@@ -1,0 +1,16 @@
+{
+  "author": "Andrew Lunny <alunny@gmail.com>",
+  "name": "pluginstall",
+  "description": "install Cordova plugins",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/alunny/pluginstall.git"
+  },
+  "main": "pluginstall.js",
+  "engines": {
+    "node": "~0.6.7"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
