@@ -1,11 +1,11 @@
 var pluginstall = require('../pluginstall');
 
-exports.testInitExists = function (test) {
+exports['should exist'] = function (test) {
     test.equal(typeof pluginstall.init, 'function');
     test.done();
 }
 
-exports.testInitReturns = function (test) {
+exports['should return expected values'] = function (test) {
     var initObj = pluginstall.init('android', '.', 'test/project'),
         projPath = process.cwd(),
         plugPath = projPath + '/test/project'
@@ -17,7 +17,7 @@ exports.testInitReturns = function (test) {
     test.done();
 }
 
-exports.testPlatformExists = function (test) {
+exports['should throw for unsupported platforms'] = function (test) {
     test.throws(function () {
         pluginstall.init('palm-treo', '.', 'test/project');
     });
