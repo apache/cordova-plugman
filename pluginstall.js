@@ -19,8 +19,8 @@ exports.init = function (platform, projectPath, pluginPath) {
     }
 }
 
-exports.parseXml = function (configObj) {
-    var xmlPath     = path.join(configObj.pluginPath, 'plugin.xml'),
+exports.parseXml = function (config) {
+    var xmlPath     = path.join(config.pluginPath, 'plugin.xml'),
         xmlText     = fs.readFileSync(xmlPath, 'utf-8'),
         xmlDoc      = new et.ElementTree(et.XML(xmlText)),
         rootAttr    = xmlDoc._root.attrib,
@@ -38,6 +38,11 @@ exports.parseXml = function (configObj) {
     };
 }
 
-exports.moveFiles = function (configObj, dataObj) {}
+// should move all asset and source files into the right places
+// and then edit all appropriate files (manifests and the like)
+exports.installPlugin = function (config, plugin, callback) {
+    // get the platform-specific fn
+    var platformInstall = platformModules[config.platform].installPlugin;
 
-exports.editFiles = function (configObj, dataObj) {}
+    return platformInstall(config, plugin, callback)
+}
