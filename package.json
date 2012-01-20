@@ -12,7 +12,9 @@
     "node": "~0.6.7"
   },
   "dependencies": {
-     "elementtree": "0.1.1"
+     "elementtree": "0.1.1",
+     "rimraf":"1.0.9",
+     "fstream":"0.1.11"
   },
   "devDependencies": {
     "nodeunit": "0.6.4"
