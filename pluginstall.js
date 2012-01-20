@@ -2,7 +2,10 @@
 var fs = require('fs'),
     path = require('path'),
     et = require('elementtree'),
-    platforms = require('./platforms')
+    platforms = require('./platforms'),
+    platformModules = {
+        'android': require('./platforms/android')
+    }
 
 // check arguments and resolve file paths
 exports.init = function (platform, projectPath, pluginPath) {
