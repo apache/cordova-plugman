@@ -5,8 +5,8 @@
 
     <name>Child Browser</name>
 
-    <asset src="www/childbrowser.js" target="www" />
-    <asset src="www/childbrowser" target="www/childbrowser" only="android" />
+    <asset src="www/childbrowser.js" target="childbrowser.js" />
+    <asset src="www/childbrowser" target="childbrowser" only="android" />
 
     <!-- android -->
     <platform name="android">
@@ -18,12 +18,12 @@
             </activity>
         </config-file>
 
-        <!-- plugins.xml - XPath selector and co -->
         <config-file target="rex/xml/plugins.xml" parent="/plugins">
             <plugin name="ChildBrowser"
                 value="com.phonegap.plugins.childBrowser.ChildBrowser"/>
         </config-file>
 
-        <src-code target-dir="src/com/phonegap/plugins/childBrowser" />
+        <source-code src="src/android/ChildBrowser.java"
+                target-dir="src/com/phonegap/plugins/childBrowser" />
     </platform>
 </plugin>
