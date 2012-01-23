@@ -18,7 +18,7 @@
             </activity>
         </config-file>
 
-        <config-file target="rex/xml/plugins.xml" parent="/plugins">
+        <config-file target="res/xml/plugins.xml" parent="/plugins">
             <plugin name="ChildBrowser"
                 value="com.phonegap.plugins.childBrowser.ChildBrowser"/>
         </config-file>
