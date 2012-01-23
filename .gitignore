@@ -1,3 +1,4 @@
 test/project/assets/www/childbrowser*
 test/project/src/**/
 test/project/res/xml/plugins.xml
+test/project/AndroidManifest.xml
