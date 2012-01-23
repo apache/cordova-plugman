@@ -3,6 +3,7 @@ var fs = require('fs'),
     rimraf = require('rimraf')
     pluginstall = require('../pluginstall'),
     android = require('../platforms/android'),
+    nCallbacks = require('../util/ncallbacks'),
     config = {
         platform: 'android',
         projectPath: fs.realpathSync('test/project'),
@@ -10,26 +11,28 @@ var fs = require('fs'),
     },
     plugin = pluginstall.parseXml(config),
     assetsDir = path.resolve(config.projectPath, 'assets/www'),
+    srcDir = path.resolve(config.projectPath, 'src'),
     jsPath = assetsDir + '/childbrowser.js',
     assetPath = assetsDir + '/childbrowser'
 
 // global setup
 exports.setUp = function (callback) {
+    var ASYNC_OPS = 2,
+        end = nCallbacks(ASYNC_OPS, callback);
+
+    // remove JS (that should be moved)
     fs.stat(jsPath, function (err, stats) {
         if (stats) {
             fs.unlinkSync(jsPath)
         }
 
-        fs.stat(assetPath, function (err, stat) {
-            if (err && err.code == 'ENOENT') {
-                callback()
-            } else {
-                rimraf(assetPath, function () {
-                    callback()
-                });
-            }
-        })
-    })
+        end(null);
+    });
+
+    // remove web assets (www/childbrowser)
+    rimraf(assetPath, function () {
+        end(null)
+    });
 }
 
 exports['should move the js file'] = function (test) {
