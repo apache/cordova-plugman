@@ -2,8 +2,9 @@ var fs = require('fs'),
     path = require('path'),
     fstream = require('fstream'),
     mkdirp = require('mkdirp'),
-    assetsDir = "assets/www", // relative path to project's web assets
-    sourceDir = "src",
+    nCallbacks = require('../util/ncallbacks'),
+    assetsDir = 'assets/www', // relative path to project's web assets
+    sourceDir = 'src',
     counter = {};
 
 exports.installPlugin = function (config, plugin, callback) {
@@ -27,7 +28,7 @@ exports.installPlugin = function (config, plugin, callback) {
         if (fs.statSync(srcPath).isDirectory()) {
             var read = fstream.Reader(srcPath);
             read.pipe(fstream.Writer({ path: targetPath,
-                                        type: "Directory"}));
+                                        type: 'Directory'}));
             read.on('end', endCallback);
         } else {
             var read = fstream.Reader(srcPath);
@@ -35,18 +36,29 @@ exports.installPlugin = function (config, plugin, callback) {
             read.on('end', endCallback);
         }
     });
+
+    /*
+       example:
+        <source-code src="src/android/ChildBrowser.java"
+                target-dir="src/com/phonegap/plugins/childBrowser" />
+     */
+    sourceFiles.forEach(function (sourceFile) {
+        var srcDir = path.resolve(config.projectPath,
+                                sourceFile.attrib['target-dir'])
+
+        mkdirp(srcDir, function (err) {
+            var srcFile = path.resolve(config.pluginPath,
+                                        sourceFile.attrib['src']),
+                destFile = path.resolve(srcDir,
+                                path.basename(sourceFile.attrib['src'])),
+                read = fstream.Reader(srcFile);
+
+            read.pipe(fstream.Writer(destFile))
+            read.on('end', endCallback);
+        });
+    })
 }
 
 function moveFilesAround(config, plugin, cb) { }
 
 function editCorrectFiles(config, plugin, cb) {}
-
-// ensure callback gets called n times
-function nCallbacks(count, callback) {
-    var n = count;
-    return function (err) {
-        if (err) callback(err)
-        --n
-        if (n == 0) callback(null)
-    }
-}
