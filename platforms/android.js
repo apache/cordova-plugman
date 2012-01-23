@@ -11,9 +11,10 @@ exports.installPlugin = function (config, plugin, callback) {
     // look for assets in the plugin 
     var assets = plugin.xmlDoc.findall('./asset'),
         platformTag = plugin.xmlDoc.find('./platform[@name="android"]'),
-        endCallback, srcPath, targetPath;
+        sourceFiles = platformTag.findall('./source-code')
 
-    endCallback = nCallbacks(assets.length, callback)
+    var endCallback = nCallbacks((assets.length + sourceFiles.length),
+                                    callback)
 
     assets.forEach(function (asset) {
         var srcPath = path.resolve(

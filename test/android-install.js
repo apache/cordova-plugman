@@ -13,11 +13,14 @@ var fs = require('fs'),
     assetsDir = path.resolve(config.projectPath, 'assets/www'),
     srcDir = path.resolve(config.projectPath, 'src'),
     jsPath = assetsDir + '/childbrowser.js',
-    assetPath = assetsDir + '/childbrowser'
+    assetPath = assetsDir + '/childbrowser',
+    javaDir  = path.resolve(config.projectPath,
+                            'src/com/phonegap/plugins/childBrowser'),
+    javaPath = path.resolve(javaDir, 'ChildBrowser.java')
 
 // global setup
 exports.setUp = function (callback) {
-    var ASYNC_OPS = 2,
+    var ASYNC_OPS = 3,
         end = nCallbacks(ASYNC_OPS, callback);
 
     // remove JS (that should be moved)
@@ -31,6 +34,11 @@ exports.setUp = function (callback) {
 
     // remove web assets (www/childbrowser)
     rimraf(assetPath, function () {
+        end(null)
+    });
+
+    // remove src code directory
+    rimraf(javaDir, function () {
         end(null)
     });
 }
@@ -48,6 +56,13 @@ exports['should move the directory'] = function (test) {
 
         test.ok(assets.isDirectory())
         test.ok(fs.statSync(assetPath + '/image.jpg'))
+        test.done();
+    })
+}
+
+exports['should move the src file'] = function (test) {
+    android.installPlugin(config, plugin, function (err) {
+        test.ok(fs.statSync(javaPath))
         test.done();
     })
 }
