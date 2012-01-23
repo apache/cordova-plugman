@@ -1,0 +1,18 @@
+{
+  "name": "magic-templates",
+  "description": "Templating framework for NodeJS inspired by Django templates.",
+  "version": "0.1.1",
+  "homepage": "https://github.com/Kami/magic-templates",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Kami/magic-templates.git"
+  },
+  "author": "Tomaz Muraus <tomaz+npm@tomaz.me> http://www.tomaz.me",
+  "main": "./index",
+  "directories": {
+    "lib": "./lib"
+  },
+  "engines": {
+    "node": ">= 0.1.95"
+  }
+}
