@@ -6,7 +6,7 @@
     <name>Child Browser</name>
 
     <asset src="www/childbrowser.js" target="childbrowser.js" />
-    <asset src="www/childbrowser" target="childbrowser" only="android" />
+    <asset src="www/childbrowser" target="childbrowser" />
 
     <!-- android -->
     <platform name="android">
