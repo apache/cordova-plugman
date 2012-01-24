@@ -26,9 +26,18 @@ var fs = require('fs'),
                             'src/com/phonegap/plugins/childBrowser'),
     javaPath = path.resolve(javaDir, 'ChildBrowser.java')
 
+function moveProjFile(origFile, callback) {
+    var src = path.resolve(config.projectPath, origFile),
+        dest = src.replace('.orig', '')
+
+    fs.createReadStream(src)
+        .pipe(fs.createWriteStream(dest))
+        .on('close', callback);
+}
+
 // global setup
 exports.setUp = function (callback) {
-    var ASYNC_OPS = 4,
+    var ASYNC_OPS = 5,
         end = nCallbacks(ASYNC_OPS, callback);
 
     // remove JS (that should be moved)
@@ -51,14 +60,10 @@ exports.setUp = function (callback) {
     });
 
     // copy in original plugins.xml
-    var pluginsOriginal = path.resolve(config.projectPath,
-            'res/xml/plugins.orig.xml'),
-        pluginsCopy = path.resolve(config.projectPath,
-            'res/xml/plugins.xml');
+    moveProjFile('res/xml/plugins.orig.xml', end)
 
-    fs.createReadStream(pluginsOriginal)
-        .pipe(fs.createWriteStream(pluginsCopy))
-        .on('close', end);
+    // copy in original AndroidManifest.xml
+    moveProjFile('AndroidManifest.orig.xml', end)
 }
 
 exports['should move the js file'] = function (test) {
@@ -93,6 +98,18 @@ exports['should add ChildBrowser to plugins.xml'] = function (test) {
                         '[@value="com.phonegap.plugins.childBrowser.ChildBrowser"]';
 
         test.ok(pluginsDoc.find(expected));
+        test.done();
+    })
+}
+
+exports['should add ChildBrowser to AndroidManifest.xml'] = function (test) {
+    android.installPlugin(config, plugin, function (err) {
+        var manifestTxt = fs.readFileSync('test/project/AndroidManifest.xml', 'utf-8'),
+            manifestDoc = new et.ElementTree(et.XML(manifestTxt)),
+            expected = 'application/activity[@android:name=' +
+                        '"com.phonegap.plugins.childBrowser.ChildBrowser"]';
+
+        test.ok(manifestDoc.find(expected));
         test.done();
     })
 }

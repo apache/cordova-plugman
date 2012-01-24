@@ -13,10 +13,12 @@ exports.installPlugin = function (config, plugin, callback) {
     var assets = plugin.xmlDoc.findall('./asset'),
         platformTag = plugin.xmlDoc.find('./platform[@name="android"]'),
         sourceFiles = platformTag.findall('./source-code'),
-        pluginsChanges = platformTag.findall('./config-file[@target="res/xml/plugins.xml"]')
+        pluginsChanges = platformTag.findall('./config-file[@target="res/xml/plugins.xml"]'),
+        manifestChanges = platformTag.findall('./config-file[@target="AndroidManifest.xml"]'),
 
-    var endCallback = nCallbacks((assets.length + sourceFiles.length + pluginsChanges.length),
-                                    callback)
+        callbackCount = assets.length + sourceFiles.length + pluginsChanges.length
+            + manifestChanges.length,
+        endCallback = nCallbacks(callbackCount, callback)
 
     // move asset files
     assets.forEach(function (asset) {
@@ -61,12 +63,12 @@ exports.installPlugin = function (config, plugin, callback) {
     // edit plugins.xml
     pluginsChanges.forEach(function (configNode) {
         var pluginsPath = path.resolve(config.projectPath, 'res/xml/plugins.xml'),
-            pluginsFile = readAsETSync(pluginsPath),
+            pluginsDoc = readAsETSync(pluginsPath),
             selector = configNode.attrib["parent"],
             child = configNode.find('*');
 
-        if (addToDoc(pluginsFile, child, selector)) {
-            fs.writeFile(pluginsPath, pluginsFile.write(), function (err) {
+        if (addToDoc(pluginsDoc, child, selector)) {
+            fs.writeFile(pluginsPath, pluginsDoc.write(), function (err) {
                 if (err) endCallback(err);
 
                 endCallback();
@@ -75,18 +77,43 @@ exports.installPlugin = function (config, plugin, callback) {
             endCallback('failed to add node to plugins.xml');
         }
     });
+
+    // edit AndroidManifest.xml
+    manifestChanges.forEach(function (configNode) {
+        var manifestPath = path.resolve(config.projectPath, 'AndroidManifest.xml'),
+            manifestDoc  = readAsETSync(manifestPath),
+            selector = configNode.attrib["parent"],
+            child = configNode.find('*');
+
+        if (addToDoc(manifestDoc, child, selector)) {
+            fs.writeFile(manifestPath, manifestDoc.write(), function (err) {
+                if (err) endCallback(err);
+
+                endCallback();
+            });
+        } else {
+            endCallback('failed to add node to AndroidManifest.xml')
+        }
+    })
 }
 
 // adds node to doc at selector
 function addToDoc(doc, node, selector) {
-    var ABSOLUTE = /^\/([^\/]*)/, // is an absolute selector
-        parent, tagName;
+    var ROOT = /^\/([^\/]*)/,
+        ABSOLUTE = /^\/([^\/]*)\/(.*)/,
+        parent, tagName, subSelector;
 
     // handle absolute selector (which elementtree doesn't like)
-    if (ABSOLUTE.test(selector)) {
-        tagName = selector.match(ABSOLUTE)[1];
+    if (ROOT.test(selector)) {
+        tagName = selector.match(ROOT)[1];
         if (tagName === doc._root.tag) {
-            parent = doc._root
+            parent = doc._root;
+
+            // could be an absolute path, but not selecting the root
+            if (ABSOLUTE.test(selector)) {
+                subSelector = selector.match(ABSOLUTE)[2];
+                parent = parent.find(subSelector)
+            }
         } else {
             return false;
         }
