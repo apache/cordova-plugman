@@ -19,5 +19,6 @@
   },
   "devDependencies": {
     "nodeunit": "0.6.4"
-  }
+  },
+  "bin" : { "pluginstall" : "./cli.js" }
 }
