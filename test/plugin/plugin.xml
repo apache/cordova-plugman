@@ -26,4 +26,19 @@
         <source-file src="src/android/ChildBrowser.java"
                 target-dir="src/com/phonegap/plugins/childBrowser" />
     </platform>
+
+    <!-- ios -->
+    <platform name="ios">
+        <plugins-plist key="com.phonegap.plugins.childbrowser"
+            string="ChildBrowserCommand" />
+
+        <resource-file src="ChildBrowser.bundle" />
+        <resource-file src="ChildBrowserViewController.xib" />
+
+        <header-file src="ChildBrowserCommand.h" />
+        <header-file src="ChildBrowserViewController.h" />
+
+        <source-file src="ChildBrowserCommand.m" />
+        <source-file src="ChildBrowserViewController.m" />
+    </platform>
 </plugin>
