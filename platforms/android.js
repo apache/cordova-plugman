@@ -12,7 +12,7 @@ exports.installPlugin = function (config, plugin, callback) {
     // look for assets in the plugin 
     var assets = plugin.xmlDoc.findall('./asset'),
         platformTag = plugin.xmlDoc.find('./platform[@name="android"]'),
-        sourceFiles = platformTag.findall('./source-code'),
+        sourceFiles = platformTag.findall('./source-file'),
         pluginsChanges = platformTag.findall('./config-file[@target="res/xml/plugins.xml"]'),
         manifestChanges = platformTag.findall('./config-file[@target="AndroidManifest.xml"]'),
 
