@@ -15,7 +15,8 @@
      "elementtree": "0.1.1",
      "rimraf":"1.0.9",
      "fstream":"0.1.11",
-     "mkdirp":"0.2.2"
+     "mkdirp":"0.2.2",
+     "xcode":"0.2.0"
   },
   "devDependencies": {
     "nodeunit": "0.6.4"
