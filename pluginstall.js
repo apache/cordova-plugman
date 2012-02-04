@@ -4,7 +4,8 @@ var fs = require('fs'),
     et = require('elementtree'),
     platforms = require('./platforms'),
     platformModules = {
-        'android': require('./platforms/android')
+        'android': require('./platforms/android'),
+        'ios': require('./platforms/ios')
     }
 
 // check arguments and resolve file paths
