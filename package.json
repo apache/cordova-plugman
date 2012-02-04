@@ -17,7 +17,8 @@
      "fstream":"0.1.11",
      "mkdirp":"0.2.2",
      "xcode":"0.2.0",
-     "plist":"0.2.1"
+     "plist":"0.2.1",
+     "glob":"3.0.1"
   },
   "devDependencies": {
     "nodeunit": "0.6.4"
