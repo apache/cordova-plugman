@@ -1,9 +1,9 @@
 var fs = require('fs'),
     path = require('path'),
-    fstream = require('fstream'),
     mkdirp = require('mkdirp'),
     et = require('elementtree'),
     nCallbacks = require('../util/ncallbacks'),
+    asyncCopy = require('../util/asyncCopy'),
     assetsDir = 'assets/www', // relative path to project's web assets
     sourceDir = 'src',
     counter = {};
@@ -31,16 +31,7 @@ exports.installPlugin = function (config, plugin, callback) {
                             assetsDir,
                             asset.attrib['target']);
 
-        if (fs.statSync(srcPath).isDirectory()) {
-            var read = fstream.Reader(srcPath);
-            read.pipe(fstream.Writer({ path: targetPath,
-                                        type: 'Directory'}));
-            read.on('end', endCallback);
-        } else {
-            var read = fstream.Reader(srcPath);
-            read.pipe(fstream.Writer(targetPath));
-            read.on('end', endCallback);
-        }
+        asyncCopy(srcPath, targetPath, endCallback);
     });
 
     // move source files
@@ -52,11 +43,9 @@ exports.installPlugin = function (config, plugin, callback) {
             var srcFile = path.resolve(config.pluginPath,
                                         sourceFile.attrib['src']),
                 destFile = path.resolve(srcDir,
-                                path.basename(sourceFile.attrib['src'])),
-                read = fstream.Reader(srcFile);
+                                path.basename(sourceFile.attrib['src']));
 
-            read.pipe(fstream.Writer(destFile))
-            read.on('end', endCallback);
+            asyncCopy(srcFile, destFile, endCallback);
         });
     })
 

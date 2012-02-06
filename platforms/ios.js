@@ -1,8 +1,8 @@
 var path = require('path'),
     fs = require('fs'),
-    fstream = require('fstream'),
     glob = require('glob'),
     nCallbacks = require('../util/nCallbacks'),
+    asyncCopy = require('../util/asyncCopy'),
     assetsDir = 'www'; // relative path to project's web assets
 
 exports.installPlugin = function (config, plugin, callback) {
@@ -10,10 +10,15 @@ exports.installPlugin = function (config, plugin, callback) {
         platformTag = plugin.xmlDoc.find('./platform[@name="ios"]'),
         sourceFiles = platformTag.findall('./source-file'),
         headerFiles = platformTag.findall('./header-file'),
-        callbackCount = assets.length + sourceFiles.length + headerFiles.length,
+        resourceFiles = platformTag.findall('./resource-file'),
+        callbackCount = assets.length + sourceFiles.length +
+            headerFiles.length,// + resourceFiles.length,
         end = nCallbacks(callbackCount, callback);
 
-    // move asset files
+    // parse the xcodeproj file
+    // and parse the PhoneGap.plist file
+
+    // move asset files into www
     assets.forEach(function (asset) {
         var srcPath = path.resolve(
                         config.pluginPath,
@@ -24,19 +29,10 @@ exports.installPlugin = function (config, plugin, callback) {
                             assetsDir,
                             asset.attrib['target']);
 
-        if (fs.statSync(srcPath).isDirectory()) {
-            var read = fstream.Reader(srcPath);
-            read.pipe(fstream.Writer({ path: targetPath,
-                                        type: 'Directory'}));
-            read.on('end', end);
-        } else {
-            var read = fstream.Reader(srcPath);
-            read.pipe(fstream.Writer(targetPath));
-            read.on('end', end);
-        }
+        asyncCopy(srcPath, targetPath, end);
     });
 
-    // move source files
+    // move native files (source/header/resource)
     // first, need to find the correct directory
     glob(config.projectPath + '/**/PhoneGap.plist', function (err, files) {
         if (!files.length) throw "does not appear to be a PhoneGap project";
@@ -44,35 +40,24 @@ exports.installPlugin = function (config, plugin, callback) {
         var pluginsDir = path.resolve(files[0], '..', 'Plugins');
 
         sourceFiles.forEach(function (sourceFile) {
-            var srcFile = path.resolve(config.pluginPath,
-                                        'src/ios',
-                                        sourceFile.attrib['src']),
-                destFile = path.resolve(pluginsDir,
-                                path.basename(sourceFile.attrib['src'])),
-                read = fstream.Reader(srcFile);
+            var src = sourceFile.attrib['src'],
+                srcFile = path.resolve(config.pluginPath, 'src/ios', src),
+                destFile = path.resolve(pluginsDir, path.basename(src));
 
-            read.pipe(fstream.Writer(destFile))
-            read.on('end', end);
+            asyncCopy(srcFile, destFile, end);
         })
 
         headerFiles.forEach(function (headerFile) {
-            var srcFile = path.resolve(config.pluginPath,
-                                        'src/ios',
-                                        headerFile.attrib['src']),
-                destFile = path.resolve(pluginsDir,
-                                path.basename(headerFile.attrib['src'])),
-                read = fstream.Reader(srcFile);
+            var src = headerFile.attrib['src'],
+                srcFile = path.resolve(config.pluginPath, 'src/ios', src),
+                destFile = path.resolve(pluginsDir, path.basename(src));
 
-            read.pipe(fstream.Writer(destFile))
-            read.on('end', end);
+            asyncCopy(srcFile, destFile, end);
         })
     });
 
-    // first parse the xcodeproj file
-    // and parse the PhoneGap.plist file
 
     // after that
-    //   move each asset file into place
     //   move the native files into place, editing the xcodeproj
     //   add the plugin key to the plist
 
