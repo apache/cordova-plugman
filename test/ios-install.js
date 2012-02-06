@@ -40,15 +40,17 @@ function unlinkIfThere(filepath, cb) {
 }
 
 exports.setUp = function (calllback) {
-    var ASYNC_OPS = 7,
+    var ASYNC_OPS = 9,
         end = nCallbacks(ASYNC_OPS, calllback);
 
     rimraf(assetsDir + '/childbrowser', end)
+    rimraf(srcDir + '/ChildBrowser.bundle', end)
     unlinkIfThere(jsPath, end)
     unlinkIfThere(srcDir + '/ChildBrowserCommand.m', end)
     unlinkIfThere(srcDir + '/ChildBrowserViewController.m', end)
     unlinkIfThere(srcDir + '/ChildBrowserCommand.h', end)
     unlinkIfThere(srcDir + '/ChildBrowserViewController.h', end)
+    unlinkIfThere(srcDir + '/ChildBrowserViewController.xib', end)
 
     // move plist file into place
     moveProjFile('SampleApp/PhoneGap.orig.plist', end);
@@ -77,9 +79,21 @@ exports['should move the header files'] = function (test) {
     })
 }
 
-exports['should move the xib file']
+exports['should move the xib file'] = function (test) {
+    ios.installPlugin(config, plugin, function (err) {
+        test.ok(fs.statSync(srcDir + '/ChildBrowserViewController.xib'))
+        test.done();
+    })
+}
 
-exports['should move the bundle']
+exports['should move the bundle'] = function (test) {
+    ios.installPlugin(config, plugin, function (err) {
+        var bundle = fs.statSync(srcDir + '/ChildBrowser.bundle');
+
+        test.ok(bundle.isDirectory())
+        test.done();
+    })
+}
 
 exports['should edit PhoneGap.plist']
 

@@ -12,7 +12,7 @@ exports.installPlugin = function (config, plugin, callback) {
         headerFiles = platformTag.findall('./header-file'),
         resourceFiles = platformTag.findall('./resource-file'),
         callbackCount = assets.length + sourceFiles.length +
-            headerFiles.length,// + resourceFiles.length,
+            headerFiles.length + resourceFiles.length,
         end = nCallbacks(callbackCount, callback);
 
     // parse the xcodeproj file
@@ -49,6 +49,14 @@ exports.installPlugin = function (config, plugin, callback) {
 
         headerFiles.forEach(function (headerFile) {
             var src = headerFile.attrib['src'],
+                srcFile = path.resolve(config.pluginPath, 'src/ios', src),
+                destFile = path.resolve(pluginsDir, path.basename(src));
+
+            asyncCopy(srcFile, destFile, end);
+        })
+
+        resourceFiles.forEach(function (resource) {
+            var src = resource.attrib['src'],
                 srcFile = path.resolve(config.pluginPath, 'src/ios', src),
                 destFile = path.resolve(pluginsDir, path.basename(src));
 
