@@ -1,6 +1,7 @@
 var fs = require('fs'),
     path = require('path'),
     rimraf = require('rimraf'),
+    plist = require('plist'),
 
     pluginstall = require('../pluginstall'),
     ios = require('../platforms/ios'),
@@ -95,6 +96,17 @@ exports['should move the bundle'] = function (test) {
     })
 }
 
-exports['should edit PhoneGap.plist']
+exports['should edit PhoneGap.plist'] = function (test) {
+    ios.installPlugin(config, plugin, function (err) {
+        var plistPath = config.projectPath + '/SampleApp/PhoneGap.plist';
+        plist.parseFile(plistPath, function (err, obj) {
+
+            test.equal(obj[0].Plugins['com.phonegap.plugins.childbrowser'],
+                'ChildBrowserCommand');
+
+            test.done();
+        });
+    })
+}
 
 exports['should edit the pbxproj file']
