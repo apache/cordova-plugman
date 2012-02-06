@@ -1,3 +1,5 @@
+node_modules/*
+
 # for testing mostly
 test/project/assets/www/childbrowser*
 test/project/www/childbrowser*
