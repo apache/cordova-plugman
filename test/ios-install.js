@@ -28,6 +28,7 @@ function moveProjFile(origFile, callback) {
 function unlinkIfThere(filepath, cb) {
     fs.stat(filepath, function (err, stat) {
         if (err) {
+            cb(null);
             return;
         }
 
@@ -75,6 +76,8 @@ exports['should move the header files'] = function (test) {
         test.done();
     })
 }
+
+exports['should move the xib file']
 
 exports['should move the bundle']
 
