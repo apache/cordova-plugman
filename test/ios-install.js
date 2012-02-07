@@ -102,7 +102,7 @@ exports['should edit PhoneGap.plist'] = function (test) {
         var plistPath = config.projectPath + '/SampleApp/PhoneGap.plist';
         plist.parseFile(plistPath, function (err, obj) {
 
-            test.equal(obj[0].Plugins['com.phonegap.plugins.childbrowser'],
+            test.equal(obj.Plugins['com.phonegap.plugins.childbrowser'],
                 'ChildBrowserCommand');
 
             test.done();

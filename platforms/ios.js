@@ -106,7 +106,7 @@ exports.installPlugin = function (config, plugin, callback) {
 
         // write out plist
         plistObj[0].Plugins[plistEle.attrib['key']] = plistEle.attrib['string'];
-        fs.writeFile(plistPath, plist.stringify(plistObj), end);
+        fs.writeFile(plistPath, plist.stringify(plistObj[0]), end);
 
         // write out xcodeproj file
         fs.writeFile(pbxPath, xcodeproj.writeSync(), end);
