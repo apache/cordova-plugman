@@ -8,19 +8,46 @@ var path = require('path'),
     assetsDir = 'www'; // relative path to project's web assets
 
 exports.installPlugin = function (config, plugin, callback) {
-    glob(config.projectPath + '/**/PhoneGap.plist', function (err, files) {
-        if (!files.length) throw "does not appear to be a PhoneGap project";
+    function prepare(then) {
+        var store = {},
+            end = nCallbacks(2, function (err) {
+                if (err) throw err;
 
-        // parse the xcodeproj file
-        // and parse the PhoneGap.plist file
-        var plistPath = files[0],
-            pluginsDir = path.resolve(files[0], '..', 'Plugins'),
+                else
+                    then(store.pbxPath, store.xcodeproj, store.plistPath,
+                        store.plist, store.pluginsDir);
+            });
 
-            assets = plugin.xmlDoc.findall('./asset'),
+        // grab and parse pbxproj
+        glob(config.projectPath + '/**/project.pbxproj', function (err, files) {
+            if (!files.length) throw "does not appear to be an xcode project";
+
+            store.pbxPath = files[0];
+            store.xcodeproj = xcode.project(files[0]);
+            store.xcodeproj.parse(end);
+        });
+
+        // grab and parse plist file
+        glob(config.projectPath + '/**/PhoneGap.plist', function (err, files) {
+            if (!files.length) throw "does not appear to be a PhoneGap project";
+
+            store.plistPath = files[0];
+            store.pluginsDir = path.resolve(files[0], '..', 'Plugins');
+
+            plist.parseFile(store.plistPath, function (err, obj) {
+                store.plist = obj;
+                end();
+            });
+        });
+    }
+
+    prepare(function (pbxPath, xcodeproj, plistPath, plistObj, pluginsDir) {
+        var assets = plugin.xmlDoc.findall('./asset'),
             platformTag = plugin.xmlDoc.find('./platform[@name="ios"]'),
             sourceFiles = platformTag.findall('./source-file'),
             headerFiles = platformTag.findall('./header-file'),
             resourceFiles = platformTag.findall('./resource-file'),
+            plistEle = platformTag.find('./plugins-plist'),
 
             callbackCount = 0, end;
 
@@ -29,7 +56,8 @@ exports.installPlugin = function (config, plugin, callback) {
         callbackCount += sourceFiles.length;
         callbackCount += headerFiles.length;
         callbackCount += resourceFiles.length;
-        callbackCount++; // for editing the plist file
+        callbackCount++; // for writing the plist file
+        callbackCount++; // for writing the pbxproj file
 
         end = nCallbacks(callbackCount, callback);
 
@@ -51,6 +79,8 @@ exports.installPlugin = function (config, plugin, callback) {
                 srcFile = path.resolve(config.pluginPath, 'src/ios', src),
                 destFile = path.resolve(pluginsDir, path.basename(src));
 
+            xcodeproj.addSourceFile('Plugins/' + path.basename(src));
+
             asyncCopy(srcFile, destFile, end);
         })
 
@@ -58,6 +88,8 @@ exports.installPlugin = function (config, plugin, callback) {
             var src = headerFile.attrib['src'],
                 srcFile = path.resolve(config.pluginPath, 'src/ios', src),
                 destFile = path.resolve(pluginsDir, path.basename(src));
+
+            xcodeproj.addHeaderFile('Plugins/' + path.basename(src));
 
             asyncCopy(srcFile, destFile, end);
         })
@@ -67,25 +99,16 @@ exports.installPlugin = function (config, plugin, callback) {
                 srcFile = path.resolve(config.pluginPath, 'src/ios', src),
                 destFile = path.resolve(pluginsDir, path.basename(src));
 
+            xcodeproj.addResourceFile('Plugins/' + path.basename(src));
+
             asyncCopy(srcFile, destFile, end);
         })
 
-        // edit the plist file
-        plist.parseFile(plistPath, function (err, obj) {
-            var plistEle = platformTag.find('./plugins-plist');
+        // write out plist
+        plistObj[0].Plugins[plistEle.attrib['key']] = plistEle.attrib['string'];
+        fs.writeFile(plistPath, plist.stringify(plistObj), end);
 
-            obj[0].Plugins[plistEle.attrib['key']] = plistEle.attrib['string'];
-
-            fs.writeFile(plistPath, plist.stringify(obj), end);
-        });
+        // write out xcodeproj file
+        fs.writeFile(pbxPath, xcodeproj.writeSync(), end);
     });
-
-    // after that
-    //   move the native files into place, editing the xcodeproj
-    //   add the plugin key to the plist
-
-    // after that
-    //   write out xcodeproj file
-    //   write out plist
-    //   call callback
 }

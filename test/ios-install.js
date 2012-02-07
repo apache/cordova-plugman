@@ -2,6 +2,7 @@ var fs = require('fs'),
     path = require('path'),
     rimraf = require('rimraf'),
     plist = require('plist'),
+    xcode = require('xcode'),
 
     pluginstall = require('../pluginstall'),
     ios = require('../platforms/ios'),
@@ -41,7 +42,7 @@ function unlinkIfThere(filepath, cb) {
 }
 
 exports.setUp = function (calllback) {
-    var ASYNC_OPS = 9,
+    var ASYNC_OPS = 10,
         end = nCallbacks(ASYNC_OPS, calllback);
 
     rimraf(assetsDir + '/childbrowser', end)
@@ -53,8 +54,8 @@ exports.setUp = function (calllback) {
     unlinkIfThere(srcDir + '/ChildBrowserViewController.h', end)
     unlinkIfThere(srcDir + '/ChildBrowserViewController.xib', end)
 
-    // move plist file into place
     moveProjFile('SampleApp/PhoneGap.orig.plist', end);
+    moveProjFile('SampleApp.xcodeproj/project.orig.pbxproj', end);
 }
 
 exports['should move the js file'] = function (test) {
@@ -109,4 +110,16 @@ exports['should edit PhoneGap.plist'] = function (test) {
     })
 }
 
-exports['should edit the pbxproj file']
+exports['should edit the pbxproj file'] = function (test) {
+    ios.installPlugin(config, plugin, function (err) {
+        var projPath = config.projectPath + '/SampleApp.xcodeproj/project.pbxproj';
+
+        xcode.project(projPath).parse(function (err, obj) {
+            var fileRefSection = obj.project.objects['PBXFileReference'],
+                fileRefLength = Object.keys(fileRefSection).length;
+
+            test.equal(fileRefLength, 82);
+            test.done();
+        })
+    });
+}
