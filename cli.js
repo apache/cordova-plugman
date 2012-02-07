@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 var pluginstall = require('./pluginstall'),
     platform, projectDir, pluginDir,
     config, plugin
