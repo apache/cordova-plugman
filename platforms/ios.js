@@ -31,6 +31,10 @@ exports.installPlugin = function (config, plugin, callback) {
         glob(config.projectPath + '/**/PhoneGap.plist', function (err, files) {
             if (!files.length) throw "does not appear to be a PhoneGap project";
 
+            files = files.filter(function (val) {
+                return !(/^build\//.test(val))
+            });
+
             store.plistPath = files[0];
             store.pluginsDir = path.resolve(files[0], '..', 'Plugins');
 
