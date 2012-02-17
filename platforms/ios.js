@@ -3,7 +3,7 @@ var path = require('path'),
     glob = require('glob'),
     xcode = require('xcode'),
     plist = require('plist'),
-    nCallbacks = require('../util/nCallbacks'),
+    nCallbacks = require('../util/ncallbacks'),
     asyncCopy = require('../util/asyncCopy'),
     assetsDir = 'www'; // relative path to project's web assets
 
