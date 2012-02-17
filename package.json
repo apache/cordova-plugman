@@ -14,7 +14,7 @@
   "dependencies": {
      "elementtree":"git+https://github.com/alunny/node-elementtree.git",
      "rimraf":"1.0.9",
-     "fstream":"0.1.11",
+     "ncp":"0.2.4",
      "mkdirp":"0.2.2",
      "xcode":"0.2.1",
      "plist":"git+https://github.com/joshfire/node-plist.git",
