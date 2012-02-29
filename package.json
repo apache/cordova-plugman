@@ -12,7 +12,7 @@
     "node": "~0.6.7"
   },
   "dependencies": {
-     "elementtree":"git+https://github.com/alunny/node-elementtree.git",
+     "elementtree":"0.1.1",
      "rimraf":"1.0.9",
      "ncp":"0.2.4",
      "mkdirp":"0.2.2",
