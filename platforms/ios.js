@@ -28,7 +28,7 @@ exports.installPlugin = function (config, plugin, callback) {
         });
 
         // grab and parse plist file
-        glob(config.projectPath + '/**/PhoneGap.plist', function (err, files) {
+        glob(config.projectPath + '/**/{PhoneGap,Cordova}.plist', function (err, files) {
             if (!files.length) throw "does not appear to be a PhoneGap project";
 
             files = files.filter(function (val) {
