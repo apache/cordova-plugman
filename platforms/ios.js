@@ -116,9 +116,14 @@ exports.installPlugin = function (config, plugin, callback) {
             xcodeproj.addFramework(src);
         });
 
+        // weirdness with node-plist and top-level <plist>
+        if (plistObj[0]) {
+            plistObj = plistObj[0];
+        }
+
         // write out plist
-        plistObj[0].Plugins[plistEle.attrib['key']] = plistEle.attrib['string'];
-        fs.writeFile(plistPath, plist.stringify(plistObj[0]), end);
+        plistObj.Plugins[plistEle.attrib['key']] = plistEle.attrib['string'];
+        fs.writeFile(plistPath, plist.stringify(plistObj), end);
 
         // write out xcodeproj file
         fs.writeFile(pbxPath, xcodeproj.writeSync(), end);
