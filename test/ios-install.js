@@ -116,10 +116,29 @@ exports['should edit the pbxproj file'] = function (test) {
 
         xcode.project(projPath).parse(function (err, obj) {
             var fileRefSection = obj.project.objects['PBXFileReference'],
-                fileRefLength = Object.keys(fileRefSection).length;
+                fileRefLength = Object.keys(fileRefSection).length,
+                EXPECTED_TOTAL_REFERENCES = 84; // magic number ahoy!
 
-            test.equal(fileRefLength, 82);
+            test.equal(fileRefLength, EXPECTED_TOTAL_REFERENCES);
             test.done();
         })
+    });
+}
+
+exports['should add the framework references to the pbxproj file'] = function (test) {
+    ios.installPlugin(config, plugin, function (err) {
+        var projPath = config.projectPath + '/SampleApp.xcodeproj/project.pbxproj',
+            projContents = fs.readFileSync(projPath, 'utf8'),
+            projLines = projContents.split("\n"),
+            references;
+
+        references = projLines.filter(function (line) {
+            return !!(line.match("libsqlite3.dylib"));
+        })
+
+        // should be four libsqlite3 reference lines added
+        // pretty low-rent test eh
+        test.equal(references.length, 4);
+        test.done();
     });
 }

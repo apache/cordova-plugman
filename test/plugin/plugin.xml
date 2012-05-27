@@ -41,5 +41,8 @@
 
         <source-file src="ChildBrowserCommand.m" />
         <source-file src="ChildBrowserViewController.m" />
+
+        <!-- framework for testing (not actual dependency of ChildBrowser -->
+        <framework src="libsqlite3.dylib" />
     </platform>
 </plugin>

@@ -51,6 +51,7 @@ exports.installPlugin = function (config, plugin, callback) {
             sourceFiles = platformTag.findall('./source-file'),
             headerFiles = platformTag.findall('./header-file'),
             resourceFiles = platformTag.findall('./resource-file'),
+            frameworks = platformTag.findall('./framework'),
             plistEle = platformTag.find('./plugins-plist'),
 
             callbackCount = 0, end;
@@ -60,6 +61,7 @@ exports.installPlugin = function (config, plugin, callback) {
         callbackCount += sourceFiles.length;
         callbackCount += headerFiles.length;
         callbackCount += resourceFiles.length;
+        // adding framework is sync, so don't add that
         callbackCount++; // for writing the plist file
         callbackCount++; // for writing the pbxproj file
 
@@ -107,6 +109,12 @@ exports.installPlugin = function (config, plugin, callback) {
 
             asyncCopy(srcFile, destFile, end);
         })
+
+        frameworks.forEach(function (framework) {
+            var src = framework.attrib['src'];
+
+            xcodeproj.addFramework(src);
+        });
 
         // write out plist
         plistObj[0].Plugins[plistEle.attrib['key']] = plistEle.attrib['string'];
