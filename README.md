@@ -17,10 +17,9 @@ Example:
 
 ## plugin.xml Format
 
-> to be finished and specified
+see https://github.com/alunny/cordova-plugin-spec
 
-see `test/plugin/plugin.xml` - there may be changes based on the input/demands
-of Cordova developers
+Currently support the June 8 revision.
 
 ## License
 
