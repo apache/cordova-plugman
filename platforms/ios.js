@@ -1,4 +1,5 @@
 var path = require('path'),
+    mkdirp = require('mkdirp'),
     fs = require('fs'),
     glob = require('glob'),
     xcode = require('xcode'),
@@ -83,21 +84,27 @@ exports.installPlugin = function (config, plugin, callback) {
         sourceFiles.forEach(function (sourceFile) {
             var src = sourceFile.attrib['src'],
                 srcFile = path.resolve(config.pluginPath, 'src/ios', src),
-                destFile = path.resolve(pluginsDir, path.basename(src));
+                targetDir = path.resolve(pluginsDir, sourceFile.attrib['target-dir']),
+                destFile = path.resolve(targetDir, path.basename(src));
+                
+            xcodeproj.addSourceFile('Plugins/' + path.relative(pluginsDir, destFile));
 
-            xcodeproj.addSourceFile('Plugins/' + path.basename(src));
-
-            asyncCopy(srcFile, destFile, end);
+            mkdirp(targetDir, function (err) {
+                asyncCopy(srcFile, destFile, end);
+            })
         })
 
         headerFiles.forEach(function (headerFile) {
             var src = headerFile.attrib['src'],
                 srcFile = path.resolve(config.pluginPath, 'src/ios', src),
-                destFile = path.resolve(pluginsDir, path.basename(src));
-
-            xcodeproj.addHeaderFile('Plugins/' + path.basename(src));
-
-            asyncCopy(srcFile, destFile, end);
+                targetDir = path.resolve(pluginsDir, headerFile.attrib['target-dir']),
+                destFile = path.resolve(targetDir, path.basename(src));
+                
+            xcodeproj.addHeaderFile('Plugins/' + path.relative(pluginsDir, destFile));
+            
+            mkdirp(targetDir, function (err) {
+                asyncCopy(srcFile, destFile, end);
+            })
         })
 
         resourceFiles.forEach(function (resource) {
