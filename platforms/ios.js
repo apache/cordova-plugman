@@ -45,6 +45,23 @@ exports.installPlugin = function (config, plugin, callback) {
             });
         });
     }
+    
+    function getRelativeDir(file) {
+        var targetDir = file.attrib['target-dir'],
+            preserveDirs = file.attrib['preserve-dirs'];
+            
+        if (typeof preserveDirs == 'string' &&
+            preserveDirs.toLowerCase() == 'true') 
+        {
+            return path.dirname(file.attrib['src']);
+        } 
+        else if (typeof targetDir == 'string') {
+            return targetDir;
+        } 
+        else {
+            return "";
+        }
+    }
 
     prepare(function (pbxPath, xcodeproj, plistPath, plistObj, pluginsDir) {
         var assets = plugin.xmlDoc.findall('./asset'),
@@ -84,7 +101,7 @@ exports.installPlugin = function (config, plugin, callback) {
         sourceFiles.forEach(function (sourceFile) {
             var src = sourceFile.attrib['src'],
                 srcFile = path.resolve(config.pluginPath, 'src/ios', src),
-                targetDir = path.resolve(pluginsDir, sourceFile.attrib['target-dir']),
+                targetDir = path.resolve(pluginsDir, getRelativeDir(sourceFile)),
                 destFile = path.resolve(targetDir, path.basename(src));
                 
             xcodeproj.addSourceFile('Plugins/' + path.relative(pluginsDir, destFile));
@@ -97,7 +114,7 @@ exports.installPlugin = function (config, plugin, callback) {
         headerFiles.forEach(function (headerFile) {
             var src = headerFile.attrib['src'],
                 srcFile = path.resolve(config.pluginPath, 'src/ios', src),
-                targetDir = path.resolve(pluginsDir, headerFile.attrib['target-dir']),
+                targetDir = path.resolve(pluginsDir, getRelativeDir(headerFile)),
                 destFile = path.resolve(targetDir, path.basename(src));
                 
             xcodeproj.addHeaderFile('Plugins/' + path.relative(pluginsDir, destFile));
