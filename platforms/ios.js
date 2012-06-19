@@ -65,6 +65,7 @@ exports.installPlugin = function (config, plugin, callback) {
 
     prepare(function (pbxPath, xcodeproj, plistPath, plistObj, pluginsDir) {
         var assets = plugin.xmlDoc.findall('./asset'),
+            hosts = plugin.xmlDoc.findall('./access'),
             platformTag = plugin.xmlDoc.find('./platform[@name="ios"]'),
             sourceFiles = platformTag.findall('./source-file'),
             headerFiles = platformTag.findall('./header-file'),
@@ -145,8 +146,15 @@ exports.installPlugin = function (config, plugin, callback) {
             plistObj = plistObj[0];
         }
 
-        // write out plist
+        // add hosts to whitelist (ExternalHosts) in plist
+        hosts.forEach(function(host) {
+            plistObj.ExternalHosts.push(host.attrib['origin']);
+        });
+        
+        // add plugin to plist
         plistObj.Plugins[plistEle.attrib['key']] = plistEle.attrib['string'];
+        
+        // write out plist
         fs.writeFile(plistPath, plist.stringify(plistObj), end);
 
         // write out xcodeproj file
