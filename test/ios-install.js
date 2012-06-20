@@ -53,6 +53,9 @@ function clean(calllback) {
     unlinkIfThere(srcDir + '/ChildBrowserCommand.h', end)
     unlinkIfThere(srcDir + '/ChildBrowserViewController.h', end)
     unlinkIfThere(srcDir + '/ChildBrowserViewController.xib', end)
+    
+    rimraf(srcDir + '/targetDir', end)
+    rimraf(srcDir + '/preserveDirs', end)
 
     moveProjFile('SampleApp/PhoneGap.orig.plist', end);
     moveProjFile('SampleApp.xcodeproj/project.orig.pbxproj', end);
@@ -72,6 +75,8 @@ exports['should move the source files'] = function (test) {
     ios.installPlugin(config, plugin, function (err) {
         test.ok(fs.statSync(srcDir + '/ChildBrowserCommand.m'))
         test.ok(fs.statSync(srcDir + '/ChildBrowserViewController.m'))
+        test.ok(fs.statSync(srcDir + '/preserveDirs/PreserveDirsTest.m'))
+        test.ok(fs.statSync(srcDir + '/targetDir/TargetDirTest.m'))
         test.done();
     })
 }
@@ -80,6 +85,8 @@ exports['should move the header files'] = function (test) {
     ios.installPlugin(config, plugin, function (err) {
         test.ok(fs.statSync(srcDir + '/ChildBrowserCommand.h'))
         test.ok(fs.statSync(srcDir + '/ChildBrowserViewController.h'))
+        test.ok(fs.statSync(srcDir + '/preserveDirs/PreserveDirsTest.h'))
+        test.ok(fs.statSync(srcDir + '/targetDir/TargetDirTest.h'))
         test.done();
     })
 }
@@ -107,6 +114,10 @@ exports['should edit PhoneGap.plist'] = function (test) {
 
             test.equal(obj.Plugins['com.phonegap.plugins.childbrowser'],
                 'ChildBrowserCommand');
+                
+            test.equal(obj.ExternalHosts.length, 2)    
+            test.equal(obj.ExternalHosts[0], "build.phonegap.com")
+            test.equal(obj.ExternalHosts[1], "s3.amazonaws.com")
 
             test.done();
         });
@@ -120,7 +131,7 @@ exports['should edit the pbxproj file'] = function (test) {
         xcode.project(projPath).parse(function (err, obj) {
             var fileRefSection = obj.project.objects['PBXFileReference'],
                 fileRefLength = Object.keys(fileRefSection).length,
-                EXPECTED_TOTAL_REFERENCES = 84; // magic number ahoy!
+                EXPECTED_TOTAL_REFERENCES = 92; // magic number ahoy!
 
             test.equal(fileRefLength, EXPECTED_TOTAL_REFERENCES);
             test.done();

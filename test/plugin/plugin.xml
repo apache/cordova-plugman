@@ -9,6 +9,9 @@
     <asset src="www/childbrowser.js" target="childbrowser.js" />
     <asset src="www/childbrowser" target="childbrowser" />
 
+	<access origin="build.phonegap.com" />
+	<access origin="s3.amazonaws.com" />
+	
     <!-- android -->
     <platform name="android">
         <config-file target="AndroidManifest.xml" parent="/manifest/application">
@@ -38,9 +41,13 @@
 
         <header-file src="ChildBrowserCommand.h" />
         <header-file src="ChildBrowserViewController.h" />
+        <header-file src="preserveDirs/PreserveDirsTest.h" preserve-dirs="true" />
+        <header-file src="TargetDirTest.h" target-dir="targetDir"/>
 
         <source-file src="ChildBrowserCommand.m" />
         <source-file src="ChildBrowserViewController.m" />
+        <source-file src="preserveDirs/PreserveDirsTest.m" preserve-dirs="true" />
+        <header-file src="TargetDirTest.m" target-dir="targetDir"/>
 
         <!-- framework for testing (not actual dependency of ChildBrowser -->
         <framework src="libsqlite3.dylib" />

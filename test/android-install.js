@@ -105,7 +105,7 @@ exports['should add ChildBrowser to AndroidManifest.xml'] = function (test) {
     android.installPlugin(config, plugin, function (err) {
         var manifestTxt = fs.readFileSync('test/project/AndroidManifest.xml', 'utf-8'),
             manifestDoc = new et.ElementTree(et.XML(manifestTxt)),
-            expected = 'application/activity[@android:name=' +
+            expected = 'manifest/application/activity[@{http://schemas.android.com/apk/res/android}name=' +
                         '"com.phonegap.plugins.childBrowser.ChildBrowser"]';
 
         test.ok(manifestDoc.find(expected));
