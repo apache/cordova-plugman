@@ -13,6 +13,7 @@ exports.installPlugin = function (config, plugin, callback) {
     var assets = plugin.xmlDoc.findall('./asset'),
         platformTag = plugin.xmlDoc.find('./platform[@name="android"]'),
         sourceFiles = platformTag.findall('./source-file'),
+        libFiles = platformTag.findall('./library-file'),
         pluginsChanges = platformTag.findall('./config-file[@target="res/xml/plugins.xml"]'),
         manifestChanges = platformTag.findall('./config-file[@target="AndroidManifest.xml"]'),
 
@@ -40,12 +41,28 @@ exports.installPlugin = function (config, plugin, callback) {
                                 sourceFile.attrib['target-dir'])
 
         mkdirp(srcDir, function (err) {
-            var srcFile = path.resolve(config.pluginPath,
+            var srcFile = path.resolve(config.pluginPath, 'src/android',
                                         sourceFile.attrib['src']),
                 destFile = path.resolve(srcDir,
                                 path.basename(sourceFile.attrib['src']));
 
             asyncCopy(srcFile, destFile, endCallback);
+        });
+    })
+    
+    // move library files
+    libFiles.forEach(function (libFile) {
+        var libDir = path.resolve(config.projectPath,
+                                libFile.attrib['target-dir'])
+
+        mkdirp(libDir, function (err) {
+            var src = path.resolve(config.pluginPath, 'src/android',
+                                        libFile.attrib['src']),
+                dest = path.resolve(libDir,
+                                path.basename(libFile.attrib['src']));
+            console.log(src, dest);
+
+            asyncCopy(src, dest, endCallback);
         });
     })
 
