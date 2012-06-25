@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 var pluginstall = require('./pluginstall'),
     spawn = require('child_process').spawn,
-    uuid = require('node-uuid'),
     platform, projectDir, pluginDir,
     config, plugin, package,
     gitProc;
@@ -37,7 +36,7 @@ if (process.argv.length == 0) {
     // clone from git repository
     if(pluginDir.indexOf('https://') == 0 || pluginDir.indexOf('git://') == 0) {
         // FIXME: need to find a portable way to get the os temporary directory 
-        tmpPluginDir = '/tmp/plugin-' + uuid.v1();
+        tmpPluginDir = '/tmp/plugin';
         gitProc = spawn('git', ['clone', pluginDir, tmpPluginDir], {cwd: '/tmp'});
         gitProc.on('exit', function(code) {
             if(code != 0) {
@@ -45,6 +44,9 @@ if (process.argv.length == 0) {
             } else {
                 installPlugin(platform, projectDir, tmpPluginDir);
             }
+        });
+        process.on('exit', function(code) {
+            spawn('rm', ['-rf', tmpPluginDir]);
         });
     // or use local path
     } else {
