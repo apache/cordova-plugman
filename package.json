@@ -2,21 +2,21 @@
   "author": "Andrew Lunny <alunny@gmail.com>",
   "name": "pluginstall",
   "description": "install Cordova plugins",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "repository": {
     "type": "git",
     "url": "git://github.com/alunny/pluginstall.git"
   },
   "main": "pluginstall.js",
   "engines": {
-    "node": "~0.8.0"
+    "node": ">=0.6.7"
   },
   "dependencies": {
      "elementtree":"0.1.1",
      "rimraf":"1.0.9",
      "ncp":"0.2.6",
      "mkdirp":"0.2.2",
-     "xcode":"0.3.4",
+     "xcode":"0.3.5",
      "plist":"git+https://github.com/joshfire/node-plist.git",
      "glob":"3.0.1"
   },
