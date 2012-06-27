@@ -107,12 +107,14 @@ exports['should add ChildBrowser to AndroidManifest.xml'] = function (test) {
             manifestDoc = new et.ElementTree(et.XML(manifestTxt)),
             activities = manifestDoc.findall('application/activity'), i;
                         
+        var found = false;
         for (i=0; i<activities.length; i++) {
             if ( activities[i].attrib['android:name'] === 'com.phonegap.plugins.childBrowser.ChildBrowser' ) {
-                test.ok(true);
+                found = true;
+                break;
             }
         }
-
+        test.ok(found);
         test.done();
     })
 }
