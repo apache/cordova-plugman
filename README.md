@@ -23,6 +23,7 @@ Then go!
 
 * Android
 * iOS
+* www (copies plugin's www assets only, to PROJECT-PATH)
 
 ## plugin.xml Format
 
