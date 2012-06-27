@@ -18,7 +18,7 @@ exports.installPlugin = function (config, plugin, callback) {
         manifestChanges = platformTag.findall('./config-file[@target="AndroidManifest.xml"]'),
 
         callbackCount = assets.length + sourceFiles.length + pluginsChanges.length
-            + manifestChanges.length,
+            + libFiles.length + manifestChanges.length,
         endCallback = nCallbacks(callbackCount, callback)
 
     // move asset files

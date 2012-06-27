@@ -27,7 +27,7 @@
                 value="com.phonegap.plugins.childBrowser.ChildBrowser"/>
         </config-file>
 
-        <source-file src="src/android/ChildBrowser.java"
+        <source-file src="ChildBrowser.java"
                 target-dir="src/com/phonegap/plugins/childBrowser" />
     </platform>
 
