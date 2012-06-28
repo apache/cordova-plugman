@@ -41,7 +41,7 @@ function unlinkIfThere(filepath, cb) {
     })
 }
 
-exports.setUp = function (calllback) {
+function clean(calllback) {
     var ASYNC_OPS = 10,
         end = nCallbacks(ASYNC_OPS, calllback);
 
@@ -57,6 +57,9 @@ exports.setUp = function (calllback) {
     moveProjFile('SampleApp/PhoneGap.orig.plist', end);
     moveProjFile('SampleApp.xcodeproj/project.orig.pbxproj', end);
 }
+
+exports.setUp = clean;
+exports.tearDown = clean;
 
 exports['should move the js file'] = function (test) {
     ios.installPlugin(config, plugin, function (err) {

@@ -35,8 +35,7 @@ function moveProjFile(origFile, callback) {
         .on('close', callback);
 }
 
-// global setup
-exports.setUp = function (callback) {
+function clean(callback) {
     var ASYNC_OPS = 5,
         end = nCallbacks(ASYNC_OPS, callback);
 
@@ -50,14 +49,10 @@ exports.setUp = function (callback) {
     });
 
     // remove web assets (www/childbrowser)
-    rimraf(assetPath, function () {
-        end(null)
-    });
+    rimraf(assetPath, end);
 
     // remove src code directory
-    rimraf(javaDir, function () {
-        end(null)
-    });
+    rimraf(javaDir, end);
 
     // copy in original plugins.xml
     moveProjFile('res/xml/plugins.orig.xml', end)
@@ -65,6 +60,10 @@ exports.setUp = function (callback) {
     // copy in original AndroidManifest.xml
     moveProjFile('AndroidManifest.orig.xml', end)
 }
+
+// global setup/teardown
+exports.setUp = clean;
+exports.tearDown = clean;
 
 exports['should move the js file'] = function (test) {
     android.installPlugin(config, plugin, function (err) {
