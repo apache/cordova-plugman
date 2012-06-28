@@ -10,6 +10,15 @@ Example:
 
     pluginstall android . ~/plugins/ChildBrowser
 
+## Development
+
+    git clone https://github.com/alunny/pluginstall.git
+    cd pluginstall
+    npm install
+    npm test
+
+Then go!
+
 ## Supported Platforms
 
 * Android
