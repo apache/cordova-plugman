@@ -45,21 +45,17 @@ exports.installPlugin = function (config, plugin, callback) {
             });
         });
     }
-    
+
     function getRelativeDir(file) {
         var targetDir = file.attrib['target-dir'],
             preserveDirs = file.attrib['preserve-dirs'];
-            
-        if (typeof preserveDirs == 'string' &&
-            preserveDirs.toLowerCase() == 'true') 
-        {
+
+        if (preserveDirs && preserveDirs.toLowerCase() == 'true') {
             return path.dirname(file.attrib['src']);
-        } 
-        else if (typeof targetDir == 'string') {
+        } else if (targetDir) {
             return targetDir;
-        } 
-        else {
-            return "";
+        } else {
+            return '';
         }
     }
 
