@@ -1,4 +1,4 @@
-var fs = require('fs'),
+var fs = require('../util/fs'), // use existsSync in 0.6.x
     path = require('path'),
     mkdirp = require('mkdirp'),
     et = require('elementtree'),
