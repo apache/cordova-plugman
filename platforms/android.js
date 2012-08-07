@@ -4,6 +4,7 @@ var fs = require('fs'),
     et = require('elementtree'),
     nCallbacks = require('../util/ncallbacks'),
     asyncCopy = require('../util/asyncCopy'),
+    getConfigChanges = require('../util/config-changes'),
     assetsDir = 'assets/www', // relative path to project's web assets
     sourceDir = 'src',
     counter = {};
@@ -14,12 +15,23 @@ exports.installPlugin = function (config, plugin, callback) {
         platformTag = plugin.xmlDoc.find('./platform[@name="android"]'),
         sourceFiles = platformTag.findall('./source-file'),
         libFiles = platformTag.findall('./library-file'),
-        pluginsChanges = platformTag.findall('./config-file[@target="res/xml/plugins.xml"]'),
-        manifestChanges = platformTag.findall('./config-file[@target="AndroidManifest.xml"]'),
 
-        callbackCount = assets.length + sourceFiles.length + pluginsChanges.length
-            + libFiles.length + manifestChanges.length,
-        endCallback = nCallbacks(callbackCount, callback)
+        configChanges = getConfigChanges(platformTag),
+
+        callbackCount = assets.length + sourceFiles.length + libFiles.length,
+        endCallback;
+
+    // find which config-files we're interested in
+    Object.keys(configChanges).forEach(function (configFile) {
+        if (fs.existsSync(path.resolve(config.projectPath, configFile))) {
+            // if so, add length to callbackCount
+            callbackCount += configChanges[configFile].length
+        } else {
+            delete configChanges[configFile];
+        }
+    });
+    
+    endCallback = nCallbacks(callbackCount, callback)
 
     // move asset files
     assets.forEach(function (asset) {
@@ -65,41 +77,24 @@ exports.installPlugin = function (config, plugin, callback) {
         });
     })
 
-    // edit plugins.xml
-    pluginsChanges.forEach(function (configNode) {
-        var pluginsPath = path.resolve(config.projectPath, 'res/xml/plugins.xml'),
-            pluginsDoc = readAsETSync(pluginsPath),
-            selector = configNode.attrib["parent"],
-            child = configNode.find('*');
+    Object.keys(configChanges).forEach(function (filename) {
+        configChanges[filename].forEach(function (configNode) {
+            var filepath = path.resolve(config.projectPath, filename),
+                xmlDoc = readAsETSync(filepath),
+                selector = configNode.attrib["parent"],
+                child = configNode.find('*');
 
-        if (addToDoc(pluginsDoc, child, selector)) {
-            fs.writeFile(pluginsPath, pluginsDoc.write(), function (err) {
-                if (err) endCallback(err);
+            if (addToDoc(xmlDoc, child, selector)) {
+                fs.writeFile(filepath, xmlDoc.write(), function (err) {
+                    if (err) endCallback(err);
 
-                endCallback();
-            });
-        } else {
-            endCallback('failed to add node to plugins.xml');
-        }
+                    endCallback();
+                });
+            } else {
+                endCallback('failed to add node to ' + filename);
+            }
+        });
     });
-
-    // edit AndroidManifest.xml
-    manifestChanges.forEach(function (configNode) {
-        var manifestPath = path.resolve(config.projectPath, 'AndroidManifest.xml'),
-            manifestDoc  = readAsETSync(manifestPath),
-            selector = configNode.attrib["parent"],
-            child = configNode.find('*');
-
-        if (addToDoc(manifestDoc, child, selector)) {
-            fs.writeFile(manifestPath, manifestDoc.write(), function (err) {
-                if (err) endCallback(err);
-
-                endCallback();
-            });
-        } else {
-            endCallback('failed to add node to AndroidManifest.xml')
-        }
-    })
 }
 
 // adds node to doc at selector
