@@ -8,24 +8,19 @@ var fs = require('fs'),
     ios = require('../platforms/ios'),
     nCallbacks = require('../util/ncallbacks'),
 
+    // helpers
+    helpers = require('../util/test-helpers'),
+    moveProjFile = helpers.moveProjFile,
+
     config = {
         platform: 'ios',
-        projectPath: fs.realpathSync('test/project'),
+        projectPath: fs.realpathSync('test/project/ios'),
         pluginPath: fs.realpathSync('test/plugin')
     },
     plugin = pluginstall.parseXml(config),
     assetsDir = path.resolve(config.projectPath, 'www'),
     srcDir = path.resolve(config.projectPath, 'SampleApp/Plugins'),
     jsPath = assetsDir + '/childbrowser.js';
-
-function moveProjFile(origFile, callback) {
-    var src = path.resolve(config.projectPath, origFile),
-        dest = src.replace('.orig', '')
-
-    fs.createReadStream(src)
-        .pipe(fs.createWriteStream(dest))
-        .on('close', callback);
-}
 
 function unlinkIfThere(filepath, cb) {
     fs.stat(filepath, function (err, stat) {
@@ -57,8 +52,8 @@ function clean(calllback) {
     rimraf(srcDir + '/targetDir', end)
     rimraf(srcDir + '/preserveDirs', end)
 
-    moveProjFile('SampleApp/PhoneGap.orig.plist', end);
-    moveProjFile('SampleApp.xcodeproj/project.orig.pbxproj', end);
+    moveProjFile('SampleApp/PhoneGap.orig.plist', config.projectPath, end);
+    moveProjFile('SampleApp.xcodeproj/project.orig.pbxproj', config.projectPath, end);
 }
 
 exports.setUp = clean;

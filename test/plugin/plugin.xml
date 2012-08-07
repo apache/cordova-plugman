@@ -22,7 +22,14 @@
             </activity>
         </config-file>
 
+        <!-- CDV < 2.0 -->
         <config-file target="res/xml/plugins.xml" parent="/plugins">
+            <plugin name="ChildBrowser"
+                value="com.phonegap.plugins.childBrowser.ChildBrowser"/>
+        </config-file>
+
+        <!-- CDV 2.0+ (for now) -->
+        <config-file target="res/xml/config.xml" parent="/cordova/plugins">
             <plugin name="ChildBrowser"
                 value="com.phonegap.plugins.childBrowser.ChildBrowser"/>
         </config-file>
