@@ -24,8 +24,7 @@ exports.installPlugin = function (config, plugin, callback) {
     // find which config-files we're interested in
     Object.keys(configChanges).forEach(function (configFile) {
         if (fs.existsSync(path.resolve(config.projectPath, configFile))) {
-            // if so, add length to callbackCount
-            callbackCount += configChanges[configFile].length
+            callbackCount++;
         } else {
             delete configChanges[configFile];
         }
@@ -78,21 +77,22 @@ exports.installPlugin = function (config, plugin, callback) {
     })
 
     Object.keys(configChanges).forEach(function (filename) {
+        var filepath = path.resolve(config.projectPath, filename),
+            xmlDoc = readAsETSync(filepath);
+
         configChanges[filename].forEach(function (configNode) {
-            var filepath = path.resolve(config.projectPath, filename),
-                xmlDoc = readAsETSync(filepath),
-                selector = configNode.attrib["parent"],
+            var selector = configNode.attrib["parent"],
                 child = configNode.find('*');
 
-            if (addToDoc(xmlDoc, child, selector)) {
-                fs.writeFile(filepath, xmlDoc.write(), function (err) {
-                    if (err) endCallback(err);
-
-                    endCallback();
-                });
-            } else {
+            if (!addToDoc(xmlDoc, child, selector)) {
                 endCallback('failed to add node to ' + filename);
             }
+        });
+
+        fs.writeFile(filepath, xmlDoc.write(), function (err) {
+            if (err) endCallback(err);
+
+            endCallback();
         });
     });
 }
