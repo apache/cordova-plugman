@@ -106,18 +106,15 @@ exports['should add ChildBrowser to AndroidManifest.xml'] = function (test) {
 }
 
 exports['should add ChildBrowser to config.xml'] = function (test) {
-    /* TODO all this
     android.installPlugin(config, plugin, function (err) {
-        var pluginsTxt = fs.readFileSync('test/project/res/xml/plugins.xml', 'utf-8'),
+        var pluginsTxt = fs.readFileSync('test/project/android_two/res/xml/config.xml',
+            'utf-8'),
             pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
-            expected = 'plugin[@name="ChildBrowser"]' +
+            expected = 'plugins/plugin[@name="ChildBrowser"]' +
                         '[@value="com.phonegap.plugins.childBrowser.ChildBrowser"]';
 
         test.ok(pluginsDoc.find(expected));
         test.done();
     })
-    */
-
-    test.done();
 }
 
