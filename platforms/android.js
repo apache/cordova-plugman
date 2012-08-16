@@ -4,6 +4,7 @@ var fs = require('../util/fs'), // use existsSync in 0.6.x
     et = require('elementtree'),
     nCallbacks = require('../util/ncallbacks'),
     asyncCopy = require('../util/asyncCopy'),
+    equalNodes = require('../util/equalNodes'),
     getConfigChanges = require('../util/config-changes'),
     assetsDir = 'assets/www', // relative path to project's web assets
     sourceDir = 'src',
@@ -76,16 +77,17 @@ exports.installPlugin = function (config, plugin, callback) {
         });
     })
 
+    // edit configuration files
     Object.keys(configChanges).forEach(function (filename) {
-        var filepath = path.resolve(config.projectPath, filename),
+        var filepath = path.resolve(config.projectPath, filename);
             xmlDoc = readAsETSync(filepath);
 
         configChanges[filename].forEach(function (configNode) {
             var selector = configNode.attrib["parent"],
-                child = configNode.find('*');
+                children = configNode.findall('*');
 
-            if (!addToDoc(xmlDoc, child, selector)) {
-                endCallback('failed to add node to ' + filename);
+            if (!addToDoc(xmlDoc, children, selector)) {
+                endCallback('failed to add children to ' + filename);
             }
         });
 
@@ -97,8 +99,8 @@ exports.installPlugin = function (config, plugin, callback) {
     });
 }
 
-// adds node to doc at selector
-function addToDoc(doc, node, selector) {
+// adds nodes to doc at selector
+function addToDoc(doc, nodes, selector) {
     var ROOT = /^\/([^\/]*)/,
         ABSOLUTE = /^\/([^\/]*)\/(.*)/,
         parent, tagName, subSelector;
@@ -121,8 +123,31 @@ function addToDoc(doc, node, selector) {
         parent = doc.find(selector)
     }
 
-    parent.append(node);
+    nodes.forEach(function (node) {
+        // check if child is unique first
+        if (uniqueChild(node, parent)) {
+            parent.append(node);
+        }
+    });
+
     return true;
+}
+
+function uniqueChild(node, parent) {
+    var matchingKids = parent.findall(node.tag),
+        i = 0;
+
+    if (matchingKids.length == 0) {
+        return true;
+    } else  {
+        for (i; i < matchingKids.length; i++) {
+            if (equalNodes(node, matchingKids[i])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
 
 function readAsETSync(filename) {
