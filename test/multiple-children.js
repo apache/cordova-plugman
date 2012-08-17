@@ -61,7 +61,48 @@ exports['should install all the uses-permission tags'] = function (test) {
         found = mDoc.findall(receive)
         test.equal(found.length, 1, 'RECEVIE permission');
 
-        // TODO: interpolation - PACKAGE_NAME.permission.C2D_MESSAGE
+        test.done();
+    })
+}
+
+exports['should interpolate the $PACKAGE_NAME correctly'] = function (test) {
+    android.installPlugin(config, plugin, function (err) {
+        var manifestTxt = fs.readFileSync(manifestPath, 'utf-8'),
+            mDoc = new et.ElementTree(et.XML(manifestTxt)),
+            soughtEle;
+
+        soughtEle = 'permission' +
+            '[@android:name="com.alunny.childapp.permission.C2D_MESSAGE"]';
+        test.equal(mDoc.findall(soughtEle).length, 1, soughtEle);
+
+        soughtEle = 'uses-permission' +
+            '[@android:name="com.alunny.childapp.permission.C2D_MESSAGE"]';
+        test.equal(mDoc.findall(soughtEle).length, 1, soughtEle);
+
+        /*
+		<config-file target="AndroidManifest.xml" parent="/manifest/application">
+			<receiver
+				android:name="com.google.android.gcm.GCMBroadcastReceiver"
+				android:permission="com.google.android.c2dm.permission.SEND">
+				<intent-filter>
+					<category android:name="$PACKAGE_NAME"/>
+        */
+        soughtEle = 'application/receiver/intent-filter/category' +
+            '[@android:name="com.alunny.childapp"]';
+        test.equal(mDoc.findall(soughtEle).length, 1, soughtEle);
+
+        // TODO: fix bug in equalNodes
+        soughtEle = 'application/activity/intent-filter/action' +
+            '[@android:name="com.alunny.childapp.MESSAGE"]';
+        test.equal(mDoc.findall(soughtEle).length, 1, soughtEle);
+
+        /*
+		<config-file target="AndroidManifest.xml" parent="/manifest/application/activity">
+			<intent-filter>
+				<action android:name="$PACKAGE_NAME.MESSAGE"/>
+
+        */
+
 
         test.done();
     })

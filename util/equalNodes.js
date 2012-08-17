@@ -1,7 +1,11 @@
 // compare two et.XML nodes, see if they match
-// currently ignores text and children
+// compares tagName, text, attributes and children (recursively)
 module.exports = function equalNodes(one, two) {
     if (one.tag != two.tag) {
+        return false;
+    } else if (one.text.trim() != two.text.trim()) {
+        return false;
+    } else if (one._children.length != two._children.length) {
         return false;
     }
 
@@ -17,6 +21,12 @@ module.exports = function equalNodes(one, two) {
         attribName = oneAttribKeys[i];
 
         if (one.attrib[attribName] != two.attrib[attribName]) {
+            return false;
+        }
+    }
+
+    for (i; i < one._children.length; i++) {
+        if (!equalNodes(one._children[i], two._children[i])) {
             return false;
         }
     }

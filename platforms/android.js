@@ -2,10 +2,12 @@ var fs = require('../util/fs'), // use existsSync in 0.6.x
     path = require('path'),
     mkdirp = require('mkdirp'),
     et = require('elementtree'),
+
     nCallbacks = require('../util/ncallbacks'),
     asyncCopy = require('../util/asyncCopy'),
     equalNodes = require('../util/equalNodes'),
     getConfigChanges = require('../util/config-changes'),
+
     assetsDir = 'assets/www', // relative path to project's web assets
     sourceDir = 'src',
     counter = {};
@@ -16,6 +18,7 @@ exports.installPlugin = function (config, plugin, callback) {
         platformTag = plugin.xmlDoc.find('./platform[@name="android"]'),
         sourceFiles = platformTag.findall('./source-file'),
         libFiles = platformTag.findall('./library-file'),
+        PACKAGE_NAME = packageName(config),
 
         configChanges = getConfigChanges(platformTag),
 
@@ -79,8 +82,9 @@ exports.installPlugin = function (config, plugin, callback) {
 
     // edit configuration files
     Object.keys(configChanges).forEach(function (filename) {
-        var filepath = path.resolve(config.projectPath, filename);
-            xmlDoc = readAsETSync(filepath);
+        var filepath = path.resolve(config.projectPath, filename),
+            xmlDoc = readAsETSync(filepath),
+            output;
 
         configChanges[filename].forEach(function (configNode) {
             var selector = configNode.attrib["parent"],
@@ -91,7 +95,10 @@ exports.installPlugin = function (config, plugin, callback) {
             }
         });
 
-        fs.writeFile(filepath, xmlDoc.write(), function (err) {
+        output = xmlDoc.write();
+        output = output.replace(/\$PACKAGE_NAME/g, PACKAGE_NAME);
+
+        fs.writeFile(filepath, output, function (err) {
             if (err) endCallback(err);
 
             endCallback();
@@ -164,4 +171,11 @@ function srcPath(pluginPath, filename) {
     } else {
         return path.resolve(pluginPath, 'src/android', filename);
     }
+}
+
+function packageName(config) {
+    var mDoc = readAsETSync(
+            path.resolve(config.projectPath, 'AndroidManifest.xml'));
+
+    return mDoc._root.attrib['package'];
 }

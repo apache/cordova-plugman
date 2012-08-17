@@ -28,7 +28,7 @@ Then go!
 
 see https://github.com/alunny/cordova-plugin-spec
 
-Currently support the June 8 revision.
+Currently support the August 16 revision, more or less.
 
 ## License
 

@@ -31,10 +31,10 @@
 			 where PACKAGE is the application's package name.
 			 -->
 			<permission
-			android:name="PACKAGE_NAME.permission.C2D_MESSAGE"
+			android:name="$PACKAGE_NAME.permission.C2D_MESSAGE"
 			android:protectionLevel="signature"/>
 			<uses-permission
-			android:name="PACKAGE_NAME.permission.C2D_MESSAGE"/>
+			android:name="$PACKAGE_NAME.permission.C2D_MESSAGE"/>
 			
 			<!-- This app has permission to register and receive data message. -->
 			<uses-permission
@@ -43,7 +43,7 @@
 		
 		<config-file target="AndroidManifest.xml" parent="/manifest/application/activity">
 			<intent-filter>
-				<action android:name="PACKAGE_NAME.MESSAGE"/>
+				<action android:name="$PACKAGE_NAME.MESSAGE"/>
 				<category android:name="android.intent.category.DEFAULT"/>
 			</intent-filter>
 		</config-file>
@@ -70,7 +70,7 @@
 					<action android:name="com.google.android.c2dm.intent.RECEIVE"/>
 					<!-- Receives the registration id. -->
 					<action android:name="com.google.android.c2dm.intent.REGISTRATION"/>
-					<category android:name="PACKAGE_NAME"/>
+					<category android:name="$PACKAGE_NAME"/>
 				</intent-filter>
 			</receiver>
 			
