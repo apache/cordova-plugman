@@ -20,4 +20,4 @@ test/project/android_two/res/xml/config.xml
 test/project/android_two/AndroidManifest.xml
 
 # test multiple AndroidManifest entries
-test/project/multiple-children/project/AndroidManifest.xml
+test/multiple-children/project/AndroidManifest.xml
