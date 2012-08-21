@@ -21,3 +21,6 @@ test/project/android_two/AndroidManifest.xml
 
 # test multiple AndroidManifest entries
 test/multiple-children/project/AndroidManifest.xml
+
+#test web-platform
+test/project/www-only
