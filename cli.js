@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 var pluginstall = require('./pluginstall'),
     spawn = require('child_process').spawn,
+    action = "install",
     platform, projectDir, pluginDir,
     config, plugin, package,
     gitProc;
@@ -8,11 +9,11 @@ if (process.argv[0] == 'node') {
     process.argv.shift();
 }
 
-function installPlugin(platform, projectDir, pluginDir) {
+function processPlugin(action, platform, projectDir, pluginDir) {
     config = pluginstall.init(platform, projectDir, pluginDir);
     plugin = pluginstall.parseXml(config);
 
-    pluginstall.installPlugin(config, plugin, function (err) {
+    pluginstall[action+"Plugin"](config, plugin, function (err) {
         if (err) {
             console.error(err);
         } else {
@@ -24,14 +25,19 @@ function installPlugin(platform, projectDir, pluginDir) {
 process.argv.shift(); // skip "cli.js"
 
 if (process.argv.length == 0) {
-    console.log('Usage: pluginstall [platform] [project directory] [plugin directory]');
+    console.log('Usage: pluginstall [action] platform project directory plugin directory');
 } else if (process.argv[0] === '-v') {
     package = require('./package')
     console.log('pluginstall version ' + package.version);
 } else {
+    action = process.argv.shift();
     platform = process.argv.shift();
     projectDir = process.argv.shift();
     pluginDir = process.argv.shift();
+
+    if(['install', 'uninstall'].indexOf(action) == -1) {
+        console.log('Usage: pluginstall [install|uninstall] platform project directory plugin directory');
+    }
 
     // clone from git repository
     if(pluginDir.indexOf('https://') == 0 || pluginDir.indexOf('git://') == 0) {
@@ -42,7 +48,7 @@ if (process.argv.length == 0) {
             if(code != 0) {
                 console.log('plugin not installed!');
             } else {
-                installPlugin(platform, projectDir, tmpPluginDir);
+                processPlugin(action, platform, projectDir, tmpPluginDir);
             }
         });
         process.on('exit', function(code) {
@@ -50,6 +56,6 @@ if (process.argv.length == 0) {
         });
     // or use local path
     } else {
-        installPlugin(platform, projectDir, pluginDir);
+        processPlugin(action, platform, projectDir, tmpPluginDir);
     }
 }

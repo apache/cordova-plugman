@@ -51,3 +51,10 @@ exports.installPlugin = function (config, plugin, callback) {
 
     return platformInstall(config, plugin, callback)
 }
+
+exports.uninstallPlugin = function (config, plugin, callback) {
+    // get the platform-specific fn
+    var platformInstall = platformModules[config.platform].uninstallPlugin;
+
+    return platformInstall(config, plugin, callback)
+}

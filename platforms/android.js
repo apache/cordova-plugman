@@ -106,8 +106,87 @@ exports.installPlugin = function (config, plugin, callback) {
     });
 }
 
-// adds nodes to doc at selector
-function addToDoc(doc, nodes, selector) {
+exports.uninstallPlugin = function (config, plugin, callback) {
+    // look for assets in the plugin 
+    var assets = plugin.xmlDoc.findall('./asset'),
+        platformTag = plugin.xmlDoc.find('./platform[@name="android"]'),
+        sourceFiles = platformTag.findall('./source-file'),
+        pluginsChanges = platformTag.findall('./config-file[@target="res/xml/plugins.xml"]'),
+        manifestChanges = platformTag.findall('./config-file[@target="AndroidManifest.xml"]'),
+
+        callbackCount = assets.length + sourceFiles.length + pluginsChanges.length
+            + manifestChanges.length,
+        endCallback = nCallbacks(callbackCount, callback)
+
+    // move asset files
+    assets.forEach(function (asset) {
+        var srcPath = path.resolve(
+                        config.pluginPath,
+                        asset.attrib['src']);
+
+        var targetPath = path.resolve(
+                            config.projectPath,
+                            assetsDir,
+                            asset.attrib['target']);
+
+        fs.unlink(targetPath, endCallback);
+    });
+
+    // move source files
+    sourceFiles.forEach(function (sourceFile) {
+        var srcDir = path.resolve(config.projectPath,
+                                sourceFile.attrib['target-dir'])
+        
+        fs.unlink(destFile, function(err) {
+            // check if directory is empty
+            fs.readdir(srcDir, function(err, files) {
+                if(files.length == 0) {
+                    fs.rmdir(srcDir, endCallback);
+                }
+            });
+        });
+
+    });
+
+    // edit plugins.xml
+    pluginsChanges.forEach(function (configNode) {
+        var pluginsPath = path.resolve(config.projectPath, 'res/xml/config.xml'),
+            pluginsDoc = readAsETSync(pluginsPath),
+            selector = configNode.attrib["parent"],
+            child = configNode.find('*');
+
+        if (addToDoc(pluginsDoc, child, selector)) {
+            fs.writeFile(pluginsPath, pluginsDoc.write(), function (err) {
+                if (err) endCallback(err);
+
+                endCallback();
+            });
+        } else {
+            endCallback('failed to add node to plugins.xml');
+        }
+    });
+
+    // edit AndroidManifest.xml
+    manifestChanges.forEach(function (configNode) {
+        var manifestPath = path.resolve(config.projectPath, 'AndroidManifest.xml'),
+            manifestDoc  = readAsETSync(manifestPath),
+            selector = configNode.attrib["parent"],
+            child = configNode.find('*');
+
+        if (addToDoc(manifestDoc, child, selector)) {
+            fs.writeFile(manifestPath, manifestDoc.write(), function (err) {
+                if (err) endCallback(err);
+
+                endCallback();
+            });
+        } else {
+            endCallback('failed to add node to AndroidManifest.xml')
+        }
+    })
+}
+
+// adds node to doc at selector
+function addToDoc(doc, node, selector) {
     var ROOT = /^\/([^\/]*)/,
         ABSOLUTE = /^\/([^\/]*)\/(.*)/,
         parent, tagName, subSelector;
