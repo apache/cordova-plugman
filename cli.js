@@ -25,19 +25,18 @@ function processPlugin(action, platform, projectDir, pluginDir) {
 process.argv.shift(); // skip "cli.js"
 
 if (process.argv.length == 0) {
-    console.log('Usage: pluginstall [action] platform project directory plugin directory');
+    console.log('Usage: pluginstall [-d] platform project directory plugin directory');
 } else if (process.argv[0] === '-v') {
     package = require('./package')
     console.log('pluginstall version ' + package.version);
 } else {
-    action = process.argv.shift();
+    if(process.argv[0] === "-d") {
+        action = "uninstall";
+        process.argv.shift();
+    }
     platform = process.argv.shift();
     projectDir = process.argv.shift();
     pluginDir = process.argv.shift();
-
-    if(['install', 'uninstall'].indexOf(action) == -1) {
-        console.log('Usage: pluginstall [install|uninstall] platform project directory plugin directory');
-    }
 
     // clone from git repository
     if(pluginDir.indexOf('https://') == 0 || pluginDir.indexOf('git://') == 0) {

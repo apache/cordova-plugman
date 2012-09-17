@@ -147,46 +147,53 @@ exports.uninstallPlugin = function (config, plugin, callback) {
         });
 
     });
+    
+    // move library files
+    libFiles.forEach(function (libFile) {
+        var libDir = path.resolve(config.projectPath,
+                                libFile.attrib['target-dir'])
+        
+        var destFile = path.resolve(libDir,
+                            path.basename(libFile.attrib['src']));
 
-    // edit plugins.xml
-    pluginsChanges.forEach(function (configNode) {
-        var pluginsPath = path.resolve(config.projectPath, 'res/xml/config.xml'),
-            pluginsDoc = readAsETSync(pluginsPath),
-            selector = configNode.attrib["parent"],
-            child = configNode.find('*');
-
-        if (addToDoc(pluginsDoc, child, selector)) {
-            fs.writeFile(pluginsPath, pluginsDoc.write(), function (err) {
-                if (err) endCallback(err);
-
-                endCallback();
+        fs.unlink(destFile, function(err) {
+            // check if directory is empty
+            fs.readdir(libDir, function(err, files) {
+                if(files.length == 0) {
+                    fs.rmdir(libDir, endCallback);
+                }
             });
-        } else {
-            endCallback('failed to add node to plugins.xml');
-        }
+        });
     });
 
-    // edit AndroidManifest.xml
-    manifestChanges.forEach(function (configNode) {
-        var manifestPath = path.resolve(config.projectPath, 'AndroidManifest.xml'),
-            manifestDoc  = readAsETSync(manifestPath),
-            selector = configNode.attrib["parent"],
-            child = configNode.find('*');
+    // edit configuration files
+    Object.keys(configChanges).forEach(function (filename) {
+        var filepath = path.resolve(config.projectPath, filename),
+            xmlDoc = readAsETSync(filepath),
+            output;
 
-        if (addToDoc(manifestDoc, child, selector)) {
-            fs.writeFile(manifestPath, manifestDoc.write(), function (err) {
-                if (err) endCallback(err);
+        configChanges[filename].forEach(function (configNode) {
+            var selector = configNode.attrib["parent"],
+                children = configNode.findall('*');
 
-                endCallback();
-            });
-        } else {
-            endCallback('failed to add node to AndroidManifest.xml')
-        }
-    })
+            if (!addToDoc(xmlDoc, children, selector)) {
+                endCallback('failed to add children to ' + filename);
+            }
+        });
+
+        output = xmlDoc.write();
+        output = output.replace(/\$PACKAGE_NAME/g, PACKAGE_NAME);
+
+        fs.writeFile(filepath, output, function (err) {
+            if (err) endCallback(err);
+
+            endCallback();
+        });
+    });
 }
 
 // adds node to doc at selector
-function addToDoc(doc, node, selector) {
+function addToDoc(doc, nodes, selector) {
     var ROOT = /^\/([^\/]*)/,
         ABSOLUTE = /^\/([^\/]*)\/(.*)/,
         parent, tagName, subSelector;
@@ -213,6 +220,40 @@ function addToDoc(doc, node, selector) {
         // check if child is unique first
         if (uniqueChild(node, parent)) {
             parent.append(node);
+        }
+    });
+
+    return true;
+}
+
+// adds node to doc at selector
+function removeFromDoc(doc, nodes, selector) {
+    var ROOT = /^\/([^\/]*)/,
+        ABSOLUTE = /^\/([^\/]*)\/(.*)/,
+        parent, tagName, subSelector;
+
+    // handle absolute selector (which elementtree doesn't like)
+    if (ROOT.test(selector)) {
+        tagName = selector.match(ROOT)[1];
+        if (tagName === doc._root.tag) {
+            parent = doc._root;
+
+            // could be an absolute path, but not selecting the root
+            if (ABSOLUTE.test(selector)) {
+                subSelector = selector.match(ABSOLUTE)[2];
+                parent = parent.find(subSelector)
+            }
+        } else {
+            return false;
+        }
+    } else {
+        parent = doc.find(selector)
+    }
+
+    nodes.forEach(function (node) {
+        // check if child is unique first
+        if (!uniqueChild(node, parent)) {
+            parent.remove(node);
         }
     });
 
