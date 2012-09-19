@@ -2,6 +2,7 @@ var fs = require('../util/fs'), // use existsSync in 0.6.x
     path = require('path'),
     mkdirp = require('mkdirp'),
     et = require('elementtree'),
+    rimraf = require('rimraf'),
 
     nCallbacks = require('../util/ncallbacks'),
     asyncCopy = require('../util/asyncCopy'),
@@ -33,7 +34,6 @@ exports.installPlugin = function (config, plugin, callback) {
             delete configChanges[configFile];
         }
     });
-    
     endCallback = nCallbacks(callbackCount, callback)
 
     // move asset files
@@ -107,39 +107,61 @@ exports.installPlugin = function (config, plugin, callback) {
 }
 
 exports.uninstallPlugin = function (config, plugin, callback) {
+    
     // look for assets in the plugin 
     var assets = plugin.xmlDoc.findall('./asset'),
         platformTag = plugin.xmlDoc.find('./platform[@name="android"]'),
         sourceFiles = platformTag.findall('./source-file'),
-        pluginsChanges = platformTag.findall('./config-file[@target="res/xml/plugins.xml"]'),
-        manifestChanges = platformTag.findall('./config-file[@target="AndroidManifest.xml"]'),
+        libFiles = platformTag.findall('./library-file'),
+        PACKAGE_NAME = packageName(config),
 
-        callbackCount = assets.length + sourceFiles.length + pluginsChanges.length
-            + manifestChanges.length,
-        endCallback = nCallbacks(callbackCount, callback)
+        configChanges = getConfigChanges(platformTag),
+
+        callbackCount = assets.length + sourceFiles.length + libFiles.length,
+        endCallback;
+
+    // find which config-files we're interested in
+    Object.keys(configChanges).forEach(function (configFile) {
+        if (fs.existsSync(path.resolve(config.projectPath, configFile))) {
+            callbackCount++;
+        } else {
+            delete configChanges[configFile];
+        }
+    });
+
+    endCallback = nCallbacks(callbackCount, callback)
 
     // move asset files
     assets.forEach(function (asset) {
-        var srcPath = path.resolve(
-                        config.pluginPath,
-                        asset.attrib['src']);
-
         var targetPath = path.resolve(
                             config.projectPath,
                             assetsDir,
                             asset.attrib['target']);
-
-        fs.unlink(targetPath, endCallback);
+        fs.stat(targetPath, function(err, stats) {
+            if(err) {
+                endCallback(err);
+            }
+            if(stats.isDirectory()) {
+                rimraf(targetPath, endCallback);
+            } else {
+                fs.unlink(targetPath, endCallback);
+            }
+        });
     });
 
     // move source files
     sourceFiles.forEach(function (sourceFile) {
         var srcDir = path.resolve(config.projectPath,
-                                sourceFile.attrib['target-dir'])
+                                sourceFile.attrib['target-dir']),
+            destFile = path.resolve(srcDir,
+                                path.basename(sourceFile.attrib['src']));
         
         fs.unlink(destFile, function(err) {
             // check if directory is empty
             fs.readdir(srcDir, function(err, files) {
+                if(err) {
+                    endCallback(err);
+                }
                 if(files.length == 0) {
                     fs.rmdir(srcDir, endCallback);
                 }
@@ -176,7 +198,7 @@ exports.uninstallPlugin = function (config, plugin, callback) {
             var selector = configNode.attrib["parent"],
                 children = configNode.findall('*');
 
-            if (!addToDoc(xmlDoc, children, selector)) {
+            if (!removeFromDoc(xmlDoc, children, selector)) {
                 endCallback('failed to add children to ' + filename);
             }
         });
