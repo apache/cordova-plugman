@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 var pluginstall = require('./pluginstall'),
     spawn = require('child_process').spawn,
-    action = "install",
     platform, projectDir, pluginDir,
     config, plugin, package,
     gitProc;
