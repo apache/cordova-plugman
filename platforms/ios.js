@@ -1,5 +1,6 @@
 var path = require('path'),
     mkdirp = require('mkdirp'),
+    rimraf = require('rimraf'),
     fs = require('fs'),
     glob = require('glob'),
     xcode = require('xcode'),
@@ -44,19 +45,6 @@ exports.installPlugin = function (config, plugin, callback) {
                 end();
             });
         });
-    }
-
-    function getRelativeDir(file) {
-        var targetDir = file.attrib['target-dir'],
-            preserveDirs = file.attrib['preserve-dirs'];
-
-        if (preserveDirs && preserveDirs.toLowerCase() == 'true') {
-            return path.dirname(file.attrib['src']);
-        } else if (targetDir) {
-            return targetDir;
-        } else {
-            return '';
-        }
     }
 
     prepare(function (pbxPath, xcodeproj, plistPath, plistObj, pluginsDir) {
@@ -224,26 +212,32 @@ exports.uninstallPlugin = function (config, plugin, callback) {
                                 config.projectPath,
                                 assetsDir, asset.attrib['target']);
 
-            fs.unlink(targetPath, end);
+            rimraf(targetPath, end);
         });
 
         // move native files (source/header/resource)
         sourceFiles.forEach(function (sourceFile) {
             var src = sourceFile.attrib['src'],
-                destFile = path.resolve(pluginsDir, path.basename(src));
+                targetDir = path.resolve(pluginsDir, getRelativeDir(sourceFile)),
+                destFile = path.resolve(targetDir, path.basename(src));
 
             xcodeproj.removeSourceFile('Plugins/' + path.basename(src));
-
-            fs.unlink(destFile, end);
+            
+            fs.unlink(destFile, function(err) {
+                rimraf(targetDir, end);    
+            });
         })
 
         headerFiles.forEach(function (headerFile) {
             var src = headerFile.attrib['src'],
-                destFile = path.resolve(pluginsDir, path.basename(src));
+                targetDir = path.resolve(pluginsDir, getRelativeDir(headerFile)),
+                destFile = path.resolve(targetDir, path.basename(src));
 
             xcodeproj.removeHeaderFile('Plugins/' + path.basename(src));
 
-            fs.unlink(destFile, end);
+            fs.unlink(destFile, function(err) {
+                rimraf(targetDir, end);    
+            });
         })
 
         resourceFiles.forEach(function (resource) {
@@ -252,7 +246,7 @@ exports.uninstallPlugin = function (config, plugin, callback) {
 
             xcodeproj.removeResourceFile('Plugins/' + path.basename(src));
 
-            fs.unlink(destFile, end);
+            rimraf(destFile, end);
         })
 
         frameworks.forEach(function (framework) {
@@ -274,3 +268,17 @@ exports.uninstallPlugin = function (config, plugin, callback) {
         fs.writeFile(pbxPath, xcodeproj.writeSync(), end);
     });
 }
+
+function getRelativeDir(file) {
+    var targetDir = file.attrib['target-dir'],
+        preserveDirs = file.attrib['preserve-dirs'];
+
+    if (preserveDirs && preserveDirs.toLowerCase() == 'true') {
+        return path.dirname(file.attrib['src']);
+    } else if (targetDir) {
+        return targetDir;
+    } else {
+        return '';
+    }
+}
+
