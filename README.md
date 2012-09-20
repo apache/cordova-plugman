@@ -1,14 +1,15 @@
 # Pluginstall
 
-> script to install Cordova plugins
+> script to install/uninstall Cordova plugins
 
 ## Usage
 
-    pluginstall PLATFORM PROJECT-PATH PLUGIN-PATH
+    pluginstall [-d] PLATFORM PROJECT-PATH PLUGIN-PATH|PLUGIN-GIT-URL
 
 Example:
 
     pluginstall android . ~/plugins/ChildBrowser
+    pluginstall -d android . https://github.com/alunny/ChildBrowser.git 
 
 ## Development
 
