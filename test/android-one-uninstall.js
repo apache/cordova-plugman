@@ -106,21 +106,23 @@ exports['should remove ChildBrowser from plugins.xml'] = function (test) {
         });
     });
 }
-//
-//exports['should remove ChildBrowser from AndroidManifest.xml'] = function (test) {
-//    android.installPlugin(config, plugin, function (err) {
-//        var manifestTxt = fs.readFileSync(manifestPath, 'utf-8'),
-//            manifestDoc = new et.ElementTree(et.XML(manifestTxt)),
-//            activities = manifestDoc.findall('application/activity'), i;
-//
-//        var found = false;
-//        for (i=0; i<activities.length; i++) {
-//            if ( activities[i].attrib['android:name'] === 'com.phonegap.plugins.childBrowser.ChildBrowser' ) {
-//                found = true;
-//                break;
-//            }
-//        }
-//        test.ok(!found);
-//        test.done();
-//    });
-//}
+
+exports['should remove ChildBrowser from AndroidManifest.xml'] = function (test) {
+    android.installPlugin(config, plugin, function() { 
+        android.uninstallPlugin(config, plugin, function (err) {
+            var manifestTxt = fs.readFileSync(manifestPath, 'utf-8'),
+                manifestDoc = new et.ElementTree(et.XML(manifestTxt)),
+                activities = manifestDoc.findall('application/activity'), i;
+
+            var found = false;
+            for (i=0; i<activities.length; i++) {
+                if ( activities[i].attrib['android:name'] === 'com.phonegap.plugins.childBrowser.ChildBrowser' ) {
+                    found = true;
+                    break;
+                }
+            }
+            test.ok(!found);
+            test.done();
+        });
+    });
+}

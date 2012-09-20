@@ -193,11 +193,9 @@ exports.uninstallPlugin = function (config, plugin, callback) {
         var filepath = path.resolve(config.projectPath, filename),
             xmlDoc = readAsETSync(filepath),
             output;
-
         configChanges[filename].forEach(function (configNode) {
             var selector = configNode.attrib["parent"],
                 children = configNode.findall('*');
-
             if (!removeFromDoc(xmlDoc, children, selector)) {
                 endCallback('failed to add children to ' + filename);
             }
@@ -248,7 +246,7 @@ function addToDoc(doc, nodes, selector) {
     return true;
 }
 
-// adds node to doc at selector
+// removes node from doc at selector
 function removeFromDoc(doc, nodes, selector) {
     var ROOT = /^\/([^\/]*)/,
         ABSOLUTE = /^\/([^\/]*)\/(.*)/,
@@ -271,15 +269,30 @@ function removeFromDoc(doc, nodes, selector) {
     } else {
         parent = doc.find(selector)
     }
-
     nodes.forEach(function (node) {
-        // check if child is unique first
-        if (!uniqueChild(node, parent)) {
-            parent.remove(node);
+        var matchingKid = null;
+        if ((matchingKid = findChild(node, parent)) != null) {
+            // stupid elementtree takes an index argument it doesn't use
+            // and does not conform to the python lib
+            parent.remove(0, matchingKid);
         }
     });
 
     return true;
+}
+
+function findChild(node, parent) {
+    var matchingKids = parent.findall(node.tag),
+        i, j;
+
+    for (i = 0, j = matchingKids.length ; i < j ; i++) {
+        if (equalNodes(node, matchingKids[i])) {
+            return matchingKids[i];
+        }
+    }
+
+    return null;
+
 }
 
 function uniqueChild(node, parent) {
