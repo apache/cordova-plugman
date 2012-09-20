@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 var pluginstall = require('./pluginstall'),
     spawn = require('child_process').spawn,
+    action = 'install',
     platform, projectDir, pluginDir,
     config, plugin, package,
     gitProc;
@@ -16,7 +17,7 @@ function processPlugin(action, platform, projectDir, pluginDir) {
         if (err) {
             console.error(err);
         } else {
-            console.log('plugin installed');
+            console.log('plugin '+action+'ed');
         }
     });
 }
@@ -24,7 +25,7 @@ function processPlugin(action, platform, projectDir, pluginDir) {
 process.argv.shift(); // skip "cli.js"
 
 if (process.argv.length == 0) {
-    console.log('Usage: pluginstall [-d] platform project directory plugin directory');
+    console.log('Usage: pluginstall [-d] platform project_directory plugin_directory');
 } else if (process.argv[0] === '-v') {
     package = require('./package')
     console.log('pluginstall version ' + package.version);
@@ -54,6 +55,6 @@ if (process.argv.length == 0) {
         });
     // or use local path
     } else {
-        processPlugin(action, platform, projectDir, tmpPluginDir);
+        processPlugin(action, platform, projectDir, pluginDir);
     }
 }
