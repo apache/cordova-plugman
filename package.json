@@ -1,7 +1,7 @@
 {
   "author": "Andrew Lunny <alunny@gmail.com>",
   "name": "pluginstall",
-  "description": "install Cordova plugins",
+  "description": "install/uninstall Cordova plugins",
   "version": "0.5.0",
   "repository": {
     "type": "git",
@@ -17,7 +17,7 @@
      "rimraf":"1.0.9",
      "ncp":"0.2.6",
      "mkdirp":"0.2.2",
-     "xcode":"0.4.1",
+     "xcode":"git+https://github.com/imhotep/node-xcode.git",
      "plist":"git+https://github.com/joshfire/node-plist.git",
      "glob":"3.0.1"
   },
