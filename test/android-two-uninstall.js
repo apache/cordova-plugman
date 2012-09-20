@@ -1,4 +1,5 @@
-// Test uninstallation on Cordova 1.x project
+// Test uninstallation on Cordova 2 project
+
     // core
 var fs = require('fs'),
     path = require('path'),
@@ -19,7 +20,7 @@ var fs = require('fs'),
     // setup
     config = {
         platform: 'android',
-        projectPath: fs.realpathSync('test/project/android_one'),
+        projectPath: fs.realpathSync('test/project/android_two'),
         pluginPath: fs.realpathSync('test/plugin')
     },
     plugin = pluginstall.parseXml(config),
@@ -30,7 +31,6 @@ var fs = require('fs'),
     javaDir  = path.resolve(config.projectPath,
                             'src/com/phonegap/plugins/childBrowser'),
     javaPath = path.resolve(javaDir, 'ChildBrowser.java'),
-    pluginsXmlPath = path.resolve(config.projectPath, 'res/xml/plugins.xml'),
     manifestPath = path.resolve(config.projectPath, 'AndroidManifest.xml');
 
 function clean(callback) {
@@ -53,7 +53,7 @@ function clean(callback) {
     rimraf(javaDir, end);
 
     // copy in original plugins.xml
-    moveProjFile('res/xml/plugins.orig.xml', config.projectPath, end)
+    moveProjFile('res/xml/config.orig.xml', config.projectPath, end)
 
     // copy in original AndroidManifest.xml
     moveProjFile('AndroidManifest.orig.xml', config.projectPath, end)
@@ -72,7 +72,7 @@ exports['should remove the js file'] = function (test) {
         });
     });
 }
-//
+
 exports['should remove the directory'] = function (test) {
     android.installPlugin(config, plugin, function() { 
         test.ok(fs.existsSync(assetPath));
@@ -82,25 +82,12 @@ exports['should remove the directory'] = function (test) {
         });
     });
 }
-//
+
 exports['should remove the src file'] = function (test) {
     android.installPlugin(config, plugin, function() { 
         test.ok(fs.statSync(javaPath))
         android.uninstallPlugin(config, plugin, function (err) {
             test.ok(!fs.existsSync(javaPath))
-            test.done();
-        });
-    });
-}
-
-exports['should remove ChildBrowser from plugins.xml'] = function (test) {
-    android.installPlugin(config, plugin, function() { 
-        android.uninstallPlugin(config, plugin, function (err) {
-            var pluginsTxt = fs.readFileSync(pluginsXmlPath, 'utf-8'),
-                pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
-                expected = 'plugin[@name="ChildBrowser"]' +
-                            '[@value="com.phonegap.plugins.childBrowser.ChildBrowser"]';
-            test.ok(!pluginsDoc.find(expected));
             test.done();
         });
     });
@@ -125,3 +112,19 @@ exports['should remove ChildBrowser from AndroidManifest.xml'] = function (test)
         });
     });
 }
+
+exports['should remove ChildBrowser from config.xml'] = function (test) {
+    android.installPlugin(config, plugin, function() { 
+        android.uninstallPlugin(config, plugin, function (err) {
+            var pluginsTxt = fs.readFileSync('test/project/android_two/res/xml/config.xml',
+                'utf-8'),
+                pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
+                expected = 'plugins/plugin[@name="ChildBrowser"]' +
+                            '[@value="com.phonegap.plugins.childBrowser.ChildBrowser"]';
+
+            test.ok(!pluginsDoc.find(expected));
+            test.done();
+        });
+    });
+}
+
