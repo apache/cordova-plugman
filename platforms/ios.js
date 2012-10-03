@@ -17,7 +17,7 @@ exports.installPlugin = function (config, plugin, callback) {
 
                 else
                     then(store.pbxPath, store.xcodeproj, store.plistPath,
-                        store.plist, store.pluginsDir);
+                        store.plist, store.pluginsDir, store.resourcesDir);
             });
 
         // grab and parse pbxproj
@@ -39,6 +39,7 @@ exports.installPlugin = function (config, plugin, callback) {
 
             store.plistPath = files[0];
             store.pluginsDir = path.resolve(files[0], '..', 'Plugins');
+            store.resourcesDir = path.resolve(files[0], '..', 'Resources');
 
             plist.parseFile(store.plistPath, function (err, obj) {
                 store.plist = obj;
@@ -47,7 +48,7 @@ exports.installPlugin = function (config, plugin, callback) {
         });
     }
 
-    prepare(function (pbxPath, xcodeproj, plistPath, plistObj, pluginsDir) {
+    prepare(function (pbxPath, xcodeproj, plistPath, plistObj, pluginsDir, resourcesDir) {
         var assets = plugin.xmlDoc.findall('./asset'),
             hosts = plugin.xmlDoc.findall('./access'),
             platformTag = plugin.xmlDoc.find('./platform[@name="ios"]'),
@@ -112,9 +113,9 @@ exports.installPlugin = function (config, plugin, callback) {
         resourceFiles.forEach(function (resource) {
             var src = resource.attrib['src'],
                 srcFile = path.resolve(config.pluginPath, 'src/ios', src),
-                destFile = path.resolve(pluginsDir, path.basename(src));
+                destFile = path.resolve(resourcesDir, path.basename(src));
 
-            xcodeproj.addResourceFile('Plugins/' + path.basename(src));
+            xcodeproj.addResourceFile('Resources/' + path.basename(src));
 
             asyncCopy(srcFile, destFile, end);
         })
@@ -154,7 +155,7 @@ exports.uninstallPlugin = function (config, plugin, callback) {
 
                 else
                     then(store.pbxPath, store.xcodeproj, store.plistPath,
-                        store.plist, store.pluginsDir);
+                        store.plist, store.pluginsDir, store.resourcesDir);
             });
 
         // grab and parse pbxproj
@@ -176,6 +177,7 @@ exports.uninstallPlugin = function (config, plugin, callback) {
 
             store.plistPath = files[0];
             store.pluginsDir = path.resolve(files[0], '..', 'Plugins');
+            store.resourcesDir = path.resolve(files[0], '..', 'Resources');
 
             plist.parseFile(store.plistPath, function (err, obj) {
                 store.plist = obj;
@@ -184,7 +186,7 @@ exports.uninstallPlugin = function (config, plugin, callback) {
         });
     }
 
-    prepare(function (pbxPath, xcodeproj, plistPath, plistObj, pluginsDir) {
+    prepare(function (pbxPath, xcodeproj, plistPath, plistObj, pluginsDir, resourcesDir) {
         var assets = plugin.xmlDoc.findall('./asset'),
             platformTag = plugin.xmlDoc.find('./platform[@name="ios"]'),
             sourceFiles = platformTag.findall('./source-file'),
@@ -242,9 +244,9 @@ exports.uninstallPlugin = function (config, plugin, callback) {
 
         resourceFiles.forEach(function (resource) {
             var src = resource.attrib['src'],
-                destFile = path.resolve(pluginsDir, path.basename(src));
+                destFile = path.resolve(resourcesDir, path.basename(src));
 
-            xcodeproj.removeResourceFile('Plugins/' + path.basename(src));
+            xcodeproj.removeResourceFile('Resources/' + path.basename(src));
 
             rimraf(destFile, end);
         })
