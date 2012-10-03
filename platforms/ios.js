@@ -35,6 +35,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
 
     var plistPath = files[0];
     var pluginsDir = path.resolve(files[0], '..', 'Plugins');
+    var resourcesDir = path.resolve(files[0], '..', 'Resources');
 
     // determine if this is a binary or ascii plist and choose the parser
     // this is temporary until binary support is added to node-plist
@@ -111,13 +112,13 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
     resourceFiles.forEach(function (resource) {
         var src = resource.attrib['src'],
             srcFile = path.resolve(plugin_dir, 'src/ios', src),
-            destFile = path.resolve(pluginsDir, path.basename(src));
+            destFile = path.resolve(resourcesDir, path.basename(src));
 
         if (action == 'install') {
             xcodeproj.addResourceFile('Resources/' + path.basename(src));
             var st = fs.statSync(srcFile);    
             if (st.isDirectory()) {
-                shell.cp('-R', srcFile, pluginsDir);
+                shell.cp('-R', srcFile, resourcesDir);
             } else {
                 shell.cp(srcFile, destFile);
             }
