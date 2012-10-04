@@ -20,6 +20,7 @@ var fs = require('fs'),
     plugin = pluginstall.parseXml(config),
     assetsDir = path.resolve(config.projectPath, 'www'),
     srcDir = path.resolve(config.projectPath, 'SampleApp/Plugins'),
+    resDir = path.resolve(config.projectPath, 'SampleApp/Resources'),
     jsPath = assetsDir + '/childbrowser.js';
 
 function unlinkIfThere(filepath, cb) {
@@ -41,13 +42,13 @@ function clean(calllback) {
         end = nCallbacks(ASYNC_OPS, calllback);
 
     rimraf(assetsDir + '/childbrowser', end)
-    rimraf(srcDir + '/ChildBrowser.bundle', end)
+    rimraf(resDir + '/ChildBrowser.bundle', end)
     unlinkIfThere(jsPath, end)
     unlinkIfThere(srcDir + '/ChildBrowserCommand.m', end)
     unlinkIfThere(srcDir + '/ChildBrowserViewController.m', end)
     unlinkIfThere(srcDir + '/ChildBrowserCommand.h', end)
     unlinkIfThere(srcDir + '/ChildBrowserViewController.h', end)
-    unlinkIfThere(srcDir + '/ChildBrowserViewController.xib', end)
+    unlinkIfThere(resDir + '/ChildBrowserViewController.xib', end)
     
     rimraf(srcDir + '/targetDir', end)
     rimraf(srcDir + '/preserveDirs', end)
@@ -95,7 +96,7 @@ exports['should remove the header files'] = function (test) {
 exports['should remove the xib file'] = function (test) {
     ios.installPlugin(config, plugin, function () {
         ios.uninstallPlugin(config, plugin, function (err) {
-            test.ok(!fs.existsSync(srcDir + '/ChildBrowserViewController.xib'))
+            test.ok(!fs.existsSync(resDir + '/ChildBrowserViewController.xib'))
             test.done();
         });
     });
@@ -104,7 +105,7 @@ exports['should remove the xib file'] = function (test) {
 exports['should remove the bundle'] = function (test) {
     ios.installPlugin(config, plugin, function () {
         ios.uninstallPlugin(config, plugin, function (err) {
-            test.ok(!fs.existsSync(srcDir + '/ChildBrowser.bundle'))
+            test.ok(!fs.existsSync(resDir + '/ChildBrowser.bundle'))
             test.done();
         });
     });
@@ -160,7 +161,7 @@ exports['should remove the framework references from the pbxproj file'] = functi
 
             // should be four libsqlite3 reference lines added
             // pretty low-rent test eh
-            test.equal(references.length, 1);
+            test.equal(references.length, 0);
             test.done();
         });
     });
