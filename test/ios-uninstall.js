@@ -15,6 +15,7 @@ var fs = require('fs')
 
   //, assetsDir = path.resolve(config.projectPath, 'www')
   , srcDir = path.resolve(test_project_dir, 'SampleApp/Plugins');
+  , resDir = path.resolve(test_project_dir, 'SampleApp/Resources');
 
 exports.setUp = function(callback) {
     shell.mkdir('-p', test_dir);
@@ -77,7 +78,7 @@ exports['should remove the xib file'] = function (test) {
     ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
     ios.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
 
-    test.ok(!fs.existsSync(srcDir + '/ChildBrowserViewController.xib'))
+    test.ok(!fs.existsSync(resDir + '/ChildBrowserViewController.xib'))
     test.done();
 }
 
@@ -86,7 +87,7 @@ exports['should remove the bundle'] = function (test) {
     ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
     ios.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
 
-    test.ok(!fs.existsSync(srcDir + '/ChildBrowser.bundle'))
+    test.ok(!fs.existsSync(resDir + '/ChildBrowser.bundle'))
     test.done();
 }
 
@@ -141,6 +142,6 @@ exports['should remove the framework references from the pbxproj file'] = functi
 
     // should be four libsqlite3 reference lines added
     // pretty low-rent test eh
-    test.equal(references.length, 1);
+    test.equal(references.length, 0);
     test.done();
 }

@@ -15,6 +15,7 @@ var fs = require('fs')
 
   //, assetsDir = path.resolve(config.projectPath, 'www')
   , srcDir = path.resolve(test_project_dir, 'SampleApp/Plugins');
+  , srcDir = path.resolve(test_project_dir, 'SampleApp/Resources');
 
 exports.setUp = function(callback) {
     shell.mkdir('-p', test_dir);
@@ -73,7 +74,7 @@ exports['should move the xib file'] = function (test) {
     // run the platform-specific function
     ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
 
-    test.ok(fs.statSync(srcDir + '/ChildBrowserViewController.xib'));
+    test.ok(fs.statSync(resDir + '/ChildBrowserViewController.xib'));
     test.done();
 }
 
@@ -81,7 +82,7 @@ exports['should move the bundle'] = function (test) {
     // run the platform-specific function
     ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
 
-    var bundle = fs.statSync(srcDir + '/ChildBrowser.bundle');
+    var bundle = fs.statSync(resDir + '/ChildBrowser.bundle');
 
     test.ok(bundle.isDirectory());
     test.done();
