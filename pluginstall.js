@@ -11,7 +11,7 @@ var shell = require('shelljs')
   , platform_modules = {
         //'android': require('./platforms/android'),
         'ios': require('./platforms/ios'),
-        //'www': require('./platforms/www')
+        'www': require('./platforms/www')
     };
 
 var known_opts = { 'platform' : [ 'ios', 'android', 'www' ]

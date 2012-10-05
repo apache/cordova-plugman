@@ -1,55 +1,61 @@
-var fs = require('fs'),
-    path = require('path'),
-    rimraf = require('rimraf'),
+var fs = require('fs')
+  , path = require('path')
+  , plist = require('plist')
+  , xcode = require('xcode')
+  , osenv = require('osenv')
+  , shell = require('shelljs')
+  , et = require('elementtree')
+  , www = require(path.join(__dirname, '..', 'platforms', 'www'))
 
-    pluginstall = require('../pluginstall'),
-    www = require('../platforms/www'),
-    nCallbacks = require('../util/ncallbacks'),
+  , test_dir = path.join(osenv.tmpdir(), 'test_pluginstall')
+  , test_project_dir = path.join(test_dir, 'projects', 'www-only')
+  , test_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
+  , xml_path     = path.join(test_dir, 'plugins', 'ChildBrowser', 'plugin.xml')
+  , xml_text, plugin_et
 
-    config = {
-        platform: 'www',
-        projectPath: fs.realpathSync('test/project/www-only'),
-        pluginPath: fs.realpathSync('test/plugin')
-    },
-    plugin = pluginstall.parseXml(config),
-    assetsDir = path.resolve(config.projectPath),
-    jsPath = assetsDir + '/childbrowser.js';
+  //, assetsDir = path.resolve(config.projectPath, 'www')
+  , srcDir = path.resolve(test_project_dir, 'SampleApp/Plugins');
 
-exports.setUp = function (callback) {
-    var ASYNC_OPS = 2,
-        end = nCallbacks(ASYNC_OPS, callback);
 
-    rimraf(assetsDir + '/childbrowser', end)
-    unlinkIfThere(jsPath, end)
+exports.setUp = function(callback) {
+    shell.mkdir('-p', test_dir);
+    
+    // copy the ios test project to a temp directory
+    shell.cp('-r', path.join(__dirname, 'projects'), test_dir);
+
+    // copy the ios test plugin to a temp directory
+    shell.cp('-r', path.join(__dirname, 'plugins'), test_dir);
+
+    // parse the plugin.xml into an elementtree object
+    xml_text   = fs.readFileSync(xml_path, 'utf-8')
+    plugin_et  = new et.ElementTree(et.XML(xml_text));
+
+    callback();
 }
 
+exports.tearDown = function(callback) {
+    // remove the temp files (projects and plugins)
+    shell.rm('-rf', test_dir);
+    callback();
+}
+
+
 exports['should move the js file'] = function (test) {
-    www.installPlugin(config, plugin, function (err) {
-        test.ok(fs.statSync(jsPath))
-        test.done();
-    })
+    var jsPath = path.join(test_dir, 'projects', 'www-only', 'childbrowser.js');
+
+    // run the platform-specific function
+    www.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    test.ok(fs.existsSync(jsPath));
+    test.done();
 }
 
 exports['should move the directory'] = function (test) {
-    www.installPlugin(config, plugin, function (err) {
-        var assetPath = path.resolve(config.projectPath, "childbrowser/")
-        var assets = fs.statSync(assetPath);
-        test.ok(assets.isDirectory())
-        test.ok(fs.statSync(assetPath + '/image.jpg'))
-        test.done();
-    })
-}
+    // run the platform-specific function
+    www.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
 
-function unlinkIfThere(filepath, cb) {
-    fs.stat(filepath, function (err, stat) {
-        if (err) {
-            cb(null);
-            return;
-        }
-
-        if (stat)
-            fs.unlinkSync(filepath);
-
-        cb(null);
-    })
+    var assetPath = path.resolve(test_project_dir, "childbrowser/")
+    var assets = fs.statSync(assetPath);
+    test.ok(assets.isDirectory());
+    test.ok(fs.statSync(assetPath + '/image.jpg'));
+    test.done();
 }
