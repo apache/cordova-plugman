@@ -1,4 +1,4 @@
-var fs = require('../util/fs')  // use existsSync in 0.6.x
+var fs = require('fs')  // use existsSync in 0.6.x
    , path = require('path')
    , shell = require('shelljs')
    , et = require('elementtree')
@@ -19,12 +19,12 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
       , platformTag = plugin_et.find('./platform[@name="android"]')
       , sourceFiles = platformTag.findall('./source-file')
       , libFiles = platformTag.findall('./library-file')
-      , PACKAGE_NAME = packageName(config)
+      , PACKAGE_NAME = androidPackageName(project_dir)
       , configChanges = getConfigChanges(platformTag);
 
     // find which config-files we're interested in
     Object.keys(configChanges).forEach(function (configFile) {
-        if (!fs.existsSync(path.resolve(config.projectPath, configFile))) {
+        if (!fs.existsSync(path.resolve(project_dir, configFile))) {
             delete configChanges[configFile];
         }
     });
@@ -40,14 +40,20 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
                             assetsDir,
                             asset.attrib['target']);
 
+        var stats = fs.statSync(srcPath);
         if (action == 'install') {
-            shell.cp(srcPath, targetPath);
+            shell.mkdir('-p', targetPath);
+            if(stats.isDirectory()) {
+                //console.log('copying', srcPath, path.join(project_dir, assetsDir));
+                shell.cp('-R', srcPath, path.join(project_dir, assetsDir));
+            } else {
+                shell.cp(srcPath, targetPath);
+            }
         } else {
-            var stats = fs.stat(targetPath);
             if(stats.isDirectory()) {
                 shell.rm('-rf', targetPath);
             } else {
-                fs.unlinkSync(targetPath);
+                shell.rm('-rf', targetPath);
             }
         }
     });
@@ -102,7 +108,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
 
     // edit configuration files
     Object.keys(configChanges).forEach(function (filename) {
-        var filepath = path.resolve(config.projectPath, filename),
+        var filepath = path.resolve(project_dir, filename),
             xmlDoc = xml_helpers.parseElementtreeSync(filepath),
             output;
 
@@ -138,9 +144,12 @@ function srcPath(pluginPath, filename) {
     }
 }
 
-function packageName(config) {
+// reads the package name out of the Android Manifest file
+// @param string project_dir the absolute path to the directory containing the project
+// @return string the name of the package
+function androidPackageName(project_dir) {
     var mDoc = xml_helpers.parseElementtreeSync(
-            path.resolve(config.projectPath, 'AndroidManifest.xml'));
+            path.resolve(project_dir, 'AndroidManifest.xml'));
 
     return mDoc._root.attrib['package'];
 }

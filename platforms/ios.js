@@ -1,5 +1,5 @@
 var path = require('path')
-  , fs = require('fs')
+  , fs = require('../util/fs')  // use existsSync in 0.6.x
   , glob = require('glob')
   , et = require('elementtree')
   , xcode = require('xcode')

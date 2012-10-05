@@ -1,120 +1,101 @@
 // Test installation on Cordova 2 project
 
-    // core
-var fs = require('fs'),
-    path = require('path'),
+var fs = require('fs')
+  , path = require('path')
+  , plist = require('plist')
+  , xcode = require('xcode')
+  , osenv = require('osenv')
+  , shell = require('shelljs')
+  , et = require('elementtree')
+  , android = require(path.join(__dirname, '..', 'platforms', 'android'))
 
-    // libs
-    rimraf = require('rimraf'),
-    et = require('elementtree'),
+  , test_dir = path.join(osenv.tmpdir(), 'test_pluginstall')
+  , test_project_dir = path.join(test_dir, 'projects', 'android_two')
+  , test_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
+  , xml_path     = path.join(test_dir, 'plugins', 'ChildBrowser', 'plugin.xml')
+  , xml_text, plugin_et;
 
-    // parts of this lib
-    pluginstall = require('../pluginstall'),
-    android = require('../platforms/android'),
-    nCallbacks = require('../util/ncallbacks'),
 
-    // helpers
-    helpers = require('../util/test-helpers'),
-    moveProjFile = helpers.moveProjFile,
 
-    // setup
-    config = {
-        platform: 'android',
-        projectPath: fs.realpathSync('test/project/android_two'),
-        pluginPath: fs.realpathSync('test/plugin')
-    },
-    plugin = pluginstall.parseXml(config),
-    assetsDir = path.resolve(config.projectPath, 'assets/www'),
-    srcDir = path.resolve(config.projectPath, 'src'),
-    jsPath = assetsDir + '/childbrowser.js',
-    assetPath = assetsDir + '/childbrowser',
-    javaDir  = path.resolve(config.projectPath,
-                            'src/com/phonegap/plugins/childBrowser'),
-    javaPath = path.resolve(javaDir, 'ChildBrowser.java'),
-    manifestPath = path.resolve(config.projectPath, 'AndroidManifest.xml');
+exports.setUp = function(callback) {
+    shell.mkdir('-p', test_dir);
+    
+    // copy the ios test project to a temp directory
+    shell.cp('-r', path.join(__dirname, 'projects'), test_dir);
 
-function clean(callback) {
-    var ASYNC_OPS = 5,
-        end = nCallbacks(ASYNC_OPS, callback);
+    // copy the ios test plugin to a temp directory
+    shell.cp('-r', path.join(__dirname, 'plugins'), test_dir);
 
-    // remove JS (that should be moved)
-    fs.stat(jsPath, function (err, stats) {
-        if (stats) {
-            fs.unlinkSync(jsPath)
-        }
+    // parse the plugin.xml into an elementtree object
+    xml_text   = fs.readFileSync(xml_path, 'utf-8')
+    plugin_et  = new et.ElementTree(et.XML(xml_text));
 
-        end(null);
-    });
-
-    // remove web assets (www/childbrowser)
-    rimraf(assetPath, end);
-
-    // remove src code directory
-    rimraf(javaDir, end);
-
-    // copy in original plugins.xml
-    moveProjFile('res/xml/config.orig.xml', config.projectPath, end)
-
-    // copy in original AndroidManifest.xml
-    moveProjFile('AndroidManifest.orig.xml', config.projectPath, end)
+    callback();
 }
 
-// global setup/teardown
-exports.setUp = clean;
-exports.tearDown = clean;
+exports.tearDown = function(callback) {
+    // remove the temp files (projects and plugins)
+    shell.rm('-rf', test_dir);
+    callback();
+}
+
 
 exports['should move the js file'] = function (test) {
-    android.installPlugin(config, plugin, function (err) {
-        test.ok(fs.statSync(jsPath))
-        test.done();
-    })
+    var jsPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'childbrowser.js');
+
+    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    test.ok(fs.existsSync(jsPath));
+    test.done();
 }
 
 exports['should move the directory'] = function (test) {
-    android.installPlugin(config, plugin, function (err) {
-        var assets = fs.statSync(assetPath);
+    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
 
-        test.ok(assets.isDirectory())
-        test.ok(fs.statSync(assetPath + '/image.jpg'))
-        test.done();
-    })
+    var assetPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'childbrowser');
+
+    var assets = fs.statSync(assetPath);
+
+    test.ok(assets.isDirectory());
+    test.ok(fs.statSync(assetPath + '/image.jpg'))
+    test.done();
 }
 
 exports['should move the src file'] = function (test) {
-    android.installPlugin(config, plugin, function (err) {
-        test.ok(fs.statSync(javaPath))
-        test.done();
-    })
-}
+    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
 
-exports['should add ChildBrowser to AndroidManifest.xml'] = function (test) {
-    android.installPlugin(config, plugin, function (err) {
-        var manifestTxt = fs.readFileSync(manifestPath, 'utf-8'),
-            manifestDoc = new et.ElementTree(et.XML(manifestTxt)),
-            activities = manifestDoc.findall('application/activity'), i;
-
-        var found = false;
-        for (i=0; i<activities.length; i++) {
-            if ( activities[i].attrib['android:name'] === 'com.phonegap.plugins.childBrowser.ChildBrowser' ) {
-                found = true;
-                break;
-            }
-        }
-        test.ok(found);
-        test.done();
-    })
+    var javaPath = path.join(test_dir, 'projects', 'android_two', 'src', 'com', 'phonegap', 'plugins', 'childBrowser', 'ChildBrowser.java');
+    test.ok(fs.statSync(javaPath));
+    test.done();
 }
 
 exports['should add ChildBrowser to config.xml'] = function (test) {
-    android.installPlugin(config, plugin, function (err) {
-        var pluginsTxt = fs.readFileSync('test/project/android_two/res/xml/config.xml',
-            'utf-8'),
-            pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
-            expected = 'plugins/plugin[@name="ChildBrowser"]' +
-                        '[@value="com.phonegap.plugins.childBrowser.ChildBrowser"]';
+    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
 
-        test.ok(pluginsDoc.find(expected));
-        test.done();
-    })
+    var pluginsXmlPath = path.join(test_dir, 'projects', 'android_two', 'res', 'xml', 'config.xml');
+    var pluginsTxt = fs.readFileSync(pluginsXmlPath, 'utf-8'),
+        pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
+        expected = 'plugins/plugin[@name="ChildBrowser"]' +
+                    '[@value="com.phonegap.plugins.childBrowser.ChildBrowser"]';
+
+    test.ok(pluginsDoc.find(expected));
+    test.done();
 }
 
+exports['should add ChildBrowser to AndroidManifest.xml'] = function (test) {
+    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+
+    var manifestPath = path.join(test_dir, 'projects', 'android_two', 'AndroidManifest.xml');
+    var manifestTxt = fs.readFileSync(manifestPath, 'utf-8'),
+        manifestDoc = new et.ElementTree(et.XML(manifestTxt)),
+        activities = manifestDoc.findall('application/activity'), i;
+
+    var found = false;
+    for (i=0; i<activities.length; i++) {
+        if ( activities[i].attrib['android:name'] === 'com.phonegap.plugins.childBrowser.ChildBrowser' ) {
+            found = true;
+            break;
+        }
+    }
+    test.ok(found);
+    test.done();
+}

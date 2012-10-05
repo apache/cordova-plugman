@@ -12,10 +12,6 @@ var fs = require('fs'),
     android = require('../platforms/android'),
     nCallbacks = require('../util/ncallbacks'),
 
-    // helpers
-    helpers = require('../util/test-helpers'),
-    moveProjFile = helpers.moveProjFile,
-
     // setup
     config = {
         platform: 'android',
