@@ -1,21 +1,26 @@
-var fs = require('../util/fs'), // use existsSync in 0.6.x
-    path = require('path'),
-    shell = require('shelljs'),
-    et = require('elementtree'),
-    equalNodes = require('../util/equalNodes'),
-    getConfigChanges = require('../util/config-changes'),
+var fs = require('../util/fs')  // use existsSync in 0.6.x
+   , path = require('path')
+   , shell = require('shelljs')
+   , et = require('elementtree')
+   , getConfigChanges = require('../util/config-changes')
 
-    assetsDir = 'assets/www', // relative path to project's web assets
-    sourceDir = 'src';
+   , assetsDir = 'assets/www'  // relative path to project's web assets
+   , sourceDir = 'src'
+   , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'));
 
-exports.handlePlugin = function (action, config, plugin) {
-    // look for assets in the plugin 
-    var assets = plugin.xmlDoc.findall('./asset'),
-        platformTag = plugin.xmlDoc.find('./platform[@name="android"]'),
-        sourceFiles = platformTag.findall('./source-file'),
-        libFiles = platformTag.findall('./library-file'),
-        PACKAGE_NAME = packageName(config),
-        configChanges = getConfigChanges(platformTag);
+
+exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
+    var plugin_id = plugin_et._root.attrib['id']
+      , version = plugin_et._root.attrib['version']
+      , external_hosts = []
+      , i = 0
+      // look for assets in the plugin 
+      , assets = plugin_et.findall('./asset')
+      , platformTag = plugin_et.find('./platform[@name="android"]')
+      , sourceFiles = platformTag.findall('./source-file')
+      , libFiles = platformTag.findall('./library-file')
+      , PACKAGE_NAME = packageName(config)
+      , configChanges = getConfigChanges(platformTag);
 
     // find which config-files we're interested in
     Object.keys(configChanges).forEach(function (configFile) {
@@ -23,288 +28,105 @@ exports.handlePlugin = function (action, config, plugin) {
             delete configChanges[configFile];
         }
     });
-    
+
     // move asset files
     assets.forEach(function (asset) {
         var srcPath = path.resolve(
-                        config.pluginPath,
+                        plugin_dir,
                         asset.attrib['src']);
 
         var targetPath = path.resolve(
-                            config.projectPath,
+                            project_dir,
                             assetsDir,
                             asset.attrib['target']);
 
-        asyncCopy(srcPath, targetPath, endCallback);
+        if (action == 'install') {
+            shell.cp(srcPath, targetPath);
+        } else {
+            var stats = fs.stat(targetPath);
+            if(stats.isDirectory()) {
+                shell.rm('-rf', targetPath);
+            } else {
+                fs.unlinkSync(targetPath);
+            }
+        }
     });
 
     // move source files
     sourceFiles.forEach(function (sourceFile) {
-        var srcDir = path.resolve(config.projectPath,
+        var srcDir = path.resolve(project_dir,
                                 sourceFile.attrib['target-dir'])
-
-        mkdirp(srcDir, function (err) {
-            var srcFile = srcPath(config.pluginPath, sourceFile.attrib['src']),
-                destFile = path.resolve(srcDir,
+          , destFile = path.resolve(srcDir,
                                 path.basename(sourceFile.attrib['src']));
 
-            asyncCopy(srcFile, destFile, endCallback);
-        });
+        if (action == 'install') {
+            shell.mkdir('-p', srcDir);
+            var srcFile = srcPath(plugin_dir, sourceFile.attrib['src']);
+            shell.cp(srcFile, destFile);
+        } else {
+            fs.unlinkSync(destFile);
+            // check if directory is empty
+            var files = fs.readdirSync(srcDir);
+            if(files.length == 0) {
+                shell.rm('-rf', srcDir);
+            }
+        }
     })
-    
+
     // move library files
     libFiles.forEach(function (libFile) {
-        var libDir = path.resolve(config.projectPath,
+        var libDir = path.resolve(project_dir,
                                 libFile.attrib['target-dir'])
 
-        mkdirp(libDir, function (err) {
-            var src = path.resolve(config.pluginPath, 'src/android',
+        if (action == 'install') {
+            shell.mkdir('-p', libDir);
+            var src = path.resolve(plugin_dir, 'src/android',
                                         libFile.attrib['src']),
                 dest = path.resolve(libDir,
                                 path.basename(libFile.attrib['src']));
-            console.log(src, dest);
-
-            asyncCopy(src, dest, endCallback);
-        });
-    })
-
-    // edit configuration files
-    Object.keys(configChanges).forEach(function (filename) {
-        var filepath = path.resolve(config.projectPath, filename),
-            xmlDoc = readAsETSync(filepath),
-            output;
-
-        configChanges[filename].forEach(function (configNode) {
-            var selector = configNode.attrib["parent"],
-                children = configNode.findall('*');
-
-            if (!addToDoc(xmlDoc, children, selector)) {
-                endCallback('failed to add children to ' + filename);
-            }
-        });
-
-        output = xmlDoc.write();
-        output = output.replace(/\$PACKAGE_NAME/g, PACKAGE_NAME);
-
-        fs.writeFile(filepath, output, function (err) {
-            if (err) endCallback(err);
-
-            endCallback();
-        });
-    });
-}
-
-exports.uninstallPlugin = function (config, plugin, callback) {
-    
-    // look for assets in the plugin 
-    var assets = plugin.xmlDoc.findall('./asset'),
-        platformTag = plugin.xmlDoc.find('./platform[@name="android"]'),
-        sourceFiles = platformTag.findall('./source-file'),
-        libFiles = platformTag.findall('./library-file'),
-        PACKAGE_NAME = packageName(config),
-
-        configChanges = getConfigChanges(platformTag),
-
-        callbackCount = assets.length + sourceFiles.length + libFiles.length,
-        endCallback;
-
-    // find which config-files we're interested in
-    Object.keys(configChanges).forEach(function (configFile) {
-        if (fs.existsSync(path.resolve(config.projectPath, configFile))) {
-            callbackCount++;
+            
+            shell.cp(src, dest);
         } else {
-            delete configChanges[configFile];
-        }
-    });
-
-    endCallback = nCallbacks(callbackCount, callback)
-
-    // move asset files
-    assets.forEach(function (asset) {
-        var targetPath = path.resolve(
-                            config.projectPath,
-                            assetsDir,
-                            asset.attrib['target']);
-        fs.stat(targetPath, function(err, stats) {
-            if(err) {
-                endCallback(err);
-            }
-            if(stats.isDirectory()) {
-                rimraf(targetPath, endCallback);
-            } else {
-                fs.unlink(targetPath, endCallback);
-            }
-        });
-    });
-
-    // move source files
-    sourceFiles.forEach(function (sourceFile) {
-        var srcDir = path.resolve(config.projectPath,
-                                sourceFile.attrib['target-dir']),
-            destFile = path.resolve(srcDir,
-                                path.basename(sourceFile.attrib['src']));
-        
-        fs.unlink(destFile, function(err) {
-            // check if directory is empty
-            fs.readdir(srcDir, function(err, files) {
-                if(err) {
-                    endCallback(err);
-                }
-                if(files.length == 0) {
-                    fs.rmdir(srcDir, endCallback);
-                }
-            });
-        });
-
-    });
-    
-    // move library files
-    libFiles.forEach(function (libFile) {
-        var libDir = path.resolve(config.projectPath,
-                                libFile.attrib['target-dir'])
-        
-        var destFile = path.resolve(libDir,
+            var destFile = path.resolve(libDir,
                             path.basename(libFile.attrib['src']));
 
-        fs.unlink(destFile, function(err) {
+            fs.unlinkSync(destFile);
             // check if directory is empty
-            fs.readdir(libDir, function(err, files) {
-                if(files.length == 0) {
-                    fs.rmdir(libDir, endCallback);
-                }
-            });
-        });
-    });
+            var files = fs.readdirSync(libDir);
+            if(files.length == 0) {
+                shell.rm('-rf', libDir);
+            }
+        }
+    })
+
 
     // edit configuration files
     Object.keys(configChanges).forEach(function (filename) {
         var filepath = path.resolve(config.projectPath, filename),
-            xmlDoc = readAsETSync(filepath),
+            xmlDoc = xml_helpers.parseElementtreeSync(filepath),
             output;
+
         configChanges[filename].forEach(function (configNode) {
             var selector = configNode.attrib["parent"],
                 children = configNode.findall('*');
-            if (!removeFromDoc(xmlDoc, children, selector)) {
-                endCallback('failed to add children to ' + filename);
+
+            if( action == 'install') {
+                if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
+                    throw new Error('failed to add children to ' + filename);
+                }
+            } else {
+                if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
+                    throw new Error('failed to remove children from' + filename);
+                }
             }
         });
 
         output = xmlDoc.write();
         output = output.replace(/\$PACKAGE_NAME/g, PACKAGE_NAME);
-
-        fs.writeFile(filepath, output, function (err) {
-            if (err) endCallback(err);
-
-            endCallback();
-        });
+        fs.writeFileSync(filepath, output);
     });
 }
 
-// adds node to doc at selector
-function addToDoc(doc, nodes, selector) {
-    var ROOT = /^\/([^\/]*)/,
-        ABSOLUTE = /^\/([^\/]*)\/(.*)/,
-        parent, tagName, subSelector;
-
-    // handle absolute selector (which elementtree doesn't like)
-    if (ROOT.test(selector)) {
-        tagName = selector.match(ROOT)[1];
-        if (tagName === doc._root.tag) {
-            parent = doc._root;
-
-            // could be an absolute path, but not selecting the root
-            if (ABSOLUTE.test(selector)) {
-                subSelector = selector.match(ABSOLUTE)[2];
-                parent = parent.find(subSelector)
-            }
-        } else {
-            return false;
-        }
-    } else {
-        parent = doc.find(selector)
-    }
-
-    nodes.forEach(function (node) {
-        // check if child is unique first
-        if (uniqueChild(node, parent)) {
-            parent.append(node);
-        }
-    });
-
-    return true;
-}
-
-// removes node from doc at selector
-function removeFromDoc(doc, nodes, selector) {
-    var ROOT = /^\/([^\/]*)/,
-        ABSOLUTE = /^\/([^\/]*)\/(.*)/,
-        parent, tagName, subSelector;
-
-    // handle absolute selector (which elementtree doesn't like)
-    if (ROOT.test(selector)) {
-        tagName = selector.match(ROOT)[1];
-        if (tagName === doc._root.tag) {
-            parent = doc._root;
-
-            // could be an absolute path, but not selecting the root
-            if (ABSOLUTE.test(selector)) {
-                subSelector = selector.match(ABSOLUTE)[2];
-                parent = parent.find(subSelector)
-            }
-        } else {
-            return false;
-        }
-    } else {
-        parent = doc.find(selector)
-    }
-    nodes.forEach(function (node) {
-        var matchingKid = null;
-        if ((matchingKid = findChild(node, parent)) != null) {
-            // stupid elementtree takes an index argument it doesn't use
-            // and does not conform to the python lib
-            parent.remove(0, matchingKid);
-        }
-    });
-
-    return true;
-}
-
-function findChild(node, parent) {
-    var matchingKids = parent.findall(node.tag),
-        i, j;
-
-    for (i = 0, j = matchingKids.length ; i < j ; i++) {
-        if (equalNodes(node, matchingKids[i])) {
-            return matchingKids[i];
-        }
-    }
-
-    return null;
-
-}
-
-function uniqueChild(node, parent) {
-    var matchingKids = parent.findall(node.tag),
-        i = 0;
-
-    if (matchingKids.length == 0) {
-        return true;
-    } else  {
-        for (i; i < matchingKids.length; i++) {
-            if (equalNodes(node, matchingKids[i])) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-}
-
-function readAsETSync(filename) {
-    var contents = fs.readFileSync(filename, 'utf-8');
-
-    return new et.ElementTree(et.XML(contents));
-}
 
 function srcPath(pluginPath, filename) {
     var prefix = /^src\/android/;
@@ -317,7 +139,7 @@ function srcPath(pluginPath, filename) {
 }
 
 function packageName(config) {
-    var mDoc = readAsETSync(
+    var mDoc = xml_helpers.parseElementtreeSync(
             path.resolve(config.projectPath, 'AndroidManifest.xml'));
 
     return mDoc._root.attrib['package'];

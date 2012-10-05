@@ -9,7 +9,7 @@ var shell = require('shelljs')
   , et = require('elementtree')
   , nopt = require('nopt')
   , platform_modules = {
-        //'android': require('./platforms/android'),
+        'android': require('./platforms/android'),
         'ios': require('./platforms/ios'),
         'www': require('./platforms/www')
     };

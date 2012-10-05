@@ -1,3 +1,4 @@
+// TODO: refactor these tests
 // Test plugin.xml with multiple child elements
     // core
 var fs = require('fs'),
