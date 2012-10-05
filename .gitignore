@@ -1,26 +1,2 @@
-node_modules/*
 .DS_Store
 
-# testing iOS
-test/project/ios/www/childbrowser*
-test/project/ios/SampleApp/PhoneGap.plist
-test/project/ios/SampleApp.xcodeproj/project.pbxproj
-test/project/ios/SampleApp/Plugins/*
-
-# testing Android (CDV 1.x)
-test/project/android_one/assets/www/childbrowser*
-test/project/android_one/src/**/
-test/project/android_one/res/xml/plugins.xml
-test/project/android_one/AndroidManifest.xml
-
-# testing Android (CDV 2.0)
-test/project/android_two/assets/www/childbrowser*
-test/project/android_two/src/**/
-test/project/android_two/res/xml/config.xml
-test/project/android_two/AndroidManifest.xml
-
-# test multiple AndroidManifest entries
-test/multiple-children/project/AndroidManifest.xml
-
-#test web-platform
-test/project/www-only
