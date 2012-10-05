@@ -127,7 +127,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
             }
         });
 
-        output = xmlDoc.write();
+        output = xmlDoc.write({indent: 4});
         output = output.replace(/\$PACKAGE_NAME/g, PACKAGE_NAME);
         fs.writeFileSync(filepath, output);
     });

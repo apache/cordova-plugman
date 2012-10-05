@@ -114,7 +114,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
             destFile = path.resolve(pluginsDir, path.basename(src));
 
         if (action == 'install') {
-            xcodeproj.addResourceFile('Plugins/' + path.basename(src));
+            xcodeproj.addResourceFile('Resources/' + path.basename(src));
             var st = fs.statSync(srcFile);    
             if (st.isDirectory()) {
                 shell.cp('-R', srcFile, pluginsDir);
@@ -122,7 +122,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
                 shell.cp(srcFile, destFile);
             }
         } else {
-            xcodeproj.removeResourceFile('Plugins/' + path.basename(src));
+            xcodeproj.removeResourceFile('Resources/' + path.basename(src));
             shell.rm('-rf', destFile);
         }
     });
