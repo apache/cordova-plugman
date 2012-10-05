@@ -14,8 +14,8 @@ var fs = require('fs')
   , xml_text, plugin_et
 
   //, assetsDir = path.resolve(config.projectPath, 'www')
-  , srcDir = path.resolve(test_project_dir, 'SampleApp/Plugins');
-  , srcDir = path.resolve(test_project_dir, 'SampleApp/Resources');
+  , srcDir = path.resolve(test_project_dir, 'SampleApp/Plugins')
+  , resDir = path.resolve(test_project_dir, 'SampleApp/Resources');
 
 exports.setUp = function(callback) {
     shell.mkdir('-p', test_dir);

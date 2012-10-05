@@ -14,7 +14,7 @@ var fs = require('fs')
   , xml_text, plugin_et
 
   //, assetsDir = path.resolve(config.projectPath, 'www')
-  , srcDir = path.resolve(test_project_dir, 'SampleApp/Plugins');
+  , srcDir = path.resolve(test_project_dir, 'SampleApp/Plugins')
   , resDir = path.resolve(test_project_dir, 'SampleApp/Resources');
 
 exports.setUp = function(callback) {
@@ -119,7 +119,7 @@ exports['should edit the pbxproj file'] = function (test) {
     obj = xcode.project(projPath).parseSync();
     var fileRefSection = obj.hash.project.objects['PBXFileReference'],
         fileRefLength = Object.keys(fileRefSection).length,
-        EXPECTED_TOTAL_REFERENCES = 78; // magic number ahoy!
+        EXPECTED_TOTAL_REFERENCES = 70; // magic number ahoy!
 
     test.equal(fileRefLength, EXPECTED_TOTAL_REFERENCES);
     test.done();
