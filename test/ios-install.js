@@ -1,153 +1,139 @@
-var fs = require('fs'),
-    path = require('path'),
-    rimraf = require('rimraf'),
-    plist = require('plist'),
-    xcode = require('xcode'),
+var fs = require('fs')
+  , path = require('path')
+  , plist = require('plist')
+  , xcode = require('xcode')
+  , osenv = require('osenv')
+  , shell = require('shelljs')
+  , et = require('elementtree')
+  , ios = require(path.join(__dirname, '..', 'platforms', 'ios'))
 
-    pluginstall = require('../pluginstall'),
-    ios = require('../platforms/ios'),
-    nCallbacks = require('../util/ncallbacks'),
+  , test_dir = path.join(osenv.tmpdir(), 'test_pluginstall')
+  , test_project_dir = path.join(test_dir, 'projects', 'ios')
+  , test_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
+  , xml_path     = path.join(test_dir, 'plugins', 'ChildBrowser', 'plugin.xml')
+  , xml_text, plugin_et
 
-    // helpers
-    helpers = require('../util/test-helpers'),
-    moveProjFile = helpers.moveProjFile,
+  //, assetsDir = path.resolve(config.projectPath, 'www')
+  , srcDir = path.resolve(test_project_dir, 'SampleApp/Plugins');
 
-    config = {
-        platform: 'ios',
-        projectPath: fs.realpathSync('test/project/ios'),
-        pluginPath: fs.realpathSync('test/plugin')
-    },
-    plugin = pluginstall.parseXml(config),
-    assetsDir = path.resolve(config.projectPath, 'www'),
-    srcDir = path.resolve(config.projectPath, 'SampleApp/Plugins'),
-    jsPath = assetsDir + '/childbrowser.js';
-
-function unlinkIfThere(filepath, cb) {
-    fs.stat(filepath, function (err, stat) {
-        if (err) {
-            cb(null);
-            return;
-        }
-
-        if (stat)
-            fs.unlinkSync(filepath);
-
-        cb(null);
-    })
-}
-
-function clean(calllback) {
-    var ASYNC_OPS = 10,
-        end = nCallbacks(ASYNC_OPS, calllback);
-
-    rimraf(assetsDir + '/childbrowser', end)
-    rimraf(srcDir + '/ChildBrowser.bundle', end)
-    unlinkIfThere(jsPath, end)
-    unlinkIfThere(srcDir + '/ChildBrowserCommand.m', end)
-    unlinkIfThere(srcDir + '/ChildBrowserViewController.m', end)
-    unlinkIfThere(srcDir + '/ChildBrowserCommand.h', end)
-    unlinkIfThere(srcDir + '/ChildBrowserViewController.h', end)
-    unlinkIfThere(srcDir + '/ChildBrowserViewController.xib', end)
+exports.setUp = function(callback) {
+    shell.mkdir('-p', test_dir);
     
-    rimraf(srcDir + '/targetDir', end)
-    rimraf(srcDir + '/preserveDirs', end)
+    // copy the ios test project to a temp directory
+    shell.cp('-r', path.join(__dirname, 'projects'), test_dir);
 
-    moveProjFile('SampleApp/PhoneGap.orig.plist', config.projectPath, end);
-    moveProjFile('SampleApp.xcodeproj/project.orig.pbxproj', config.projectPath, end);
+    // copy the ios test plugin to a temp directory
+    shell.cp('-r', path.join(__dirname, 'plugins'), test_dir);
+
+    // parse the plugin.xml into an elementtree object
+    xml_text   = fs.readFileSync(xml_path, 'utf-8')
+    plugin_et  = new et.ElementTree(et.XML(xml_text));
+
+    callback();
 }
 
-exports.setUp = clean;
-exports.tearDown = clean;
+exports.tearDown = function(callback) {
+    // remove the temp files (projects and plugins)
+    shell.rm('-rf', test_dir);
+    callback();
+}
 
 exports['should move the js file'] = function (test) {
-    ios.installPlugin(config, plugin, function (err) {
-        test.ok(fs.statSync(jsPath))
-        test.done();
-    })
+    // run the platform-specific function
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+
+    var jsPath = path.join(test_dir, 'projects', 'ios', 'www', 'childbrowser.js');
+    test.ok(fs.existsSync(jsPath));
+    test.done();
 }
 
 exports['should move the source files'] = function (test) {
-    ios.installPlugin(config, plugin, function (err) {
-        test.ok(fs.statSync(srcDir + '/ChildBrowserCommand.m'))
-        test.ok(fs.statSync(srcDir + '/ChildBrowserViewController.m'))
-        test.ok(fs.statSync(srcDir + '/preserveDirs/PreserveDirsTest.m'))
-        test.ok(fs.statSync(srcDir + '/targetDir/TargetDirTest.m'))
-        test.done();
-    })
+    // run the platform-specific function
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+
+    test.ok(fs.existsSync(srcDir + '/ChildBrowserCommand.m'))
+    test.ok(fs.existsSync(srcDir + '/ChildBrowserViewController.m'))
+    test.ok(fs.existsSync(srcDir + '/preserveDirs/PreserveDirsTest.m'))
+    test.ok(fs.existsSync(srcDir + '/targetDir/TargetDirTest.m'))
+    test.done();
 }
 
 exports['should move the header files'] = function (test) {
-    ios.installPlugin(config, plugin, function (err) {
-        test.ok(fs.statSync(srcDir + '/ChildBrowserCommand.h'))
-        test.ok(fs.statSync(srcDir + '/ChildBrowserViewController.h'))
-        test.ok(fs.statSync(srcDir + '/preserveDirs/PreserveDirsTest.h'))
-        test.ok(fs.statSync(srcDir + '/targetDir/TargetDirTest.h'))
-        test.done();
-    })
+    // run the platform-specific function
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+
+    test.ok(fs.statSync(srcDir + '/ChildBrowserCommand.h'));
+    test.ok(fs.statSync(srcDir + '/ChildBrowserViewController.h'));
+    test.ok(fs.statSync(srcDir + '/preserveDirs/PreserveDirsTest.h'));
+    test.ok(fs.statSync(srcDir + '/targetDir/TargetDirTest.h'));
+    test.done();
 }
 
 exports['should move the xib file'] = function (test) {
-    ios.installPlugin(config, plugin, function (err) {
-        test.ok(fs.statSync(srcDir + '/ChildBrowserViewController.xib'))
-        test.done();
-    })
+    // run the platform-specific function
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+
+    test.ok(fs.statSync(srcDir + '/ChildBrowserViewController.xib'));
+    test.done();
 }
 
 exports['should move the bundle'] = function (test) {
-    ios.installPlugin(config, plugin, function (err) {
-        var bundle = fs.statSync(srcDir + '/ChildBrowser.bundle');
+    // run the platform-specific function
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
 
-        test.ok(bundle.isDirectory())
-        test.done();
-    })
+    var bundle = fs.statSync(srcDir + '/ChildBrowser.bundle');
+
+    test.ok(bundle.isDirectory());
+    test.done();
 }
 
+
 exports['should edit PhoneGap.plist'] = function (test) {
-    ios.installPlugin(config, plugin, function (err) {
-        var plistPath = config.projectPath + '/SampleApp/PhoneGap.plist';
-        plist.parseFile(plistPath, function (err, obj) {
+    // run the platform-specific function
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
 
-            test.equal(obj.Plugins['com.phonegap.plugins.childbrowser'],
-                'ChildBrowserCommand');
-                
-            test.equal(obj.ExternalHosts.length, 2)    
-            test.equal(obj.ExternalHosts[0], "build.phonegap.com")
-            test.equal(obj.ExternalHosts[1], "s3.amazonaws.com")
+    var plistPath = test_project_dir + '/SampleApp/PhoneGap.plist';
+    var obj = plist.parseFileSync(plistPath);
 
-            test.done();
-        });
-    })
+    test.equal(obj.Plugins['com.phonegap.plugins.childbrowser'],
+        'ChildBrowserCommand');
+        
+    test.equal(obj.ExternalHosts.length, 2)    
+    test.equal(obj.ExternalHosts[0], "build.phonegap.com")
+    test.equal(obj.ExternalHosts[1], "s3.amazonaws.com")
+
+    test.done();
 }
 
 exports['should edit the pbxproj file'] = function (test) {
-    ios.installPlugin(config, plugin, function (err) {
-        var projPath = config.projectPath + '/SampleApp.xcodeproj/project.pbxproj';
+    // run the platform-specific function
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
 
-        xcode.project(projPath).parse(function (err, obj) {
-            var fileRefSection = obj.project.objects['PBXFileReference'],
-                fileRefLength = Object.keys(fileRefSection).length,
-                EXPECTED_TOTAL_REFERENCES = 92; // magic number ahoy!
+    var projPath = test_project_dir + '/SampleApp.xcodeproj/project.pbxproj';
 
-            test.equal(fileRefLength, EXPECTED_TOTAL_REFERENCES);
-            test.done();
-        })
-    });
+    obj = xcode.project(projPath).parseSync();
+    var fileRefSection = obj.hash.project.objects['PBXFileReference'],
+        fileRefLength = Object.keys(fileRefSection).length,
+        EXPECTED_TOTAL_REFERENCES = 92; // magic number ahoy!
+
+    test.equal(fileRefLength, EXPECTED_TOTAL_REFERENCES);
+    test.done();
 }
 
 exports['should add the framework references to the pbxproj file'] = function (test) {
-    ios.installPlugin(config, plugin, function (err) {
-        var projPath = config.projectPath + '/SampleApp.xcodeproj/project.pbxproj',
-            projContents = fs.readFileSync(projPath, 'utf8'),
-            projLines = projContents.split("\n"),
-            references;
+    // run the platform-specific function
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    var projPath = test_project_dir + '/SampleApp.xcodeproj/project.pbxproj',
+        projContents = fs.readFileSync(projPath, 'utf8'),
+        projLines = projContents.split("\n"),
+        references;
 
-        references = projLines.filter(function (line) {
-            return !!(line.match("libsqlite3.dylib"));
-        })
+    references = projLines.filter(function (line) {
+        return !!(line.match("libsqlite3.dylib"));
+    })
 
-        // should be four libsqlite3 reference lines added
-        // pretty low-rent test eh
-        test.equal(references.length, 4);
-        test.done();
-    });
+    // should be four libsqlite3 reference lines added
+    // pretty low-rent test eh
+    test.equal(references.length, 4);
+    test.done();
 }

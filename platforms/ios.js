@@ -1,272 +1,178 @@
-var path = require('path'),
-    mkdirp = require('mkdirp'),
-    rimraf = require('rimraf'),
-    fs = require('fs'),
-    glob = require('glob'),
-    xcode = require('xcode'),
-    plist = require('plist'),
-    nCallbacks = require('../util/ncallbacks'),
-    asyncCopy = require('../util/asyncCopy'),
-    assetsDir = 'www'; // relative path to project's web assets
+var path = require('path')
+  , fs = require('fs')
+  , glob = require('glob')
+  , et = require('elementtree')
+  , xcode = require('xcode')
+  , plist = require('plist')
+  , bplist = require('bplist-parser')
+  , shell = require('shelljs')
+  , assetsDir = 'www';    // relative path to project's web assets
 
-exports.installPlugin = function (config, plugin, callback) {
-    function prepare(then) {
-        var store = {},
-            end = nCallbacks(2, function (err) {
-                if (err) throw err;
+exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
+    var plugin_id = plugin_et._root.attrib['id']
+      , version = plugin_et._root.attrib['version']
+      , external_hosts = []
+      , i = 0
+      , matched;
 
-                else
-                    then(store.pbxPath, store.xcodeproj, store.plistPath,
-                        store.plist, store.pluginsDir);
-            });
+    // grab and parse pbxproj
+    var files = glob.sync(project_dir + '/**/project.pbxproj');
+    
+    if (!files.length) throw "does not appear to be an xcode project";
+    var pbxPath = files[0];
 
-        // grab and parse pbxproj
-        glob(config.projectPath + '/**/project.pbxproj', function (err, files) {
-            if (!files.length) throw "does not appear to be an xcode project";
+    var xcodeproj = xcode.project(files[0]);
+    xcodeproj.parseSync();
 
-            store.pbxPath = files[0];
-            store.xcodeproj = xcode.project(files[0]);
-            store.xcodeproj.parse(end);
-        });
+    // grab and parse plist file
+    files = glob.sync(project_dir + '/**/{PhoneGap,Cordova}.plist');
 
-        // grab and parse plist file
-        glob(config.projectPath + '/**/{PhoneGap,Cordova}.plist', function (err, files) {
-            if (!files.length) throw "does not appear to be a PhoneGap project";
+    if (!files.length) throw "does not appear to be a PhoneGap project";
 
-            files = files.filter(function (val) {
-                return !(/^build\//.test(val))
-            });
+    files = files.filter(function (val) {
+        return !(/^build\//.test(val));
+    });
 
-            store.plistPath = files[0];
-            store.pluginsDir = path.resolve(files[0], '..', 'Plugins');
+    var plistPath = files[0];
+    var pluginsDir = path.resolve(files[0], '..', 'Plugins');
 
-            plist.parseFile(store.plistPath, function (err, obj) {
-                store.plist = obj;
-                end();
-            });
-        });
+    // determine if this is a binary or ascii plist and choose the parser
+    // this is temporary until binary support is added to node-plist
+    if( isBinaryPlist(plistPath) ) {
+        pl = bplist;
+    } else {
+        pl = plist; 
     }
 
-    prepare(function (pbxPath, xcodeproj, plistPath, plistObj, pluginsDir) {
-        var assets = plugin.xmlDoc.findall('./asset'),
-            hosts = plugin.xmlDoc.findall('./access'),
-            platformTag = plugin.xmlDoc.find('./platform[@name="ios"]'),
-            sourceFiles = platformTag.findall('./source-file'),
-            headerFiles = platformTag.findall('./header-file'),
-            resourceFiles = platformTag.findall('./resource-file'),
-            frameworks = platformTag.findall('./framework'),
-            plistEle = platformTag.find('./plugins-plist'),
+    var plistObj = pl.parseFileSync(plistPath);
 
-            callbackCount = 0, end;
+    var assets = plugin_et.findall('./asset'),
+        hosts = plugin_et.findall('./access'),
+        platformTag = plugin_et.find('./platform[@name="ios"]'),
+        sourceFiles = platformTag.findall('./source-file'),
+        headerFiles = platformTag.findall('./header-file'),
+        resourceFiles = platformTag.findall('./resource-file'),
+        frameworks = platformTag.findall('./framework'),
+        plistEle = platformTag.find('./plugins-plist');
 
-        // callback for every file/dir to add
-        callbackCount += assets.length;
-        callbackCount += sourceFiles.length;
-        callbackCount += headerFiles.length;
-        callbackCount += resourceFiles.length;
-        // adding framework is sync, so don't add that
-        callbackCount++; // for writing the plist file
-        callbackCount++; // for writing the pbxproj file
+    // move asset files into www
+    assets.forEach(function (asset) {
+        var srcPath = path.resolve(
+                        plugin_dir, asset.attrib['src']);
 
-        end = nCallbacks(callbackCount, callback);
-
-        // move asset files into www
-        assets.forEach(function (asset) {
-            var srcPath = path.resolve(
-                            config.pluginPath, asset.attrib['src']);
-
-            var targetPath = path.resolve(
-                                config.projectPath,
-                                assetsDir, asset.attrib['target']);
-
-            asyncCopy(srcPath, targetPath, end);
-        });
-
-        // move native files (source/header/resource)
-        sourceFiles.forEach(function (sourceFile) {
-            var src = sourceFile.attrib['src'],
-                srcFile = path.resolve(config.pluginPath, 'src/ios', src),
-                targetDir = path.resolve(pluginsDir, getRelativeDir(sourceFile)),
-                destFile = path.resolve(targetDir, path.basename(src));
-                
-            xcodeproj.addSourceFile('Plugins/' + path.relative(pluginsDir, destFile));
-
-            mkdirp(targetDir, function (err) {
-                asyncCopy(srcFile, destFile, end);
-            })
-        })
-
-        headerFiles.forEach(function (headerFile) {
-            var src = headerFile.attrib['src'],
-                srcFile = path.resolve(config.pluginPath, 'src/ios', src),
-                targetDir = path.resolve(pluginsDir, getRelativeDir(headerFile)),
-                destFile = path.resolve(targetDir, path.basename(src));
-                
-            xcodeproj.addHeaderFile('Plugins/' + path.relative(pluginsDir, destFile));
-            
-            mkdirp(targetDir, function (err) {
-                asyncCopy(srcFile, destFile, end);
-            })
-        })
-
-        resourceFiles.forEach(function (resource) {
-            var src = resource.attrib['src'],
-                srcFile = path.resolve(config.pluginPath, 'src/ios', src),
-                destFile = path.resolve(pluginsDir, path.basename(src));
-
-            xcodeproj.addResourceFile('Plugins/' + path.basename(src));
-
-            asyncCopy(srcFile, destFile, end);
-        })
-
-        frameworks.forEach(function (framework) {
-            var src = framework.attrib['src'];
-
-            xcodeproj.addFramework(src);
-        });
-
-        // weirdness with node-plist and top-level <plist>
-        if (plistObj[0]) {
-            plistObj = plistObj[0];
+        var targetPath = path.resolve(
+                            project_dir,
+                            assetsDir, asset.attrib['target']);
+        shell.mkdir('-p', targetPath);
+        if (action == 'install') {
+            shell.cp('-r', srcPath, targetPath);
+        } else {
+            shell.rm('-rf', targetPath);
         }
+    });
 
+    // move native files (source/header/resource)
+    sourceFiles.forEach(function (sourceFile) {
+        var src = sourceFile.attrib['src'],
+            srcFile = path.resolve(plugin_dir, 'src/ios', src),
+            targetDir = path.resolve(pluginsDir, getRelativeDir(sourceFile)),
+            destFile = path.resolve(targetDir, path.basename(src));
+         
+        if (action == 'install') {
+            xcodeproj.addSourceFile('Plugins/' + path.relative(pluginsDir, destFile));
+            shell.mkdir('-p', targetDir);
+            shell.cp(srcFile, destFile);
+        } else {
+            xcodeproj.removeSourceFile('Plugins/' + path.basename(src));   
+            if(fs.existsSync(destFile))
+                fs.unlinkSync(destFile);
+            shell.rm('-rf', targetDir);    
+        }
+    });
+
+    headerFiles.forEach(function (headerFile) {
+        var src = headerFile.attrib['src'],
+            srcFile = path.resolve(plugin_dir, 'src/ios', src),
+            targetDir = path.resolve(pluginsDir, getRelativeDir(headerFile)),
+            destFile = path.resolve(targetDir, path.basename(src));
+         
+        if (action == 'install') {     
+            xcodeproj.addHeaderFile('Plugins/' + path.relative(pluginsDir, destFile));
+            shell.mkdir('-p', targetDir);
+            shell.cp(srcFile, destFile);
+        } else {
+            xcodeproj.removeHeaderFile('Plugins/' + path.basename(src));
+            if(fs.existsSync(destFile))
+                fs.unlinkSync(destFile);
+            shell.rm('-rf', targetDir);
+        }
+    });
+
+    resourceFiles.forEach(function (resource) {
+        var src = resource.attrib['src'],
+            srcFile = path.resolve(plugin_dir, 'src/ios', src),
+            destFile = path.resolve(pluginsDir, path.basename(src));
+
+        if (action == 'install') {
+            xcodeproj.addResourceFile('Plugins/' + path.basename(src));
+            var st = fs.statSync(srcFile);    
+            if (st.isDirectory()) {
+                shell.cp('-R', srcFile, pluginsDir);
+            } else {
+                shell.cp(srcFile, destFile);
+            }
+        } else {
+            xcodeproj.removeResourceFile('Plugins/' + path.basename(src));
+            shell.rm('-rf', destFile);
+        }
+    });
+
+    frameworks.forEach(function (framework) {
+        var src = framework.attrib['src'];
+
+        if (action == 'install') {
+            xcodeproj.addFramework(src);
+        } else {
+            xcodeproj.removeFramework(src);
+        }
+    });
+
+    if (action == 'install') {
         // add hosts to whitelist (ExternalHosts) in plist
         hosts.forEach(function(host) {
             plistObj.ExternalHosts.push(host.attrib['origin']);
         });
-        
+
         // add plugin to plist
         plistObj.Plugins[plistEle.attrib['key']] = plistEle.attrib['string'];
-        
-        // write out plist
-        fs.writeFile(plistPath, plist.stringify(plistObj), end);
-
-        // write out xcodeproj file
-        fs.writeFile(pbxPath, xcodeproj.writeSync(), end);
-    });
-}
-
-exports.uninstallPlugin = function (config, plugin, callback) {
-    function prepare(then) {
-        var store = {},
-            end = nCallbacks(2, function (err) {
-                if (err) throw err;
-
-                else
-                    then(store.pbxPath, store.xcodeproj, store.plistPath,
-                        store.plist, store.pluginsDir);
+    } else {
+        // remove hosts from whitelist (ExternalHosts) in plist
+        // check each entry in external hosts, only add it to the plist if
+        // it's not an entry added by this plugin 
+        for(i=0; i < plistObj.ExternalHosts.length;i++) {
+            matched = false;
+            hosts.forEach(function(host) {
+                if(host === plistObj.ExternalHosts[i])
+                {
+                    matched = true;
+                }
             });
-
-        // grab and parse pbxproj
-        glob(config.projectPath + '/**/project.pbxproj', function (err, files) {
-            if (!files.length) throw "does not appear to be an xcode project";
-
-            store.pbxPath = files[0];
-            store.xcodeproj = xcode.project(files[0]);
-            store.xcodeproj.parse(end);
-        });
-
-        // grab and parse plist file
-        glob(config.projectPath + '/**/{PhoneGap,Cordova}.plist', function (err, files) {
-            if (!files.length) throw "does not appear to be a PhoneGap project";
-
-            files = files.filter(function (val) {
-                return !(/^build\//.test(val))
-            });
-
-            store.plistPath = files[0];
-            store.pluginsDir = path.resolve(files[0], '..', 'Plugins');
-
-            plist.parseFile(store.plistPath, function (err, obj) {
-                store.plist = obj;
-                end();
-            });
-        });
-    }
-
-    prepare(function (pbxPath, xcodeproj, plistPath, plistObj, pluginsDir) {
-        var assets = plugin.xmlDoc.findall('./asset'),
-            platformTag = plugin.xmlDoc.find('./platform[@name="ios"]'),
-            sourceFiles = platformTag.findall('./source-file'),
-            headerFiles = platformTag.findall('./header-file'),
-            resourceFiles = platformTag.findall('./resource-file'),
-            frameworks = platformTag.findall('./framework'),
-            plistEle = platformTag.find('./plugins-plist'),
-
-            callbackCount = 0, end;
-
-        // callback for every file/dir to add
-        callbackCount += assets.length;
-        callbackCount += sourceFiles.length;
-        callbackCount += headerFiles.length;
-        callbackCount += resourceFiles.length;
-        // adding framework is sync, so don't add that
-        callbackCount++; // for writing the plist file
-        callbackCount++; // for writing the pbxproj file
-
-        end = nCallbacks(callbackCount, callback);
-
-        // move asset files into www
-        assets.forEach(function (asset) {
-            var targetPath = path.resolve(
-                                config.projectPath,
-                                assetsDir, asset.attrib['target']);
-
-            rimraf(targetPath, end);
-        });
-
-        // move native files (source/header/resource)
-        sourceFiles.forEach(function (sourceFile) {
-            var src = sourceFile.attrib['src'],
-                targetDir = path.resolve(pluginsDir, getRelativeDir(sourceFile)),
-                destFile = path.resolve(targetDir, path.basename(src));
-
-            xcodeproj.removeSourceFile('Plugins/' + path.basename(src));
-            
-            fs.unlink(destFile, function(err) {
-                rimraf(targetDir, end);    
-            });
-        })
-
-        headerFiles.forEach(function (headerFile) {
-            var src = headerFile.attrib['src'],
-                targetDir = path.resolve(pluginsDir, getRelativeDir(headerFile)),
-                destFile = path.resolve(targetDir, path.basename(src));
-
-            xcodeproj.removeHeaderFile('Plugins/' + path.basename(src));
-
-            fs.unlink(destFile, function(err) {
-                rimraf(targetDir, end);    
-            });
-        })
-
-        resourceFiles.forEach(function (resource) {
-            var src = resource.attrib['src'],
-                destFile = path.resolve(pluginsDir, path.basename(src));
-
-            xcodeproj.removeResourceFile('Plugins/' + path.basename(src));
-
-            rimraf(destFile, end);
-        })
-
-        frameworks.forEach(function (framework) {
-            var src = framework.attrib['src'];
-
-            xcodeproj.removeFramework(src);
-        });
-
-        // weirdness with node-plist and top-level <plist>
-        if (plistObj[0]) {
-            plistObj = plistObj[0];
+            if (!matched) {
+                external_hosts.push(plistObj.ExternalHosts[i]);
+            }
         }
 
-        // write out plist
-        delete plistObj.Plugins[plistEle.attrib['key']];
-        fs.writeFile(plistPath, plist.stringify(plistObj), end);
+        // filtered the external hosts entries out, copy result
+        plistObj.ExternalHosts = external_hosts;
 
-        // write out xcodeproj file
-        fs.writeFile(pbxPath, xcodeproj.writeSync(), end);
-    });
+        delete plistObj.Plugins[plistEle.attrib['key']];
+    }
+
+    // write out plist
+    fs.writeFileSync(plistPath, plist.build(plistObj));
+
+    // write out xcodeproj file
+    fs.writeFileSync(pbxPath, xcodeproj.writeSync());
 }
 
 function getRelativeDir(file) {
@@ -282,3 +188,11 @@ function getRelativeDir(file) {
     }
 }
 
+// determine if a plist file is binary
+function isBinaryPlist(filename) {
+    // I wish there was a synchronous way to read only the first 6 bytes of a
+    // file. This is wasteful :/ 
+    var buf = '' + fs.readFileSync(filename, 'utf8');
+    // binary plists start with a magic header, "bplist"
+    return buf.substring(0, 6) === 'bplist';
+}

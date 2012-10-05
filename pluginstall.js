@@ -1,60 +1,90 @@
+#!/usr/bin/env node
+
 // copyright (c) 2012 Andrew Lunny, Adobe Systems
-var fs = require('fs'),
-    path = require('path'),
-    et = require('elementtree'),
-    platforms = require('./platforms'),
-    platformModules = {
-        'android': require('./platforms/android'),
+var shell = require('shelljs')
+  , osenv = require('osenv')
+  , fs = require('fs')
+  , path = require('path')
+  , package = require(path.join(__dirname, 'package'))
+  , et = require('elementtree')
+  , nopt = require('nopt')
+  , platform_modules = {
+        //'android': require('./platforms/android'),
         'ios': require('./platforms/ios'),
-        'www': require('./platforms/www')
+        //'www': require('./platforms/www')
+    };
+
+var known_opts = { 'platform' : [ 'ios', 'android', 'www' ]
+            , 'project' : path
+            , 'plugin' : path
+            , 'remove' : Boolean
+            , 'v' : Boolean
+            , 'debug' : Boolean
+            };
+
+var cli_opts = nopt(known_opts);
+
+// only dump stack traces in debug mode, otherwise show error message and exit
+if (!cli_opts.debug) {
+    // provide clean output on exceptions rather than dumping a stack trace
+    process.on('uncaughtException', function(error){
+        console.error(error + '\n');
+        process.exit(1);
+    });
+}
+
+if (cli_opts.v) {
+    console.log(package.name + ' version ' + package.version);
+}
+else if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
+    printUsage();
+}
+else if (cli_opts.remove) {
+    handlePlugin('uninstall', cli_opts.platform, cli_opts.project, cli_opts.plugin);
+}
+else {
+    handlePlugin('install', cli_opts.platform, cli_opts.project, cli_opts.plugin);
+}
+
+function printUsage() {
+    platforms = known_opts.platform.join('|');
+    console.log('Usage\n---------');
+    console.log('Add a plugin:\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --plugin <directory>\n');
+    console.log('Remove a plugin:\n\t' + package.name + ' --remove --platform <'+ platforms +'> --project <directory> --plugin <directory>\n');
+} 
+
+function handlePlugin(action, platform, project_dir, plugin_dir) {
+    var plugin_git_url, plugin_xml_path;
+
+    // clone from git repository
+    if(plugin_dir.indexOf('https://') == 0 || plugin_dir.indexOf('git://') == 0) {
+        if(!shell.which('git')) {
+            throw new Error('git command line is not installed');
+        }
+        // use osenv to get a temp directory in a portable way
+        plugin_git_url = plugin_dir; 
+        plugin_dir = path.join(osenv.tmpdir(), 'plugin');
+
+        if(shell.exec('git clone ' + plugin_url + ' ' + plugin_dir).code != 0) {
+            throw new Error('failed to get the plugin via git URL', plugin_url);
+        }
     }
 
-// check arguments and resolve file paths
-exports.init = function (platform, projectPath, pluginPath) {
-    var projectPath = fs.realpathSync(projectPath),
-        pluginPath = fs.realpathSync(pluginPath);
+    plugin_xml_path = path.join(plugin_dir, 'plugin.xml');
+    if (!fs.existsSync(plugin_xml_path)) {
+        throw new Error(action + ' failed. "' + plugin_xml_path + '" not found');
+    }
 
-    if (platforms.indexOf(platform) < 0)
+    if (!platform_modules[platform])
         throw { name: "Platform Error", message: platform + " not supported" }
 
-    return {
-        platform:    platform,
-        projectPath: projectPath,
-        pluginPath:  pluginPath
-    }
-}
+    // check arguments and resolve file paths
+    var xml_path     = path.join(plugin_dir, 'plugin.xml')
+      , xml_text     = fs.readFileSync(xml_path, 'utf-8')
+      , plugin_et   = new et.ElementTree(et.XML(xml_text));
 
-exports.parseXml = function (config) {
-    var xmlPath     = path.join(config.pluginPath, 'plugin.xml'),
-        xmlText     = fs.readFileSync(xmlPath, 'utf-8'),
-        xmlDoc      = new et.ElementTree(et.XML(xmlText)),
-        rootAttr    = xmlDoc._root.attrib,
-        supportedPlatforms;
+    // run the platform-specific function
+    platform_modules[platform].handlePlugin(action, project_dir, plugin_dir, plugin_et);
 
-    supportedPlatforms = xmlDoc.findall('platform').map(function (platform) {
-        return platform.attrib['name'];
-    });
-
-    return {
-        xmlDoc: xmlDoc,
-        _id: rootAttr['id'],
-        version: rootAttr['version'],
-        platforms: supportedPlatforms
-    };
-}
-
-// should move all asset and source files into the right places
-// and then edit all appropriate files (manifests and the like)
-exports.installPlugin = function (config, plugin, callback) {
-    // get the platform-specific fn
-    var platformInstall = platformModules[config.platform].installPlugin;
-
-    return platformInstall(config, plugin, callback)
-}
-
-exports.uninstallPlugin = function (config, plugin, callback) {
-    // get the platform-specific fn
-    var platformInstall = platformModules[config.platform].uninstallPlugin;
-
-    return platformInstall(config, plugin, callback)
+    console.log('plugin ' + action + 'ed');
 }

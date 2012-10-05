@@ -1,41 +1,29 @@
 var fs = require('../util/fs'), // use existsSync in 0.6.x
     path = require('path'),
-    mkdirp = require('mkdirp'),
+    shell = require('shelljs'),
     et = require('elementtree'),
-    rimraf = require('rimraf'),
-
-    nCallbacks = require('../util/ncallbacks'),
-    asyncCopy = require('../util/asyncCopy'),
     equalNodes = require('../util/equalNodes'),
     getConfigChanges = require('../util/config-changes'),
 
     assetsDir = 'assets/www', // relative path to project's web assets
-    sourceDir = 'src',
-    counter = {};
+    sourceDir = 'src';
 
-exports.installPlugin = function (config, plugin, callback) {
+exports.handlePlugin = function (action, config, plugin) {
     // look for assets in the plugin 
     var assets = plugin.xmlDoc.findall('./asset'),
         platformTag = plugin.xmlDoc.find('./platform[@name="android"]'),
         sourceFiles = platformTag.findall('./source-file'),
         libFiles = platformTag.findall('./library-file'),
         PACKAGE_NAME = packageName(config),
-
-        configChanges = getConfigChanges(platformTag),
-
-        callbackCount = assets.length + sourceFiles.length + libFiles.length,
-        endCallback;
+        configChanges = getConfigChanges(platformTag);
 
     // find which config-files we're interested in
     Object.keys(configChanges).forEach(function (configFile) {
-        if (fs.existsSync(path.resolve(config.projectPath, configFile))) {
-            callbackCount++;
-        } else {
+        if (!fs.existsSync(path.resolve(config.projectPath, configFile))) {
             delete configChanges[configFile];
         }
     });
-    endCallback = nCallbacks(callbackCount, callback)
-
+    
     // move asset files
     assets.forEach(function (asset) {
         var srcPath = path.resolve(
