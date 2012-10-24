@@ -16,7 +16,8 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
       , matched;
 
     // grab and parse pbxproj
-    var files = glob.sync(project_dir + '/**/project.pbxproj');
+    // we don't want CordovaLib's xcode project
+    var files = glob.sync(project_dir + '/*.xcodeproj/project.pbxproj');
     
     if (!files.length) throw "does not appear to be an xcode project";
     var pbxPath = files[0];
