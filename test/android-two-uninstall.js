@@ -67,7 +67,12 @@ exports['should remove the src file'] = function (test) {
     test.ok(fs.statSync(javaPath));
 
     android.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
-    test.ok(!fs.existsSync(javaPath));
+    test.ok(fs.existsSync(path.resolve(test_dir + '/projects/android_two/src')));
+    test.ok(!fs.existsSync(path.resolve(javaPath)));
+    test.ok(!fs.existsSync(path.resolve(javaPath + '/..')));
+    test.ok(!fs.existsSync(path.resolve(javaPath + '/../..')));
+    test.ok(!fs.existsSync(path.resolve(javaPath + '/../../..')));
+    test.ok(!fs.existsSync(path.resolve(javaPath + '/../../../..')));
     test.done();
 }
 

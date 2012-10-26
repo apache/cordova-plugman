@@ -72,9 +72,15 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
         } else {
             fs.unlinkSync(destFile);
             // check if directory is empty
-            var files = fs.readdirSync(srcDir);
-            if(files.length == 0) {
-                shell.rm('-rf', srcDir);
+            var curDir = srcDir;
+            while(curDir !== project_dir + '/src') {
+                if(fs.readdirSync(curDir).length == 0) {
+                    fs.rmdirSync(curDir);
+                    curDir = path.resolve(curDir + '/..');
+                } else {
+                    // directory not empty...do nothing
+                    break;
+                }
             }
         }
     })
