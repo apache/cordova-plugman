@@ -65,7 +65,10 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
         var targetPath = path.resolve(
                             project_dir,
                             assetsDir, asset.attrib['target']);
-        shell.mkdir('-p', targetPath);
+        var stat = fs.statSync(srcPath);
+        if(stat.isDirectory()) {
+            shell.mkdir('-p', targetPath);
+        }
         if (action == 'install') {
             shell.cp('-r', srcPath, targetPath);
         } else {
