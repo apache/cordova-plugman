@@ -44,8 +44,11 @@ exports['should move the js file'] = function (test) {
     var jsPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'childbrowser.js');
 
     android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-    test.ok(fs.existsSync(jsPath));
-    test.done();
+    fs.stat(jsPath, function(err, stats) {
+        test.ok(!err);
+        test.ok(stats.isFile());
+        test.done();
+    });
 }
 
 exports['should move the directory'] = function (test) {

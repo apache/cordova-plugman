@@ -42,19 +42,14 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
 
         var stats = fs.statSync(srcPath);
         if (action == 'install') {
-            shell.mkdir('-p', targetPath);
             if(stats.isDirectory()) {
-                //console.log('copying', srcPath, path.join(project_dir, assetsDir));
+                shell.mkdir('-p', targetPath);
                 shell.cp('-R', srcPath, path.join(project_dir, assetsDir));
             } else {
                 shell.cp(srcPath, targetPath);
             }
         } else {
-            if(stats.isDirectory()) {
-                shell.rm('-rf', targetPath);
-            } else {
-                shell.rm('-rf', targetPath);
-            }
+            shell.rm('-rf', targetPath);
         }
     });
 
