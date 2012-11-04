@@ -76,6 +76,28 @@ exports['should remove the src file'] = function (test) {
     test.done();
 }
 
+exports['should not remove common package directories when two plugins share a package subname'] = function (test) {
+    
+    // setting up a DummyPlugin
+    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'DummyPlugin')
+    var dummy_xml_path = path.join(test_dir, 'plugins', 'DummyPlugin', 'plugin.xml')
+    dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
+
+    var javaPath = path.join(test_dir, 'projects', 'android_two', 'src', 'com', 'phonegap', 'plugins', 'childBrowser', 'ChildBrowser.java');
+
+    // installing two plugins that share some common package directory structure
+    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    android.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
+
+    // uninstalling DummyPlugin should not delete existing ChildBrowser package dir structure
+    android.handlePlugin('uninstall', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
+    
+    var stat = fs.statSync(javaPath);
+    test.ok(stat.isFile());
+
+    test.done();
+}
+
 exports['should remove ChildBrowser from config.xml'] = function (test) {
     android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
     android.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
