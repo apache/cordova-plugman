@@ -38,6 +38,17 @@ exports.tearDown = function(callback) {
     callback();
 }
 
+exports['should install webless plugin'] = function (test) {
+    
+    // setting up a DummyPlugin
+    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'WeblessPlugin')
+    var dummy_xml_path = path.join(test_dir, 'plugins', 'WeblessPlugin', 'plugin.xml')
+    dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
+
+    android.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
+
+    test.done();
+}
 
 exports['should move the js file'] = function (test) {
     var jsPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www', 'childbrowser.js');
