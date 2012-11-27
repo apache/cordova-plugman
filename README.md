@@ -1,4 +1,4 @@
-pluginstall
+plugman
 ===================
 
 A command line tool to distribute and package plugins for use with Apache Cordova, nee PhoneGap.
@@ -16,19 +16,19 @@ This document defines tool usage and the plugin format specification. This is no
 
 Adding plugins:
 
-    pluginstall --platform PLATFORM --project PROJECT-PATH --plugin PLUGIN-PATH
+    plugman --platform PLATFORM --project PROJECT-PATH --plugin PLUGIN-PATH
 
 Example:
 
-    pluginstall --platform android --project . --plugin ~/plugins/ChildBrowser
+    plugman --platform android --project . --plugin ~/plugins/ChildBrowser
 
 Removing plugins:
  
-    pluginstall --platform PLATFORM --project PROJECT-PATH --plugin PLUGIN-PATH --remove
+    plugman --platform PLATFORM --project PROJECT-PATH --plugin PLUGIN-PATH --remove
 
 Example:
 
-    pluginstall --platform android --project . --plugin ~/plugins/ChildBrowser --remove
+    plugman --platform android --project . --plugin ~/plugins/ChildBrowser --remove
     
 ### Supported Platforms
 * iOS
@@ -40,8 +40,8 @@ Andrew Lunny's tamed plugins for ChildBrowser and PGSQLite will work but need to
 
 ## Development
 
-    git clone https://github.com/imhotep/pluginstall.git
-    cd pluginstall
+    git clone https://github.com/imhotep/plugman.git
+    cd plugman
     npm install -g
    
 
@@ -136,7 +136,7 @@ maintenance when the underlying platform is updated. A minimum of `>`, `>=`,
         <engine name="cordova" version="<1.8.1" />
     </engines>
 
-pluginstall will abort plugin installation if the target project does not meet the engine constraints.
+plugman will abort plugin installation if the target project does not meet the engine constraints.
 
 
 
@@ -320,7 +320,7 @@ series of capital letters, digits and underscores. For the above example, the
     <uses-permission
     android:name="$PACKAGE_NAME.permission.C2D_MESSAGE"/>
 
-pluginstall replaces variable references with the
+plugman replaces variable references with the
 correct value, if specified, or the empty string otherwise. The value of the
 variable reference may be detected (in this case, from the `AndroidManifest.xml`
 file, or specified by the user of the tool; the exact process is dependent on
@@ -335,7 +335,7 @@ the `CFBundleIdentifier` on iOS or the `package` attribute of the top-level
 `manifest` element in an `AndroidManifest.xml` file.
 
 ## Project Directory Structure
-TODO: show how the foo plugin example from above will have its files placed in a cordova project after running pluginstall
+TODO: show how the foo plugin example from above will have its files placed in a cordova project after running plugman
 
 ## Authors
 

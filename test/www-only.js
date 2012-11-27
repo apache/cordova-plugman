@@ -7,7 +7,7 @@ var fs = require('fs')
   , et = require('elementtree')
   , www = require(path.join(__dirname, '..', 'platforms', 'www'))
 
-  , test_dir = path.join(osenv.tmpdir(), 'test_pluginstall')
+  , test_dir = path.join(osenv.tmpdir(), 'test_plugman')
   , test_project_dir = path.join(test_dir, 'projects', 'www-only')
   , test_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
   , xml_path     = path.join(test_dir, 'plugins', 'ChildBrowser', 'plugin.xml')

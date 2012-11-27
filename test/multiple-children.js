@@ -6,7 +6,7 @@ var fs = require('fs')
   , shell = require('shelljs')
   , android = require(path.join(__dirname, '..', 'platforms', 'android'))
 
-  , test_dir = path.join(osenv.tmpdir(), 'test_pluginstall')
+  , test_dir = path.join(osenv.tmpdir(), 'test_plugman')
   , test_project_dir = path.join(test_dir, 'projects', 'multiple-children')
   , test_plugin_dir = path.join(test_dir, 'plugins', 'multiple-children')
   , xml_path     = path.join(test_dir, 'plugins', 'multiple-children', 'plugin.xml')
