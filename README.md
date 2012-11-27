@@ -301,7 +301,7 @@ on. Example:
 
     <framework src="libsqlite3.dylib" />
 
-Pluginstall identifies the framework through the `src` attribute and attempts to add the framework to the Cordova project, in the correct fashion for a given platform.
+plugman identifies the framework through the `src` attribute and attempts to add the framework to the Cordova project, in the correct fashion for a given platform.
 
 ## Variables
 
