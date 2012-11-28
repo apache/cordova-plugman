@@ -1,13 +1,13 @@
 {
   "author": "Andrew Lunny <alunny@gmail.com>",
-  "name": "pluginstall",
+  "name": "plugman",
   "description": "install/uninstall Cordova plugins",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "repository": {
     "type": "git",
-    "url": "git://github.com/alunny/pluginstall.git"
+    "url": "git://github.com/imhotep/plugman.git"
   },
-  "main": "pluginstall.js",
+  "main": "plugman.js",
   "engines": {
     "node": ">=0.6.7"
   },
@@ -24,7 +24,7 @@
   "devDependencies": {
     "nodeunit": "0.7.x"
   },
-  "bin" : { "pluginstall" : "./pluginstall.js" },
+  "bin" : { "pluginstall" : "./plugman.js" },
   "scripts": {
     "test": "nodeunit test"
   }
