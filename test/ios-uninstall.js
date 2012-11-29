@@ -39,6 +39,19 @@ exports.tearDown = function(callback) {
     callback();
 }
 
+exports['should remove webless plugin'] = function (test) {
+    
+    // setting up a DummyPlugin
+    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'WeblessPlugin')
+    var dummy_xml_path = path.join(test_dir, 'plugins', 'WeblessPlugin', 'plugin.xml')
+    var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
+
+    ios.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
+    ios.handlePlugin('uninstall', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
+
+    test.done();
+}
+
 exports['should remove the js file'] = function (test) {
     // run the platform-specific function
     ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
@@ -105,6 +118,31 @@ exports['should edit PhoneGap.plist'] = function (test) {
     test.equal(obj.ExternalHosts.length, 2)    
     test.equal(obj.ExternalHosts[0], "build.phonegap.com")
     test.equal(obj.ExternalHosts[1], "s3.amazonaws.com")
+
+    test.done();
+}
+
+exports['should edit config.xml'] = function (test) {
+    // setting up WebNotification (with config.xml) 
+    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'WebNotifications')
+    var dummy_xml_path = path.join(test_dir, 'plugins', 'WebNotifications', 'plugin.xml')
+    
+    // overriding some params
+    var project_dir = path.join(test_dir, 'projects', 'ios-config-xml')
+    var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
+
+    // run the platform-specific function
+    ios.handlePlugin('install', project_dir, dummy_plugin_dir, dummy_plugin_et);
+    
+    ios.handlePlugin('uninstall', project_dir, dummy_plugin_dir, dummy_plugin_et);
+    
+    var configXmlPath = path.join(project_dir, 'SampleApp', 'config.xml');
+    var pluginsTxt = fs.readFileSync(configXmlPath, 'utf-8'),
+        pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
+        expected = 'plugins/plugin[@name="WebNotifications"]' +
+                    '[@value="WebNotifications"]';
+
+    test.ok(!pluginsDoc.find(expected));
 
     test.done();
 }
