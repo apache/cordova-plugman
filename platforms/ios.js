@@ -6,56 +6,48 @@ var path = require('path')
   , plist = require('plist')
   , bplist = require('bplist-parser')
   , shell = require('shelljs')
+  , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'))
+  , getConfigChanges = require(path.join(__dirname, '..', 'util', 'config-changes'))
   , assetsDir = 'www';    // relative path to project's web assets
 
 exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
     var plugin_id = plugin_et._root.attrib['id']
       , version = plugin_et._root.attrib['version']
-      , external_hosts = []
       , i = 0
       , matched;
-
     // grab and parse pbxproj
     // we don't want CordovaLib's xcode project
-    var files = glob.sync(project_dir + '/*.xcodeproj/project.pbxproj');
+    var project_files = glob.sync(project_dir + '/*.xcodeproj/project.pbxproj');
     
-    if (!files.length) throw "does not appear to be an xcode project";
-    var pbxPath = files[0];
+    if (!project_files.length) throw "does not appear to be an xcode project";
+    var pbxPath = project_files[0];
 
-    var xcodeproj = xcode.project(files[0]);
+    var xcodeproj = xcode.project(project_files[0]);
     xcodeproj.parseSync();
 
-    // grab and parse plist file
-    files = glob.sync(project_dir + '/**/{PhoneGap,Cordova}.plist');
+    // grab and parse plist file or config.xml
+    var config_files = (glob.sync(project_dir + '/**/{PhoneGap,Cordova}.plist').length == 0 ? 
+                        glob.sync(project_dir + '/**/config.xml') :
+                        glob.sync(project_dir + '/**/{PhoneGap,Cordova}.plist')
+                       );
 
-    if (!files.length) throw "does not appear to be a PhoneGap project";
+    if (!config_files.length) {
+        throw "does not appear to be a PhoneGap project";
+    }
 
-    files = files.filter(function (val) {
+    config_files = config_files.filter(function (val) {
         return !(/^build\//.test(val));
     });
 
-    var plistPath = files[0];
-    var pluginsDir = path.resolve(files[0], '..', 'Plugins');
-    var resourcesDir = path.resolve(files[0], '..', 'Resources');
-
-    // determine if this is a binary or ascii plist and choose the parser
-    // this is temporary until binary support is added to node-plist
-    if( isBinaryPlist(plistPath) ) {
-        pl = bplist;
-    } else {
-        pl = plist; 
-    }
-
-    var plistObj = pl.parseFileSync(plistPath);
+    var pluginsDir = path.resolve(config_files[0], '..', 'Plugins');
+    var resourcesDir = path.resolve(config_files[0], '..', 'Resources');
 
     var assets = plugin_et.findall('./asset'),
-        hosts = plugin_et.findall('./access'),
         platformTag = plugin_et.find('./platform[@name="ios"]'),
         sourceFiles = platformTag.findall('./source-file'),
         headerFiles = platformTag.findall('./header-file'),
         resourceFiles = platformTag.findall('./resource-file'),
-        frameworks = platformTag.findall('./framework'),
-        plistEle = platformTag.find('./plugins-plist');
+        frameworks = platformTag.findall('./framework');
 
     // move asset files into www
     assets.forEach(function (asset) {
@@ -120,7 +112,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
 
         if (action == 'install') {
             xcodeproj.addResourceFile('Resources/' + path.basename(src));
-            var st = fs.statSync(srcFile);    
+            var st = fs.statSync(srcFile);
             if (st.isDirectory()) {
                 shell.cp('-R', srcFile, resourcesDir);
             } else {
@@ -142,39 +134,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
         }
     });
 
-    if (action == 'install') {
-        // add hosts to whitelist (ExternalHosts) in plist
-        hosts.forEach(function(host) {
-            plistObj.ExternalHosts.push(host.attrib['origin']);
-        });
-
-        // add plugin to plist
-        plistObj.Plugins[plistEle.attrib['key']] = plistEle.attrib['string'];
-    } else {
-        // remove hosts from whitelist (ExternalHosts) in plist
-        // check each entry in external hosts, only add it to the plist if
-        // it's not an entry added by this plugin 
-        for(i=0; i < plistObj.ExternalHosts.length;i++) {
-            matched = false;
-            hosts.forEach(function(host) {
-                if(host === plistObj.ExternalHosts[i])
-                {
-                    matched = true;
-                }
-            });
-            if (!matched) {
-                external_hosts.push(plistObj.ExternalHosts[i]);
-            }
-        }
-
-        // filtered the external hosts entries out, copy result
-        plistObj.ExternalHosts = external_hosts;
-
-        delete plistObj.Plugins[plistEle.attrib['key']];
-    }
-
-    // write out plist
-    fs.writeFileSync(plistPath, plist.build(plistObj));
+    updateConfig(action, config_files[0], plugin_et);
 
     // write out xcodeproj file
     fs.writeFileSync(pbxPath, xcodeproj.writeSync());
@@ -200,4 +160,90 @@ function isBinaryPlist(filename) {
     var buf = '' + fs.readFileSync(filename, 'utf8');
     // binary plists start with a magic header, "bplist"
     return buf.substring(0, 6) === 'bplist';
+}
+
+function updatePlistFile(action, config_path, plugin_et) {
+    var hosts = plugin_et.findall('./access'),
+        platformTag = plugin_et.find('./platform[@name="ios"]'), // FIXME: can probably do better than this
+        plistEle = platformTag.find('./plugins-plist'),
+        external_hosts = [];
+
+    // determine if this is a binary or ascii plist and choose the parser
+    // this is temporary until binary support is added to node-plist
+    var pl = (isBinaryPlist(config_path) ? bplist : plist);
+
+    var plistObj = pl.parseFileSync(config_path);
+    
+    if (action == 'install') {
+        // add hosts to whitelist (ExternalHosts) in plist
+        hosts.forEach(function(host) {
+            plistObj.ExternalHosts.push(host.attrib['origin']);
+        });
+
+        // add plugin to plist
+        plistObj.Plugins[plistEle.attrib['key']] = plistEle.attrib['string'];
+    } else {
+        // remove hosts from whitelist (ExternalHosts) in plist
+        // check each entry in external hosts, only add it to the plist if
+        // it's not an entry added by this plugin 
+        for(i=0; i < plistObj.ExternalHosts.length;i++) {
+            matched = false;
+            hosts.forEach(function(host) {
+                if(host === plistObj.ExternalHosts[i]) {
+                    matched = true;
+                }
+            });
+            if (!matched) {
+                external_hosts.push(plistObj.ExternalHosts[i]);
+            }
+        }
+
+        // filtered the external hosts entries out, copy result
+        plistObj.ExternalHosts = external_hosts;
+
+        delete plistObj.Plugins[plistEle.attrib['key']];
+    }
+    
+    // write out plist
+    fs.writeFileSync(config_path, plist.build(plistObj));
+}
+
+function updateConfigXml(action, config_path, plugin_et) {
+    var hosts = plugin_et.findall('./access'),
+        platformTag = plugin_et.find('./platform[@name="ios"]'), // FIXME: can probably do better than this
+        plistEle = platformTag.find('./plugins-plist'), // TODO: use this for older that have plugins-plist
+        configChanges = getConfigChanges(platformTag),
+        pl,
+        external_hosts = [];
+    // edit configuration files
+    var xmlDoc = xml_helpers.parseElementtreeSync(config_path),
+        output;
+
+    configChanges[path.basename(config_path)].forEach(function (configNode) {
+        var selector = configNode.attrib["parent"],
+            children = configNode.findall('*');
+
+        if( action == 'install') {
+            if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
+                throw new Error('failed to add children to ' + filename);
+            }
+        } else {
+            if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
+                throw new Error('failed to remove children from' + filename);
+            }
+        }
+    });
+
+    output = xmlDoc.write({indent: 4});
+    fs.writeFileSync(config_path, output);
+
+}
+
+// updates plist file and/or config.xml
+function updateConfig(action, config_path, plugin_et) {
+    if(path.basename(config_path) == "config.xml") {
+        updateConfigXml(action, config_path, plugin_et);
+    } else {
+        updatePlistFile(action, config_path, plugin_et);
+    }
 }
