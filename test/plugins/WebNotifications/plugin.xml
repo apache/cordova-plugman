@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    id="com.phonegap.plugins.webnotifications"
+    version="0.0.1">
+
+    <name>Web Notifications</name>
+
+    <asset src="www/webnotifications.js" target="webnotifications.js" />
+
+	<access origin="build.phonegap.com" />
+	<access origin="s3.amazonaws.com" />
+	
+    <!-- ios -->
+    <platform name="ios">
+        <config-file target="config.xml" parent="/cordova/plugins">
+            <plugin name="WebNotifications"
+                value="WebNotifications"/>
+        </config-file>
+
+        <header-file src="WebNotifications.h" />
+
+        <source-file src="WebNotifications.m" />
+
+    </platform>
+</plugin>
