@@ -24,7 +24,7 @@
   "devDependencies": {
     "nodeunit": "0.7.x"
   },
-  "bin" : { "pluginstall" : "./plugman.js" },
+  "bin" : { "plugman" : "./plugman.js" },
   "scripts": {
     "test": "nodeunit test"
   }
