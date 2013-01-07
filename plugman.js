@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
-// copyright (c) 2012 Andrew Lunny, Adobe Systems
-var shell = require('shelljs')
-  , osenv = require('osenv')
-  , fs = require('fs')
+// copyright (c) 2013 Andrew Lunny, Adobe Systems
+var fs = require('fs')
   , path = require('path')
+  , url = require('url')
   , package = require(path.join(__dirname, 'package'))
   , et = require('elementtree')
   , nopt = require('nopt')
+  , plugins = require('./util/plugins')
   , platform_modules = {
         'android': require('./platforms/android'),
         'ios': require('./platforms/ios'),
@@ -16,7 +16,7 @@ var shell = require('shelljs')
 
 var known_opts = { 'platform' : [ 'ios', 'android', 'www' ]
             , 'project' : path
-            , 'plugin' : path
+            , 'plugin' : [String, path, url]
             , 'remove' : Boolean
             , 'v' : Boolean
             , 'debug' : Boolean
@@ -51,40 +51,48 @@ function printUsage() {
     console.log('Usage\n---------');
     console.log('Add a plugin:\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --plugin <directory>\n');
     console.log('Remove a plugin:\n\t' + package.name + ' --remove --platform <'+ platforms +'> --project <directory> --plugin <directory>\n');
-} 
+}
+
+function execAction(action, platform, project_dir, plugin_dir) {
+    var xml_path     = path.join(plugin_dir, 'plugin.xml')
+      , xml_text     = fs.readFileSync(xml_path, 'utf-8')
+      , plugin_et   = new et.ElementTree(et.XML(xml_text));
+    
+    // run the platform-specific function
+    platform_modules[platform].handlePlugin(action, project_dir, plugin_dir, plugin_et);
+    
+    console.log('plugin ' + action + 'ed');
+}
 
 function handlePlugin(action, platform, project_dir, plugin_dir) {
-    var plugin_git_url, plugin_xml_path;
+    var plugin_xml_path, async = false;
 
     // clone from git repository
     if(plugin_dir.indexOf('https://') == 0 || plugin_dir.indexOf('git://') == 0) {
-        if(!shell.which('git')) {
-            throw new Error('git command line is not installed');
-        }
-        // use osenv to get a temp directory in a portable way
-        plugin_git_url = plugin_dir; 
-        plugin_dir = path.join(osenv.tmpdir(), 'plugin');
-
-        if(shell.exec('git clone ' + plugin_url + ' ' + plugin_dir).code != 0) {
-            throw new Error('failed to get the plugin via git URL', plugin_url);
-        }
+        plugin_dir = plugins.clonePluginGitRepo(plugin_dir);
     }
 
     plugin_xml_path = path.join(plugin_dir, 'plugin.xml');
     if (!fs.existsSync(plugin_xml_path)) {
-        throw new Error(action + ' failed. "' + plugin_xml_path + '" not found');
+        // try querying the plugin database
+        async = true;
+        plugins.getPluginInfo(plugin_dir,
+            function(plugin_dir) {
+                execAction(action, platform, project_dir, plugin_dir);
+            },
+            function(e) {
+                throw new Error(action + ' failed. "' + plugin_xml_path + '" not found');
+            }
+        );
     }
 
-    if (!platform_modules[platform])
+    if (!platform_modules[platform]) {
         throw { name: "Platform Error", message: platform + " not supported" }
+    }
 
     // check arguments and resolve file paths
-    var xml_path     = path.join(plugin_dir, 'plugin.xml')
-      , xml_text     = fs.readFileSync(xml_path, 'utf-8')
-      , plugin_et   = new et.ElementTree(et.XML(xml_text));
-
-    // run the platform-specific function
-    platform_modules[platform].handlePlugin(action, project_dir, plugin_dir, plugin_et);
-
-    console.log('plugin ' + action + 'ed');
+    if(!async) {
+        execAction(action, platform, project_dir, plugin_dir);
+    }
 }
+
