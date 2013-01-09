@@ -18,6 +18,7 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'www' ]
             , 'project' : path
             , 'plugin' : [String, path, url]
             , 'remove' : Boolean
+            , 'list' : Boolean
             , 'v' : Boolean
             , 'debug' : Boolean
             };
@@ -36,6 +37,9 @@ if (!cli_opts.debug) {
 if (cli_opts.v) {
     console.log(package.name + ' version ' + package.version);
 }
+else if (cli_opts.list) {
+    plugins.listAllPlugins();
+}
 else if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
     printUsage();
 }
@@ -49,8 +53,9 @@ else {
 function printUsage() {
     platforms = known_opts.platform.join('|');
     console.log('Usage\n---------');
-    console.log('Add a plugin:\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --plugin <directory>\n');
-    console.log('Remove a plugin:\n\t' + package.name + ' --remove --platform <'+ platforms +'> --project <directory> --plugin <directory>\n');
+    console.log('Add a plugin:\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --plugin <directory|git-url|name>\n');
+    console.log('Remove a plugin:\n\t' + package.name + ' --remove --platform <'+ platforms +'> --project <directory> --plugin <directory|git-url|name>\n');
+    console.log('List plugins:\n\t' + package.name + ' --list\n');
 }
 
 function execAction(action, platform, project_dir, plugin_dir) {

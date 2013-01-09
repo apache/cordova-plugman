@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // FIXME: change this quickly
-var url = "http://ec2-184-72-173-33.compute-1.amazonaws.com:5984";
+var url = "http://ec2-184-72-173-33.compute-1.amazonaws.com";
 var http = require('http'),
     osenv = require('osenv'),
     path = require('path'),
@@ -21,6 +21,25 @@ exports.getPluginInfo = function(plugin_name, success, error) {
             success(exports.clonePluginGitRepo(plugin_info.url));
           } else {
             error("Could not find information on "+plugin_dir+" plugin");
+          }
+      });
+      
+    }).on('error', function(e) {
+      console.log("Got error: " + e.message);
+      error(e.message);
+    });
+}
+
+exports.listAllPlugins = function(plugin_name, success, error) {
+    http.get(url + "/cordova_plugins/_design/cordova_plugins/_view/by_name", function(res) {
+      var str = '';
+      res.on('data', function (chunk) {
+        str += chunk;
+      });
+      res.on('end', function () {
+          var plugins = (JSON.parse(str)).rows, i, j;
+          for(i = 0, j = plugins.length ; i < j ; i++) {
+            console.log(plugins[i].value.name, '-', plugins[i].value.description);
           }
       });
       

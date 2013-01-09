@@ -16,7 +16,7 @@ This document defines tool usage and the plugin format specification. This is no
 
 Adding plugins:
 
-    plugman --platform PLATFORM --project PROJECT-PATH --plugin PLUGIN-PATH
+    plugman --platform PLATFORM --project PROJECT-PATH --plugin PLUGIN-PATH|PLUGIN-GIT-URL|PLUGIN-NAME
 
 Example:
 
@@ -24,11 +24,16 @@ Example:
 
 Removing plugins:
  
-    plugman --platform PLATFORM --project PROJECT-PATH --plugin PLUGIN-PATH --remove
+    plugman --platform PLATFORM --project PROJECT-PATH --plugin PLUGIN-PATH|PLUGIN-GIT-URL|PLUGIN-NAME --remove
 
 Example:
 
     plugman --platform android --project . --plugin ~/plugins/ChildBrowser --remove
+
+Listing plugins:
+ 
+    plugman --list
+
     
 ### Supported Platforms
 * iOS
@@ -270,6 +275,15 @@ the config file.
 
 ### &lt;plugins-plist&gt;
 
+This is OUTDATED. Only applies to Cordova 2.2.0 and below). Use &lt;config-file&gt; tag (same as Android) for newer versions of Cordova.
+
+Example:
+
+    <config-file target="config.xml" parent="/cordova/plugins">
+         <plugin name="ChildBrowser"
+             value="ChildBrowserCommand"/>
+    </config-file>
+
 Specifies a key and value to append to the correct `AppInfo.plist` file in an
 iOS Cordova project. Example:
 
@@ -342,6 +356,7 @@ TODO: show how the foo plugin example from above will have its files placed in a
 * Andrew Lunny
 * Fil Maj
 * Mike Reinstein
+* Anis Kadri
 
 ## Contributors
 
