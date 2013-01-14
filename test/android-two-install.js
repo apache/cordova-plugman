@@ -113,3 +113,13 @@ exports['should add ChildBrowser to AndroidManifest.xml'] = function (test) {
     test.ok(found);
     test.done();
 }
+
+exports['should not install a plugin that is already installed'] = function (test) {
+    var jsPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'childbrowser.js');
+
+    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    
+    test.throws(function() {android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);}, /already installed/);
+
+    test.done();
+}

@@ -130,3 +130,13 @@ exports['should remove ChildBrowser from AndroidManifest.xml'] = function (test)
     test.ok(!found);
     test.done();
 }
+
+exports['should not uninstall a plugin that is not installed'] = function (test) {
+    var jsPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'childbrowser.js');
+
+    test.throws(function() {android.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);}, 
+                /not installed/
+               );
+
+    test.done();
+}

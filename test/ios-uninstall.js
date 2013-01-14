@@ -183,3 +183,10 @@ exports['should remove the framework references from the pbxproj file'] = functi
     test.equal(references.length, 0);
     test.done();
 }
+
+exports['should not uninstall a plugin that is not installed'] = function (test) {
+    test.throws(function(){ios.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et); }, 
+                /not installed/
+               );
+    test.done();
+}

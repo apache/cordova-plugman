@@ -28,6 +28,13 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
             delete configChanges[configFile];
         }
     });
+    
+    // collision detection 
+    if(action == "install" && pluginInstalled(plugin_et, project_dir)) {
+        throw "Plugin "+plugin_id+" already installed"
+    } else if(action == "uninstall" && !pluginInstalled(plugin_et, project_dir)) {
+        throw "Plugin "+plugin_id+" not installed"
+    }
 
     // move asset files
     assets.forEach(function (asset) {
@@ -153,4 +160,11 @@ function androidPackageName(project_dir) {
             path.resolve(project_dir, 'AndroidManifest.xml'));
 
     return mDoc._root.attrib['package'];
+}
+
+function pluginInstalled(plugin_et, project_dir) {
+    var config_tag = plugin_et.find('./platform[@name="android"]/config-file[@target="res/xml/config.xml"]/plugin')
+    var plugin_name = config_tag.attrib.name;
+    return (fs.readFileSync(path.resolve(project_dir, 'res/xml/config.xml'), 'utf8')
+           .match(new RegExp(plugin_name, "g")) != null);
 }

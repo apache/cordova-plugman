@@ -42,6 +42,12 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
     var pluginsDir = path.resolve(config_files[0], '..', 'Plugins');
     var resourcesDir = path.resolve(config_files[0], '..', 'Resources');
 
+    // collision detection 
+    if(action == "install" && pluginInstalled(plugin_et, config_files[0])) {
+        throw "Plugin "+plugin_id+" already installed"
+    } else if(action == "uninstall" && !pluginInstalled(plugin_et, config_files[0])) {
+        throw "Plugin "+plugin_id+" not installed"
+    }
     var assets = plugin_et.findall('./asset'),
         platformTag = plugin_et.find('./platform[@name="ios"]'),
         sourceFiles = platformTag.findall('./source-file'),
@@ -206,6 +212,13 @@ function updatePlistFile(action, config_path, plugin_et) {
     
     // write out plist
     fs.writeFileSync(config_path, plist.build(plistObj));
+}
+
+function pluginInstalled(plugin_et, config_path) {
+    var config_tag = plugin_et.find('./platform[@name="ios"]/config-file[@target="config.xml"]/plugin') ||
+                     plugin_et.find('./platform[@name="ios"]/plugins-plist');
+    var plugin_name = config_tag.attrib.name || config_tag.attrib.key;
+    return (fs.readFileSync(config_path, 'utf8').match(new RegExp(plugin_name, "g")) != null);
 }
 
 function updateConfigXml(action, config_path, plugin_et) {

@@ -176,3 +176,12 @@ exports['should add the framework references to the pbxproj file'] = function (t
     test.equal(references.length, 4);
     test.done();
 }
+
+exports['should not install a plugin that is already installed'] = function (test) {
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+
+    test.throws(function(){ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et); }, 
+                /already installed/
+               );
+    test.done();
+}
