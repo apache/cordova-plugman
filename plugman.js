@@ -11,7 +11,7 @@ var fs = require('fs')
   , platform_modules = {
         'android': require('./platforms/android'),
         'ios': require('./platforms/ios'),
-        //'bb10': require('./platforms/bb10'),
+        'bb10': require('./platforms/bb10'),
         'www': require('./platforms/www')
     };
 

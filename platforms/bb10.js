@@ -20,7 +20,6 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
       , sourceFiles = platformTag.findall('./source-file')
       , libFiles = platformTag.findall('./library-file')
       , configChanges = getConfigChanges(platformTag);
-
     // find which config-files we're interested in
     Object.keys(configChanges).forEach(function (configFile) {
         if (!fs.existsSync(path.resolve(project_dir, configFile))) {
@@ -38,7 +37,6 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
                             project_dir,
                             assetsDir,
                             asset.attrib['target']);
-
         var stats = fs.statSync(srcPath);
         if (action == 'install') {
             if(stats.isDirectory()) {
@@ -128,7 +126,6 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
         });
 
         output = xmlDoc.write({indent: 4});
-        output = output.replace(/\$PACKAGE_NAME/g, PACKAGE_NAME);
         fs.writeFileSync(filepath, output);
     });
 }
