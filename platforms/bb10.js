@@ -13,7 +13,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
     var plugin_id = plugin_et._root.attrib['id']
       , version = plugin_et._root.attrib['version']
       , external_hosts = []
-      , i = 0
+
       // look for assets in the plugin 
       , assets = plugin_et.findall('./asset')
       , platformTag = plugin_et.find('./platform[@name="bb10"]')
