@@ -16,7 +16,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
 
       // look for assets in the plugin 
       , assets = plugin_et.findall('./asset')
-      , platformTag = plugin_et.find('./platform[@name="bb10"]')
+      , platformTag = plugin_et.find('./platform[@name="BlackBerry10"]')
       , sourceFiles = platformTag.findall('./source-file')
       , libFiles = platformTag.findall('./library-file')
       , configChanges = getConfigChanges(platformTag);
