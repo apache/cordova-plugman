@@ -29,9 +29,7 @@ exports.setUp = function(callback) {
 
 exports.tearDown = function(callback) {
     // remove the temp files (projects and plugins)
-    console.log(fs.readdirSync(test_dir));
     shell.rm('-rf', test_dir);
-    //console.log(fs.readdirSync(test_dir));
     callback();
 }
 
@@ -46,30 +44,19 @@ exports['should move the source files'] = function (test) {
     test.ok(fs.existsSync(srcDir + '/simulator/echoJnext.so'));
     test.done();
 }
-/*
-exports['should edit config.xml'] = function (test) {
-    // setting up WebNotification (with config.xml) 
-    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'WebNotifications')
-    var dummy_xml_path = path.join(test_dir, 'plugins', 'WebNotifications', 'plugin.xml')
-    
-    // overriding some params
-    var project_dir = path.join(test_dir, 'projects', 'ios-config-xml')
-    var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
 
-    // run the platform-specific function
-    ios.handlePlugin('install', project_dir, dummy_plugin_dir, dummy_plugin_et);
+exports['should edit config.xml'] = function (test) {
+    bb10.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
     
-    var configXmlPath = path.join(project_dir, 'SampleApp', 'config.xml');
+    var configXmlPath = path.join(test_project_dir, 'config.xml');
     var pluginsTxt = fs.readFileSync(configXmlPath, 'utf-8'),
         pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
-        expected = 'plugins/plugin[@name="WebNotifications"]' +
-                    '[@value="WebNotifications"]';
-
+        expected = 'feature[@id="cordova.echo"]';
     test.ok(pluginsDoc.find(expected));
 
     test.done();
 }
-*/
+
 exports['should not install a plugin that is already installed'] = function (test) {
     bb10.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
 
