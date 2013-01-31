@@ -20,6 +20,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
       , sourceFiles = platformTag.findall('./source-file')
       , libFiles = platformTag.findall('./library-file')
       , configChanges = getConfigChanges(platformTag);
+      
     // find which config-files we're interested in
     Object.keys(configChanges).forEach(function (configFile) {
         if (!fs.existsSync(path.resolve(project_dir, configFile))) {
@@ -27,6 +28,13 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
         }
     });
 
+    // collision detection 
+    if(action == "install" && pluginInstalled(plugin_et, project_dir)) {
+        throw "Plugin "+plugin_id+" already installed"
+    } else if(action == "uninstall" && !pluginInstalled(plugin_et, project_dir)) {
+        throw "Plugin "+plugin_id+" not installed"
+    }
+    
     // move asset files
     assets.forEach(function (asset) {
         var srcPath = path.resolve(
@@ -141,3 +149,9 @@ function srcPath(pluginPath, filename) {
     }
 }
 
+function pluginInstalled(plugin_et, project_dir) {
+    var config_tag = plugin_et.find('./platform[@name="BlackBerry10"]/config-file[@target="config.xml"]/feature')
+    var plugin_name = config_tag.attrib.id;
+    return (fs.readFileSync(path.resolve(project_dir, 'config.xml'), 'utf8')
+           .match(new RegExp(plugin_name, "g")) != null);
+}

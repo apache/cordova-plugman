@@ -52,7 +52,6 @@ exports['should install webless plugin'] = function (test) {
 
 exports['should move the js file'] = function (test) {
     var jsPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www', 'childbrowser.js');
-
     android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
     fs.stat(jsPath, function(err, stats) {
         test.ok(!err);
