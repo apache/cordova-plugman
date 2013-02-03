@@ -1,5 +1,6 @@
 var fs = require('fs')  // use existsSync in 0.6.x
    , path = require('path')
+   , util = require('util')
    , shell = require('shelljs')
    , et = require('elementtree')
    , getConfigChanges = require('../util/config-changes')
@@ -163,8 +164,12 @@ function androidPackageName(project_dir) {
 }
 
 function pluginInstalled(plugin_et, project_dir) {
-    var config_tag = plugin_et.find('./platform[@name="android"]/config-file[@target="res/xml/config.xml"]/plugin')
-    var plugin_name = config_tag.attrib.name;
-    return (fs.readFileSync(path.resolve(project_dir, 'res/xml/config.xml'), 'utf8')
+    var filename = 'res/xml/config.xml';
+    if(fs.existsSync(path.resolve(project_dir, 'res/xml/plugins.xml'))) {
+        filename = 'res/xml/plugins.xml';
+    }
+    var tag_xpath = util.format('./platform[@name="android"]/config-file[@target="%s"]/plugin', filename);
+    var plugin_name = plugin_et.find(tag_xpath).attrib.name;
+    return (fs.readFileSync(path.resolve(project_dir, filename), 'utf8')
            .match(new RegExp(plugin_name, "g")) != null);
 }
