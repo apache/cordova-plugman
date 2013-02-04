@@ -56,11 +56,8 @@ exports['should move the js file'] = function (test) {
     ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
 
     var jsPath = path.join(test_dir, 'projects', 'ios', 'www', 'childbrowser.js');
-    fs.stat(jsPath, function(err, stats) {
-        test.ok(!err);
-        test.ok(stats.isFile());
-        test.done();
-    });
+    test.ok(fs.existsSync(jsPath));
+    test.done();
 }
 
 exports['should move the source files'] = function (test) {
