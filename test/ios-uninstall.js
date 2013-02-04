@@ -122,6 +122,31 @@ exports['should edit PhoneGap.plist'] = function (test) {
     test.done();
 }
 
+exports['should edit config.xml even when using old <plugins-plist> approach'] = function (test) {
+    // setting up PGSQLitePlugin (with config.xml) 
+    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'PGSQLitePlugin')
+    var dummy_xml_path = path.join(dummy_plugin_dir, 'plugin.xml')
+    
+    // overriding some params
+    var project_dir = path.join(test_dir, 'projects', 'ios-config-xml')
+    var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
+
+    // run the platform-specific function
+    ios.handlePlugin('install', project_dir, dummy_plugin_dir, dummy_plugin_et);
+    
+    ios.handlePlugin('uninstall', project_dir, dummy_plugin_dir, dummy_plugin_et);
+    
+    var configXmlPath = path.join(project_dir, 'SampleApp', 'config.xml');
+    var pluginsTxt = fs.readFileSync(configXmlPath, 'utf-8'),
+        pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
+        expected = 'plugins/plugin[@name="PGSQLitePlugin"]' +
+                    '[@value="PGSQLitePlugin"]';
+
+    test.ok(!pluginsDoc.find(expected));
+
+    test.done();
+}
+
 exports['should edit config.xml'] = function (test) {
     // setting up WebNotification (with config.xml) 
     var dummy_plugin_dir = path.join(test_dir, 'plugins', 'WebNotifications')
