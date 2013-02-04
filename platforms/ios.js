@@ -224,32 +224,49 @@ function pluginInstalled(plugin_et, config_path) {
 function updateConfigXml(action, config_path, plugin_et) {
     var hosts = plugin_et.findall('./access'),
         platformTag = plugin_et.find('./platform[@name="ios"]'), // FIXME: can probably do better than this
-        plistEle = platformTag.find('./plugins-plist'), // TODO: use this for older that have plugins-plist
-        configChanges = getConfigChanges(platformTag),
+        plistEle = platformTag.find('./plugins-plist'), // use this for older that have plugins-plist
         pl,
         external_hosts = [];
+
     // edit configuration files
     var xmlDoc = xml_helpers.parseElementtreeSync(config_path),
         output;
 
-    configChanges[path.basename(config_path)].forEach(function (configNode) {
-        var selector = configNode.attrib["parent"],
-            children = configNode.findall('*');
-
-        if( action == 'install') {
-            if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
-                throw new Error('failed to add children to ' + filename);
-            }
+    if (plistEle) {
+        // if the plugin supports the old plugins-plist elemtn..
+        var name = plistEle.attrib.key;
+        var value = plistEle.attrib.string;
+        var pluginsEl = xmlDoc.find('plugins');
+        if ( action == 'install') {
+            var new_plugin = new et.Element('plugin');
+            new_plugin.attrib.name = name;
+            new_plugin.attrib.value = value;
+            pluginsEl.append(new_plugin);
         } else {
-            if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
-                throw new Error('failed to remove children from' + filename);
-            }
+            var culprit = pluginsEl.find("plugin[@name='"+name+"']");
+            pluginsEl.remove(0, culprit);
         }
-    });
+    } else {
+        var configChanges = getConfigChanges(platformTag);
+        var base_config_path = path.basename(config_path);
+        configChanges[base_config_path].forEach(function (configNode) {
+            var selector = configNode.attrib["parent"],
+                children = configNode.findall('*');
 
+            if( action == 'install') {
+                if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
+                    throw new Error('failed to add children to ' + filename);
+                }
+            } else {
+                if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
+                    throw new Error('failed to remove children from' + filename);
+                }
+            }
+        });
+
+    }
     output = xmlDoc.write({indent: 4});
     fs.writeFileSync(config_path, output);
-
 }
 
 // updates plist file and/or config.xml

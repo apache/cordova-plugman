@@ -18,7 +18,7 @@
     "xcode": "git+https://github.com/imhotep/node-xcode.git",
     "plist": "0.4.x",
     "bplist-parser": "0.0.x",
-    "shelljs": "0.0.x",
+    "shelljs": "0.1.x",
     "osenv": "0.0.x"
   },
   "devDependencies": {

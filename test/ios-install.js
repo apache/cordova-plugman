@@ -56,11 +56,8 @@ exports['should move the js file'] = function (test) {
     ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
 
     var jsPath = path.join(test_dir, 'projects', 'ios', 'www', 'childbrowser.js');
-    fs.stat(jsPath, function(err, stats) {
-        test.ok(!err);
-        test.ok(stats.isFile());
-        test.done();
-    });
+    test.ok(fs.existsSync(jsPath));
+    test.done();
 }
 
 exports['should move the source files'] = function (test) {
@@ -138,6 +135,29 @@ exports['should edit config.xml'] = function (test) {
         pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
         expected = 'plugins/plugin[@name="WebNotifications"]' +
                     '[@value="WebNotifications"]';
+
+    test.ok(pluginsDoc.find(expected));
+
+    test.done();
+}
+
+exports['should edit config.xml even when using old <plugins-plist> approach'] = function (test) {
+    // setting up PGSQLitePlugin (with config.xml) 
+    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'PGSQLitePlugin')
+    var dummy_xml_path = path.join(dummy_plugin_dir, 'plugin.xml')
+    
+    // overriding some params
+    var project_dir = path.join(test_dir, 'projects', 'ios-config-xml')
+    var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
+
+    // run the platform-specific function
+    ios.handlePlugin('install', project_dir, dummy_plugin_dir, dummy_plugin_et);
+    
+    var configXmlPath = path.join(project_dir, 'SampleApp', 'config.xml');
+    var pluginsTxt = fs.readFileSync(configXmlPath, 'utf-8'),
+        pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
+        expected = 'plugins/plugin[@name="PGSQLitePlugin"]' +
+                    '[@value="PGSQLitePlugin"]';
 
     test.ok(pluginsDoc.find(expected));
 
