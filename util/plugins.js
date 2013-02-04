@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // FIXME: change this quickly
-var url = "http://ec2-184-72-173-33.compute-1.amazonaws.com";
+var url = "http://plugins.cordova.io";
 var http = require('http'),
     osenv = require('osenv'),
     path = require('path'),
