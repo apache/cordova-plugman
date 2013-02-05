@@ -57,7 +57,7 @@ exports.clonePluginGitRepo = function(plugin_dir) {
     plugin_git_url = plugin_dir; 
     plugin_dir = path.join(osenv.tmpdir(), 'plugin');
 
-    if(shell.exec('git clone ' + plugin_git_url + ' ' + plugin_dir + ' 2>&1 1>/dev/null').code != 0) {
+    if(shell.exec('git clone ' + plugin_git_url + ' ' + plugin_dir + ' 2>&1 1>/dev/null', {silent: true}).code != 0) {
         throw new Error('failed to get the plugin via git URL', plugin_git_url);
     }
     
