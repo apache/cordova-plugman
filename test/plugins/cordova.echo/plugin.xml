@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
+    id="com.cordova.echo"
+    version="1.0.0">
+        
+    <engines>
+        <engine name="cordova" version=">=2.3.0" />
+    </engines>
+    
+    <name>cordova echo</name>
+
+    
+    <platform name="BlackBerry10">    
+        <config-file target="config.xml" parent="/widget">
+            <feature id="cordova.echo" required="true" version="1.0.0.0"/>
+        </config-file>
+        
+        <source-file src="client.js" target-dir="ext-qnx/cordova.echo" />
+        <source-file src="index.js" target-dir="ext-qnx/cordova.echo" />
+        <source-file src="manifest.json" target-dir="ext-qnx/cordova.echo" />
+        <source-file src="device/echoJnext.so" target-dir="ext-qnx/cordova.echo/device" />
+        <source-file src="simulator/echoJnext.so" target-dir="ext-qnx/cordova.echo/simulator" />
+    </platform>
+</plugin>
