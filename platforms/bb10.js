@@ -3,8 +3,6 @@ var fs = require('fs')  // use existsSync in 0.6.x
    , shell = require('shelljs')
    , et = require('elementtree')
    , getConfigChanges = require('../util/config-changes')
-
-   , assetsDir = 'www'  // relative path to project's web assets
    , sourceDir = 'src'
    , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'));
 
@@ -43,13 +41,12 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
 
         var targetPath = path.resolve(
                             project_dir,
-                            assetsDir,
                             asset.attrib['target']);
         var stats = fs.statSync(srcPath);
         if (action == 'install') {
             if(stats.isDirectory()) {
                 shell.mkdir('-p', targetPath);
-                shell.cp('-R', srcPath, path.join(project_dir, assetsDir));
+                shell.cp('-R', srcPath, project_dir);
             } else {
                 shell.cp(srcPath, targetPath);
             }

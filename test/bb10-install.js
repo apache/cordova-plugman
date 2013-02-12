@@ -45,6 +45,20 @@ exports['should move the source files'] = function (test) {
     test.done();
 }
 
+exports['should move the js file'] = function (test) {
+    // setting up a DummyPlugin
+    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'DummyPlugin')
+    var dummy_xml_path = path.join(test_dir, 'plugins', 'DummyPlugin', 'plugin.xml')
+    var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
+
+    // run the platform-specific function
+    bb10.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
+
+    var jsPath = path.join(test_project_dir, 'dummyplugin.js');
+    test.ok(fs.existsSync(jsPath));
+    test.done();
+}
+
 exports['should edit config.xml'] = function (test) {
     bb10.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
     

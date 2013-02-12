@@ -34,29 +34,27 @@ exports.tearDown = function(callback) {
 }
 
 exports['should remove cordova echo plugin'] = function (test) {
-    
-    // setting up a DummyPlugin
-    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'cordova.echo')
-    var dummy_xml_path = path.join(test_dir, 'plugins', 'cordova.echo', 'plugin.xml')
+    // run the platform-specific function
+    bb10.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    bb10.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
+
+    test.done();
+}
+
+
+exports['should remove the js file'] = function (test) {
+
+    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'DummyPlugin')
+    var dummy_xml_path = path.join(test_dir, 'plugins', 'DummyPlugin', 'plugin.xml')
     var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
 
     bb10.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
     bb10.handlePlugin('uninstall', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
-
-    test.done();
-}
-
-/*
-exports['should remove the js file'] = function (test) {
-    // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-    ios.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
-
-    var jsPath = path.join(test_dir, 'projects', 'ios', 'www', 'childbrowser.js');
+    var jsPath = path.join(test_dir, 'projects', 'bb10', 'www', 'dummyplugin.js');
     test.ok(!fs.existsSync(jsPath))
     test.done();
 }
-*/
+
 
 exports['should remove the source files'] = function (test) {
     // run the platform-specific function

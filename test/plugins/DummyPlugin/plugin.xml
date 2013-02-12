@@ -38,6 +38,18 @@
                 target-dir="src/com/phonegap/plugins/dummyplugin" />
     </platform>
 
+    <!-- BlackBerry10 -->
+    <platform name="BlackBerry10">
+        <config-file target="config.xml" parent="/widget">
+            <feature id="dummyPlugin" required="true" version="1.0.0.0"/>
+        </config-file>
+
+        <source-file src="client.js" target-dir="ext-qnx/cordova.echo" />
+        <source-file src="index.js" target-dir="ext-qnx/cordova.echo" />
+        <source-file src="manifest.json" target-dir="ext-qnx/cordova.echo" />
+    </platform>
+
+        
     <!-- ios -->
     <platform name="ios">
         <plugins-plist key="com.phonegap.plugins.dummyplugin"
