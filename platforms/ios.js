@@ -75,7 +75,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
         frameworks = platformTag.findall('./framework');
 
     // move asset files into www
-    assets.forEach(function (asset) {
+    assets && assets.forEach(function (asset) {
         var srcPath = path.resolve(
                         plugin_dir, asset.attrib['src']);
 
@@ -94,7 +94,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
     });
 
     // move native files (source/header/resource)
-    sourceFiles.forEach(function (sourceFile) {
+    sourceFiles && sourceFiles.forEach(function (sourceFile) {
         var src = sourceFile.attrib['src'],
             srcFile = path.resolve(plugin_dir, 'src/ios', src),
             targetDir = path.resolve(pluginsDir, getRelativeDir(sourceFile)),
@@ -112,7 +112,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
         }
     });
 
-    headerFiles.forEach(function (headerFile) {
+    headerFiles && headerFiles.forEach(function (headerFile) {
         var src = headerFile.attrib['src'],
             srcFile = path.resolve(plugin_dir, 'src/ios', src),
             targetDir = path.resolve(pluginsDir, getRelativeDir(headerFile)),
@@ -130,7 +130,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
         }
     });
 
-    resourceFiles.forEach(function (resource) {
+    resourceFiles && resourceFiles.forEach(function (resource) {
         var src = resource.attrib['src'],
             srcFile = path.resolve(plugin_dir, 'src/ios', src),
             destFile = path.resolve(resourcesDir, path.basename(src));
@@ -149,7 +149,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
         }
     });
 
-    frameworks.forEach(function (framework) {
+    frameworks && frameworks.forEach(function (framework) {
         var src = framework.attrib['src'],
             weak = framework.attrib['weak'];
 
@@ -203,7 +203,7 @@ function updatePlistFile(action, config_path, plugin_et) {
     
     if (action == 'install') {
         // add hosts to whitelist (ExternalHosts) in plist
-        hosts.forEach(function(host) {
+        hosts && hosts.forEach(function(host) {
             plistObj.ExternalHosts.push(host.attrib['origin']);
         });
 
@@ -215,7 +215,7 @@ function updatePlistFile(action, config_path, plugin_et) {
         // it's not an entry added by this plugin 
         for(i=0; i < plistObj.ExternalHosts.length;i++) {
             matched = false;
-            hosts.forEach(function(host) {
+            hosts && hosts.forEach(function(host) {
                 if(host === plistObj.ExternalHosts[i]) {
                     matched = true;
                 }
@@ -238,6 +238,9 @@ function updatePlistFile(action, config_path, plugin_et) {
 function pluginInstalled(plugin_et, config_path) {
     var config_tag = plugin_et.find('./platform[@name="ios"]/config-file[@target="config.xml"]/plugin') ||
                      plugin_et.find('./platform[@name="ios"]/plugins-plist');
+    if (!config_tag) {
+        return false;
+    }
     var plugin_name = config_tag.attrib.name || config_tag.attrib.key;
     return (fs.readFileSync(config_path, 'utf8').match(new RegExp(plugin_name, "g")) != null);
 }
@@ -274,7 +277,6 @@ function updateConfigXml(action, config_path, plugin_et) {
             var culprit = pluginsEl.find("plugin[@name='"+name+"']");
             pluginsEl.remove(0, culprit);
         }
-
     }
 
 	// add whitelist hosts

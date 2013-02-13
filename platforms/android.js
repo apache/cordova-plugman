@@ -201,7 +201,13 @@ function androidPackageName(project_dir) {
 
 function pluginInstalled(plugin_et, project_dir, config_xml_filename) {
     var tag_xpath = util.format('./platform[@name="android"]/config-file[@target="%s"]/plugin', config_xml_filename);
-    var plugin_name = plugin_et.find(tag_xpath).attrib.name;
+
+    var plugin_tag = plugin_et.find(tag_xpath);
+    if (!plugin_tag) {
+        return false;
+    }
+    var plugin_name = plugin_tag.attrib.name;
+
     return (fs.readFileSync(path.resolve(project_dir, config_xml_filename), 'utf8')
            .match(new RegExp(plugin_name, "g")) != null);
 }
