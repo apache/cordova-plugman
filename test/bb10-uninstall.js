@@ -33,49 +33,60 @@ exports.tearDown = function(callback) {
     callback();
 }
 
-exports['should move the source files'] = function (test) {
+exports['should remove cordova echo plugin'] = function (test) {
     // run the platform-specific function
     bb10.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    bb10.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
 
-    test.ok(fs.existsSync(srcDir + '/client.js'));
-    test.ok(fs.existsSync(srcDir + '/index.js'));
-    test.ok(fs.existsSync(srcDir + '/manifest.json'));
-    test.ok(fs.existsSync(srcDir + '/device/echoJnext.so'));
-    test.ok(fs.existsSync(srcDir + '/simulator/echoJnext.so'));
     test.done();
 }
 
-exports['should move the js file'] = function (test) {
-    // setting up a DummyPlugin
+
+exports['should remove the js file'] = function (test) {
+
     var dummy_plugin_dir = path.join(test_dir, 'plugins', 'DummyPlugin')
     var dummy_xml_path = path.join(test_dir, 'plugins', 'DummyPlugin', 'plugin.xml')
     var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
 
-    // run the platform-specific function
     bb10.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
-
-    var jsPath = path.join(test_project_dir, 'dummyplugin.js');
-    test.ok(fs.existsSync(jsPath));
+    bb10.handlePlugin('uninstall', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
+    var jsPath = path.join(test_dir, 'projects', 'bb10', 'www', 'dummyplugin.js');
+    test.ok(!fs.existsSync(jsPath))
     test.done();
 }
 
-exports['should edit config.xml'] = function (test) {
+
+exports['should remove the source files'] = function (test) {
+    // run the platform-specific function
     bb10.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    bb10.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
+
+    test.ok(!fs.existsSync(srcDir + '/index.js'))
+    test.ok(!fs.existsSync(srcDir + '/client.js'))
+    test.ok(!fs.existsSync(srcDir + '/manifest.json'))
+    test.ok(!fs.existsSync(srcDir + '/device/echoJnext.so'))
+    test.ok(!fs.existsSync(srcDir + '/simulator/echoJnext.so'))
+    test.done();
+}
+
+exports['should edit config.xml'] = function (test) {   
+    // run the platform-specific function
+    bb10.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    
+    bb10.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
     
     var configXmlPath = path.join(test_project_dir, 'config.xml');
     var pluginsTxt = fs.readFileSync(configXmlPath, 'utf-8'),
         pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
         expected = 'feature[@id="cordova.echo"]';
-    test.ok(pluginsDoc.find(expected));
-
+    test.ok(!pluginsDoc.find(expected));
+    
     test.done();
 }
 
-exports['should not install a plugin that is already installed'] = function (test) {
-    bb10.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-
-    test.throws(function(){bb10.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et); }, 
-                /already installed/
+exports['should not uninstall a plugin that is not installed'] = function (test) {
+    test.throws(function(){bb10.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et); }, 
+                /not installed/
                );
     test.done();
 }
