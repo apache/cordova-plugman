@@ -39,7 +39,11 @@ if (cli_opts.v) {
     console.log(package.name + ' version ' + package.version);
 }
 else if (cli_opts.list) {
-    plugins.listAllPlugins();
+    plugins.listAllPlugins(function(plugins) {
+      for(var i = 0, j = plugins.length ; i < j ; i++) {
+        console.log(plugins[i].value.name, '-', plugins[i].value.description);
+      }
+    });
 }
 else if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
     printUsage();
@@ -83,8 +87,8 @@ function handlePlugin(action, platform, project_dir, plugin_dir) {
         // try querying the plugin database
         async = true;
         plugins.getPluginInfo(plugin_dir,
-            function(plugin_dir) {
-                execAction(action, platform, project_dir, plugin_dir);
+            function(plugin_info) {
+                execAction(action, platform, project_dir, plugins.clonePluginGitRepo(plugin_info.url));
             },
             function(e) {
                 throw new Error(action + ' failed. "' + plugin_xml_path + '" not found');
