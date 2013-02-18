@@ -58,5 +58,7 @@
 
         <!-- framework for testing (not actual dependency of ChildBrowser -->
         <framework src="libsqlite3.dylib" />
+        <framework src="social.framework" weak="true" />
+        <framework src="music.framework" weak="rabbit" />
     </platform>
 </plugin>
