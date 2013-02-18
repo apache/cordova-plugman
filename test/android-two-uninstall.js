@@ -131,6 +131,18 @@ exports['should remove ChildBrowser from AndroidManifest.xml'] = function (test)
     test.done();
 }
 
+exports['should remove whitelist hosts'] = function (test) {
+    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+	android.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
+	
+	var pluginsXmlPath = path.join(test_dir, 'projects', 'android_two', 'res', 'xml', 'config.xml');
+    var pluginsTxt = fs.readFileSync(pluginsXmlPath, 'utf-8'),
+        pluginsDoc = new et.ElementTree(et.XML(pluginsTxt));
+
+    test.equal(pluginsDoc.findall("access").length, 1, "/access");
+    test.done();
+}
+
 exports['should not uninstall a plugin that is not installed'] = function (test) {
     var jsPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'childbrowser.js');
 

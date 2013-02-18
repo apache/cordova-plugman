@@ -23,19 +23,37 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
       , PACKAGE_NAME = androidPackageName(project_dir)
       , configChanges = getConfigChanges(platformTag);
 
-    // find which config-files we're interested in
+	// get config.xml filename
+	var config_xml_filename = 'res/xml/config.xml';
+    if(fs.existsSync(path.resolve(project_dir, 'res/xml/plugins.xml'))) {
+        config_xml_filename = 'res/xml/plugins.xml';
+    }
+
+    // collision detection 
+    if(action == "install" && pluginInstalled(plugin_et, project_dir, config_xml_filename)) {
+        throw "Plugin "+plugin_id+" already installed"
+    } else if(action == "uninstall" && !pluginInstalled(plugin_et, project_dir, config_xml_filename)) {
+        throw "Plugin "+plugin_id+" not installed"
+    }
+
+	root = et.Element("config-file");
+	root.attrib['parent'] = '.'
+    plugin_et.findall('./access').forEach(function (tag) { 
+		root.append(tag);
+	});
+
+	if (root.len()) {
+		(configChanges[config_xml_filename]) ?
+        	configChanges[config_xml_filename].push(root) :
+        	configChanges[config_xml_filename] = [root];
+	}
+
+	// find which config-files we're interested in
     Object.keys(configChanges).forEach(function (configFile) {
         if (!fs.existsSync(path.resolve(project_dir, configFile))) {
             delete configChanges[configFile];
         }
     });
-    
-    // collision detection 
-    if(action == "install" && pluginInstalled(plugin_et, project_dir)) {
-        throw "Plugin "+plugin_id+" already installed"
-    } else if(action == "uninstall" && !pluginInstalled(plugin_et, project_dir)) {
-        throw "Plugin "+plugin_id+" not installed"
-    }
 
     // move asset files
     assets.forEach(function (asset) {
@@ -114,7 +132,6 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
         }
     })
 
-
     // edit configuration files
     Object.keys(configChanges).forEach(function (filename) {
         var filepath = path.resolve(project_dir, filename),
@@ -163,13 +180,9 @@ function androidPackageName(project_dir) {
     return mDoc._root.attrib['package'];
 }
 
-function pluginInstalled(plugin_et, project_dir) {
-    var filename = 'res/xml/config.xml';
-    if(fs.existsSync(path.resolve(project_dir, 'res/xml/plugins.xml'))) {
-        filename = 'res/xml/plugins.xml';
-    }
-    var tag_xpath = util.format('./platform[@name="android"]/config-file[@target="%s"]/plugin', filename);
+function pluginInstalled(plugin_et, project_dir, config_xml_filename) {
+    var tag_xpath = util.format('./platform[@name="android"]/config-file[@target="%s"]/plugin', config_xml_filename);
     var plugin_name = plugin_et.find(tag_xpath).attrib.name;
-    return (fs.readFileSync(path.resolve(project_dir, filename), 'utf8')
+    return (fs.readFileSync(path.resolve(project_dir, config_xml_filename), 'utf8')
            .match(new RegExp(plugin_name, "g")) != null);
 }

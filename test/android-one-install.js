@@ -111,3 +111,16 @@ exports['should add ChildBrowser to AndroidManifest.xml'] = function (test) {
     test.ok(found);
     test.done();
 }
+
+exports['should add whitelist hosts'] = function (test) {
+	android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+
+    var pluginsXmlPath = path.join(test_dir, 'projects', 'android_one', 'res', 'xml', 'plugins.xml');
+    var pluginsTxt = fs.readFileSync(pluginsXmlPath, 'utf-8'),
+        pluginsDoc = new et.ElementTree(et.XML(pluginsTxt));
+
+    test.equal(pluginsDoc.findall("access").length, 2, "/access");
+	test.equal(pluginsDoc.findall("access")[0].attrib["origin"], "build.phonegap.com")
+    test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "s3.amazonaws.com")
+    test.done();
+}

@@ -123,3 +123,16 @@ exports['should not install a plugin that is already installed'] = function (tes
 
     test.done();
 }
+
+exports['should add whitelist hosts'] = function (test) {
+	android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+
+    var pluginsXmlPath = path.join(test_dir, 'projects', 'android_two', 'res', 'xml', 'config.xml');
+    var pluginsTxt = fs.readFileSync(pluginsXmlPath, 'utf-8'),
+        pluginsDoc = new et.ElementTree(et.XML(pluginsTxt));
+
+    test.equal(pluginsDoc.findall("access").length, 3, "/access");
+	test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "build.phonegap.com")
+    test.equal(pluginsDoc.findall("access")[2].attrib["origin"], "s3.amazonaws.com")
+    test.done();
+}
