@@ -137,7 +137,9 @@ exports['should edit config.xml'] = function (test) {
                     '[@value="WebNotifications"]';
 
     test.ok(pluginsDoc.find(expected));
-
+	test.equal(pluginsDoc.findall("access").length, 3, "/access");
+	test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "build.phonegap.com")
+    test.equal(pluginsDoc.findall("access")[2].attrib["origin"], "s3.amazonaws.com")
     test.done();
 }
 
@@ -160,6 +162,9 @@ exports['should edit config.xml even when using old <plugins-plist> approach'] =
                     '[@value="PGSQLitePlugin"]';
 
     test.ok(pluginsDoc.find(expected));
+	test.equal(pluginsDoc.findall("access").length, 3, "/access");
+	test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "build.phonegap.com")
+    test.equal(pluginsDoc.findall("access")[2].attrib["origin"], "s3.amazonaws.com")
 
     test.done();
 }

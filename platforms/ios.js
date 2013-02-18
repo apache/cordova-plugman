@@ -227,15 +227,22 @@ function updateConfigXml(action, config_path, plugin_et) {
     var hosts = plugin_et.findall('./access'),
         platformTag = plugin_et.find('./platform[@name="ios"]'), // FIXME: can probably do better than this
         plistEle = platformTag.find('./plugins-plist'), // use this for older that have plugins-plist
-        pl,
-        external_hosts = [];
+		configChanges = getConfigChanges(platformTag),
+	    base_config_path = path.basename(config_path);
 
     // edit configuration files
     var xmlDoc = xml_helpers.parseElementtreeSync(config_path),
-        output;
+        output,
+		pListOnly = plistEle;
 
-    if (plistEle) {
-        // if the plugin supports the old plugins-plist elemtn..
+	if (configChanges[path.basename(config_path)]) {	
+		configChanges[path.basename(config_path)].forEach(function (val) {
+			if (val.find("plugin")) pListOnly = false;
+		});
+	}
+
+    if (pListOnly) {
+        // if the plugin supports the old plugins-plist element only
         var name = plistEle.attrib.key;
         var value = plistEle.attrib.string;
         var pluginsEl = xmlDoc.find('plugins');
@@ -248,25 +255,39 @@ function updateConfigXml(action, config_path, plugin_et) {
             var culprit = pluginsEl.find("plugin[@name='"+name+"']");
             pluginsEl.remove(0, culprit);
         }
-    } else {
-        var configChanges = getConfigChanges(platformTag);
-        var base_config_path = path.basename(config_path);
-        configChanges[base_config_path].forEach(function (configNode) {
-            var selector = configNode.attrib["parent"],
-                children = configNode.findall('*');
-
-            if( action == 'install') {
-                if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
-                    throw new Error('failed to add children to ' + filename);
-                }
-            } else {
-                if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
-                    throw new Error('failed to remove children from' + filename);
-                }
-            }
-        });
 
     }
+
+	// add whitelist hosts
+	root = et.Element("config-file");
+	root.attrib['parent'] = '.'
+    hosts.forEach(function (tag) {
+		root.append(tag);
+	});
+
+	if (root.len()) {
+		(configChanges[path.basename(config_path)]) ?
+        	configChanges[path.basename(config_path)].push(root) :
+        	configChanges[path.basename(config_path)] = [root];
+	}
+
+	if (configChanges[path.basename(config_path)]) {
+
+	    configChanges[base_config_path].forEach(function (configNode) {
+	        var selector = configNode.attrib["parent"],
+	            children = configNode.findall('*');
+	        if( action == 'install') {
+	            if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
+	                throw new Error('failed to add children to ' + filename);
+	            }
+	        } else {
+	            if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
+	                throw new Error('failed to remove children from' + filename);
+	            }
+	        }
+		});
+	}
+
     output = xmlDoc.write({indent: 4});
     fs.writeFileSync(config_path, output);
 }

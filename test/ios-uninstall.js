@@ -143,6 +143,7 @@ exports['should edit config.xml even when using old <plugins-plist> approach'] =
                     '[@value="PGSQLitePlugin"]';
 
     test.ok(!pluginsDoc.find(expected));
+	test.equal(pluginsDoc.findall("access").length, 1, "/access");
 
     test.done();
 }
@@ -168,6 +169,7 @@ exports['should edit config.xml'] = function (test) {
                     '[@value="WebNotifications"]';
 
     test.ok(!pluginsDoc.find(expected));
+	test.equal(pluginsDoc.findall("access").length, 1, "/access");
 
     test.done();
 }
