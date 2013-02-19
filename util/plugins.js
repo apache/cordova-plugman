@@ -30,7 +30,7 @@ exports.getPluginInfo = function(plugin_name, success, error) {
     });
 }
 
-exports.listAllPlugins = function(plugin_name, success, error) {
+exports.listAllPlugins = function(success, error) {
     http.get(remote.url + remote.list_path, function(res) {
       var str = '';
       res.on('data', function (chunk) {

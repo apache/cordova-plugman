@@ -11,7 +11,7 @@ exports['should get plugin information from a remote source'] = function(test) {
 }
 
 exports['should list all plugins from a remote source'] = function(test) {
-    plugins.listAllPlugins('ChildBrowser', function(plugins) {
+    plugins.listAllPlugins(function(plugins) {
         test.ok(plugins != undefined);
         test.ok(plugins.length > 0);
         test.done();
