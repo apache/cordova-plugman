@@ -131,10 +131,12 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
     });
 
     frameworks.forEach(function (framework) {
-        var src = framework.attrib['src'];
+        var src = framework.attrib['src'],
+            weak = framework.attrib['weak'];
 
         if (action == 'install') {
-            xcodeproj.addFramework(src);
+			var opt = { weak: (weak && weak.toLowerCase() == 'true') };
+            xcodeproj.addFramework(src, opt);
         } else {
             xcodeproj.removeFramework(src);
         }

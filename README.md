@@ -310,12 +310,16 @@ of this document will likely merge these elements with `source-file`.
 
 ### &lt;framework&gt;
 
-Identifies a framework (usually part of the OS/platform) that the plugin depends
-on. Example:
+Identifies a framework (usually part of the OS/platform) that the plugin depends on.
+
+Examples:
 
     <framework src="libsqlite3.dylib" />
+    <framework src="social.framework" weak="true" />
 
 plugman identifies the framework through the `src` attribute and attempts to add the framework to the Cordova project, in the correct fashion for a given platform.
+
+The optional `weak` attribute is a boolean denoting whether the framework should be weakly-linked. Default is `false`.
 
 ## Variables
 

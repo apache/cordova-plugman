@@ -173,7 +173,7 @@ exports['should edit the pbxproj file'] = function (test) {
     obj = xcode.project(projPath).parseSync();
     var fileRefSection = obj.hash.project.objects['PBXFileReference'],
         fileRefLength = Object.keys(fileRefSection).length,
-        EXPECTED_TOTAL_REFERENCES = 92; // magic number ahoy!
+        EXPECTED_TOTAL_REFERENCES = 96; // magic number ahoy!
 
     test.equal(fileRefLength, EXPECTED_TOTAL_REFERENCES);
     test.done();
@@ -185,6 +185,7 @@ exports['should add the framework references to the pbxproj file'] = function (t
     var projPath = test_project_dir + '/SampleApp.xcodeproj/project.pbxproj',
         projContents = fs.readFileSync(projPath, 'utf8'),
         projLines = projContents.split("\n"),
+		weak_linked = "settings = {ATTRIBUTES = (Weak, ); };",
         references;
 
     references = projLines.filter(function (line) {
@@ -194,7 +195,35 @@ exports['should add the framework references to the pbxproj file'] = function (t
     // should be four libsqlite3 reference lines added
     // pretty low-rent test eh
     test.equal(references.length, 4);
+    test.ok(references[0].indexOf(weak_linked) == -1);
     test.done();
+}
+
+exports['should add the framework references with weak option to the pbxproj file'] = function (test) {
+    // run the platform-specific function
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    var projPath = test_project_dir + '/SampleApp.xcodeproj/project.pbxproj',
+        projContents = fs.readFileSync(projPath, 'utf8'),
+        projLines = projContents.split("\n"),
+		weak_linked = "settings = {ATTRIBUTES = (Weak, ); };",
+        references;
+
+    weak_references = projLines.filter(function (line) {
+        return !!(line.match("social.framework"));
+    })
+
+    non_weak_references = projLines.filter(function (line) {
+        return !!(line.match("music.framework"));
+    })
+
+    // should be four libsqlite3 reference lines added
+    // pretty low-rent test eh
+    test.equal(weak_references.length, 4);
+    test.ok(weak_references[0].indexOf(weak_linked) != -1);
+    
+	test.equal(non_weak_references.length, 4);
+    test.ok(non_weak_references[0].indexOf(weak_linked) == -1);
+	test.done();
 }
 
 exports['should not install a plugin that is already installed'] = function (test) {
