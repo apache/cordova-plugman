@@ -137,15 +137,15 @@ exports['should edit config.xml'] = function (test) {
                     '[@value="WebNotifications"]';
 
     test.ok(pluginsDoc.find(expected));
-	test.equal(pluginsDoc.findall("access").length, 3, "/access");
-	test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "build.phonegap.com")
+    test.equal(pluginsDoc.findall("access").length, 3, "/access");
+    test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "build.phonegap.com")
     test.equal(pluginsDoc.findall("access")[2].attrib["origin"], "s3.amazonaws.com")
     test.done();
 }
 
 exports['should edit config.xml even when using old <plugins-plist> approach'] = function (test) {
     // setting up PGSQLitePlugin (with config.xml) 
-    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'PGSQLitePlugin')
+    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
     var dummy_xml_path = path.join(dummy_plugin_dir, 'plugin.xml')
     
     // overriding some params
@@ -158,12 +158,12 @@ exports['should edit config.xml even when using old <plugins-plist> approach'] =
     var configXmlPath = path.join(project_dir, 'SampleApp', 'config.xml');
     var pluginsTxt = fs.readFileSync(configXmlPath, 'utf-8'),
         pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
-        expected = 'plugins/plugin[@name="PGSQLitePlugin"]' +
-                    '[@value="PGSQLitePlugin"]';
+        expected = 'plugins/plugin[@name="com.phonegap.plugins.childbrowser"]' +
+                    '[@value="ChildBrowserCommand"]';
 
     test.ok(pluginsDoc.find(expected));
-	test.equal(pluginsDoc.findall("access").length, 3, "/access");
-	test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "build.phonegap.com")
+    test.equal(pluginsDoc.findall("access").length, 3, "/access");
+    test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "build.phonegap.com")
     test.equal(pluginsDoc.findall("access")[2].attrib["origin"], "s3.amazonaws.com")
 
     test.done();
