@@ -85,7 +85,7 @@ else {
 function printUsage() {
     platforms = known_opts.platform.join('|');
     console.log('Usage\n---------');
-    console.log('Add a plugin:\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --plugin <directory|git-url|name>\n');
+    console.log('Add a plugin:\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --variable <preference_name>="<substituion>" --plugin <directory|git-url|name>\n');
     console.log('Remove a plugin:\n\t' + package.name + ' --remove --platform <'+ platforms +'> --project <directory> --plugin <directory|git-url|name>\n');
     console.log('List plugins:\n\t' + package.name + ' --list\n');
 }
@@ -93,26 +93,28 @@ function printUsage() {
 function execAction(action, platform, project_dir, plugin_dir, cli_variables) {
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , xml_text     = fs.readFileSync(xml_path, 'utf-8')
-      , plugin_et   = new et.ElementTree(et.XML(xml_text));
-    
+      , plugin_et    = new et.ElementTree(et.XML(xml_text))
+      , filtered_variables = {};
 
     if (action == 'install') {
         prefs = plugin_et.findall('./preference') || [];
         prefs = prefs.concat(plugin_et.findall('./platform[@name="'+platform+'"]/preference'));
-        var missing_vars = []
+        var missing_vars = [];
         prefs.forEach(function (pref) {
             var key = pref.attrib["name"].toUpperCase();
             if (cli_variables[key] == undefined)
                 missing_vars.push(key)
+            else
+                filtered_variables[key] = cli_variables[key]
         })
         if (missing_vars.length > 0) {
             console.log('Variable missing: ' + missing_vars.join(", "));
             return;
         }
     }
-
+    
     // run the platform-specific function
-    platform_modules[platform].handlePlugin(action, project_dir, plugin_dir, plugin_et, cli_variables);
+    platform_modules[platform].handlePlugin(action, project_dir, plugin_dir, plugin_et, filtered_variables);
     
     console.log('plugin ' + action + 'ed');
 }
