@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /*
  *
  * Copyright 2013 Anis Kadri
@@ -16,8 +17,6 @@
  * under the License.
  *
 */
-
-#!/usr/bin/env node
 
 // copyright (c) 2013 Andrew Lunny, Adobe Systems
 var fs = require('fs')
