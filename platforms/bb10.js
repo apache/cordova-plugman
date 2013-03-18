@@ -166,7 +166,10 @@ function srcPath(pluginPath, filename) {
 }
 
 function pluginInstalled(plugin_et, project_dir) {
-    var config_tag = plugin_et.find('./platform[@name="BlackBerry10"]/config-file[@target="config.xml"]/feature')
+    var config_tag = plugin_et.find('./platform[@name="BlackBerry10"]/config-file[@target="config.xml"]/feature');
+    if (!config_tag) {
+        return false;
+    }
     var plugin_name = config_tag.attrib.id;
     return (fs.readFileSync(path.resolve(project_dir, 'config.xml'), 'utf8')
            .match(new RegExp(plugin_name, "g")) != null);
