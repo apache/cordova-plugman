@@ -26,6 +26,8 @@ var fs = require('fs')
   , et = require('elementtree')
   , nopt = require('nopt')
   , plugins = require('./util/plugins')
+  , shell = require('shelljs')
+  , plugin_loader = require('./util/plugin_loader')
   , platform_modules = {
         'android': require('./platforms/android'),
         'ios': require('./platforms/ios'),
@@ -40,9 +42,22 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'bb10' ,'www' ]
             , 'list' : Boolean
             , 'v' : Boolean
             , 'debug' : Boolean
+            , 'prepare' : Boolean
+            , 'plugins': path
+            , 'www': path
             };
 
 var cli_opts = nopt(known_opts);
+
+// Default the plugins_dir to './cordova/plugins'.
+var plugins_dir;
+
+// Without these arguments, the commands will fail and print the usage anyway.
+if (cli_opts.plugins_dir || cli_opts.project) {
+    plugins_dir = typeof cli_opts.plugins_dir == 'string' ?
+        cli_opts.plugins_dir :
+        path.join(cli_opts.project, 'cordova', 'plugins');
+}
 
 // only dump stack traces in debug mode, otherwise show error message and exit
 if (!cli_opts.debug) {
@@ -63,6 +78,9 @@ else if (cli_opts.list) {
       }
     });
 }
+else if (cli_opts.prepare && cli_opts.project && cli_opts.www) {
+    util.handlePrepare(cli_opts.project, plugins_dir, cli_opts.www, cli_opts.platform);
+}
 else if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
     printUsage();
 }
@@ -79,6 +97,8 @@ function printUsage() {
     console.log('Add a plugin:\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --plugin <directory|git-url|name>\n');
     console.log('Remove a plugin:\n\t' + package.name + ' --remove --platform <'+ platforms +'> --project <directory> --plugin <directory|git-url|name>\n');
     console.log('List plugins:\n\t' + package.name + ' --list\n');
+    console.log('Prepare project:\n\t' + package.name + ' --prepare --platform <ios|android|bb10> --project <directory> --www <directory> [--plugins_dir <directory>]');
+    console.log('\n\t--plugins_dir defaults to <project>/cordova/plugins, but can be any directory containing a subdirectory for each plugin');
 }
 
 function execAction(action, platform, project_dir, plugin_dir) {
@@ -95,9 +115,24 @@ function execAction(action, platform, project_dir, plugin_dir) {
 function handlePlugin(action, platform, project_dir, plugin_dir) {
     var plugin_xml_path, async = false;
 
+    // Ensure the containing directory exists.
+    shell.mkdir('-p', plugins_dir);
+
     // clone from git repository
     if(plugin_dir.indexOf('https://') == 0 || plugin_dir.indexOf('git://') == 0) {
-        plugin_dir = plugins.clonePluginGitRepo(plugin_dir);
+        plugin_dir = plugins.clonePluginGitRepo(plugin_dir, plugins_dir);
+    } else { // Copy from the local filesystem.
+        var lastSlash = plugin_dir.lastIndexOf(path.sep);
+        var dest = plugin_dir;
+        if (lastSlash >= 0) {
+            dest = dest.substring(lastSlash+1);
+        }
+        dest = path.join(plugins_dir, dest);
+
+        shell.rm('-rf', dest);
+        shell.cp('-R', plugin_dir, plugins_dir); // Yes, not dest.
+
+        plugin_dir = dest;
     }
 
     plugin_xml_path = path.join(plugin_dir, 'plugin.xml');
