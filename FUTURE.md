@@ -35,8 +35,8 @@ Care is required here not to remove permissions that are still needed by other p
 
 ### `--prepare`
 
-Takes over part of cordova-cli's `prepare` command. Copies all plugins' Javascript files (more precisely, those specified in `<js-module>` tags rather than `<asset>` tags) into `www/plugins/com.plugin.id/whatever/path/file.js` and constructs the `plugins.json` file.
+Takes over part of cordova-cli's `prepare` command. Copies all plugins' Javascript files (more precisely, those specified in `<js-module>` tags rather than `<asset>` tags) into `www/plugins/com.plugin.id/whatever/path/file.js` and constructs the `cordova_plugins.json` file.
 
-`cordova.js` in this new model will have code that reads this `plugins.json` file via XHR, loads the JS files for the plugins, and does their clobbers and merges.
+`cordova.js` in this new model will have code that reads this `cordova_plugins.json` file via XHR, loads the JS files for the plugins, and does their clobbers and merges.
 
 This is something of a change from the current cordova-cli method, but necessary because we won't be working with a fresh `cordova.js` file on each run anymore.
