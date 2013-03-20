@@ -28,8 +28,8 @@
     <asset src="www/childbrowser.js" target="childbrowser.js" />
     <asset src="www/childbrowser" target="childbrowser" />
 
-	<access origin="build.phonegap.com" />
-	<access origin="s3.amazonaws.com" />
+	  <access origin="build.phonegap.com" />
+	  <access origin="$APP_ID.s3.amazonaws.com" />
 	
     <!-- android -->
     <platform name="android">

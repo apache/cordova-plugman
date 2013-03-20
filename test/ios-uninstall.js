@@ -125,7 +125,7 @@ exports['should remove the bundle'] = function (test) {
 
 exports['should edit PhoneGap.plist'] = function (test) {
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
     ios.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
 
     var plistPath = test_project_dir + '/SampleApp/PhoneGap.plist';
@@ -136,7 +136,7 @@ exports['should edit PhoneGap.plist'] = function (test) {
         
     test.equal(obj.ExternalHosts.length, 2)    
     test.equal(obj.ExternalHosts[0], "build.phonegap.com")
-    test.equal(obj.ExternalHosts[1], "s3.amazonaws.com")
+    test.equal(obj.ExternalHosts[1], "12345.s3.amazonaws.com")
 
     test.done();
 }

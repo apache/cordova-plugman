@@ -25,20 +25,24 @@ var path = require('path')
   , plist = require('plist')
   , bplist = require('bplist-parser')
   , shell = require('shelljs')
-  , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'))
-  , getConfigChanges = require(path.join(__dirname, '..', 'util', 'config-changes'))
+  , xml_helpers = require('../util/xml-helpers')
+  , searchAndReplace = require('../util/search-and-replace')
+  , getConfigChanges = require('../util/config-changes')
   , assetsDir = 'www';    // relative path to project's web assets
 
-exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
+exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, variables) {
     var plugin_id = plugin_et._root.attrib['id']
       , version = plugin_et._root.attrib['version']
       , i = 0
       , matched;
+
+    variables = variables || {}
+
     // grab and parse pbxproj
     // we don't want CordovaLib's xcode project
     var project_files = glob.sync(project_dir + '/*.xcodeproj/project.pbxproj');
     
-    if (!project_files.length) throw "does not appear to be an xcode project";
+    if (!project_files.length) throw "does not appear to be an xcode project (no xcode project file)";
     var pbxPath = project_files[0];
 
     var xcodeproj = xcode.project(project_files[0]);
@@ -50,23 +54,30 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
                         glob.sync(project_dir + '/**/{PhoneGap,Cordova}.plist')
                        );
 
-    if (!config_files.length) {
-        throw "does not appear to be a PhoneGap project";
-    }
-
     config_files = config_files.filter(function (val) {
         return !(/^build\//.test(val));
     });
 
-    var pluginsDir = path.resolve(config_files[0], '..', 'Plugins');
-    var resourcesDir = path.resolve(config_files[0], '..', 'Resources');
+    if (!config_files.length) {
+        throw "does not appear to be a PhoneGap project";
+    }
 
+    var config_file = config_files[0];
+    var xcode_dir = path.dirname(config_file);
+    var pluginsDir = path.resolve(xcode_dir, 'Plugins');
+    var resourcesDir = path.resolve(xcode_dir, 'Resources');
+    
+    // get project plist for package name
+    var project_plists = glob.sync(xcode_dir + '/*-Info.plist');
+    var projectPListPath = project_plists[0];
+    
     // collision detection 
-    if(action == "install" && pluginInstalled(plugin_et, config_files[0])) {
+    if(action == "install" && pluginInstalled(plugin_et, config_file)) {
         throw "Plugin "+plugin_id+" already installed"
-    } else if(action == "uninstall" && !pluginInstalled(plugin_et, config_files[0])) {
+    } else if(action == "uninstall" && !pluginInstalled(plugin_et, config_file)) {
         throw "Plugin "+plugin_id+" not installed"
     }
+    
     var assets = plugin_et.findall('./asset'),
         platformTag = plugin_et.find('./platform[@name="ios"]'),
         sourceFiles = platformTag.findall('./source-file'),
@@ -161,10 +172,19 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
         }
     });
 
-    updateConfig(action, config_files[0], plugin_et);
-
     // write out xcodeproj file
     fs.writeFileSync(pbxPath, xcodeproj.writeSync());
+
+    // add plugin and whitelisted hosts
+    updateConfig(action, config_file, plugin_et);
+    
+    if (action == 'install') {
+        variables['PACKAGE_NAME'] = plist.parseFileSync(projectPListPath).CFBundleIdentifier;
+        searchAndReplace(pbxPath, variables);
+        searchAndReplace(projectPListPath, variables);
+        searchAndReplace(config_file, variables);
+    }
+    
 }
 
 function getRelativeDir(file) {

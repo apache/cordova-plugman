@@ -23,13 +23,13 @@ var fs = require('fs')  // use existsSync in 0.6.x
    , shell = require('shelljs')
    , et = require('elementtree')
    , getConfigChanges = require('../util/config-changes')
+   , searchAndReplace = require('../util/search-and-replace')
+   , xml_helpers = require('../util/xml-helpers')
+   , assetsDir = 'assets/www'
+   , sourceDir = 'src';
 
-   , assetsDir = 'assets/www'  // relative path to project's web assets
-   , sourceDir = 'src'
-   , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'));
 
-
-exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
+exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, variables) {
     var plugin_id = plugin_et._root.attrib['id']
       , version = plugin_et._root.attrib['version']
       , external_hosts = []
@@ -39,8 +39,9 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
       , platformTag = plugin_et.find('./platform[@name="android"]')
       , sourceFiles = platformTag.findall('./source-file')
       , libFiles = platformTag.findall('./library-file')
-      , PACKAGE_NAME = androidPackageName(project_dir)
       , configChanges = getConfigChanges(platformTag);
+
+    variables = variables || {}
 
 	// get config.xml filename
 	var config_xml_filename = 'res/xml/config.xml';
@@ -173,9 +174,15 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
         });
 
         output = xmlDoc.write({indent: 4});
-        output = output.replace(/\$PACKAGE_NAME/g, PACKAGE_NAME);
         fs.writeFileSync(filepath, output);
     });
+    
+    if (action == 'install') {
+        variables['PACKAGE_NAME'] = androidPackageName(project_dir);
+        searchAndReplace(path.resolve(project_dir, config_xml_filename), variables);
+        searchAndReplace(path.resolve(project_dir, 'AndroidManifest.xml'), variables);
+    }
+    
 }
 
 

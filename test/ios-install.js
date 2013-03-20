@@ -65,14 +65,14 @@ exports['should install webless plugin'] = function (test) {
     var dummy_xml_path = path.join(test_dir, 'plugins', 'WeblessPlugin', 'plugin.xml')
     var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
 
-    ios.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
+    ios.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et, { APP_ID: 12345 });
 
     test.done();
 }
 
 exports['should move the js file'] = function (test) {
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
 
     var jsPath = path.join(test_dir, 'projects', 'ios', 'www', 'childbrowser.js');
     test.ok(fs.existsSync(jsPath));
@@ -81,7 +81,7 @@ exports['should move the js file'] = function (test) {
 
 exports['should move the source files'] = function (test) {
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
 
     test.ok(fs.existsSync(srcDir + '/ChildBrowserCommand.m'))
     test.ok(fs.existsSync(srcDir + '/ChildBrowserViewController.m'))
@@ -92,7 +92,7 @@ exports['should move the source files'] = function (test) {
 
 exports['should move the header files'] = function (test) {
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
 
     test.ok(fs.statSync(srcDir + '/ChildBrowserCommand.h'));
     test.ok(fs.statSync(srcDir + '/ChildBrowserViewController.h'));
@@ -103,7 +103,7 @@ exports['should move the header files'] = function (test) {
 
 exports['should move the xib file'] = function (test) {
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
 
     test.ok(fs.statSync(resDir + '/ChildBrowserViewController.xib'));
     test.done();
@@ -111,7 +111,7 @@ exports['should move the xib file'] = function (test) {
 
 exports['should move the bundle'] = function (test) {
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
 
     var bundle = fs.statSync(resDir + '/ChildBrowser.bundle');
 
@@ -122,7 +122,7 @@ exports['should move the bundle'] = function (test) {
 
 exports['should edit PhoneGap.plist'] = function (test) {
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
 
     var plistPath = test_project_dir + '/SampleApp/PhoneGap.plist';
     var obj = plist.parseFileSync(plistPath);
@@ -132,7 +132,7 @@ exports['should edit PhoneGap.plist'] = function (test) {
         
     test.equal(obj.ExternalHosts.length, 2)    
     test.equal(obj.ExternalHosts[0], "build.phonegap.com")
-    test.equal(obj.ExternalHosts[1], "s3.amazonaws.com")
+    test.equal(obj.ExternalHosts[1], "12345.s3.amazonaws.com")
 
     test.done();
 }
@@ -172,7 +172,7 @@ exports['should edit config.xml even when using old <plugins-plist> approach'] =
     var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
 
     // run the platform-specific function
-    ios.handlePlugin('install', project_dir, dummy_plugin_dir, dummy_plugin_et);
+    ios.handlePlugin('install', project_dir, dummy_plugin_dir, dummy_plugin_et, { APP_ID: 12345 });
     
     var configXmlPath = path.join(project_dir, 'SampleApp', 'config.xml');
     var pluginsTxt = fs.readFileSync(configXmlPath, 'utf-8'),
@@ -183,14 +183,14 @@ exports['should edit config.xml even when using old <plugins-plist> approach'] =
     test.ok(pluginsDoc.find(expected));
     test.equal(pluginsDoc.findall("access").length, 3, "/access");
     test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "build.phonegap.com")
-    test.equal(pluginsDoc.findall("access")[2].attrib["origin"], "s3.amazonaws.com")
+    test.equal(pluginsDoc.findall("access")[2].attrib["origin"], "12345.s3.amazonaws.com")
 
     test.done();
 }
 
 exports['should edit the pbxproj file'] = function (test) {
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
 
     var projPath = test_project_dir + '/SampleApp.xcodeproj/project.pbxproj';
 
@@ -205,7 +205,7 @@ exports['should edit the pbxproj file'] = function (test) {
 
 exports['should add the framework references to the pbxproj file'] = function (test) {
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
     var projPath = test_project_dir + '/SampleApp.xcodeproj/project.pbxproj',
         projContents = fs.readFileSync(projPath, 'utf8'),
         projLines = projContents.split("\n"),
@@ -225,7 +225,7 @@ exports['should add the framework references to the pbxproj file'] = function (t
 
 exports['should add the framework references with weak option to the pbxproj file'] = function (test) {
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
     var projPath = test_project_dir + '/SampleApp.xcodeproj/project.pbxproj',
         projContents = fs.readFileSync(projPath, 'utf8'),
         projLines = projContents.split("\n"),
@@ -251,7 +251,7 @@ exports['should add the framework references with weak option to the pbxproj fil
 }
 
 exports['should not install a plugin that is already installed'] = function (test) {
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
 
     test.throws(function(){ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et); }, 
                 /already installed/
