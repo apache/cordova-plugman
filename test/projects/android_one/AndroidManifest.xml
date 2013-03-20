@@ -48,6 +48,8 @@
 
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
+    
+    <appid value="$APP_ID" />
 
     <application android:icon="@drawable/icon" android:label="@string/app_name"
     	android:debuggable="true">

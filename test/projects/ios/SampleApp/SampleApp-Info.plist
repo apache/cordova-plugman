@@ -74,5 +74,7 @@
 	<string></string>
 	<key>NSMainNibFile~ipad</key>
 	<string></string>
+	<key>AppId</key>
+	<string>$APP_ID</string>
 </dict>
 </plist>
