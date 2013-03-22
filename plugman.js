@@ -80,7 +80,7 @@ else if (cli_opts.list) {
     });
 }
 else if (cli_opts.prepare && cli_opts.project && cli_opts.www) {
-    util.handlePrepare(cli_opts.project, plugins_dir, cli_opts.www, cli_opts.platform);
+    plugin_loader.handlePrepare(cli_opts.project, plugins_dir, cli_opts.www, cli_opts.platform);
 }
 else if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
     printUsage();
