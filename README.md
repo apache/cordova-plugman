@@ -344,6 +344,14 @@ variable reference may be detected (in this case, from the `AndroidManifest.xml`
 file, or specified by the user of the tool; the exact process is dependent on
 the particular tool.
 
+plugman can request users to specify variables required by a plugin. For example API keys for C2M and Google Maps can be specified as a command line argument like so:
+
+    plugman --platform ios|android --project /path/to/project --plugin name|git-url|path --variable API_KEY="!@CFATGWE%^WGSFDGSDFW$%^#$%YTHGsdfhsfhyer56734"
+
+A preference tag will need to be present inside the platform tag to make the variable mandatory like so:
+
+    <preference name="API_KEY">
+
 Certain variable names should be reserved - these are listed below.
 
 ### $PACKAGE_NAME

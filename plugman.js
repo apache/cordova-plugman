@@ -71,15 +71,15 @@ else if (cli_opts.remove) {
     handlePlugin('uninstall', cli_opts.platform, cli_opts.project, cli_opts.plugin);
 }
 else {
-    var cli_variables = {}
-	if (cli_opts.variable) {
-		cli_opts.variable.forEach(function (variable) {
-			var tokens = variable.split('=');
-			var key = tokens.shift().toUpperCase();
-			if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
-		});
-	}
-    handlePlugin('install', cli_opts.platform, cli_opts.project, cli_opts.plugin, cli_variables);
+  var cli_variables = {}
+  if (cli_opts.variable) {
+    cli_opts.variable.forEach(function (variable) {
+        var tokens = variable.split('=');
+        var key = tokens.shift().toUpperCase();
+        if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
+        });
+  }
+  handlePlugin('install', cli_opts.platform, cli_opts.project, cli_opts.plugin, cli_variables);
 }
 
 function printUsage() {
