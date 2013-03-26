@@ -1,61 +1,80 @@
-plugman
-===================
+# plugman
 
 A command line tool to distribute and package plugins for use with Apache Cordova, nee PhoneGap.
 
-This document defines tool usage and the plugin format specification. This is not an official document of the Apache Cordova project.
+This document defines tool usage and the plugin format specification.
 
 
 ## Design Goals
-* facilitate programmatic installation and manipulation of plugins
-* detail the dependencies and components of individual plugins
-* allow code reuse between different target platforms
+
+* Facilitate programmatic installation and manipulation of plugins
+* Detail the dependencies and components of individual plugins
+* Allow code reuse between different target platforms
 
 
 ## Usage
 
-Adding plugins:
+Fetch a plugin:
 
-    plugman --platform PLATFORM --project PROJECT-PATH --plugin PLUGIN-PATH|PLUGIN-GIT-URL|PLUGIN-NAME
+    plugman --fetch --plugin <directory|git-url|name> [--plugins_dir <directory>]
 
-Example:
+Install an already fetched plugin:
 
-    plugman --platform android --project . --plugin ~/plugins/ChildBrowser
+    plugman --platform <ios|android|bb10> --project <directory> --plugin <name> [--plugins_dir <directory>]
 
-Removing plugins:
- 
-    plugman --platform PLATFORM --project PROJECT-PATH --plugin PLUGIN-PATH|PLUGIN-GIT-URL|PLUGIN-NAME --remove
+Uninstall a plugin:
 
-Example:
+    plugman --remove --platform <ios|android|bb10> --project <directory> --plugin <name> [--plugins_dir <directory>]
 
-    plugman --platform android --project . --plugin ~/plugins/ChildBrowser --remove
+Delete the local copy of a plugin:
 
-Listing plugins:
- 
-    plugman --list
+    plugman --remove --plugin <name> [--plugins_dir <directory>]
 
-    
+List plugins:
+
+    plugman --list [--plugins_dir <directory>]
+
+Prepare project:
+
+    plugman --prepare --platform <ios|android|bb10> --project <directory> --www <directory> [--plugins_dir <directory>]
+
+`--plugins_dir` defaults to `<project>/cordova/plugins`, but can be any directory containing a subdirectory for each fetched plugin
+
+Note that `--fetch` and `--remove` deal with the local cache of the plugin's files and don't care about platforms, while `--install` and `--uninstall` require specifying the target platform and the location of the project, and actually do that copying of the native code.
+
+Javascript code (see the section below on loading plugin Javascript) and `www` assets are loaded during `--prepare`.
+
+
 ### Supported Platforms
+
 * iOS
 * Android
+* BB10?
 
-### Supported Plugins
-Andrew Lunny's tamed plugins for ChildBrowser and PGSQLite will work but need to be massaged into the right format. 
+### Example Plugins
 
+The plugins found [https://github.com/MobileChromeApps/chrome-cordova/plugins](here) are maintained actively by a contributor to plugman, and should serve as good examples.
 
 ## Development
 
-    git clone https://github.com/imhotep/plugman.git
-    cd plugman
-    npm install -g
-   
+Basic installation:
 
+    git clone https://git-wip-us.apache.org/repos/asf/cordova-plugman.git
+    cd cordova-plugman
+    npm install -g
+
+Linking the global executable to the git repo:
+
+    git clone https://git-wip-us.apache.org/repos/asf/cordova-plugman.git
+    cd cordova-plugman
+    npm install
+    sudo npm link
 
 ## Plugin Directory Structure
 
 A plugin is typically a combination of some web/www code, and some native code.
 However, plugins may have only one of these things - a plugin could be a single
-JavaScript, or some native code with no corresponding JavaScript.
+JavaScript file, or some native code with no corresponding JavaScript.
 
 Here is a sample plugin named foo with android and ios platforms support, and 2 www assets.
 
@@ -63,7 +82,7 @@ Here is a sample plugin named foo with android and ios platforms support, and 2 
 foo-plugin/
 |- plugin.xml     # xml-based manifest
 |- src/           # native source for each platform
-|  |- android/ 
+|  |- android/
 |  |  `- Foo.java
 |  `- ios/
 |     |- CDVFoo.h
@@ -71,8 +90,40 @@ foo-plugin/
 |- README.md
 `- www/
    |- foo.js
-   `- foo.png 
-```   
+   `- foo.png
+```
+
+This structure is suggested, but not required.
+
+
+## Plugin Javascript Code Installation
+
+A typical plugin includes one or more Javascript files. Rather than have the user of your plugin add `<script>` tags for your Javascript to their HTML file(s) manually, you should use `<js-module>` tags for your Javascript files.
+
+### `<js-module>` tags
+
+`<asset>` tags are a dumb copy: copy a file from the plugin subdirectory to `www`.
+
+In contrast, `<js-module>` tags are much more sophisticated. They look like this:
+
+    <js-module src="socket.js" name="Socket">
+        <clobbers target="chrome.socket" />
+    </js-module>
+
+For each file with a `<js-module>` tag, the `plugman --prepare` call will copy the file to `www/plugins/my.plugin.id/path/to/myfile.js`. Further, it will add an entry for this plugin to `www/cordova_plugins.json`. At load time, code in `cordova.js` will use an XHR to read this file, inject a `<script>` tag for each Javascript file, and add a mapping to clobber or merge as appropriate (see below).
+
+DO NOT wrap the file with `cordova.define`; this will be added automatically. Your module will be wrapped in a closure, and will have `module`, `exports` and `require` in scope, as normal for AMD modules.
+
+Details for the `<js-module>` tag:
+
+* The `src` points to a file in the plugin directory.
+* The `name` gives the last part of the module name. It can generally be whatever you like, and it only matters if you want to use `cordova.require` to import other parts of your plugins in your Javascript code. The module name for a `<js-module>` is your plugin's `id` followed by the value of `name`. For the example above, with an `id` of `chrome.socket`, the module name is `chrome.socket.Socket`.
+* Inside the `<js-module>` tag there are three legal sub-tags:
+    * `<clobbers target="some.value" />` indicates that the `module.exports` will be inserted into the `window` object as `window.some.value`. You can have as many `<clobbers>` as you like.
+    * `<merges target="some.value" />` indicates that your module should be merged with any existing value at `window.some.value`. If any key already exists, you module's version overrides the original. You can have as many `<merges>` as you like.
+    * `<runs />` means that your code should be `cordova.require`d, but not installed on the `window` object anywhere. This is useful for initializing the module, attaching event handlers or otherwise. You can only have 0 or 1 `<runs />` tags. Note that including a `<runs />` with `<clobbers />` or `<merges />` is redundant, since they also `cordova.require` your module.
+    * An empty `<js-module>` will still be loaded and can be `cordova.require`d in other modules.
+
 
 ## plugin.xml Manifest Format
 
@@ -98,7 +149,7 @@ following attributes:
 #### xmlns (required)
 
 The plugin namespace - `http://www.phonegap.com/ns/plugins/1.0`. If the document
-contains XML from other namespaces - for example, tags to be added ot the
+contains XML from other namespaces - for example, tags to be added to the
 AndroidManifest.xml file - those namespaces should also be included in the
 top-level element.
 
@@ -112,8 +163,6 @@ A version number for the plugin, that matches the following major-minor-patch
 style regular expression:
 
     ^\d+[.]\d+[.]\d+$
-
-### Child elements
 
 ### &lt;engines&gt; element
 
@@ -187,11 +236,14 @@ present, and then copy the file `new-foo.js` as `foo.js` into that directory.
 If a file exists at the target location, tools based on this specification
 should stop the installation process and notify the user of the conflict.
 
+
 ### &lt;platform&gt;
 
 Platform tags identify platforms that have associated native code. Tools using
 this specification can identify supported platforms and install the code into
 Cordova projects.
+
+Plugins without `<platform>` tags are assumed to be JS-only, and therefore installable on any and all platforms.
 
 A sample platform tag:
 
@@ -211,6 +263,7 @@ Platform names should be all-lowercase. Platform names, as arbitrarily chosen,
 are listed:
 
 * android
+* bb10
 * ios
 
 
@@ -383,6 +436,7 @@ TODO: show how the foo plugin example from above will have its files placed in a
 * Fil Maj
 * Mike Reinstein
 * Anis Kadri
+* Braden Shepherdson
 
 ## Contributors
 
@@ -392,3 +446,21 @@ Michael Brooks
 ## License
 
 Apache
+
+## TODO
+
+These apply to plugman as well as cordova-cli. Keep the two in step, they both have `future` branches.
+
+These are in rough order of priority, most urgent at the top.
+
+* Remove expectation that source, header and resource files are found relative to `src/<platform>`. The `src` parameter should be relative to `plugin.xml` like the others.
+* Fix all the tests, including the www-only tests, which expect the old `www` platform that has been removed. Note that most of the tests will need some rewiring because of the separation of `--fetch` and `--install`.
+* Add tests for the `cordova_plugins.json` creation and copying of plugin Javascript files into `www/plugins/my.plugin/**`.
+* Make sure (I think it's already so) that `--uninstall` uses the local cache to uninstall a plugin, rather than fetching another. This avoids problems with the list of files changing upstream.
+* Add `cordova plugin add ../path/to/my/plugin --link` (and similarly for `plugman --fetch`), that symlinks the plugin rather than copying, so that it updates in real time on every `prepare`. This may have problems with native code until we can make that part of a `prepare` as well.
+* Make sure that when a new platform is `cordova platform add`ed that it gets all the currently loaded plugins installed.
+* Implement a `cordova watch` a la `grunt watch` that will re-run `cordova prepare` every time the installed plugins change (including those installed with `--link`). This is definitely a stretch goal, but it would be awesome.
+
+
+I (Braden) am willing to do all of these, and my employer has the will to allocate me to them for as long as they take.
+
