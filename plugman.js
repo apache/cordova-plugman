@@ -31,11 +31,11 @@ var fs = require('fs')
   , platform_modules = {
         'android': require('./platforms/android'),
         'ios': require('./platforms/ios'),
-        'blackberry': require('./platforms/blackberry'),
-        'www': require('./platforms/www')
+        'blackberry': require('./platforms/blackberry')
     };
 
-var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry' ,'www' ]
+var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry' ]
+
             , 'project' : path
             , 'plugin' : [String, path, url]
             , 'remove' : Boolean

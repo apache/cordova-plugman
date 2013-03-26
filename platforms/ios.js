@@ -25,16 +25,16 @@ var path = require('path')
   , plist = require('plist')
   , bplist = require('bplist-parser')
   , shell = require('shelljs')
-  , xml_helpers = require('../util/xml-helpers')
-  , searchAndReplace = require('../util/search-and-replace')
-  , getConfigChanges = require('../util/config-changes')
-  , assetsDir = 'www';    // relative path to project's web assets
-
+  , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'))
+  , searchAndReplace = require(path.join(__dirname, '..', 'util', 'search-and-replace')
+  , getConfigChanges = require(path.join(__dirname, '..', 'util', 'config-changes'));
+  
 exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, variables) {
     var plugin_id = plugin_et._root.attrib['id']
       , version = plugin_et._root.attrib['version']
       , i = 0
       , matched;
+
     variables = variables || {}
 
     // grab and parse pbxproj
@@ -80,38 +80,6 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
     } else {
       action = action.replace('force-', '');
     }
-    
-    var assets = plugin_et.findall('./asset'),
-        platformTag = plugin_et.find('./platform[@name="ios"]'),
-        sourceFiles = platformTag.findall('./source-file'),
-        headerFiles = platformTag.findall('./header-file'),
-        resourceFiles = platformTag.findall('./resource-file'),
-        frameworks = platformTag.findall('./framework');
-
-    // move asset files into www
-    assets && assets.forEach(function (asset) {
-        var srcPath = path.resolve(
-                        plugin_dir, asset.attrib['src']);
-
-        var targetPath = path.resolve(
-                            project_dir,
-                            assetsDir, asset.attrib['target']);
-        if (action == 'install') {
-            var stat = fs.statSync(srcPath);
-            if(stat.isDirectory()) {
-              shell.mkdir('-p', targetPath);
-              checkLastCommand();
-              shell.cp('-r', srcPath, targetPath);
-              checkLastCommand();
-            } else {
-              shell.cp(srcPath, targetPath);
-            }
-            checkLastCommand();
-        } else {
-            shell.rm('-rf', targetPath);
-            checkLastCommand();
-        }
-    });
 
     // move native files (source/header/resource)
     sourceFiles && sourceFiles.forEach(function (sourceFile) {
