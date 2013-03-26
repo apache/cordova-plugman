@@ -31,13 +31,17 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
       , version = plugin_et._root.attrib['version']
       , external_hosts = []
 
-      // look for assets in the plugin 
-      , assets = plugin_et.findall('./asset')
       , platformTag = plugin_et.find('./platform[@name="BlackBerry10"]')
-      , sourceFiles = platformTag.findall('./source-file')
+
+    if (!platformTag) {
+        // Either this plugin doesn't support this platform, or it's a JS-only plugin.
+        // Either way, return now.
+        return;
+    }
+
+    var sourceFiles = platformTag.findall('./source-file')
       , libFiles = platformTag.findall('./library-file')
       , configChanges = getConfigChanges(platformTag);
-      
     // find which config-files we're interested in
     Object.keys(configChanges).forEach(function (configFile) {
         if (!fs.existsSync(path.resolve(project_dir, configFile))) {
@@ -52,28 +56,6 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
         throw "Plugin "+plugin_id+" not installed"
     }
     
-    // move asset files
-    assets.forEach(function (asset) {
-        var srcPath = path.resolve(
-                        plugin_dir,
-                        asset.attrib['src']);
-
-        var targetPath = path.resolve(
-                            project_dir,
-                            asset.attrib['target']);
-        var stats = fs.statSync(srcPath);
-        if (action == 'install') {
-            if(stats.isDirectory()) {
-                shell.mkdir('-p', targetPath);
-                shell.cp('-R', srcPath, project_dir);
-            } else {
-                shell.cp(srcPath, targetPath);
-            }
-        } else {
-            shell.rm('-rf', targetPath);
-        }
-    });
-
     // move source files
     sourceFiles.forEach(function (sourceFile) {
         var srcDir = path.resolve(project_dir,

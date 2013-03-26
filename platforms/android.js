@@ -24,7 +24,6 @@ var fs = require('fs')  // use existsSync in 0.6.x
    , et = require('elementtree')
    , getConfigChanges = require('../util/config-changes')
 
-   , assetsDir = 'assets/www'  // relative path to project's web assets
    , sourceDir = 'src'
    , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'));
 
@@ -34,12 +33,18 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
       , version = plugin_et._root.attrib['version']
       , external_hosts = []
       , i = 0
-      // look for assets in the plugin 
-      , assets = plugin_et.findall('./asset')
-      , platformTag = plugin_et.find('./platform[@name="android"]')
-      , sourceFiles = platformTag.findall('./source-file')
-      , libFiles = platformTag.findall('./library-file')
       , PACKAGE_NAME = androidPackageName(project_dir)
+
+
+    var platformTag = plugin_et.find('./platform[@name="android"]');
+    if (!platformTag) {
+        // Either this plugin doesn't support this platform, or it's a JS-only plugin.
+        // Either way, return now.
+        return;
+    }
+
+    var sourceFiles = platformTag.findall('./source-file')
+      , libFiles = platformTag.findall('./library-file')
       , configChanges = getConfigChanges(platformTag);
 
 	// get config.xml filename
@@ -71,30 +76,6 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
     Object.keys(configChanges).forEach(function (configFile) {
         if (!fs.existsSync(path.resolve(project_dir, configFile))) {
             delete configChanges[configFile];
-        }
-    });
-
-    // move asset files
-    assets.forEach(function (asset) {
-        var srcPath = path.resolve(
-                        plugin_dir,
-                        asset.attrib['src']);
-
-        var targetPath = path.resolve(
-                            project_dir,
-                            assetsDir,
-                            asset.attrib['target']);
-
-        var stats = fs.statSync(srcPath);
-        if (action == 'install') {
-            if(stats.isDirectory()) {
-                shell.mkdir('-p', targetPath);
-                shell.cp('-R', srcPath, path.join(project_dir, assetsDir));
-            } else {
-                shell.cp(srcPath, targetPath);
-            }
-        } else {
-            shell.rm('-rf', targetPath);
         }
     });
 

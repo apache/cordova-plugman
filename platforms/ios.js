@@ -27,13 +27,26 @@ var path = require('path')
   , shell = require('shelljs')
   , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'))
   , getConfigChanges = require(path.join(__dirname, '..', 'util', 'config-changes'))
-  , assetsDir = 'www';    // relative path to project's web assets
 
 exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
     var plugin_id = plugin_et._root.attrib['id']
       , version = plugin_et._root.attrib['version']
       , i = 0
       , matched;
+
+    var platformTag = plugin_et.find('./platform[@name="ios"]');
+
+    if (!platformTag) {
+        // Either this plugin doesn't support this platform, or it's a JS-only plugin.
+        // Either way, return now.
+        return;
+    }
+
+    var sourceFiles = platformTag.findall('./source-file'),
+        headerFiles = platformTag.findall('./header-file'),
+        resourceFiles = platformTag.findall('./resource-file'),
+        frameworks = platformTag.findall('./framework');
+
     // grab and parse pbxproj
     // we don't want CordovaLib's xcode project
     var project_files = glob.sync(project_dir + '/*.xcodeproj/project.pbxproj');
@@ -67,31 +80,6 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
     } else if(action == "uninstall" && !pluginInstalled(plugin_et, config_files[0])) {
         throw "Plugin "+plugin_id+" not installed"
     }
-    var assets = plugin_et.findall('./asset'),
-        platformTag = plugin_et.find('./platform[@name="ios"]'),
-        sourceFiles = platformTag.findall('./source-file'),
-        headerFiles = platformTag.findall('./header-file'),
-        resourceFiles = platformTag.findall('./resource-file'),
-        frameworks = platformTag.findall('./framework');
-
-    // move asset files into www
-    assets && assets.forEach(function (asset) {
-        var srcPath = path.resolve(
-                        plugin_dir, asset.attrib['src']);
-
-        var targetPath = path.resolve(
-                            project_dir,
-                            assetsDir, asset.attrib['target']);
-        var stat = fs.statSync(srcPath);
-        if(stat.isDirectory()) {
-            shell.mkdir('-p', targetPath);
-        }
-        if (action == 'install') {
-            shell.cp('-r', srcPath, targetPath);
-        } else {
-            shell.rm('-rf', targetPath);
-        }
-    });
 
     // move native files (source/header/resource)
     sourceFiles && sourceFiles.forEach(function (sourceFile) {
