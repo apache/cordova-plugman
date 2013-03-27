@@ -33,7 +33,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
 
       // look for assets in the plugin 
       , assets = plugin_et.findall('./asset')
-      , platformTag = plugin_et.find('./platform[@name="BlackBerry10"]')
+      , platformTag = plugin_et.find('./platform[@name="blackberry"]')
       , sourceFiles = platformTag.findall('./source-file')
       , libFiles = platformTag.findall('./library-file')
       , configChanges = getConfigChanges(platformTag);
@@ -108,7 +108,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
 
         if (action == 'install') {
             shell.mkdir('-p', libDir);
-            var src = path.resolve(plugin_dir, 'src/BlackBerry10',
+            var src = path.resolve(plugin_dir, 'src/blackberry',
                                         libFile.attrib['src']),
                 dest = path.resolve(libDir,
                                 path.basename(libFile.attrib['src']));
@@ -156,17 +156,17 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
 
 
 function srcPath(pluginPath, filename) {
-    var prefix = /^src\/BlackBerry10/;
+    var prefix = /^src\/blackberry/;
 
     if (prefix.test(filename)) {
         return path.resolve(pluginPath, filename);
     } else {
-        return path.resolve(pluginPath, 'src/BlackBerry10', filename);
+        return path.resolve(pluginPath, 'src/blackberry', filename);
     }
 }
 
 function pluginInstalled(plugin_et, project_dir) {
-    var config_tag = plugin_et.find('./platform[@name="BlackBerry10"]/config-file[@target="config.xml"]/feature');
+    var config_tag = plugin_et.find('./platform[@name="blackberry"]/config-file[@target="config.xml"]/feature');
     if (!config_tag) {
         return false;
     }

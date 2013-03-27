@@ -57,8 +57,8 @@
                 target-dir="src/com/phonegap/plugins/dummyplugin" />
     </platform>
 
-    <!-- BlackBerry10 -->
-    <platform name="BlackBerry10">
+    <!-- blackberry -->
+    <platform name="blackberry">
         <config-file target="config.xml" parent="/widget">
             <feature id="dummyPlugin" required="true" version="1.0.0.0"/>
         </config-file>
