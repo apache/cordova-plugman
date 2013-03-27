@@ -95,36 +95,6 @@ foo-plugin/
 
 This structure is suggested, but not required.
 
-
-## Plugin Javascript Code Installation
-
-A typical plugin includes one or more Javascript files. Rather than have the user of your plugin add `<script>` tags for your Javascript to their HTML file(s) manually, you should use `<js-module>` tags for your Javascript files.
-
-### `<js-module>` tags
-
-`<asset>` tags are a dumb copy: copy a file from the plugin subdirectory to `www`.
-
-In contrast, `<js-module>` tags are much more sophisticated. They look like this:
-
-    <js-module src="socket.js" name="Socket">
-        <clobbers target="chrome.socket" />
-    </js-module>
-
-For each file with a `<js-module>` tag, the `plugman --prepare` call will copy the file to `www/plugins/my.plugin.id/path/to/myfile.js`. Further, it will add an entry for this plugin to `www/cordova_plugins.json`. At load time, code in `cordova.js` will use an XHR to read this file, inject a `<script>` tag for each Javascript file, and add a mapping to clobber or merge as appropriate (see below).
-
-DO NOT wrap the file with `cordova.define`; this will be added automatically. Your module will be wrapped in a closure, and will have `module`, `exports` and `require` in scope, as normal for AMD modules.
-
-Details for the `<js-module>` tag:
-
-* The `src` points to a file in the plugin directory.
-* The `name` gives the last part of the module name. It can generally be whatever you like, and it only matters if you want to use `cordova.require` to import other parts of your plugins in your Javascript code. The module name for a `<js-module>` is your plugin's `id` followed by the value of `name`. For the example above, with an `id` of `chrome.socket`, the module name is `chrome.socket.Socket`.
-* Inside the `<js-module>` tag there are three legal sub-tags:
-    * `<clobbers target="some.value" />` indicates that the `module.exports` will be inserted into the `window` object as `window.some.value`. You can have as many `<clobbers>` as you like.
-    * `<merges target="some.value" />` indicates that your module should be merged with any existing value at `window.some.value`. If any key already exists, you module's version overrides the original. You can have as many `<merges>` as you like.
-    * `<runs />` means that your code should be `cordova.require`d, but not installed on the `window` object anywhere. This is useful for initializing the module, attaching event handlers or otherwise. You can only have 0 or 1 `<runs />` tags. Note that including a `<runs />` with `<clobbers />` or `<merges />` is redundant, since they also `cordova.require` your module.
-    * An empty `<js-module>` will still be loaded and can be `cordova.require`d in other modules.
-
-
 ## plugin.xml Manifest Format
 
 The `plugin.xml` file is an XML document in the plugins namespace -
@@ -164,7 +134,7 @@ style regular expression:
 
     ^\d+[.]\d+[.]\d+$
 
-### &lt;engines&gt; element
+### &lt;engines&gt; and &lt;engine&gt; elements
 
 The child elements of the `<engines>` element specify versions of
 Apache Cordova-based frameworks that this plugin supports. An example:
@@ -192,7 +162,7 @@ maintenance when the underlying platform is updated. A minimum of `>`, `>=`,
 
 plugman will abort plugin installation if the target project does not meet the engine constraints.
 
-
+If no `<engine>` tags are specified, plugman will attempt to install into the specified cordova project directory blindly.
 
 ### &lt;name&gt; element
 
@@ -201,8 +171,7 @@ the name of the plugin. An example:
 
     <name>Foo</name>
 
-This element does not yet handle localization.
-
+This element does not (yet) handle localization.
 
 ### &lt;asset&gt; element
 
@@ -233,8 +202,33 @@ Assets can be targeted to subdirectories - for instance:
 would create the `js/experimental` directory in the `www` directory, if not
 present, and then copy the file `new-foo.js` as `foo.js` into that directory.
 
-If a file exists at the target location, tools based on this specification
-should stop the installation process and notify the user of the conflict.
+If a file exists at the target location, plugman will stop the installation process and notify the user of the conflict.
+
+### `&lt;js-module&gt;` element 
+
+A typical plugin includes one or more Javascript files. Rather than have the user of your plugin add `<script>` tags for your Javascript to their HTML file(s) manually, you should use `<js-module>` tags for your Javascript files.
+
+`<asset>` tags are a dumb copy: copy a file from the plugin subdirectory to `www`.
+
+In contrast, `<js-module>` tags are much more sophisticated. They look like this:
+
+    <js-module src="socket.js" name="Socket">
+        <clobbers target="chrome.socket" />
+    </js-module>
+
+For each file with a `<js-module>` tag, the `plugman --prepare` call will copy the file to `www/plugins/my.plugin.id/path/to/myfile.js`. Further, it will add an entry for this plugin to `www/cordova_plugins.json`. At load time, code in `cordova.js` will use an XHR to read this file, inject a `<script>` tag for each Javascript file, and add a mapping to clobber or merge as appropriate (see below).
+
+DO NOT wrap the file with `cordova.define`; this will be added automatically. Your module will be wrapped in a closure, and will have `module`, `exports` and `require` in scope, as normal for AMD modules.
+
+Details for the `<js-module>` tag:
+
+* The `src` points to a file in the plugin directory.
+* The `name` gives the last part of the module name. It can generally be whatever you like, and it only matters if you want to use `cordova.require` to import other parts of your plugins in your Javascript code. The module name for a `<js-module>` is your plugin's `id` followed by the value of `name`. For the example above, with an `id` of `chrome.socket`, the module name is `chrome.socket.Socket`.
+* Inside the `<js-module>` tag there are three legal sub-tags:
+    * `<clobbers target="some.value" />` indicates that the `module.exports` will be inserted into the `window` object as `window.some.value`. You can have as many `<clobbers>` as you like.
+    * `<merges target="some.value" />` indicates that your module should be merged with any existing value at `window.some.value`. If any key already exists, you module's version overrides the original. You can have as many `<merges>` as you like.
+    * `<runs />` means that your code should be `cordova.require`d, but not installed on the `window` object anywhere. This is useful for initializing the module, attaching event handlers or otherwise. You can only have 0 or 1 `<runs />` tags. Note that including a `<runs />` with `<clobbers />` or `<merges />` is redundant, since they also `cordova.require` your module.
+    * An empty `<js-module>` will still be loaded and can be `cordova.require`d in other modules.
 
 
 ### &lt;platform&gt;
@@ -278,8 +272,7 @@ into a project. A couple of examples:
     <!-- ios -->
     <source-file src="CDVFoo.m" />
 
-As with assets, if a `source-file` would overwrite an existing file, tools
-should notify the user and stop, like, right away.
+As with assets, if a `source-file` would overwrite an existing file, plugman will notify the user and stop, like, right away.
 
 #### src (required)
 
@@ -328,7 +321,7 @@ the config file.
 
 ### &lt;plugins-plist&gt;
 
-This is OUTDATED. Only applies to Cordova 2.2.0 and below). Use &lt;config-file&gt; tag (same as Android) for newer versions of Cordova.
+This is OUTDATED. Only applies to cordova-ios 2.2.0 and below. Use &lt;config-file&gt; tag (same as Android) for newer versions of Cordova.
 
 Example:
 
@@ -406,6 +399,7 @@ the `CFBundleIdentifier` on iOS or the `package` attribute of the top-level
 `manifest` element in an `AndroidManifest.xml` file.
 
 ## Project Directory Structure
+
 TODO: show how the foo plugin example from above will have its files placed in a cordova project after running plugman
 
 ## Authors
@@ -418,8 +412,7 @@ TODO: show how the foo plugin example from above will have its files placed in a
 
 ## Contributors
 
-Michael Brooks
-
+* Michael Brooks
 
 ## License
 
@@ -431,14 +424,14 @@ These apply to plugman as well as cordova-cli. Keep the two in step, they both h
 
 These are in rough order of priority, most urgent at the top.
 
-* Remove expectation that source, header and resource files are found relative to `src/<platform>`. The `src` parameter should be relative to `plugin.xml` like the others.
-* Fix all the tests, including the www-only tests, which expect the old `www` platform that has been removed. Note that most of the tests will need some rewiring because of the separation of `--fetch` and `--install`.
-* Add tests for the `cordova_plugins.json` creation and copying of plugin Javascript files into `www/plugins/my.plugin/**`.
-* Make sure (I think it's already so) that `--uninstall` uses the local cache to uninstall a plugin, rather than fetching another. This avoids problems with the list of files changing upstream.
-* Add `cordova plugin add ../path/to/my/plugin --link` (and similarly for `plugman --fetch`), that symlinks the plugin rather than copying, so that it updates in real time on every `prepare`. This may have problems with native code until we can make that part of a `prepare` as well.
-* Make sure that when a new platform is `cordova platform add`ed that it gets all the currently loaded plugins installed.
-* Implement a `cordova watch` a la `grunt watch` that will re-run `cordova prepare` every time the installed plugins change (including those installed with `--link`). This is definitely a stretch goal, but it would be awesome.
-
+* Remove expectation that source, header and resource files are found relative to `src/<platform>`. The `src` parameter should be relative to `plugin.xml` like the others. [CB-2813](http://issues.corodva.io/2813). Assigned to Braden.
+* Fix all the tests, including the www-only tests, which expect the old `www` platform that has been removed. Note that most of the tests will need some rewiring because of the separation of `--fetch` and `--install`. [CB-2814](http://issues.cordova.io/2814). Assigned to Fil.
+* Add tests for the `cordova_plugins.json` creation and copying of plugin Javascript files into `www/plugins/my.plugin/**`. [CB-2815](http://issues.cordova.io/2815). Assigned to Braden.
+* Make sure (I think it's already so) that `--uninstall` uses the local cache to uninstall a plugin, rather than fetching another. This avoids problems with the list of files changing upstream. [CB-2816](http://issues.cordova.io). Assigned to Fil.
+* Add `cordova plugin add ../path/to/my/plugin --link` (and similarly for `plugman --fetch`), that symlinks the plugin rather than copying, so that it updates in real time on every `prepare`. This may have problems with native code until we can make that part of a `prepare` as well. [CB-2817](http://issues.cordova.io/2817). Assigned to Braden.
+* Make sure that when a new platform is `cordova platform add`ed that it gets all the currently loaded plugins installed. [CB-2818](http://issues.cordova.io/2818). Assigned to Fil.
+* Implement a `cordova watch` a la `grunt watch` that will re-run `cordova prepare` every time the installed plugins change (including those installed with `--link`). This is definitely a stretch goal, but it would be awesome. Not assigned but tracked at [CB-2819](http://issues.cordova.io/2819).
 
 I (Braden) am willing to do all of these, and my employer has the will to allocate me to them for as long as they take.
 
+Fil, Anis, and Tim are all available resources for cordova-plugman and cordova-cli work! USE US, BRADEN!
