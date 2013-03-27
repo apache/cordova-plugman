@@ -100,10 +100,10 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
             fs.unlinkSync(destFile);
             // check if directory is empty
             var curDir = srcDir;
-            while(curDir !== project_dir + '/src') {
+            while(curDir !== path.join(project_dir, 'src')) {
                 if(fs.readdirSync(curDir).length == 0) {
                     fs.rmdirSync(curDir);
-                    curDir = path.resolve(curDir + '/..');
+                    curDir = path.resolve(path.join(curDir, '..'));
                 } else {
                     // directory not empty...do nothing
                     break;
@@ -119,11 +119,11 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
 
         if (action == 'install') {
             shell.mkdir('-p', libDir);
-            var src = path.resolve(plugin_dir, 'src/android',
+            var src = path.resolve(plugin_dir,
                                         libFile.attrib['src']),
                 dest = path.resolve(libDir,
                                 path.basename(libFile.attrib['src']));
-            
+
             shell.cp(src, dest);
         } else {
             var destFile = path.resolve(libDir,
@@ -173,13 +173,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
 
 
 function srcPath(pluginPath, filename) {
-    var prefix = /^src\/android/;
-
-    if (prefix.test(filename)) {
-        return path.resolve(pluginPath, filename);
-    } else {
-        return path.resolve(pluginPath, 'src/android', filename);
-    }
+    return path.resolve(pluginPath, filename);
 }
 
 // reads the package name out of the Android Manifest file

@@ -39,7 +39,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
 
     // grab and parse pbxproj
     // we don't want CordovaLib's xcode project
-    var project_files = glob.sync(project_dir + '/*.xcodeproj/project.pbxproj');
+    var project_files = glob.sync(path.join(project_dir, '*.xcodeproj', 'project.pbxproj'));
     
     if (!project_files.length) throw "does not appear to be an xcode project (no xcode project file)";
     var pbxPath = project_files[0];
@@ -48,9 +48,9 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
     xcodeproj.parseSync();
 
     // grab and parse plist file or config.xml
-    var config_files = (glob.sync(project_dir + '/**/{PhoneGap,Cordova}.plist').length == 0 ? 
-                        glob.sync(project_dir + '/**/config.xml') :
-                        glob.sync(project_dir + '/**/{PhoneGap,Cordova}.plist')
+    var config_files = (glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist')).length == 0 ? 
+                        glob.sync(path.join(project_dir, '**', 'config.xml')) :
+                        glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist'))
                        );
 
     config_files = config_files.filter(function (val) {
@@ -84,18 +84,18 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
     // move native files (source/header/resource)
     sourceFiles && sourceFiles.forEach(function (sourceFile) {
         var src = sourceFile.attrib['src'],
-            srcFile = path.resolve(plugin_dir, 'src/ios', src),
+            srcFile = path.resolve(plugin_dir, src),
             targetDir = path.resolve(pluginsDir, getRelativeDir(sourceFile)),
             destFile = path.resolve(targetDir, path.basename(src));
          
         if (action == 'install') {
-            xcodeproj.addSourceFile('Plugins/' + path.relative(pluginsDir, destFile));
+            xcodeproj.addSourceFile(path.join('Plugins', path.relative(pluginsDir, destFile)));
             shell.mkdir('-p', targetDir);
             checkLastCommand();
             shell.cp(srcFile, destFile);
             checkLastCommand();
         } else {
-            xcodeproj.removeSourceFile('Plugins/' + path.basename(src));   
+            xcodeproj.removeSourceFile(path.join('Plugins', path.basename(src)));
             if(fs.existsSync(destFile))
                 fs.unlinkSync(destFile);
             shell.rm('-rf', targetDir);    
@@ -105,18 +105,18 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
 
     headerFiles && headerFiles.forEach(function (headerFile) {
         var src = headerFile.attrib['src'],
-            srcFile = path.resolve(plugin_dir, 'src/ios', src),
+            srcFile = path.resolve(plugin_dir, src),
             targetDir = path.resolve(pluginsDir, getRelativeDir(headerFile)),
             destFile = path.resolve(targetDir, path.basename(src));
          
         if (action == 'install') {     
-            xcodeproj.addHeaderFile('Plugins/' + path.relative(pluginsDir, destFile));
+            xcodeproj.addHeaderFile(path.join('Plugins', path.relative(pluginsDir, destFile)));
             shell.mkdir('-p', targetDir);
             checkLastCommand();
             shell.cp(srcFile, destFile);
             checkLastCommand();
         } else {
-            xcodeproj.removeHeaderFile('Plugins/' + path.basename(src));
+            xcodeproj.removeHeaderFile(path.join('Plugins', path.basename(src)));
             if(fs.existsSync(destFile))
                 fs.unlinkSync(destFile);
             shell.rm('-rf', targetDir);
@@ -126,11 +126,11 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
 
     resourceFiles && resourceFiles.forEach(function (resource) {
         var src = resource.attrib['src'],
-            srcFile = path.resolve(plugin_dir, 'src/ios', src),
+            srcFile = path.resolve(plugin_dir, src),
             destFile = path.resolve(resourcesDir, path.basename(src));
 
         if (action == 'install') {
-            xcodeproj.addResourceFile('Resources/' + path.basename(src));
+            xcodeproj.addResourceFile(path.join('Resources', path.basename(src)));
             var st = fs.statSync(srcFile);
             if (st.isDirectory()) {
                 shell.cp('-R', srcFile, resourcesDir);
@@ -140,7 +140,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
                 checkLastCommand();
             }
         } else {
-            xcodeproj.removeResourceFile('Resources/' + path.basename(src));
+            xcodeproj.removeResourceFile(path.join('Resources', path.basename(src)));
             shell.rm('-rf', destFile);
             checkLastCommand();
         }
