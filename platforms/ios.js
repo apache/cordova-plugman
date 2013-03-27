@@ -319,11 +319,11 @@ function updateConfigXml(action, config_path, plugin_et) {
 	            children = configNode.findall('*');
 	        if( action == 'install') {
 	            if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
-	                throw new Error('failed to add children to ' + filename);
+	                throw new Error('failed to add children to ' + selector + ' in ' + config_path);
 	            }
 	        } else {
 	            if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
-	                throw new Error('failed to remove children from' + filename);
+	                throw new Error('failed to remove children from ', selector + ' in ' + config_path);
 	            }
 	        }
 		});
