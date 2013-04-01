@@ -27,7 +27,7 @@ var fs = require('fs')
   , ios = require(path.join(__dirname, '..', 'platforms', 'ios'))
 
   , test_dir = path.join(osenv.tmpdir(), 'test_plugman')
-  , test_project_dir = path.join(test_dir, 'projects', 'ios')
+  , test_project_dir = path.join(test_dir, 'projects', 'ios-config-xml')
   , test_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
   , xml_path     = path.join(test_dir, 'plugins', 'ChildBrowser', 'plugin.xml')
   , xml_text, plugin_et
@@ -76,7 +76,7 @@ exports['should remove the js file'] = function (test) {
     ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
     ios.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
 
-    var jsPath = path.join(test_dir, 'projects', 'ios', 'www', 'childbrowser.js');
+    var jsPath = path.join(test_dir, 'projects', 'ios-config-xml', 'www', 'childbrowser.js');
     test.ok(!fs.existsSync(jsPath))
     test.done();
 }
@@ -120,24 +120,6 @@ exports['should remove the bundle'] = function (test) {
     ios.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
 
     test.ok(!fs.existsSync(resDir + '/ChildBrowser.bundle'))
-    test.done();
-}
-
-exports['should edit PhoneGap.plist'] = function (test) {
-    // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
-    ios.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
-
-    var plistPath = test_project_dir + '/SampleApp/PhoneGap.plist';
-    obj = plist.parseFileSync(plistPath);
-
-    test.notEqual(obj.Plugins['com.phonegap.plugins.childbrowser'],
-        'ChildBrowserCommand');
-        
-    test.equal(obj.ExternalHosts.length, 2)    
-    test.equal(obj.ExternalHosts[0], "build.phonegap.com")
-    test.equal(obj.ExternalHosts[1], "12345.s3.amazonaws.com")
-
     test.done();
 }
 
@@ -233,6 +215,13 @@ exports['should remove the framework references from the pbxproj file'] = functi
 exports['should not uninstall a plugin that is not installed'] = function (test) {
     test.throws(function(){ios.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et); }, 
                 /not installed/
+               );
+    test.done();
+}
+
+exports['should skip collision check when installation is forced'] = function (test) {
+    test.doesNotThrow(function(){ios.handlePlugin('uninstall-force', test_project_dir, test_plugin_dir, plugin_et); }, 
+                /already installed/
                );
     test.done();
 }

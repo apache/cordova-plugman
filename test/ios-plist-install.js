@@ -27,7 +27,7 @@ var fs = require('fs')
   , ios = require(path.join(__dirname, '..', 'platforms', 'ios'))
 
   , test_dir = path.join(osenv.tmpdir(), 'test_plugman')
-  , test_project_dir = path.join(test_dir, 'projects', 'ios')
+  , test_project_dir = path.join(test_dir, 'projects', 'ios-plist')
   , test_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
   , xml_path     = path.join(test_dir, 'plugins', 'ChildBrowser', 'plugin.xml')
   , xml_text, plugin_et
@@ -74,7 +74,7 @@ exports['should move the js file'] = function (test) {
     // run the platform-specific function
     ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
 
-    var jsPath = path.join(test_dir, 'projects', 'ios', 'www', 'childbrowser.js');
+    var jsPath = path.join(test_dir, 'projects', 'ios-plist', 'www', 'childbrowser.js');
     test.ok(fs.existsSync(jsPath));
     test.done();
 }
@@ -137,57 +137,6 @@ exports['should edit PhoneGap.plist'] = function (test) {
     test.done();
 }
 
-exports['should edit config.xml'] = function (test) {
-    // setting up WebNotification (with config.xml) 
-    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'WebNotifications')
-    var dummy_xml_path = path.join(test_dir, 'plugins', 'WebNotifications', 'plugin.xml')
-    
-    // overriding some params
-    var project_dir = path.join(test_dir, 'projects', 'ios-config-xml')
-    var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
-
-    // run the platform-specific function
-    ios.handlePlugin('install', project_dir, dummy_plugin_dir, dummy_plugin_et);
-    
-    var configXmlPath = path.join(project_dir, 'SampleApp', 'config.xml');
-    var pluginsTxt = fs.readFileSync(configXmlPath, 'utf-8'),
-        pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
-        expected = 'plugins/plugin[@name="WebNotifications"]' +
-                    '[@value="WebNotifications"]';
-
-    test.ok(pluginsDoc.find(expected));
-    test.equal(pluginsDoc.findall("access").length, 3, "/access");
-    test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "build.phonegap.com")
-    test.equal(pluginsDoc.findall("access")[2].attrib["origin"], "s3.amazonaws.com")
-    test.done();
-}
-
-exports['should edit config.xml even when using old <plugins-plist> approach'] = function (test) {
-    // setting up PGSQLitePlugin (with config.xml) 
-    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
-    var dummy_xml_path = path.join(dummy_plugin_dir, 'plugin.xml')
-    
-    // overriding some params
-    var project_dir = path.join(test_dir, 'projects', 'ios-config-xml')
-    var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
-
-    // run the platform-specific function
-    ios.handlePlugin('install', project_dir, dummy_plugin_dir, dummy_plugin_et, { APP_ID: 12345 });
-    
-    var configXmlPath = path.join(project_dir, 'SampleApp', 'config.xml');
-    var pluginsTxt = fs.readFileSync(configXmlPath, 'utf-8'),
-        pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
-        expected = 'plugins/plugin[@name="com.phonegap.plugins.childbrowser"]' +
-                    '[@value="ChildBrowserCommand"]';
-
-    test.ok(pluginsDoc.find(expected));
-    test.equal(pluginsDoc.findall("access").length, 3, "/access");
-    test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "build.phonegap.com")
-    test.equal(pluginsDoc.findall("access")[2].attrib["origin"], "12345.s3.amazonaws.com")
-
-    test.done();
-}
-
 exports['should edit the pbxproj file'] = function (test) {
     // run the platform-specific function
     ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
@@ -245,9 +194,9 @@ exports['should add the framework references with weak option to the pbxproj fil
     test.equal(weak_references.length, 4);
     test.ok(weak_references[0].indexOf(weak_linked) != -1);
     
-	test.equal(non_weak_references.length, 4);
+    test.equal(non_weak_references.length, 4);
     test.ok(non_weak_references[0].indexOf(weak_linked) == -1);
-	test.done();
+    test.done();
 }
 
 exports['should not install a plugin that is already installed'] = function (test) {
@@ -258,3 +207,26 @@ exports['should not install a plugin that is already installed'] = function (tes
                );
     test.done();
 }
+
+exports['should skip collision check when installation is forced'] = function (test) {
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+    test.doesNotThrow(function(){ios.handlePlugin('force-install', test_project_dir, test_plugin_dir, plugin_et); }, 
+                /already installed/
+               );
+    test.done();
+}
+
+//exports['should revert changes when an error occurs'] = function (test) {
+//    var faulty_plugin_dir = path.join(test_dir, 'plugins', 'FaultyPlugin')
+//    var faulty_xml_path = path.join(test_dir, 'plugins', 'FaultyPlugin', 'plugin.xml')
+//    var faulty_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(faulty_xml_path, 'utf-8')));
+//    
+//    var project_dir = path.join(test_dir, 'projects', 'ios-new-config-xml')
+//    
+//    ios.handlePlugin('install', project_dir, faulty_plugin_dir, faulty_plugin_et, { APP_ID: 12345 });
+//
+//    test.throws(function(){ios.handlePlugin('install', project_dir, test_plugin_dir, plugin_et); }, 
+//                /already installed/
+//               );
+//    test.done();
+//}
