@@ -72,10 +72,14 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
     var projectPListPath = project_plists[0];
     
     // collision detection 
-    if(action == "install" && pluginInstalled(plugin_et, config_file)) {
-        throw "Plugin "+plugin_id+" already installed"
-    } else if(action == "uninstall" && !pluginInstalled(plugin_et, config_file)) {
-        throw "Plugin "+plugin_id+" not installed"
+    if(action.match(/force-/) == null) {
+      if(action == "install" && pluginInstalled(plugin_et, config_file)) {
+          throw "Plugin "+plugin_id+" already installed"
+      } else if(action == "uninstall" && !pluginInstalled(plugin_et, config_file)) {
+          throw "Plugin "+plugin_id+" not installed"
+      }
+    } else {
+      action = action.replace('force-', '');
     }
     
     var assets = plugin_et.findall('./asset'),
@@ -165,7 +169,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
             weak = framework.attrib['weak'];
 
         if (action == 'install') {
-			var opt = { weak: (weak && weak.toLowerCase() == 'true') };
+            var opt = { weak: (weak && weak.toLowerCase() == 'true') };
             xcodeproj.addFramework(src, opt);
         } else {
             xcodeproj.removeFramework(src);
@@ -176,7 +180,15 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
     fs.writeFileSync(pbxPath, xcodeproj.writeSync());
 
     // add plugin and whitelisted hosts
-    updateConfig(action, config_file, plugin_et);
+    try {
+      updateConfig(action, config_file, plugin_et);
+    } catch(e) {
+      throw {
+        name: "ConfigurationError",
+        level: "ERROR",
+        message: "Error updating configuration: "+e.message,
+      }
+    }
     
     if (action == 'install') {
         variables['PACKAGE_NAME'] = plist.parseFileSync(projectPListPath).CFBundleIdentifier;
@@ -269,19 +281,19 @@ function updateConfigXml(action, config_path, plugin_et) {
     var hosts = plugin_et.findall('./access'),
         platformTag = plugin_et.find('./platform[@name="ios"]'), // FIXME: can probably do better than this
         plistEle = platformTag.find('./plugins-plist'), // use this for older that have plugins-plist
-		configChanges = getConfigChanges(platformTag),
-	    base_config_path = path.basename(config_path);
+        configChanges = getConfigChanges(platformTag),
+        base_config_path = path.basename(config_path);
 
     // edit configuration files
     var xmlDoc = xml_helpers.parseElementtreeSync(config_path),
         output,
-		pListOnly = plistEle;
-
-	if (configChanges[path.basename(config_path)]) {	
-		configChanges[path.basename(config_path)].forEach(function (val) {
-			if (val.find("plugin")) pListOnly = false;
-		});
-	}
+		    pListOnly = plistEle;
+    
+    if (configChanges[path.basename(config_path)]) {	
+      configChanges[path.basename(config_path)].forEach(function (val) {
+        if (val.find("plugin")) pListOnly = false;
+      });
+    }
 
     if (pListOnly) {
         // if the plugin supports the old plugins-plist element only
@@ -299,35 +311,35 @@ function updateConfigXml(action, config_path, plugin_et) {
         }
     }
 
-	// add whitelist hosts
-	root = et.Element("config-file");
-	root.attrib['parent'] = '.'
-    hosts.forEach(function (tag) {
-		root.append(tag);
-	});
+    // add whitelist hosts
+    root = et.Element("config-file");
+    root.attrib['parent'] = '.'
+      hosts.forEach(function (tag) {
+      root.append(tag);
+    });
 
-	if (root.len()) {
-		(configChanges[path.basename(config_path)]) ?
-        	configChanges[path.basename(config_path)].push(root) :
-        	configChanges[path.basename(config_path)] = [root];
-	}
+    if (root.len()) {
+      (configChanges[path.basename(config_path)]) ?
+            configChanges[path.basename(config_path)].push(root) :
+            configChanges[path.basename(config_path)] = [root];
+    }
 
-	if (configChanges[path.basename(config_path)]) {
+    if (configChanges[path.basename(config_path)]) {
 
-	    configChanges[base_config_path].forEach(function (configNode) {
-	        var selector = configNode.attrib["parent"],
-	            children = configNode.findall('*');
-	        if( action == 'install') {
-	            if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
-	                throw new Error('failed to add children to ' + selector + ' in ' + config_path);
-	            }
-	        } else {
-	            if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
-	                throw new Error('failed to remove children from ', selector + ' in ' + config_path);
-	            }
-	        }
-		});
-	}
+        configChanges[base_config_path].forEach(function (configNode) {
+            var selector = configNode.attrib["parent"],
+                children = configNode.findall('*');
+            if( action == 'install') {
+                if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
+                    throw new Error('failed to add children to ' + selector + ' in ' + config_path);
+                }
+            } else {
+                if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
+                    throw new Error('failed to remove children from ' + selector + ' in ' + config_path);
+                }
+            }
+      });
+    }
 
     output = xmlDoc.write({indent: 4});
     fs.writeFileSync(config_path, output);
