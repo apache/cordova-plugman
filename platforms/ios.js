@@ -35,7 +35,6 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
       , version = plugin_et._root.attrib['version']
       , i = 0
       , matched;
-
     variables = variables || {}
 
     // grab and parse pbxproj
@@ -100,11 +99,14 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
         var stat = fs.statSync(srcPath);
         if(stat.isDirectory()) {
             shell.mkdir('-p', targetPath);
+            checkLastCommand();
         }
         if (action == 'install') {
             shell.cp('-r', srcPath, targetPath);
+            checkLastCommand();
         } else {
             shell.rm('-rf', targetPath);
+            checkLastCommand();
         }
     });
 
@@ -118,12 +120,15 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
         if (action == 'install') {
             xcodeproj.addSourceFile('Plugins/' + path.relative(pluginsDir, destFile));
             shell.mkdir('-p', targetDir);
+            checkLastCommand();
             shell.cp(srcFile, destFile);
+            checkLastCommand();
         } else {
             xcodeproj.removeSourceFile('Plugins/' + path.basename(src));   
             if(fs.existsSync(destFile))
                 fs.unlinkSync(destFile);
             shell.rm('-rf', targetDir);    
+            checkLastCommand();
         }
     });
 
@@ -136,12 +141,15 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
         if (action == 'install') {     
             xcodeproj.addHeaderFile('Plugins/' + path.relative(pluginsDir, destFile));
             shell.mkdir('-p', targetDir);
+            checkLastCommand();
             shell.cp(srcFile, destFile);
+            checkLastCommand();
         } else {
             xcodeproj.removeHeaderFile('Plugins/' + path.basename(src));
             if(fs.existsSync(destFile))
                 fs.unlinkSync(destFile);
             shell.rm('-rf', targetDir);
+            checkLastCommand();
         }
     });
 
@@ -155,12 +163,15 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
             var st = fs.statSync(srcFile);
             if (st.isDirectory()) {
                 shell.cp('-R', srcFile, resourcesDir);
+                checkLastCommand();
             } else {
                 shell.cp(srcFile, destFile);
+                checkLastCommand();
             }
         } else {
             xcodeproj.removeResourceFile('Resources/' + path.basename(src));
             shell.rm('-rf', destFile);
+            checkLastCommand();
         }
     });
 
@@ -352,4 +363,8 @@ function updateConfig(action, config_path, plugin_et) {
     } else {
         updatePlistFile(action, config_path, plugin_et);
     }
+}
+
+function checkLastCommand() {
+    if(shell.error() != null) throw {name: "ShellError", message: shell.error()};
 }
