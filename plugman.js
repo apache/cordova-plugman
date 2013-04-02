@@ -84,10 +84,11 @@ else {
 
 function printUsage() {
     platforms = known_opts.platform.join('|');
-    console.log('Usage\n---------');
-    console.log('Add a plugin:\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --variable <preference_name>="<substituion>" --plugin <directory|git-url|name>\n');
-    console.log('Remove a plugin:\n\t' + package.name + ' --remove --platform <'+ platforms +'> --project <directory> --plugin <directory|git-url|name>\n');
-    console.log('List plugins:\n\t' + package.name + ' --list\n');
+    console.error('Usage\n---------');
+    console.error('Add a plugin:\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --variable <preference_name>="<substituion>" --plugin <directory|git-url|name>\n');
+    console.error('Remove a plugin:\n\t' + package.name + ' --remove --platform <'+ platforms +'> --project <directory> --plugin <directory|git-url|name>\n');
+    console.error('List plugins:\n\t' + package.name + ' --list\n');
+    process.exit(1);
 }
 
 function execAction(action, platform, project_dir, plugin_dir, cli_variables) {
@@ -108,15 +109,24 @@ function execAction(action, platform, project_dir, plugin_dir, cli_variables) {
                 filtered_variables[key] = cli_variables[key]
         })
         if (missing_vars.length > 0) {
-            console.log('Variable missing: ' + missing_vars.join(", "));
+            console.error('Variable missing: ' + missing_vars.join(", "));
             return;
         }
     }
     
     // run the platform-specific function
-    platform_modules[platform].handlePlugin(action, project_dir, plugin_dir, plugin_et, filtered_variables);
-    
-    console.log('plugin ' + action + 'ed');
+    try {
+      platform_modules[platform].handlePlugin(action, project_dir, plugin_dir, plugin_et, filtered_variables);
+      console.log('plugin ' + action + 'ed');
+    } catch(e) {
+        var revert = (action == "install" ? "force-uninstall" : "force-install" );
+        console.error("An error occurred for action", action, ":", e.message, "\nTrying to revert changes...");
+        try {
+          platform_modules[platform].handlePlugin(revert, project_dir, plugin_dir, plugin_et, filtered_variables);
+        } catch(e) {
+          console.log("Changes might have not been reverted: "+e.message);
+        }
+    }
 }
 
 function handlePlugin(action, platform, project_dir, plugin_dir, cli_variables) {
