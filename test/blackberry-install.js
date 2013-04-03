@@ -22,9 +22,9 @@ var fs = require('fs')
   , shell = require('shelljs')
   , et = require('elementtree')
   , osenv = require('osenv')
-  , bb10 = require(path.join(__dirname, '..', 'platforms', 'bb10'))
+  , blackberry = require(path.join(__dirname, '..', 'platforms', 'blackberry'))
   , test_dir = path.join(osenv.tmpdir(), 'test_plugman')
-  , test_project_dir = path.join(test_dir, 'projects', 'BlackBerry10', 'www')
+  , test_project_dir = path.join(test_dir, 'projects', 'blackberry', 'www')
   , test_plugin_dir = path.join(test_dir, 'plugins', 'cordova.echo')
   , xml_path     = path.join(test_dir, 'plugins', 'cordova.echo', 'plugin.xml')
   , xml_text, plugin_et
@@ -33,10 +33,10 @@ var fs = require('fs')
 exports.setUp = function(callback) {
     shell.mkdir('-p', test_dir);
     
-    // copy the bb10 test project to a temp directory
+    // copy the blackberry test project to a temp directory
     shell.cp('-r', path.join(__dirname, 'projects'), test_dir);
 
-    // copy the bb10 test plugin to a temp directory
+    // copy the blackberry test plugin to a temp directory
     shell.cp('-r', path.join(__dirname, 'plugins'), test_dir);
 
     // parse the plugin.xml into an elementtree object
@@ -54,7 +54,7 @@ exports.tearDown = function(callback) {
 
 exports['should move the source files'] = function (test) {
     // run the platform-specific function
-    bb10.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    blackberry.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
 
     test.ok(fs.existsSync(srcDir + '/client.js'));
     test.ok(fs.existsSync(srcDir + '/index.js'));
@@ -71,7 +71,7 @@ exports['should move the js file'] = function (test) {
     var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
 
     // run the platform-specific function
-    bb10.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
+    blackberry.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
 
     var jsPath = path.join(test_project_dir, 'dummyplugin.js');
     test.ok(fs.existsSync(jsPath));
@@ -79,7 +79,7 @@ exports['should move the js file'] = function (test) {
 }
 
 exports['should edit config.xml'] = function (test) {
-    bb10.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    blackberry.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
     
     var configXmlPath = path.join(test_project_dir, 'config.xml');
     var pluginsTxt = fs.readFileSync(configXmlPath, 'utf-8'),
@@ -91,9 +91,9 @@ exports['should edit config.xml'] = function (test) {
 }
 
 exports['should not install a plugin that is already installed'] = function (test) {
-    bb10.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    blackberry.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
 
-    test.throws(function(){bb10.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et); }, 
+    test.throws(function(){blackberry.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et); }, 
                 /already installed/
                );
     test.done();
