@@ -45,7 +45,6 @@ exports.handlePrepare = function(projectRoot, plugins_dir, wwwDir, platform) {
     // This array holds all the metadata for each module and ends up in cordova_plugins.json
     var moduleObjects = [];
 
-
     plugins && plugins.forEach(function(plugin) {
         var pluginDir = path.join(plugins_dir, plugin);
         var xml = new et.ElementTree(et.XML(fs.readFileSync(path.join(pluginDir, 'plugin.xml'), 'utf-8')));
@@ -56,18 +55,28 @@ exports.handlePrepare = function(projectRoot, plugins_dir, wwwDir, platform) {
         var assets = xml.findall('./asset');
         assets && assets.forEach(function(asset) {
             var target = asset.attrib.target;
+           
             var lastSlash = target.lastIndexOf('/');
             var dirname  = lastSlash < 0 ? ''     : target.substring(0, lastSlash);
             var basename = lastSlash < 0 ? target : target.substring(lastSlash + 1);
 
             var targetDir = path.join(wwwDir, dirname);
+             
             shell.mkdir('-p', targetDir);
 
             var srcFile = path.join(pluginDir, asset.attrib.src);
             var targetFile = path.join(targetDir, basename);
 
-            var cpOptions = fs.statSync(srcFile).isDirectory() ? '-Rf' : '-f';
+            var cpOptions = '-f';
+            
+            if(fs.statSync(srcFile).isDirectory()){
+                shell.mkdir('-p',targetFile);
+                srcFile = srcFile+'/*';
+                cpOptions = '-Rf';
+            }
+
             shell.cp(cpOptions, [srcFile], targetFile);
+            
         });
 
         // And then add the plugins dir to the platform's www.
