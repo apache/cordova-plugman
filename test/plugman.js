@@ -91,7 +91,7 @@ exports['should revert ios install on failures'] = function (test) {
   var test_project_dir = path.join(test_dir, 'ios-config-xml'),
       test_plugin_dir = path.join(test_dir, 'FaultyPlugin'),
       srcDir = path.resolve(test_project_dir, 'SampleApp/Plugins'),
-      options = {silent: false},
+      options = {silent: true},
       command;
 
     // copy the ios test project to a temp directory
