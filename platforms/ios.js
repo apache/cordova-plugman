@@ -96,13 +96,16 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
         var targetPath = path.resolve(
                             project_dir,
                             assetsDir, asset.attrib['target']);
-        var stat = fs.statSync(srcPath);
-        if(stat.isDirectory()) {
-            shell.mkdir('-p', targetPath);
-            checkLastCommand();
-        }
         if (action == 'install') {
-            shell.cp('-r', srcPath, targetPath);
+            var stat = fs.statSync(srcPath);
+            if(stat.isDirectory()) {
+              shell.mkdir('-p', targetPath);
+              checkLastCommand();
+              shell.cp('-r', srcPath, targetPath);
+              checkLastCommand();
+            } else {
+              shell.cp(srcPath, targetPath);
+            }
             checkLastCommand();
         } else {
             shell.rm('-rf', targetPath);
@@ -364,7 +367,7 @@ function updateConfig(action, config_path, plugin_et) {
         updatePlistFile(action, config_path, plugin_et);
     }
 }
-
+// throws error if last command returns code != 0
 function checkLastCommand() {
     if(shell.error() != null) throw {name: "ShellError", message: shell.error()};
 }
