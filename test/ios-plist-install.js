@@ -34,6 +34,7 @@ var fs = require('fs')
 
   //, assetsDir = path.resolve(config.projectPath, 'www')
   , srcDir = path.resolve(test_project_dir, 'SampleApp/Plugins')
+  , wwwDir = path.resolve(test_project_dir, 'www')
   , resDir = path.resolve(test_project_dir, 'SampleApp/Resources');
 
 exports.setUp = function(callback) {
@@ -76,6 +77,7 @@ exports['should move the js file'] = function (test) {
 
     var jsPath = path.join(test_dir, 'projects', 'ios-plist', 'www', 'childbrowser.js');
     test.ok(fs.existsSync(jsPath));
+    test.ok(fs.statSync(jsPath).isFile());
     test.done();
 }
 
@@ -210,23 +212,12 @@ exports['should not install a plugin that is already installed'] = function (tes
 
 exports['should skip collision check when installation is forced'] = function (test) {
     ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+    // deleting files because only presence in config.xml determines installation
+    shell.rm('-rf', srcDir + '/*');
+    shell.rm('-rf', resDir + '/*');
+    shell.rm('-rf', wwwDir + '/*');
     test.doesNotThrow(function(){ios.handlePlugin('force-install', test_project_dir, test_plugin_dir, plugin_et); }, 
                 /already installed/
                );
     test.done();
 }
-
-//exports['should revert changes when an error occurs'] = function (test) {
-//    var faulty_plugin_dir = path.join(test_dir, 'plugins', 'FaultyPlugin')
-//    var faulty_xml_path = path.join(test_dir, 'plugins', 'FaultyPlugin', 'plugin.xml')
-//    var faulty_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(faulty_xml_path, 'utf-8')));
-//    
-//    var project_dir = path.join(test_dir, 'projects', 'ios-new-config-xml')
-//    
-//    ios.handlePlugin('install', project_dir, faulty_plugin_dir, faulty_plugin_et, { APP_ID: 12345 });
-//
-//    test.throws(function(){ios.handlePlugin('install', project_dir, test_plugin_dir, plugin_et); }, 
-//                /already installed/
-//               );
-//    test.done();
-//}
