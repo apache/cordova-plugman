@@ -46,10 +46,14 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
     });
 
     // collision detection 
-    if(action == "install" && pluginInstalled(plugin_et, project_dir)) {
-        throw "Plugin "+plugin_id+" already installed"
-    } else if(action == "uninstall" && !pluginInstalled(plugin_et, project_dir)) {
-        throw "Plugin "+plugin_id+" not installed"
+    if(action.match(/force-/) == null) {
+      if(action == "install" && pluginInstalled(plugin_et, project_dir)) {
+          throw "Plugin "+plugin_id+" already installed"
+      } else if(action == "uninstall" && !pluginInstalled(plugin_et, project_dir)) {
+          throw "Plugin "+plugin_id+" not installed"
+      }
+    } else {
+      action = action.replace('force-', '');
     }
     
     // move asset files
