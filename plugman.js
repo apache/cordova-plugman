@@ -98,6 +98,7 @@ function execAction(action, platform, project_dir, plugin_dir, cli_variables) {
       , filtered_variables = {};
 
     if (action == 'install') {
+        // checking preferences
         prefs = plugin_et.findall('./preference') || [];
         prefs = prefs.concat(plugin_et.findall('./platform[@name="'+platform+'"]/preference'));
         var missing_vars = [];
@@ -111,6 +112,10 @@ function execAction(action, platform, project_dir, plugin_dir, cli_variables) {
         if (missing_vars.length > 0) {
             console.error('Variable missing: ' + missing_vars.join(", "));
             return;
+        }
+
+        if((info = plugin_et.find('./platform[@name="'+platform+'"]/info'))) {
+            console.log(info.text);
         }
     }
     
