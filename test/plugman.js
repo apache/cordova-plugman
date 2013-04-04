@@ -135,7 +135,7 @@ exports['should install and uninstall android plugin'] = function (test) {
                          ); 
     var ret = shell.exec(command, options); 
     test.equal(0, ret.code);
-    test.equal("plugin installed\n", ret.output);
+    test.ok(ret.output.match(/plugin installed/));
     
     command = util.format('%s %s --remove --platform android --project %s --plugin %s', shell.which('node'),
                                                                                     plugman_exe, 
@@ -144,7 +144,34 @@ exports['should install and uninstall android plugin'] = function (test) {
                          ); 
     var ret = shell.exec(command, options); 
     test.equal(0, ret.code);
-    test.equal("plugin uninstalled\n", ret.output);
+    test.ok(ret.output.match(/plugin uninstalled/));
    
     test.done();
 }
+
+
+exports['should display additional install info'] = function (test) {
+  var test_project_dir = path.join(test_dir, 'android_two'),
+      test_plugin_dir = path.join(test_dir, 'ChildBrowser'),
+      options = {silent: true},
+      command;
+
+    // copy the ios test project to a temp directory
+    shell.cp('-r', path.join(__dirname, 'projects', 'android_two'), test_dir);
+
+    // copy the ios test plugin to a temp directory
+    shell.cp('-r', path.join(__dirname, 'plugins', 'ChildBrowser'), test_dir);
+
+    command = util.format('%s %s --platform android --project %s --plugin %s', shell.which('node'),
+                                                                           plugman_exe, 
+                                                                           test_project_dir, 
+                                                                           test_plugin_dir
+                         ); 
+    var ret = shell.exec(command, options); 
+    test.equal(0, ret.code);
+    test.ok(ret.output.match(/Please make sure you read this because it is very important to complete the installation of your plugin/));
+    test.ok(ret.output.match(/plugin installed/));
+    test.done();
+}
+
+// TODO: this module is seriously lacking tests
