@@ -321,6 +321,20 @@ plugman identifies the framework through the `src` attribute and attempts to add
 
 The optional `weak` attribute is a boolean denoting whether the framework should be weakly-linked. Default is `false`.
 
+### &lt;info&gt;
+
+The tool will provide additionnal information to users. This is useful when you require some extra steps that can't be easily automated or are out of the scope of plugman.
+
+Examples:
+
+<info>
+You need to install **Google Play Services** from the `Android Extras` section using the Android SDK manager (run `android`).
+
+You need to add the following line to your `local.properties`
+    
+android.library.reference.1=PATH_TO_ANDROID_SDK/sdk/extras/google/google_play_services/libproject/google-play-services_lib
+</info>
+
 ## Variables
 
 In certain cases, a plugin may need to make configuration changes dependent on
