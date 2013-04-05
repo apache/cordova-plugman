@@ -50,7 +50,7 @@
                 value="com.phonegap.plugins.weblessplugin.WeblessPlugin"/>
         </config-file>
 
-        <source-file src="WeblessPlugin.java"
+        <source-file src="src/android/WeblessPlugin.java"
                 target-dir="src/com/phonegap/plugins/weblessplugin" />
     </platform>
 
@@ -66,14 +66,14 @@
                 value="WeblessPluginCommand"/>
         </config-file>
 
-        <resource-file src="WeblessPlugin.bundle" />
-        <resource-file src="WeblessPluginViewController.xib" />
+        <resource-file src="src/ios/WeblessPlugin.bundle" />
+        <resource-file src="src/ios/WeblessPluginViewController.xib" />
 
-        <header-file src="WeblessPluginCommand.h" />
-        <header-file src="WeblessPluginViewController.h" />
+        <header-file src="src/ios/WeblessPluginCommand.h" />
+        <header-file src="src/ios/WeblessPluginViewController.h" />
 
-        <source-file src="WeblessPluginCommand.m" />
-        <source-file src="WeblessPluginViewController.m" />
+        <source-file src="src/ios/WeblessPluginCommand.m" />
+        <source-file src="src/ios/WeblessPluginViewController.m" />
 
         <!-- framework for testing (not actual dependency of WeblessPlugin -->
         <framework src="libsqlite3.dylib" />

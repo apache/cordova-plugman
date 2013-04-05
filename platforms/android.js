@@ -87,16 +87,15 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
 
     // move source files
     sourceFiles.forEach(function (sourceFile) {
+        
         var srcDir = path.resolve(project_dir,
                                 sourceFile.attrib['target-dir'])
           , destFile = path.resolve(srcDir,
                                 path.basename(sourceFile.attrib['src']));
 
         if (action == 'install') {
-            
             shell.mkdir('-p', srcDir);
             var srcFile = srcPath(plugin_dir, sourceFile.attrib['src']);
-            console.log('src file ' + srcFile);
             shell.cp(srcFile, destFile);
         } else {
             fs.unlinkSync(destFile);

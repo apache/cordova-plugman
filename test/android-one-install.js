@@ -106,7 +106,6 @@ exports['should move the src file'] = function (test) {
     android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
     plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
     
-    var bahPath = path.join(test_dir, 'projects', 'android_one', 'src', 'com', 'phonegap', 'plugins', 'childBrowser');
     var javaPath = path.join(test_dir, 'projects', 'android_one', 'src', 'com', 'phonegap', 'plugins', 'childBrowser', 'ChildBrowser.java');
     
     test.ok(fs.statSync(javaPath));
