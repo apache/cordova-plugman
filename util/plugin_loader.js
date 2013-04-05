@@ -45,7 +45,6 @@ exports.handlePrepare = function(projectRoot, plugins_dir, wwwDir, platform) {
     // This array holds all the metadata for each module and ends up in cordova_plugins.json
     var moduleObjects = [];
 
-    //console.log('plugins_dir ' + fs.readdirSync(plugins_dir));
     plugins && plugins.forEach(function(plugin) {
         var pluginDir = path.join(plugins_dir, plugin);
         if(fs.statSync(pluginDir).isDirectory()){
