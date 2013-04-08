@@ -27,7 +27,7 @@ var fs = require('fs')
   , shell = require('shelljs')
   , et = require('elementtree')
   , android = require(path.join(__dirname, '..', 'platforms', 'android'))
-
+  , plugin_loader = require('../util/plugin_loader')
   , test_dir = path.join(osenv.tmpdir(), 'test_plugman')
   , test_project_dir = path.join(test_dir, 'projects', 'android_one')
   , test_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
@@ -58,11 +58,15 @@ exports.tearDown = function(callback) {
 }
 
 exports['should remove the js file'] = function (test) {
+    var pluginsPath = path.join(test_dir, 'plugins');
+    var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');
     var jsPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www', 'childbrowser.js');
 
     android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
     android.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
-
+    
+    console.log(fs.readdirSync(wwwPath));
     test.ok(!fs.existsSync(jsPath));
     test.done();
 }

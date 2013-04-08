@@ -132,6 +132,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
         if (action == 'install') {
             xcodeproj.addResourceFile(path.join('Resources', path.basename(src)));
             var st = fs.statSync(srcFile);
+            shell.mkdir('-p', resourcesDir);
             if (st.isDirectory()) {
                 shell.cp('-R', srcFile, resourcesDir);
                 checkLastCommand();

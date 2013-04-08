@@ -24,7 +24,7 @@ var fs = require('fs')
   , shell = require('shelljs')
   , et = require('elementtree')
   , ios = require(path.join(__dirname, '..', 'platforms', 'ios'))
-
+  , plugin_loader = require('../util/plugin_loader')
   , test_dir = path.join(osenv.tmpdir(), 'test_plugman')
   , test_project_dir = path.join(test_dir, 'projects', 'ios-config-xml')
   , test_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
@@ -59,21 +59,35 @@ exports.tearDown = function(callback) {
 }
 
 exports['should install webless plugin'] = function (test) {
-    
     // setting up a DummyPlugin
+    var pluginsPath = path.join(test_dir, 'plugins');
+    var wwwPath = path.join(test_dir, 'projects', 'ios', 'www');
     var dummy_plugin_dir = path.join(test_dir, 'plugins', 'WeblessPlugin')
     var dummy_xml_path = path.join(test_dir, 'plugins', 'WeblessPlugin', 'plugin.xml')
     var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
+    
+// out var/folders/k5/p44x4yn122s_gk2s0p0c7rm00000gn/T/test_plugman/projects/ios/SampleApp/Plugins/
+
+// test project dir var/folders/k5/p44x4yn122s_gk2s0p0c7rm00000gn/T/test_plugman/projects/ios
 
     ios.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et, { APP_ID: 12345 });
-
+    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'ios');
+    
+    var huh =  path.join(test_project_dir, 'SampleApp');
+    console.log(huh);
+    console.log('contents ' + fs.readdirSync(huh));
+    
     test.done();
 }
 
 exports['should move the js file'] = function (test) {
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+    var wwwPath = path.join(test_dir, 'projects', 'ios', 'www');
     var jsPath = path.join(test_dir, 'projects', 'ios-config-xml', 'www', 'childbrowser.js');
+    
+    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'ios');
+    
     test.ok(fs.existsSync(jsPath));
     test.ok(fs.statSync(jsPath).isFile());
     test.done();
@@ -250,3 +264,4 @@ exports['should skip collision check when installation is forced'] = function (t
                );
     test.done();
 }
+
