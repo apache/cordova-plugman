@@ -22,9 +22,9 @@ var fs = require('fs')  // use existsSync in 0.6.x
    , util = require('util')
    , shell = require('shelljs')
    , et = require('elementtree')
-   , getConfigChanges = require(path.join(__dirname, '..', 'util', 'config-changes')
-   , searchAndReplace = require(path.join(__dirname, '..', 'util', 'search-and-replace')
-   , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'));
+   , getConfigChanges = require(path.join(__dirname, '..', 'util', 'config-changes'))
+   , searchAndReplace = require(path.join(__dirname, '..', 'util', 'search-and-replace'))
+   , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'))
    , assetsDir = 'assets/www'
    , sourceDir = 'src';
 

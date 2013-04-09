@@ -26,7 +26,7 @@ var path = require('path')
   , bplist = require('bplist-parser')
   , shell = require('shelljs')
   , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'))
-  , searchAndReplace = require(path.join(__dirname, '..', 'util', 'search-and-replace')
+  , searchAndReplace = require(path.join(__dirname, '..', 'util', 'search-and-replace'))
   , getConfigChanges = require(path.join(__dirname, '..', 'util', 'config-changes'));
   
 exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, variables) {
