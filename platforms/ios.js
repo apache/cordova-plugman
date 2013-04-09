@@ -37,6 +37,19 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
 
     variables = variables || {}
 
+    var platformTag = plugin_et.find('./platform[@name="ios"]');
+    
+    if (!platformTag) {
+       // Either this plugin doesn't support this platform, or it's a JS-only plugin.
+       // Either way, return now.
+       return;
+    }
+    
+    var sourceFiles = platformTag.findall('./source-file'),
+           headerFiles = platformTag.findall('./header-file'),
+           resourceFiles = platformTag.findall('./resource-file'),
+           frameworks = platformTag.findall('./framework');
+           
     // grab and parse pbxproj
     // we don't want CordovaLib's xcode project
     var project_files = glob.sync(path.join(project_dir, '*.xcodeproj', 'project.pbxproj'));

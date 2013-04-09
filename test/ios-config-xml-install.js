@@ -65,23 +65,16 @@ exports['should install webless plugin'] = function (test) {
     var dummy_plugin_dir = path.join(test_dir, 'plugins', 'WeblessPlugin')
     var dummy_xml_path = path.join(test_dir, 'plugins', 'WeblessPlugin', 'plugin.xml')
     var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
-    
-// out var/folders/k5/p44x4yn122s_gk2s0p0c7rm00000gn/T/test_plugman/projects/ios/SampleApp/Plugins/
-
-// test project dir var/folders/k5/p44x4yn122s_gk2s0p0c7rm00000gn/T/test_plugman/projects/ios
 
     ios.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et, { APP_ID: 12345 });
     plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'ios');
-    
-    var huh =  path.join(test_project_dir, 'SampleApp');
-    console.log(huh);
-    console.log('contents ' + fs.readdirSync(huh));
     
     test.done();
 }
 
 exports['should move the js file'] = function (test) {
     // run the platform-specific function
+    var pluginsPath = path.join(test_dir, 'plugins');
     var wwwPath = path.join(test_dir, 'projects', 'ios', 'www');
     var jsPath = path.join(test_dir, 'projects', 'ios-config-xml', 'www', 'childbrowser.js');
     
