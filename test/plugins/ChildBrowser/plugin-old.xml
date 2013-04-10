@@ -62,18 +62,18 @@
         <plugins-plist key="com.phonegap.plugins.childbrowser"
             string="ChildBrowserCommand" />
 
-        <resource-file src="ChildBrowser.bundle" />
-        <resource-file src="ChildBrowserViewController.xib" />
+        <resource-file src="src/ios/ChildBrowser.bundle" />
+        <resource-file src="src/ios/ChildBrowserViewController.xib" />
 
-        <header-file src="ChildBrowserCommand.h" />
-        <header-file src="ChildBrowserViewController.h" />
-        <header-file src="preserveDirs/PreserveDirsTest.h" preserve-dirs="true" />
-        <header-file src="TargetDirTest.h" target-dir="targetDir"/>
+        <header-file src="src/ios/ChildBrowserCommand.h" />
+        <header-file src="src/ios/ChildBrowserViewController.h" />
+        <header-file src="src/ios/preserveDirs/PreserveDirsTest.h" preserve-dirs="true" />
+        <header-file src="src/ios/TargetDirTest.h" target-dir="targetDir"/>
 
-        <source-file src="ChildBrowserCommand.m" />
-        <source-file src="ChildBrowserViewController.m" />
-        <source-file src="preserveDirs/PreserveDirsTest.m" preserve-dirs="true" />
-        <header-file src="TargetDirTest.m" target-dir="targetDir"/>
+        <source-file src="src/ios/ChildBrowserCommand.m" />
+        <source-file src="src/ios/ChildBrowserViewController.m" />
+        <source-file src="src/ios/preserveDirs/PreserveDirsTest.m" preserve-dirs="true" />
+        <header-file src="src/ios/TargetDirTest.m" target-dir="targetDir"/>
 
         <!-- framework for testing (not actual dependency of ChildBrowser -->
         <framework src="libsqlite3.dylib" />

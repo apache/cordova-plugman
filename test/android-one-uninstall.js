@@ -66,7 +66,6 @@ exports['should remove the js file'] = function (test) {
     plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
     android.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
     
-    console.log(fs.readdirSync(wwwPath));
     test.ok(!fs.existsSync(jsPath));
     test.done();
 }
