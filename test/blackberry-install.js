@@ -23,6 +23,7 @@ var fs = require('fs')
   , et = require('elementtree')
   , osenv = require('osenv')
   , blackberry = require(path.join(__dirname, '..', 'platforms', 'blackberry'))
+  , plugin_loader = require('../util/plugin_loader')
   , test_dir = path.join(osenv.tmpdir(), 'test_plugman')
   , test_project_dir = path.join(test_dir, 'projects', 'blackberry', 'www')
   , test_plugin_dir = path.join(test_dir, 'plugins', 'cordova.echo')
@@ -65,6 +66,9 @@ exports['should move the source files'] = function (test) {
 }
 
 exports['should move the js file'] = function (test) {
+    var pluginsPath = path.join(test_dir, 'plugins');
+    var wwwPath = path.join(test_dir, 'projects', 'blackberry', 'www');
+    
     // setting up a DummyPlugin
     var dummy_plugin_dir = path.join(test_dir, 'plugins', 'DummyPlugin')
     var dummy_xml_path = path.join(test_dir, 'plugins', 'DummyPlugin', 'plugin.xml')
@@ -72,7 +76,8 @@ exports['should move the js file'] = function (test) {
 
     // run the platform-specific function
     blackberry.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
-
+    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'blackberry');
+    
     var jsPath = path.join(test_project_dir, 'dummyplugin.js');
     test.ok(fs.existsSync(jsPath));
     test.done();
