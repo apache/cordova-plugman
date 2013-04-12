@@ -191,8 +191,7 @@ function removePlugin(name) {
     console.log('Plugin ' + cli_opts.plugin + ' deleted.');
 }
 
-// function handlePlugin(action, platform, project_dir, plugin_dir, cli_variables) 
-function handlePlugin(action, platform, project_dir, name) {
+function handlePlugin(action, platform, project_dir, name, cli_variables) {
     var plugin_xml_path, async;
 
     // Check that the plugin has already been fetched.
@@ -207,8 +206,7 @@ function handlePlugin(action, platform, project_dir, name) {
         async = true;
         plugins.getPluginInfo(plugin_dir,
             function(plugin_info) {
-                execAction(action, platform, project_dir, plugins.clonePluginGitRepo(plugin_info.url), plugins_dir);
-                //execAction(action, platform, project_dir, plugins.clonePluginGitRepo(plugin_info.url), cli_variables);
+                execAction(action, platform, project_dir, plugins.clonePluginGitRepo(plugin_info.url), plugins_dir, cli_variables);
             },
             function(e) {
                 throw new Error(action + ' failed. "' + plugin_xml_path + '" not found');

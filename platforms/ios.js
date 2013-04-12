@@ -165,7 +165,6 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
             weak = framework.attrib['weak'];
         if (action == 'install') {
             var opt = { weak: (weak && weak.toLowerCase() == 'true') };
-            console.log(src + ' ' + opt.weak);
             xcodeproj.addFramework(src, opt);
         } else {
             xcodeproj.removeFramework(src);
