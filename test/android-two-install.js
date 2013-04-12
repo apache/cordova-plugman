@@ -27,7 +27,7 @@ var fs = require('fs')
   , shell = require('shelljs')
   , et = require('elementtree')
   , android = require(path.join(__dirname, '..', 'platforms', 'android'))
-
+  , plugin_loader = require('../util/plugin_loader')
   , test_dir = path.join(osenv.tmpdir(), 'test_plugman')
   , test_project_dir = path.join(test_dir, 'projects', 'android_two')
   , test_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
@@ -71,9 +71,13 @@ exports['should install webless plugin'] = function (test) {
 }
 
 exports['should move the js file'] = function (test) {
+    var pluginsPath = path.join(test_dir, 'plugins');
+    var wwwPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www');
     var jsPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'childbrowser.js');
 
     android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
+    console.log(wwwPath + ' ' + fs.readdirSync(wwwPath));
     fs.stat(jsPath, function(err, stats) {
         test.ok(!err);
         test.ok(stats.isFile());
@@ -82,10 +86,13 @@ exports['should move the js file'] = function (test) {
 }
 
 exports['should move the directory'] = function (test) {
+    var pluginsPath = path.join(test_dir, 'plugins');
+    var wwwPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www');
+    
     android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-
+    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
+    
     var assetPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'childbrowser');
-
     var assets = fs.statSync(assetPath);
 
     test.ok(assets.isDirectory());
@@ -94,7 +101,11 @@ exports['should move the directory'] = function (test) {
 }
 
 exports['should move the src file'] = function (test) {
+    var pluginsPath = path.join(test_dir, 'plugins');
+    var wwwPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www');
+    
     android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
 
     var javaPath = path.join(test_dir, 'projects', 'android_two', 'src', 'com', 'phonegap', 'plugins', 'childBrowser', 'ChildBrowser.java');
     test.ok(fs.statSync(javaPath));
@@ -134,9 +145,12 @@ exports['should add ChildBrowser to AndroidManifest.xml'] = function (test) {
 }
 
 exports['should not install a plugin that is already installed'] = function (test) {
+    var pluginsPath = path.join(test_dir, 'plugins');
+    var wwwPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www');
     var jsPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'childbrowser.js');
 
     android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
     
     test.throws(function() {android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);}, /already installed/);
 
