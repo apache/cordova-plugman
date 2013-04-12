@@ -77,7 +77,7 @@ exports['should move the js file'] = function (test) {
 
     android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
     plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
-    console.log(wwwPath + ' ' + fs.readdirSync(wwwPath));
+
     fs.stat(jsPath, function(err, stats) {
         test.ok(!err);
         test.ok(stats.isFile());
