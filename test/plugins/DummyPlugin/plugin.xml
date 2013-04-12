@@ -63,9 +63,9 @@
             <feature id="dummyPlugin" required="true" version="1.0.0.0"/>
         </config-file>
 
-        <source-file src="client.js" target-dir="ext-qnx/cordova.echo" />
-        <source-file src="index.js" target-dir="ext-qnx/cordova.echo" />
-        <source-file src="manifest.json" target-dir="ext-qnx/cordova.echo" />
+        <source-file src="src/blackberry/client.js" target-dir="ext-qnx/cordova.echo" />
+        <source-file src="src/blackberry/index.js" target-dir="ext-qnx/cordova.echo" />
+        <source-file src="src/blackberry/manifest.json" target-dir="ext-qnx/cordova.echo" />
     </platform>
 
         
