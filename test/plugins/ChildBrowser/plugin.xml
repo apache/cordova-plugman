@@ -118,6 +118,7 @@
             <ItemGroup>
                 <Compile Include="Plugins\\ChildBrowserCommand.cs"/>
                 <Content Include="www\\childbrowser.js" />
+                <Content Include="www\\childbrowser\\**"/>
             </ItemGroup>    
         </config-file> 
 

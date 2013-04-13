@@ -28,7 +28,19 @@ var fs = require('fs'),
     glob = require('glob'),
     shell = require('shelljs'),
     et = require('elementtree'),
+    xml_helpers = require('../util/xml-helpers'),
     assetsDir = 'www'; // relative path to project's web assets
+
+var unix_projPath,  //  for use with glob
+    project_file,   //  first csproj returned by glob unix_projPath
+    projPath,       //  full path to the project file, including file name
+    assets,         //  assets node et in root ./asset
+    platformTag,    //  wp7 platform node et
+    sourceFiles,    //  ./source-file inside platform
+    hosts,          //  ./access inside root
+    projectChanges; //  <config-file target=".csproj" parent=".">, inside platform
+
+
 
 function copyFileSync(srcPath, destPath) {
 
@@ -53,16 +65,19 @@ function copyFileSync(srcPath, destPath) {
   }
 }    
 
+function initPaths(project_dir, plugin_dir, plugin_et, variables) {
+
+    unix_projPath = project_dir.split("\\").join("/");
+    project_file = glob.sync('*.csproj',{nocase:true,cwd:unix_projPath})[0];
+    projPath = path.join(unix_projPath,project_file);
+    assets = plugin_et.findall('./asset');
+    platformTag = plugin_et.find('./platform[@name="wp7"]');
+    sourceFiles = platformTag.findall('./source-file');
+    projectChanges = platformTag.findall('./config-file[@target=".csproj"]');
+    hosts = plugin_et.findall('./access');
+}
+
 function install(project_dir, plugin_dir, plugin_et, variables) {
-
-  var unix_projPath = project_dir.split("\\").join("/");
-  var project_file = glob.sync('*.csproj',{nocase:true,cwd:unix_projPath})[0];
-  var projPath = path.join(unix_projPath,project_file);
-  var assets = plugin_et.findall('./asset');
-  var platformTag = plugin_et.find('./platform[@name="wp7"]');
-  var sourceFiles = platformTag.findall('./source-file');
-  var projectChanges = platformTag.findall('./config-file[@target=".csproj"]');
-
 
   // move asset files
   assets && assets.forEach(function (asset) {
@@ -86,29 +101,63 @@ function install(project_dir, plugin_dir, plugin_et, variables) {
 
     // child is the configNode child that we will insert into csproj
     var child = configNode.find('*'); 
-
     var newNodeText = new et.ElementTree(child).write({xml_declaration:false});
-        newNodeText = newNodeText.split("&#xA;").join("\n").split("&#xD;").join("\r");
+        
+    newNodeText = newNodeText.split("&#xA;").join("\n").split("&#xD;").join("\r");
+    
     // insert text right before closing tag
-    var newDocStr = docStr.replace("</Project>",newNodeText + "\n</Project>");
+    var newDocStr = docStr.replace("</Project>",newNodeText + "\n\r</Project>");
+
     // save it, and get out
     fs.writeFileSync(projPath, newDocStr);
   });
 }
 
 function uninstall(project_dir, plugin_dir, plugin_et, variables) {
-   // uninstall would be : shell.rm('-rf', targetPath);
+
+   assets && assets.forEach(function (asset) {
+      var targetPath = path.resolve(project_dir, assetsDir,  asset.attrib['target']);
+      shell.rm('-rf', targetPath);
+   });
+
+   sourceFiles && sourceFiles.forEach(function (sourceFile) {
+      var destDir = path.resolve(project_dir, sourceFile.attrib['target-dir']);
+      var destFilePath = path.resolve(destDir, path.basename(sourceFile.attrib['src']));
+      shell.rm('-rf', destFilePath);
+   });
+
+   et.register_namespace("csproj", "http://schemas.microsoft.com/developer/msbuild/2003");
+
+   projectChanges && projectChanges.forEach(function (configNode) {
+
+    var docStr = fs.readFileSync(projPath,"utf8");
+
+    // child is the configNode child that we will insert into csproj
+    var child = configNode.find('*'); 
+    var newNodeText = new et.ElementTree(child).write({xml_declaration:false});
+        
+    newNodeText = newNodeText.split("&#xA;").join("\n").split("&#xD;").join("\r");
+    
+    // insert text right before closing tag
+    var splitString = docStr.split(newNodeText);
+    console.log("split length = " + splitString.length);
+    var newDocStr = splitString.join("");
+
+    // save it, and get out
+    fs.writeFileSync(projPath, newDocStr);
+  });
 }
 
 exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, variables) {
-
+    console.log("action = " + action);
     switch(action) {
         case 'install' :
-            //console.log('installing');
+            initPaths(project_dir, plugin_dir, plugin_et, variables);
             install(project_dir, plugin_dir, plugin_et, variables);
             break;
         case 'uninstall' :
-            console.log('uninstalling');
+            initPaths(project_dir, plugin_dir, plugin_et, variables);
+            uninstall(project_dir, plugin_dir, plugin_et, variables);
             break;
         default :
           throw 'error unknown action';
