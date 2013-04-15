@@ -39,7 +39,7 @@ exports.getPluginInfo = function(plugin_name, success, error) {
             plugin_info = response.rows[0].value;
             success(plugin_info);
           } else {
-            error("Could not find information on "+plugin_dir+" plugin");
+            error("Could not find information on "+plugin_name+" plugin");
           }
       });
       

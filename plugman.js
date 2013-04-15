@@ -47,6 +47,7 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry' ]
             , 'prepare' : Boolean
             , 'plugins': path
             , 'www': path
+            , 'link': Boolean
             , 'variable' : Array
             }, shortHands = { 'var' : 'variable' };
 
@@ -113,7 +114,7 @@ function printUsage() {
     console.log('Usage\n---------');
     console.log('Fetch a plugin:\n\t' + package.name + ' --fetch --plugin <directory|git-url|name> [--plugins_dir <directory>]\n');
     console.log('Install an already fetched plugin:\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --plugin <name> [--plugins_dir <directory>]\n');
-    console.log('Uninstall a plugin:\n\t' + package.name + ' --remove --platform <'+ platforms +'> --project <directory> --plugin <name> [--plugins_dir <directory>]\n');
+    console.log('Uninstall a plugin:\n\t' + package.name + ' --uninstall --platform <'+ platforms +'> --project <directory> --plugin <name> [--plugins_dir <directory>]\n');
     console.log('Delete the local copy of a plugin:\n\t' + package.name + ' --remove --plugin <name> [--plugins_dir <directory>]\n');
     console.log('List plugins:\n\t' + package.name + ' --list [--plugins_dir <directory>]\n');
     console.log('Prepare project:\n\t' + package.name + ' --prepare --platform <ios|android|bb10> --project <directory> --www <directory> [--plugins_dir <directory>]');
@@ -169,6 +170,9 @@ function fetchPlugin(plugin_dir) {
 
     // clone from git repository
     if(plugin_dir.indexOf('https://') == 0 || plugin_dir.indexOf('git://') == 0) {
+        if (cli_opts.link) {
+            throw new Error('--link is not supported for git URLs');
+        }
         plugin_dir = plugins.clonePluginGitRepo(plugin_dir, plugins_dir);
     } else { // Copy from the local filesystem.
         var lastSlash = plugin_dir.lastIndexOf(path.sep);
@@ -179,14 +183,25 @@ function fetchPlugin(plugin_dir) {
         dest = path.join(plugins_dir, dest);
 
         shell.rm('-rf', dest);
-        shell.cp('-R', plugin_dir, plugins_dir); // Yes, not dest.
+        if (cli_opts.link) {
+            fs.symlinkSync(path.resolve(plugin_dir), dest, 'dir');
+        } else {
+            shell.cp('-R', plugin_dir, plugins_dir); // Yes, not dest.
+        }
 
         plugin_dir = dest;
     }
 }
 
 function removePlugin(name) {
-    shell.rm('-rf', path.join(plugins_dir, cli_opts.plugin));
+    var target = path.join(plugins_dir, cli_opts.plugin);
+    var stat = fs.lstatSync(target);
+
+    if (stat.isSymbolicLink()) {
+        fs.unlinkSync(target);
+    } else {
+        shell.rm('-rf', target);
+    }
     console.log('Plugin ' + cli_opts.plugin + ' deleted.');
 }
 
