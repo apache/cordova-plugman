@@ -26,32 +26,35 @@ var path = require('path')
   , bplist = require('bplist-parser')
   , shell = require('shelljs')
   , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'))
-  , getConfigChanges = require(path.join(__dirname, '..', 'util', 'config-changes'))
-
-exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
+  , searchAndReplace = require(path.join(__dirname, '..', 'util', 'search-and-replace'))
+  , getConfigChanges = require(path.join(__dirname, '..', 'util', 'config-changes'));
+  
+exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, variables) {
     var plugin_id = plugin_et._root.attrib['id']
       , version = plugin_et._root.attrib['version']
       , i = 0
       , matched;
 
+    variables = variables || {}
+
     var platformTag = plugin_et.find('./platform[@name="ios"]');
-
+    
     if (!platformTag) {
-        // Either this plugin doesn't support this platform, or it's a JS-only plugin.
-        // Either way, return now.
-        return;
+       // Either this plugin doesn't support this platform, or it's a JS-only plugin.
+       // Either way, return now.
+       return;
     }
-
+    
     var sourceFiles = platformTag.findall('./source-file'),
-        headerFiles = platformTag.findall('./header-file'),
-        resourceFiles = platformTag.findall('./resource-file'),
-        frameworks = platformTag.findall('./framework');
-
+           headerFiles = platformTag.findall('./header-file'),
+           resourceFiles = platformTag.findall('./resource-file'),
+           frameworks = platformTag.findall('./framework');
+           
     // grab and parse pbxproj
     // we don't want CordovaLib's xcode project
     var project_files = glob.sync(path.join(project_dir, '*.xcodeproj', 'project.pbxproj'));
     
-    if (!project_files.length) throw "does not appear to be an xcode project";
+    if (!project_files.length) throw "does not appear to be an xcode project (no xcode project file)";
     var pbxPath = project_files[0];
 
     var xcodeproj = xcode.project(project_files[0]);
@@ -63,22 +66,32 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
                         glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist'))
                        );
 
-    if (!config_files.length) {
-        throw "does not appear to be a PhoneGap project";
-    }
-
     config_files = config_files.filter(function (val) {
         return !(/^build\//.test(val));
     });
 
-    var pluginsDir = path.resolve(config_files[0], '..', 'Plugins');
-    var resourcesDir = path.resolve(config_files[0], '..', 'Resources');
+    if (!config_files.length) {
+        throw "does not appear to be a PhoneGap project";
+    }
 
+    var config_file = config_files[0];
+    var xcode_dir = path.dirname(config_file);
+    var pluginsDir = path.resolve(xcode_dir, 'Plugins');
+    var resourcesDir = path.resolve(xcode_dir, 'Resources');
+    
+    // get project plist for package name
+    var project_plists = glob.sync(xcode_dir + '/*-Info.plist');
+    var projectPListPath = project_plists[0];
+    
     // collision detection 
-    if(action == "install" && pluginInstalled(plugin_et, config_files[0])) {
-        throw "Plugin "+plugin_id+" already installed"
-    } else if(action == "uninstall" && !pluginInstalled(plugin_et, config_files[0])) {
-        throw "Plugin "+plugin_id+" not installed"
+    if(action.match(/force-/) == null) {
+      if(action == "install" && pluginInstalled(plugin_et, config_file)) {
+          throw "Plugin "+plugin_id+" already installed"
+      } else if(action == "uninstall" && !pluginInstalled(plugin_et, config_file)) {
+          throw "Plugin "+plugin_id+" not installed"
+      }
+    } else {
+      action = action.replace('force-', '');
     }
 
     // move native files (source/header/resource)
@@ -91,12 +104,15 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
         if (action == 'install') {
             xcodeproj.addSourceFile(path.join('Plugins', path.relative(pluginsDir, destFile)));
             shell.mkdir('-p', targetDir);
+            checkLastCommand();
             shell.cp(srcFile, destFile);
+            checkLastCommand();
         } else {
             xcodeproj.removeSourceFile(path.join('Plugins', path.basename(src)));
             if(fs.existsSync(destFile))
                 fs.unlinkSync(destFile);
             shell.rm('-rf', targetDir);    
+            checkLastCommand();
         }
     });
 
@@ -109,12 +125,15 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
         if (action == 'install') {     
             xcodeproj.addHeaderFile(path.join('Plugins', path.relative(pluginsDir, destFile)));
             shell.mkdir('-p', targetDir);
+            checkLastCommand();
             shell.cp(srcFile, destFile);
+            checkLastCommand();
         } else {
             xcodeproj.removeHeaderFile(path.join('Plugins', path.basename(src)));
             if(fs.existsSync(destFile))
                 fs.unlinkSync(destFile);
             shell.rm('-rf', targetDir);
+            checkLastCommand();
         }
     });
 
@@ -126,33 +145,53 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
         if (action == 'install') {
             xcodeproj.addResourceFile(path.join('Resources', path.basename(src)));
             var st = fs.statSync(srcFile);
+            shell.mkdir('-p', resourcesDir);
             if (st.isDirectory()) {
                 shell.cp('-R', srcFile, resourcesDir);
+                checkLastCommand();
             } else {
                 shell.cp(srcFile, destFile);
+                checkLastCommand();
             }
         } else {
             xcodeproj.removeResourceFile(path.join('Resources', path.basename(src)));
             shell.rm('-rf', destFile);
+            checkLastCommand();
         }
     });
 
     frameworks && frameworks.forEach(function (framework) {
         var src = framework.attrib['src'],
             weak = framework.attrib['weak'];
-
         if (action == 'install') {
-			var opt = { weak: (weak && weak.toLowerCase() == 'true') };
+            var opt = { weak: (weak && weak.toLowerCase() == 'true') };
             xcodeproj.addFramework(src, opt);
         } else {
             xcodeproj.removeFramework(src);
         }
     });
 
-    updateConfig(action, config_files[0], plugin_et);
-
     // write out xcodeproj file
     fs.writeFileSync(pbxPath, xcodeproj.writeSync());
+
+    // add plugin and whitelisted hosts
+    try {
+      updateConfig(action, config_file, plugin_et);
+    } catch(e) {
+      throw {
+        name: "ConfigurationError",
+        level: "ERROR",
+        message: "Error updating configuration: "+e.message,
+      }
+    }
+    
+    if (action == 'install') {
+        variables['PACKAGE_NAME'] = plist.parseFileSync(projectPListPath).CFBundleIdentifier;
+        searchAndReplace(pbxPath, variables);
+        searchAndReplace(projectPListPath, variables);
+        searchAndReplace(config_file, variables);
+    }
+    
 }
 
 function getRelativeDir(file) {
@@ -237,19 +276,19 @@ function updateConfigXml(action, config_path, plugin_et) {
     var hosts = plugin_et.findall('./access'),
         platformTag = plugin_et.find('./platform[@name="ios"]'), // FIXME: can probably do better than this
         plistEle = platformTag.find('./plugins-plist'), // use this for older that have plugins-plist
-		configChanges = getConfigChanges(platformTag),
-	    base_config_path = path.basename(config_path);
+        configChanges = getConfigChanges(platformTag),
+        base_config_path = path.basename(config_path);
 
     // edit configuration files
     var xmlDoc = xml_helpers.parseElementtreeSync(config_path),
         output,
-		pListOnly = plistEle;
-
-	if (configChanges[path.basename(config_path)]) {	
-		configChanges[path.basename(config_path)].forEach(function (val) {
-			if (val.find("plugin")) pListOnly = false;
-		});
-	}
+		    pListOnly = plistEle;
+    
+    if (configChanges[path.basename(config_path)]) {	
+      configChanges[path.basename(config_path)].forEach(function (val) {
+        if (val.find("plugin")) pListOnly = false;
+      });
+    }
 
     if (pListOnly) {
         // if the plugin supports the old plugins-plist element only
@@ -267,35 +306,35 @@ function updateConfigXml(action, config_path, plugin_et) {
         }
     }
 
-	// add whitelist hosts
-	root = et.Element("config-file");
-	root.attrib['parent'] = '.'
-    hosts.forEach(function (tag) {
-		root.append(tag);
-	});
+    // add whitelist hosts
+    root = et.Element("config-file");
+    root.attrib['parent'] = '.'
+      hosts.forEach(function (tag) {
+      root.append(tag);
+    });
 
-	if (root.len()) {
-		(configChanges[path.basename(config_path)]) ?
-        	configChanges[path.basename(config_path)].push(root) :
-        	configChanges[path.basename(config_path)] = [root];
-	}
+    if (root.len()) {
+      (configChanges[path.basename(config_path)]) ?
+            configChanges[path.basename(config_path)].push(root) :
+            configChanges[path.basename(config_path)] = [root];
+    }
 
-	if (configChanges[path.basename(config_path)]) {
+    if (configChanges[path.basename(config_path)]) {
 
-	    configChanges[base_config_path].forEach(function (configNode) {
-	        var selector = configNode.attrib["parent"],
-	            children = configNode.findall('*');
-	        if( action == 'install') {
-	            if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
-	                throw new Error('failed to add children to ' + filename);
-	            }
-	        } else {
-	            if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
-	                throw new Error('failed to remove children from' + filename);
-	            }
-	        }
-		});
-	}
+        configChanges[base_config_path].forEach(function (configNode) {
+            var selector = configNode.attrib["parent"],
+                children = configNode.findall('*');
+            if( action == 'install') {
+                if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
+                    throw new Error('failed to add children to ' + selector + ' in ' + config_path);
+                }
+            } else {
+                if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
+                    throw new Error('failed to remove children from ' + selector + ' in ' + config_path);
+                }
+            }
+      });
+    }
 
     output = xmlDoc.write({indent: 4});
     fs.writeFileSync(config_path, output);
@@ -308,4 +347,8 @@ function updateConfig(action, config_path, plugin_et) {
     } else {
         updatePlistFile(action, config_path, plugin_et);
     }
+}
+// throws error if last command returns code != 0
+function checkLastCommand() {
+    if(shell.error() != null) throw {name: "ShellError", message: shell.error()};
 }

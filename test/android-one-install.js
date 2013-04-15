@@ -27,7 +27,7 @@ var fs = require('fs')
   , shell = require('shelljs')
   , et = require('elementtree')
   , android = require(path.join(__dirname, '..', 'platforms', 'android'))
-
+  , plugin_loader = require('../util/plugin_loader')
   , test_dir = path.join(osenv.tmpdir(), 'test_plugman')
   , test_project_dir = path.join(test_dir, 'projects', 'android_one')
   , test_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
@@ -64,14 +64,19 @@ exports['should install webless plugin'] = function (test) {
     var dummy_xml_path = path.join(test_dir, 'plugins', 'WeblessPlugin', 'plugin.xml')
     dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
 
-    android.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
+    android.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et, { APP_ID: 12345 });
 
     test.done();
 }
 
 exports['should move the js file'] = function (test) {
+    var pluginsPath = path.join(test_dir, 'plugins');
+    var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');
     var jsPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www', 'childbrowser.js');
-    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    
+    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
+    
     fs.stat(jsPath, function(err, stats) {
         test.ok(!err);
         test.ok(stats.isFile());
@@ -80,10 +85,13 @@ exports['should move the js file'] = function (test) {
 }
 
 exports['should move the directory'] = function (test) {
-    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-
+    var pluginsPath = path.join(test_dir, 'plugins');
+    var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');
+    
+    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
+    
     var assetPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www', 'childbrowser');
-
     var assets = fs.statSync(assetPath);
 
     test.ok(assets.isDirectory());
@@ -92,15 +100,20 @@ exports['should move the directory'] = function (test) {
 }
 
 exports['should move the src file'] = function (test) {
-    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-
+    var pluginsPath = path.join(test_dir, 'plugins');
+    var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');
+    
+    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
+    
     var javaPath = path.join(test_dir, 'projects', 'android_one', 'src', 'com', 'phonegap', 'plugins', 'childBrowser', 'ChildBrowser.java');
+    
     test.ok(fs.statSync(javaPath));
     test.done();
 }
 
 exports['should add ChildBrowser to plugins.xml'] = function (test) {
-    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
 
     var pluginsXmlPath = path.join(test_dir, 'projects', 'android_one', 'res', 'xml', 'plugins.xml');
     var pluginsTxt = fs.readFileSync(pluginsXmlPath, 'utf-8'),
@@ -113,7 +126,7 @@ exports['should add ChildBrowser to plugins.xml'] = function (test) {
 }
 
 exports['should add ChildBrowser to AndroidManifest.xml'] = function (test) {
-    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
 
     var manifestPath = path.join(test_dir, 'projects', 'android_one', 'AndroidManifest.xml');
     var manifestTxt = fs.readFileSync(manifestPath, 'utf-8'),
@@ -132,7 +145,7 @@ exports['should add ChildBrowser to AndroidManifest.xml'] = function (test) {
 }
 
 exports['should add whitelist hosts'] = function (test) {
-	android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+	android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
 
     var pluginsXmlPath = path.join(test_dir, 'projects', 'android_one', 'res', 'xml', 'plugins.xml');
     var pluginsTxt = fs.readFileSync(pluginsXmlPath, 'utf-8'),
@@ -140,6 +153,30 @@ exports['should add whitelist hosts'] = function (test) {
 
     test.equal(pluginsDoc.findall("access").length, 2, "/access");
 	test.equal(pluginsDoc.findall("access")[0].attrib["origin"], "build.phonegap.com")
-    test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "s3.amazonaws.com")
+    test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "12345.s3.amazonaws.com")
+    test.done();
+}
+
+exports['should search/replace plugin.xml'] = function (test) {
+	android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+
+    var pluginsXmlPath = path.join(test_dir, 'projects', 'android_one', 'res', 'xml', 'plugins.xml');
+    var pluginsTxt = fs.readFileSync(pluginsXmlPath, 'utf-8'),
+        pluginsDoc = new et.ElementTree(et.XML(pluginsTxt));
+
+    test.equal(pluginsDoc.findall("access").length, 2, "/access");
+	test.equal(pluginsDoc.findall("access")[0].attrib["origin"], "build.phonegap.com")
+    test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "12345.s3.amazonaws.com")
+    test.done();
+}
+
+exports['should search/replace manifest.xml files'] = function (test) {
+	android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+
+    var manifestXmlPath = path.join(test_dir, 'projects', 'android_one', 'AndroidManifest.xml');
+    var manifestTxt = fs.readFileSync(manifestXmlPath, 'utf-8'),
+        manifestDoc = new et.ElementTree(et.XML(manifestTxt));
+
+	test.equal(manifestDoc.findall("appid")[0].attrib["value"], "12345")
     test.done();
 }

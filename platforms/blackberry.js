@@ -19,24 +19,19 @@
 
 var fs = require('fs')  // use existsSync in 0.6.x
    , path = require('path')
-   , util = require('util')
    , shell = require('shelljs')
    , et = require('elementtree')
-   , getConfigChanges = require(path.join(__dirname, '..', 'util', 'config-changes'))
-   , searchAndReplace = require(path.join(__dirname, '..', 'util', 'search-and-replace'))
-   , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'))
-   , assetsDir = 'assets/www'
-   , sourceDir = 'src';
+   , getConfigChanges = require('../util/config-changes')
+   , sourceDir = 'src'
+   , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'));
 
-exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, variables) {
+
+exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
     var plugin_id = plugin_et._root.attrib['id']
       , version = plugin_et._root.attrib['version']
       , external_hosts = []
-      , i = 0
-      , PACKAGE_NAME = androidPackageName(project_dir)
+      , platformTag = plugin_et.find('./platform[@name="blackberry"]')
 
-
-    var platformTag = plugin_et.find('./platform[@name="android"]');
     if (!platformTag) {
         // Either this plugin doesn't support this platform, or it's a JS-only plugin.
         // Either way, return now.
@@ -46,38 +41,6 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
     var sourceFiles = platformTag.findall('./source-file')
       , libFiles = platformTag.findall('./library-file')
       , configChanges = getConfigChanges(platformTag);
-
-    variables = variables || {}
-
-	  // get config.xml filename
-	  var config_xml_filename = 'res/xml/config.xml';
-    if(fs.existsSync(path.resolve(project_dir, 'res/xml/plugins.xml'))) {
-        config_xml_filename = 'res/xml/plugins.xml';
-    }
-
-    // collision detection 
-    if(action.match(/force-/) == null) {
-      if(action == "install" && pluginInstalled(plugin_et, project_dir, config_xml_filename)) {
-          throw "Plugin "+plugin_id+" already installed"
-      } else if(action == "uninstall" && !pluginInstalled(plugin_et, project_dir, config_xml_filename)) {
-          throw "Plugin "+plugin_id+" not installed"
-      }
-    } else {
-      action = action.replace('force-', '');
-    }
-
-    root = et.Element("config-file");
-    root.attrib['parent'] = '.'
-      plugin_et.findall('./access').forEach(function (tag) { 
-      root.append(tag);
-    });
-
-    if (root.len()) {
-      (configChanges[config_xml_filename]) ?
-            configChanges[config_xml_filename].push(root) :
-            configChanges[config_xml_filename] = [root];
-    }
-
     // find which config-files we're interested in
     Object.keys(configChanges).forEach(function (configFile) {
         if (!fs.existsSync(path.resolve(project_dir, configFile))) {
@@ -85,9 +48,19 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
         }
     });
 
+    // collision detection 
+    if(action.match(/force-/) == null) {
+      if(action == "install" && pluginInstalled(plugin_et, project_dir)) {
+          throw "Plugin "+plugin_id+" already installed"
+      } else if(action == "uninstall" && !pluginInstalled(plugin_et, project_dir)) {
+          throw "Plugin "+plugin_id+" not installed"
+      }
+    } else {
+      action = action.replace('force-', '');
+    }
+    
     // move source files
     sourceFiles.forEach(function (sourceFile) {
-        
         var srcDir = path.resolve(project_dir,
                                 sourceFile.attrib['target-dir'])
           , destFile = path.resolve(srcDir,
@@ -104,7 +77,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
             while(curDir !== path.join(project_dir, 'src')) {
                 if(fs.readdirSync(curDir).length == 0) {
                     fs.rmdirSync(curDir);
-                    curDir = path.resolve(path.join(curDir, '..'));
+                    curDir = path.resolve(curDir, '..');
                 } else {
                     // directory not empty...do nothing
                     break;
@@ -120,11 +93,12 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
 
         if (action == 'install') {
             shell.mkdir('-p', libDir);
+
             var src = path.resolve(plugin_dir,
                                         libFile.attrib['src']),
                 dest = path.resolve(libDir,
                                 path.basename(libFile.attrib['src']));
-
+            
             shell.cp(src, dest);
         } else {
             var destFile = path.resolve(libDir,
@@ -138,6 +112,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
             }
         }
     })
+
 
     // edit configuration files
     Object.keys(configChanges).forEach(function (filename) {
@@ -163,13 +138,6 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
         output = xmlDoc.write({indent: 4});
         fs.writeFileSync(filepath, output);
     });
-    
-    if (action == 'install') {
-        variables['PACKAGE_NAME'] = androidPackageName(project_dir);
-        searchAndReplace(path.resolve(project_dir, config_xml_filename), variables);
-        searchAndReplace(path.resolve(project_dir, 'AndroidManifest.xml'), variables);
-    }
-    
 }
 
 
@@ -177,25 +145,12 @@ function srcPath(pluginPath, filename) {
     return path.resolve(pluginPath, filename);
 }
 
-// reads the package name out of the Android Manifest file
-// @param string project_dir the absolute path to the directory containing the project
-// @return string the name of the package
-function androidPackageName(project_dir) {
-    var mDoc = xml_helpers.parseElementtreeSync(
-            path.resolve(project_dir, 'AndroidManifest.xml'));
-
-    return mDoc._root.attrib['package'];
-}
-
-function pluginInstalled(plugin_et, project_dir, config_xml_filename) {
-    var tag_xpath = util.format('./platform[@name="android"]/config-file[@target="%s"]/plugin', config_xml_filename);
-
-    var plugin_tag = plugin_et.find(tag_xpath);
-    if (!plugin_tag) {
+function pluginInstalled(plugin_et, project_dir) {
+    var config_tag = plugin_et.find('./platform[@name="blackberry"]/config-file[@target="config.xml"]/feature');
+    if (!config_tag) {
         return false;
     }
-    var plugin_name = plugin_tag.attrib.name;
-
-    return (fs.readFileSync(path.resolve(project_dir, config_xml_filename), 'utf8')
+    var plugin_name = config_tag.attrib.id;
+    return (fs.readFileSync(path.resolve(project_dir, 'config.xml'), 'utf8')
            .match(new RegExp(plugin_name, "g")) != null);
 }

@@ -31,10 +31,10 @@ var fs = require('fs')
   , platform_modules = {
         'android': require('./platforms/android'),
         'ios': require('./platforms/ios'),
-        'bb10': require('./platforms/bb10')
+        'blackberry': require('./platforms/blackberry')
     };
 
-var known_opts = { 'platform' : [ 'ios', 'android', 'bb10' ]
+var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry' ]
             , 'project' : path
             , 'plugin' : [String, path, url]
             , 'remove' : Boolean
@@ -47,7 +47,8 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'bb10' ]
             , 'prepare' : Boolean
             , 'plugins': path
             , 'www': path
-            };
+            , 'variable' : Array
+            }, shortHands = { 'var' : 'variable' };
 
 var cli_opts = nopt(known_opts);
 
@@ -96,7 +97,15 @@ else if (cli_opts.uninstall) {
     handlePlugin('uninstall', cli_opts.platform, cli_opts.project, cli_opts.plugin);
 }
 else {
-    handlePlugin('install', cli_opts.platform, cli_opts.project, cli_opts.plugin);
+  var cli_variables = {}
+  if (cli_opts.variable) {
+    cli_opts.variable.forEach(function (variable) {
+        var tokens = variable.split('=');
+        var key = tokens.shift().toUpperCase();
+        if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
+        });
+  }
+  handlePlugin('install', cli_opts.platform, cli_opts.project, cli_opts.plugin, cli_variables);
 }
 
 function printUsage() {
@@ -108,18 +117,50 @@ function printUsage() {
     console.log('Delete the local copy of a plugin:\n\t' + package.name + ' --remove --plugin <name> [--plugins_dir <directory>]\n');
     console.log('List plugins:\n\t' + package.name + ' --list [--plugins_dir <directory>]\n');
     console.log('Prepare project:\n\t' + package.name + ' --prepare --platform <ios|android|bb10> --project <directory> --www <directory> [--plugins_dir <directory>]');
-    console.log('\n--plugins_dir defaults to <project>/cordova/plugins, but can be any directory containing a subdirectory for each plugin');
+    console.log('\n\t--plugins_dir defaults to <project>/cordova/plugins, but can be any directory containing a subdirectory for each plugin');
 }
 
-function execAction(action, platform, project_dir, plugin_dir) {
+function execAction(action, platform, project_dir, plugin_dir, cli_variables) {
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , xml_text     = fs.readFileSync(xml_path, 'utf-8')
-      , plugin_et   = new et.ElementTree(et.XML(xml_text));
+      , plugin_et    = new et.ElementTree(et.XML(xml_text))
+      , filtered_variables = {};
+
+    if (action == 'install') {
+        // checking preferences
+        prefs = plugin_et.findall('./preference') || [];
+        prefs = prefs.concat(plugin_et.findall('./platform[@name="'+platform+'"]/preference'));
+        var missing_vars = [];
+        prefs.forEach(function (pref) {
+            var key = pref.attrib["name"].toUpperCase();
+            if (cli_variables[key] == undefined)
+                missing_vars.push(key)
+            else
+                filtered_variables[key] = cli_variables[key]
+        })
+        if (missing_vars.length > 0) {
+            console.error('Variable missing: ' + missing_vars.join(", "));
+            return;
+        }
+
+        if((info = plugin_et.find('./platform[@name="'+platform+'"]/info'))) {
+            console.log(info.text);
+        }
+    }
     
     // run the platform-specific function
-    platform_modules[platform].handlePlugin(action, project_dir, plugin_dir, plugin_et);
-    
-    console.log('plugin ' + action + 'ed');
+    try {
+      platform_modules[platform].handlePlugin(action, project_dir, plugin_dir, plugin_et, filtered_variables);
+      console.log('plugin ' + action + 'ed');
+    } catch(e) {
+        var revert = (action == "install" ? "force-uninstall" : "force-install" );
+        console.error("An error occurred for action", action, ":", e.message, "\nTrying to revert changes...");
+        try {
+          platform_modules[platform].handlePlugin(revert, project_dir, plugin_dir, plugin_et, filtered_variables);
+        } catch(e) {
+          console.log("Changes might have not been reverted: "+e.message);
+        }
+    }
 }
 
 function fetchPlugin(plugin_dir) {
@@ -149,7 +190,7 @@ function removePlugin(name) {
     console.log('Plugin ' + cli_opts.plugin + ' deleted.');
 }
 
-function handlePlugin(action, platform, project_dir, name) {
+function handlePlugin(action, platform, project_dir, name, cli_variables) {
     var plugin_xml_path, async;
 
     // Check that the plugin has already been fetched.
@@ -164,7 +205,7 @@ function handlePlugin(action, platform, project_dir, name) {
         async = true;
         plugins.getPluginInfo(plugin_dir,
             function(plugin_info) {
-                execAction(action, platform, project_dir, plugins.clonePluginGitRepo(plugin_info.url), plugins_dir);
+                execAction(action, platform, project_dir, plugins.clonePluginGitRepo(plugin_info.url), plugins_dir, cli_variables);
             },
             function(e) {
                 throw new Error(action + ' failed. "' + plugin_xml_path + '" not found');
@@ -178,7 +219,7 @@ function handlePlugin(action, platform, project_dir, name) {
 
     // check arguments and resolve file paths
     if(!async) {
-        execAction(action, platform, project_dir, plugin_dir);
+        execAction(action, platform, project_dir, plugin_dir, cli_variables);
     }
 }
 

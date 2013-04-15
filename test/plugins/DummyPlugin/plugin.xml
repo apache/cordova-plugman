@@ -57,22 +57,29 @@
                 target-dir="src/com/phonegap/plugins/dummyplugin" />
     </platform>
 
-    <!-- BlackBerry10 -->
-    <platform name="BlackBerry10">
+    <!-- blackberry -->
+    <platform name="blackberry">
         <config-file target="config.xml" parent="/widget">
             <feature id="dummyPlugin" required="true" version="1.0.0.0"/>
         </config-file>
 
-        <source-file src="client.js" target-dir="ext-qnx/cordova.echo" />
-        <source-file src="index.js" target-dir="ext-qnx/cordova.echo" />
-        <source-file src="manifest.json" target-dir="ext-qnx/cordova.echo" />
+        <source-file src="src/blackberry/client.js" target-dir="ext-qnx/cordova.echo" />
+        <source-file src="src/blackberry/index.js" target-dir="ext-qnx/cordova.echo" />
+        <source-file src="src/blackberry/manifest.json" target-dir="ext-qnx/cordova.echo" />
     </platform>
 
         
     <!-- ios -->
     <platform name="ios">
+        <!-- CDV < 2.4 -->
         <plugins-plist key="com.phonegap.plugins.dummyplugin"
             string="DummyPluginCommand" />
+        
+        <!-- CDV 2.5+ -->
+        <config-file target="config.xml" parent="/widget/plugins">
+            <plugin name="DummyPlugin"
+                value="DummyPluginCommand"/>
+        </config-file>
 
         <resource-file src="DummyPlugin.bundle" />
         <resource-file src="DummyPluginViewController.xib" />

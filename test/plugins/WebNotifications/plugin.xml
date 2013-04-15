@@ -32,14 +32,14 @@
 	
     <!-- ios -->
     <platform name="ios">
-        <config-file target="config.xml" parent="/cordova/plugins">
+        <config-file target="config.xml" parent="/widget/plugins">
             <plugin name="WebNotifications"
                 value="WebNotifications"/>
         </config-file>
 
-        <header-file src="WebNotifications.h" />
+        <header-file src="src/ios/WebNotifications.h" />
 
-        <source-file src="WebNotifications.m" />
+        <source-file src="src/ios/WebNotifications.m" />
 
     </platform>
 </plugin>
