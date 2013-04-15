@@ -22,6 +22,7 @@ var fs = require('fs')
   , osenv = require('osenv')
   , shell = require('shelljs')
   , util = require('util')
+  , plugin_loader = require('../util/plugin_loader')
   , plugman_exe = path.join(__dirname, '..', 'plugman.js')
   , test_dir = path.join(osenv.tmpdir(), 'test_plugman');
 
