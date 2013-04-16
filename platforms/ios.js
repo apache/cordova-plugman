@@ -191,7 +191,18 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
         searchAndReplace(projectPListPath, variables);
         searchAndReplace(config_file, variables);
     }
-    
+
+    // Remove all assets and JS modules installed by this plugin.
+    if (action == 'uninstall') {
+        var assets = plugin_et.findall('./asset');
+        assets && assets.forEach(function(asset) {
+            var target = asset.attrib.target;
+            shell.rm('-rf', path.join(project_dir, 'www', target));
+        });
+
+        shell.rm('-rf', path.join(project_dir, 'www', 'plugins', plugin_id));
+    }
+
 }
 
 function getRelativeDir(file) {

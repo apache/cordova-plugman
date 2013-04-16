@@ -138,6 +138,17 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
         output = xmlDoc.write({indent: 4});
         fs.writeFileSync(filepath, output);
     });
+
+    // Remove all assets and JS modules installed by this plugin.
+    if (action == 'uninstall') {
+        var assets = plugin_et.findall('./asset');
+        assets && assets.forEach(function(asset) {
+            var target = asset.attrib.target;
+            shell.rm('-rf', path.join(project_dir, 'www', target));
+        });
+
+        shell.rm('-rf', path.join(project_dir, 'www', 'plugins', plugin_id));
+    }
 }
 
 

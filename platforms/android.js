@@ -163,13 +163,23 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
         output = xmlDoc.write({indent: 4});
         fs.writeFileSync(filepath, output);
     });
-    
+
     if (action == 'install') {
         variables['PACKAGE_NAME'] = androidPackageName(project_dir);
         searchAndReplace(path.resolve(project_dir, config_xml_filename), variables);
         searchAndReplace(path.resolve(project_dir, 'AndroidManifest.xml'), variables);
     }
-    
+
+    // Remove all assets and JS modules installed by this plugin.
+    if (action == 'uninstall') {
+        var assets = plugin_et.findall('./asset');
+        assets && assets.forEach(function(asset) {
+            var target = asset.attrib.target;
+            shell.rm('-rf', path.join(project_dir, assetsDir, target));
+        });
+
+        shell.rm('-rf', path.join(project_dir, assetsDir, 'plugins', plugin_id));
+    }
 }
 
 
