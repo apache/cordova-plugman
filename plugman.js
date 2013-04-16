@@ -31,10 +31,11 @@ var fs = require('fs')
         'ios': require('./platforms/ios'),
         'blackberry': require('./platforms/blackberry'),
         'wp7': require('./platforms/wp7'),
+        'wp8': require('./platforms/wp7'),
         'www': require('./platforms/www')
     };
 
-var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry' ,'wp7' , 'www' ]
+var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry' ,'wp7', 'wp8' , 'www' ]
             , 'project' : path
             , 'plugin' : [String, path, url]
             , 'remove' : Boolean
