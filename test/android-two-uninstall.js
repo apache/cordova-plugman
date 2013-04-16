@@ -28,7 +28,7 @@ var fs = require('fs')
   , shell = require('shelljs')
   , et = require('elementtree')
   , android = require(path.join(__dirname, '..', 'platforms', 'android'))
-
+  , plugin_loader = require('../util/plugin_loader')
   , test_dir = path.join(osenv.tmpdir(), 'test_plugman')
   , test_project_dir = path.join(test_dir, 'projects', 'android_two')
   , test_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
@@ -69,9 +69,12 @@ exports['should remove the js file'] = function (test) {
 }
 
 exports['should remove the directory'] = function (test) {
+    var pluginsPath = path.join(test_dir, 'plugins');
+    var wwwPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www');
     var assetPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'childbrowser');
 
     android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
     test.ok(fs.existsSync(assetPath));
 
     android.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
