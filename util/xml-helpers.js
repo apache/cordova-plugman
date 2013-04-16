@@ -141,6 +141,7 @@ exports.pruneXML = function(doc, nodes, selector) {
 
 exports.parseElementtreeSync = function (filename) {
     var contents = fs.readFileSync(filename, 'utf-8');
+    contents = contents.replace("\ufeff", ""); // Windows is the BOM 
     return new et.ElementTree(et.XML(contents));
 }
 
