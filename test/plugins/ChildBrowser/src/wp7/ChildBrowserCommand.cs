@@ -16,7 +16,7 @@ using Microsoft.Phone.Shell;
 namespace WPCordovaClassLib.Cordova.Commands
 {
     [DataContract]
-    public class BrowserOptions
+    internal class _BrowserOptions
     {
         [DataMember]
         public string url;
@@ -35,7 +35,7 @@ namespace WPCordovaClassLib.Cordova.Commands
         // Display an inderminate progress indicator
         public void showWebPage(string options)
         {
-            BrowserOptions opts = JSON.JsonHelper.Deserialize<BrowserOptions>(options);
+            _BrowserOptions opts = JSON.JsonHelper.Deserialize<_BrowserOptions>(options);
 
             Uri loc = new Uri(opts.url);
 

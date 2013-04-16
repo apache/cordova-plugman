@@ -19,6 +19,13 @@
 
 /*
 node plugman --platform wp7 --project '/c//users/jesse/documents/visual studio 2012/Projects/TestPlugin7/' --plugin '.\test\plugins\ChildBrowser\'
+
+TODO:  ( Apr. 16, 2013 - jm )
+- Update WMAppManifest.xml with any new required capabilities 
+- add references for any new libraries required by plugin
+
+
+
 */
 
 var fs = require('fs'),
@@ -27,11 +34,13 @@ var fs = require('fs'),
     shell = require('shelljs'),
     et = require('elementtree'),
     xml_helpers = require('../util/xml-helpers'),
+    getConfigChanges = require('../util/config-changes'),
     assetsDir = 'www'; // relative path to project's web assets
 
 var unix_projPath,  //  for use with glob
-    project_file,   //  first csproj returned by glob unix_projPath
+    projectFilename,//  first csproj returned by glob unix_projPath
     projPath,       //  full path to the project file, including file name
+    configFilePath, //  path to config.xml
     assets,         //  assets node et in root ./asset
     platformTag,    //  wp7 platform node et
     sourceFiles,    //  ./source-file inside platform
@@ -66,8 +75,9 @@ function copyFileSync(srcPath, destPath) {
 function initPaths(project_dir, plugin_dir, plugin_et, variables) {
 
     unix_projPath = project_dir.split("\\").join("/");
-    project_file = glob.sync('*.csproj',{nocase:true,cwd:unix_projPath})[0];
-    projPath = path.join(unix_projPath,project_file);
+    configFilePath = path.join(unix_projPath,'config.xml');
+    projectFilename = glob.sync('*.csproj',{nocase:true,cwd:unix_projPath})[0];
+    projPath = path.join(unix_projPath,projectFilename);
     assets = plugin_et.findall('./asset');
     platformTag = plugin_et.find('./platform[@name="wp7"]');
     sourceFiles = platformTag.findall('./source-file');
@@ -91,6 +101,8 @@ function install(project_dir, plugin_dir, plugin_et, variables) {
       var destFilePath = path.resolve(destDir, path.basename(sourceFile.attrib['src']));
       copyFileSync(srcFilePath, destFilePath);
   });
+
+  updateConfigXml("install", configFilePath, plugin_et);
 
   et.register_namespace("csproj", "http://schemas.microsoft.com/developer/msbuild/2003");
   projectChanges && projectChanges.forEach(function (configNode) {
@@ -116,6 +128,53 @@ function install(project_dir, plugin_dir, plugin_et, variables) {
   });
 }
 
+function updateConfigXml(action, config_path, plugin_et) {
+
+    var hosts = plugin_et.findall('./access');
+    var platformTag = plugin_et.find('./platform[@name="wp7"]');
+    var configChanges = getConfigChanges(platformTag);   
+    var base_config_path = path.basename(config_path);
+        // add whitelist hosts
+    var root = et.Element("config-file");
+        root.attrib['parent'] = '.';
+      
+    hosts && hosts.forEach( function (tag) {
+      root.append(tag);
+    });
+
+    if (root.len()) {
+      var changeList = configChanges[path.basename(config_path)];
+      // if changeList then add to it, otherwise create it.
+      if(changeList) {
+        changeList.push(root);
+      }
+      else {
+        configChanges[path.basename(config_path)] = [root]
+      }
+    }  
+
+    if (configChanges[path.basename(config_path)]) {
+
+          // edit configuration files
+      var xmlDoc = xml_helpers.parseElementtreeSync(config_path)
+      configChanges[base_config_path].forEach( function (configNode) {
+            var selector = configNode.attrib["parent"],
+                children = configNode.findall('*');
+            if( action == 'install') {
+                if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
+                    throw new Error('failed to add children to ' + selector + ' in ' + config_path);
+                }
+            } else {
+                if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
+                    throw new Error('failed to remove children from ' + selector + ' in ' + config_path);
+                }
+            }
+      });
+    }
+
+    fs.writeFileSync(config_path, xmlDoc.write({indent: 4}));
+}
+
 function uninstall(project_dir, plugin_dir, plugin_et, variables) {
 
    assets && assets.forEach(function (asset) {
@@ -128,6 +187,8 @@ function uninstall(project_dir, plugin_dir, plugin_et, variables) {
       var destFilePath = path.resolve(destDir, path.basename(sourceFile.attrib['src']));
       shell.rm('-rf', destFilePath);
    });
+
+   updateConfigXml("uninstall", configFilePath, plugin_et);
 
    et.register_namespace("csproj", "http://schemas.microsoft.com/developer/msbuild/2003");
 
