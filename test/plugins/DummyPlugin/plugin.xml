@@ -53,7 +53,7 @@
                 value="com.phonegap.plugins.dummyplugin.DummyPlugin"/>
         </config-file>
 
-        <source-file src="DummyPlugin.java"
+        <source-file src="src/android/DummyPlugin.java"
                 target-dir="src/com/phonegap/plugins/dummyplugin" />
     </platform>
 
