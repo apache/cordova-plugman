@@ -18,9 +18,7 @@
 */
 
 /*
-$ node plugman --platform wp7 
-  --project '/c//users/jesse/documents/visual studio 2012/Projects/TestPlugin7/' 
-  --plugin '.\test\plugins\ChildBrowser\'
+node plugman --platform wp7 --project '/c//users/jesse/documents/visual studio 2012/Projects/TestPlugin7/' --plugin '.\test\plugins\ChildBrowser\'
 */
 
 var fs = require('fs'),
@@ -101,12 +99,17 @@ function install(project_dir, plugin_dir, plugin_et, variables) {
 
     // child is the configNode child that we will insert into csproj
     var child = configNode.find('*'); 
-    var newNodeText = new et.ElementTree(child).write({xml_declaration:false});
-        
-    newNodeText = newNodeText.split("&#xA;").join("\n").split("&#xD;").join("\r");
-    
+    // we use empty text as a default, so we always modify the project file so Visual Studio will notice if open.
+    var newNodeText = "";
+    if(child) {
+
+      newNodeText = new et.ElementTree(child).write({xml_declaration:false});
+      newNodeText = newNodeText.split("&#xA;").join("\n").split("&#xD;").join("\r");
+      newNodeText += "\n\r";
+    }
+
     // insert text right before closing tag
-    var newDocStr = docStr.replace("</Project>",newNodeText + "\n\r</Project>");
+    var newDocStr = docStr.replace("</Project>", newNodeText + "</Project>");
 
     // save it, and get out
     fs.writeFileSync(projPath, newDocStr);
@@ -134,17 +137,23 @@ function uninstall(project_dir, plugin_dir, plugin_et, variables) {
 
     // child is the configNode child that we will insert into csproj
     var child = configNode.find('*'); 
-    var newNodeText = new et.ElementTree(child).write({xml_declaration:false});
-        
-    newNodeText = newNodeText.split("&#xA;").join("\n").split("&#xD;").join("\r");
-    
-    // insert text right before closing tag
-    var splitString = docStr.split(newNodeText);
-    console.log("split length = " + splitString.length);
-    var newDocStr = splitString.join("");
+    if(child) {
+      var newNodeText = new et.ElementTree(child).write({xml_declaration:false});
+          
+      newNodeText = newNodeText.split("&#xA;").join("\n").split("&#xD;").join("\r");
+      
+      // insert text right before closing tag
+      var splitString = docStr.split(newNodeText);
+      console.log("split length = " + splitString.length);
+      var newDocStr = splitString.join("");
 
-    // save it, and get out
-    fs.writeFileSync(projPath, newDocStr);
+      // save it, and get out
+      fs.writeFileSync(projPath, newDocStr);
+    }
+    else {
+      // this just lets Visual Studio know to reload the project if it is open
+      fs.writeFileSync(projPath, docStr);
+    }
   });
 }
 
