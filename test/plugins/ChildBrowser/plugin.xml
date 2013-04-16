@@ -118,4 +118,21 @@
         </config-file> 
 
     </platform>
+
+    <!-- wp8 -->
+    <platform name="wp8">
+        <resource-file src="src\wp7\Images\appbar.back.rest.png" />
+        <config-file target="config.xml" parent="/widget/plugins">
+            <plugin name="ChildBrowser"
+                value="ChildBrowser"/>
+        </config-file>
+
+        <source-file src="src\wp7\ChildBrowserCommand.cs"
+                     target-dir="Plugins\" />
+
+        <!-- modify the project file to include the added files -->
+        <config-file target=".csproj" parent=".">  
+        </config-file> 
+
+    </platform>
 </plugin>
