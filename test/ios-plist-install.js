@@ -74,12 +74,12 @@ exports['should install webless plugin'] = function (test) {
 exports['should move the js file'] = function (test) {
     var pluginsPath = path.join(test_dir, 'plugins');
     var wwwPath = path.join(test_dir, 'projects', 'ios-plist', 'www');
+    var jsPath = path.join(test_dir, 'projects', 'ios-plist', 'www', 'plugins', 'com.phonegap.plugins.childbrowser', 'www', 'childbrowser.js');
     
     // run the platform-specific function
     ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
     plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'ios');
-    
-    var jsPath = path.join(test_dir, 'projects', 'ios-plist', 'www', 'childbrowser.js');
+
     test.ok(fs.existsSync(jsPath));
     test.ok(fs.statSync(jsPath).isFile());
     test.done();
