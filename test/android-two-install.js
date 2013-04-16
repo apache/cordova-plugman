@@ -73,23 +73,37 @@ exports['should install webless plugin'] = function (test) {
 exports['should move the js file'] = function (test) {
     var pluginsPath = path.join(test_dir, 'plugins');
     var wwwPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www');
-    var jsPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'childbrowser.js');
+    var jsPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'plugins', 'com.phonegap.plugins.childbrowser', 'www', 'childbrowser.js');
 
     android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
     plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
 
-    fs.stat(jsPath, function(err, stats) {
-        test.ok(!err);
-        test.ok(stats.isFile());
-        test.done();
-    });
+    var stats = fs.statSync(jsPath);
+    test.ok(stats);
+    test.ok(stats.isFile());
+    test.done();
 }
 
-exports['should move the directory'] = function (test) {
+exports['should move the asset file'] = function(test) {
+    var pluginsPath = path.join(test_dir, 'plugins');
+    var wwwPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www');
+
+    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
+
+    var assetPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'childbrowser_file.html');
+    var assets = fs.statSync(assetPath);
+
+    test.ok(assets);
+    test.ok(assets.isFile());
+    test.done();
+}
+
+exports['should move the asset directory'] = function (test) {
     var pluginsPath = path.join(test_dir, 'plugins');
     var wwwPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www');
     
-    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
     plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
     
     var assetPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'childbrowser');
@@ -99,6 +113,22 @@ exports['should move the directory'] = function (test) {
     test.ok(fs.statSync(assetPath + '/image.jpg'))
     test.done();
 }
+
+exports['should add entries to the cordova_plugins.json file'] = function(test) {
+    var pluginsPath = path.join(test_dir, 'plugins');
+    var wwwPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www');
+
+    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
+
+    var jsonPath = path.join(wwwPath, 'cordova_plugins.json');
+    var content = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+
+    test.ok(content);
+    test.ok(content.length > 0);
+    test.ok(content[0].file);
+    test.done();
+};
 
 exports['should move the src file'] = function (test) {
     var pluginsPath = path.join(test_dir, 'plugins');

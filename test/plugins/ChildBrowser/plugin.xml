@@ -25,8 +25,12 @@
 
     <name>Child Browser</name>
 
-    <asset src="www/childbrowser.js" target="childbrowser.js" />
     <asset src="www/childbrowser" target="childbrowser" />
+    <asset src="www/childbrowser_file.html" target="childbrowser_file.html" />
+
+    <js-module src="www/childbrowser.js" name="ChildBrowser">
+        <clobbers target="childbrowser" />
+    </js-module>
 
     <access origin="build.phonegap.com" />
     <access origin="$APP_ID.s3.amazonaws.com" />
