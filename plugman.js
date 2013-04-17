@@ -82,8 +82,7 @@ else if (cli_opts.list) {
     });
 }
 else if (cli_opts.prepare && cli_opts.project) {
-    var www_dir = platform_modules[cli_opts.platform].www_dir(cli_opts.project);
-    plugin_loader.handlePrepare(cli_opts.project, plugins_dir, www_dir, cli_opts.platform);
+    handlePrepare(cli_opts.project, cli_opts.platform);
 }
 else if (cli_opts.remove) {
     removePlugin(cli_opts.plugin);
@@ -148,10 +147,11 @@ function execAction(action, platform, project_dir, plugin_dir, cli_variables) {
             console.log(info.text);
         }
     }
-    
+
     // run the platform-specific function
     try {
       platform_modules[platform].handlePlugin(action, project_dir, plugin_dir, plugin_et, filtered_variables);
+      handlePrepare(project_dir, platform);
       console.log('plugin ' + action + 'ed');
     } catch(e) {
         var revert = (action == "install" ? "force-uninstall" : "force-install" );
@@ -236,5 +236,10 @@ function handlePlugin(action, platform, project_dir, name, cli_variables) {
     if(!async) {
         execAction(action, platform, project_dir, plugin_dir, cli_variables);
     }
+}
+
+function handlePrepare(project_dir, platform) {
+    var www_dir = platform_modules[platform].www_dir(project_dir);
+    plugin_loader.handlePrepare(project_dir, plugins_dir, www_dir, platform);
 }
 
