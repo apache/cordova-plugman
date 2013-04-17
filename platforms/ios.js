@@ -273,10 +273,11 @@ function updatePlistFile(action, config_path, plugin_et) {
         for(i=0; i < plistObj.ExternalHosts.length;i++) {
             matched = false;
             hosts && hosts.forEach(function(host) {
-                if(host === plistObj.ExternalHosts[i]) {
+                if(host.attrib.origin === plistObj.ExternalHosts[i]) {
                     matched = true;
                 }
             });
+
             if (!matched) {
                 external_hosts.push(plistObj.ExternalHosts[i]);
             }

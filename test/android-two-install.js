@@ -152,6 +152,6 @@ exports['should add whitelist hosts'] = function (test) {
 
     test.equal(pluginsDoc.findall("access").length, 3, "/access");
 	test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "build.phonegap.com")
-    test.equal(pluginsDoc.findall("access")[2].attrib["origin"], "12345.s3.amazonaws.com")
+    test.equal(pluginsDoc.findall("access")[2].attrib["origin"], "s3.amazonaws.com")
     test.done();
 }

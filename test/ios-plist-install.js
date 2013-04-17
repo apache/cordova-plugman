@@ -134,7 +134,7 @@ exports['should edit PhoneGap.plist'] = function (test) {
         
     test.equal(obj.ExternalHosts.length, 2)    
     test.equal(obj.ExternalHosts[0], "build.phonegap.com")
-    test.equal(obj.ExternalHosts[1], "12345.s3.amazonaws.com")
+    test.equal(obj.ExternalHosts[1], "s3.amazonaws.com")
 
     test.done();
 }
