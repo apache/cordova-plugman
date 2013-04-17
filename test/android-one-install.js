@@ -140,7 +140,7 @@ exports['should add whitelist hosts'] = function (test) {
 
     test.equal(pluginsDoc.findall("access").length, 2, "/access");
 	test.equal(pluginsDoc.findall("access")[0].attrib["origin"], "build.phonegap.com")
-    test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "12345.s3.amazonaws.com")
+    test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "s3.amazonaws.com")
     test.done();
 }
 
@@ -153,7 +153,7 @@ exports['should search/replace plugin.xml'] = function (test) {
 
     test.equal(pluginsDoc.findall("access").length, 2, "/access");
 	test.equal(pluginsDoc.findall("access")[0].attrib["origin"], "build.phonegap.com")
-    test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "12345.s3.amazonaws.com")
+    test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "s3.amazonaws.com")
     test.done();
 }
 
