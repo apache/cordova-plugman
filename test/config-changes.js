@@ -20,7 +20,8 @@
 var configChanges = require('../util/config-changes'),
     fs = require('fs'),
     et = require('elementtree'),
-    xmlText = fs.readFileSync('dummy.xml', 'utf-8'),
+    path = require('path'),
+    xmlText = fs.readFileSync(path.join(__dirname, 'dummy.xml'), 'utf-8'),
     xmlDoc = new et.ElementTree(et.XML(xmlText)),
     platformTag = null;
 
