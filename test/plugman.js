@@ -49,39 +49,54 @@ exports['should list all plugins'] = function (test) {
 }
 
 exports['should install and uninstall ios plugin'] = function (test) {
-  var test_project_dir = path.join(test_dir, 'ios-config-xml'),
-      test_plugin_dir = path.join(test_dir, 'WebNotifications'),
+  var test_project_dir = path.join(test_dir, 'projects', 'ios-config-xml'),
+      test_plugins_dir = path.join(test_dir, 'plugins'),
       srcDir = path.resolve(test_project_dir, 'SampleApp/Plugins'),
+      srcPluginDir = path.join(__dirname, 'plugins', 'WebNotifications'),
       options = {silent: true},
       command;
 
     // copy the ios test project to a temp directory
-    shell.cp('-r', path.join(__dirname, 'projects', 'ios-config-xml'), test_dir);
+    shell.cp('-r', path.join(__dirname, 'projects'), test_dir);
 
-    // copy the ios test plugin to a temp directory
-    shell.cp('-r', path.join(__dirname, 'plugins', 'WebNotifications'), test_dir);
-
-    command = util.format('%s %s --platform ios --project %s --plugin %s', shell.which('node'),
+    // create the plugins dir to the temp directory
+    shell.mkdir('-p', test_plugins_dir);
+    
+    command = util.format('%s %s --fetch --plugin %s --plugins_dir %s', shell.which('node'),
                                                                            plugman_exe, 
-                                                                           test_project_dir, 
-                                                                           test_plugin_dir
+                                                                           srcPluginDir, 
+                                                                           test_plugins_dir
                          ); 
+
     var ret = shell.exec(command, options); 
     test.equal(0, ret.code);
-    test.equal("plugin installed\n", ret.output);
     
+    command = util.format('%s %s --platform ios --project %s --plugin %s --plugins_dir %s', shell.which('node'),
+                                                                           plugman_exe, 
+                                                                           test_project_dir, 
+                                                                           'WebNotifications',
+                                                                           test_plugins_dir
+                         ); 
+
+    ret = shell.exec(command, options); 
+    test.equal(0, ret.code);
+    test.equal("plugin installed\n", ret.output);
+ 
+                   
     test.ok(fs.existsSync(srcDir + '/WebNotifications.m'))
     test.ok(fs.existsSync(srcDir + '/WebNotifications.h'));
     
-    command = util.format('%s %s --remove --platform ios --project %s --plugin %s', shell.which('node'),
+    command = util.format('%s %s --uninstall --platform ios --project %s --plugin %s --plugins_dir %s', shell.which('node'),
                                                                                     plugman_exe, 
                                                                                     test_project_dir, 
-                                                                                    test_plugin_dir
+                                                                                    'WebNotifications', 
+                                                                                    test_plugins_dir
                          ); 
+
     var ret = shell.exec(command, options); 
     test.equal(0, ret.code);
     test.equal("plugin uninstalled\n", ret.output);
-    
+
     test.ok(!fs.existsSync(srcDir + '/WebNotifications.m'))
     test.ok(!fs.existsSync(srcDir + '/WebNotifications.h'));
    
