@@ -15,8 +15,10 @@ This document defines tool usage and the plugin format specification.
 ## Usage
 
 Fetch a plugin:
+TODO: is `--plugin` redundant here?
 
     plugman --fetch --plugin <directory|git-url|name> [--plugins_dir <directory>]
+
 
 Install an already fetched plugin:
 
@@ -41,6 +43,7 @@ Prepare project:
 `--plugins_dir` defaults to `<project>/cordova/plugins`, but can be any directory containing a subdirectory for each fetched plugin
 
 Note that `--fetch` and `--remove` deal with the local cache of the plugin's files and don't care about platforms, while `--install` and `--uninstall` require specifying the target platform and the location of the project, and actually do that copying of the native code.
+TODO: the above sentence mentions `--install` but there is no mention of it in plugman's usage guide above.
 
 Javascript code (see the section below on loading plugin Javascript) and `www` assets are loaded during `--prepare`.
 
@@ -97,15 +100,17 @@ This structure is suggested, but not required.
 
 ## plugin.xml Manifest Format
 
+Last edited April 16 2013.
+
 The `plugin.xml` file is an XML document in the plugins namespace -
-`http://www.phonegap.com/ns/plugins/1.0`. It contains a top-level `plugin`
+`http://apache.org/cordova/ns/plugins/1.0`. It contains a top-level `plugin`
 element defining the plugin, and children that define the structure of the
 plugin.
 
 A sample plugin element:
 
 	<?xml version="1.0" encoding="UTF-8"?>
-    <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
+    <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
         xmlns:android="http://schemas.android.com/apk/res/android"
         id="com.alunny.foo"
         version="1.0.2">
@@ -118,7 +123,7 @@ following attributes:
 
 #### xmlns (required)
 
-The plugin namespace - `http://www.phonegap.com/ns/plugins/1.0`. If the document
+The plugin namespace - `http://apache.org/cordova/ns/plugins/1.0`. If the document
 contains XML from other namespaces - for example, tags to be added to the
 AndroidManifest.xml file - those namespaces should also be included in the
 top-level element.
@@ -160,7 +165,7 @@ maintenance when the underlying platform is updated. A minimum of `>`, `>=`,
         <engine name="cordova" version="<1.8.1" />
     </engines>
 
-plugman will abort plugin installation if the target project does not meet the engine constraints.
+plugman will abort plugin installation if the target project does not meet the engine constraints, and exit with a non-zero code.
 
 If no `<engine>` tags are specified, plugman will attempt to install into the specified cordova project directory blindly.
 
@@ -185,10 +190,14 @@ Cordova app's `www` directory. A couple of samples:
 
 All assets tags require both a `src` attribute and a `target` attribute.
 
+Web-only plugins would contains mainly &lt;asset&gt; elements.
+
 #### src (required)
 
 Where the file or directory is located in the plugin package, relative to the
 `plugin.xml` document.
+
+If a file does not exist at the source location, plugman will stop/reverse the installation process and notify the user, and exit with a non-zero code.
 
 #### target (required)
 
@@ -202,11 +211,11 @@ Assets can be targeted to subdirectories - for instance:
 would create the `js/experimental` directory in the `www` directory, if not
 present, and then copy the file `new-foo.js` as `foo.js` into that directory.
 
-If a file exists at the target location, plugman will stop the installation process and notify the user of the conflict.
+If a file exists at the target location, plugman will stop/reverse the installation process and notify the user of the conflict, and exit with a non-zero code.
 
 ### `&lt;js-module&gt;` element 
 
-A typical plugin includes one or more Javascript files. Rather than have the user of your plugin add `<script>` tags for your Javascript to their HTML file(s) manually, you should use `<js-module>` tags for your Javascript files.
+A typical plugin includes one or more JavaScript files. Rather than have the user of your plugin add `<script>` tags for your JavaScript to their HTML file(s) manually, you should use `<js-module>` tags for your Javascript files.
 
 `<asset>` tags are a dumb copy: copy a file from the plugin subdirectory to `www`.
 
@@ -216,24 +225,26 @@ In contrast, `<js-module>` tags are much more sophisticated. They look like this
         <clobbers target="chrome.socket" />
     </js-module>
 
-For each file with a `<js-module>` tag, the `plugman --prepare` call will copy the file to `www/plugins/my.plugin.id/path/to/myfile.js`. Further, it will add an entry for this plugin to `www/cordova_plugins.json`. At load time, code in `cordova.js` will use an XHR to read this file, inject a `<script>` tag for each Javascript file, and add a mapping to clobber or merge as appropriate (see below).
+With the above example, a call to `plugman --prepare` will copy socket.js to `www/plugins/my.plugin.id/socket.js`. Further, it will add an entry for this plugin to `www/cordova_plugins.json`. At load time, code in `cordova.js` will use an XHR to read this file, inject a `<script>` tag for each Javascript file, and add a mapping to clobber or merge as appropriate (see below).
 
 DO NOT wrap the file with `cordova.define`; this will be added automatically. Your module will be wrapped in a closure, and will have `module`, `exports` and `require` in scope, as normal for AMD modules.
 
 Details for the `<js-module>` tag:
 
-* The `src` points to a file in the plugin directory.
-* The `name` gives the last part of the module name. It can generally be whatever you like, and it only matters if you want to use `cordova.require` to import other parts of your plugins in your Javascript code. The module name for a `<js-module>` is your plugin's `id` followed by the value of `name`. For the example above, with an `id` of `chrome.socket`, the module name is `chrome.socket.Socket`.
+* The `src` points to a file in the plugin directory relative to the `plugin.xml` file.
+* The `name` gives the last part of the module name. It can generally be whatever you like, and it only matters if you want to use `cordova.require` to import other parts of your plugins in your JavaScript code. The module name for a `<js-module>` is your plugin's `id` followed by the value of `name`. For the example above, with an `id` of `chrome.socket`, the module name is `chrome.socket.Socket`.
 * Inside the `<js-module>` tag there are three legal sub-tags:
     * `<clobbers target="some.value" />` indicates that the `module.exports` will be inserted into the `window` object as `window.some.value`. You can have as many `<clobbers>` as you like.
     * `<merges target="some.value" />` indicates that your module should be merged with any existing value at `window.some.value`. If any key already exists, you module's version overrides the original. You can have as many `<merges>` as you like.
     * `<runs />` means that your code should be `cordova.require`d, but not installed on the `window` object anywhere. This is useful for initializing the module, attaching event handlers or otherwise. You can only have 0 or 1 `<runs />` tags. Note that including a `<runs />` with `<clobbers />` or `<merges />` is redundant, since they also `cordova.require` your module.
     * An empty `<js-module>` will still be loaded and can be `cordova.require`d in other modules.
 
+If `src` does not resolve to a file that can be found, plugman will stop/reverse the installation, notify the user of the problem and exit with a non-zero code.
+
 
 ### &lt;platform&gt;
 
-Platform tags identify platforms that have associated native code. Tools using
+Platform tags identify platforms that have associated native code and/or require configuration file modifications. Tools using
 this specification can identify supported platforms and install the code into
 Cordova projects.
 
@@ -259,6 +270,9 @@ are listed:
 * android
 * bb10
 * ios
+* wp7
+* wp8
+* windows8
 
 
 ### &lt;source-file&gt;
@@ -272,13 +286,16 @@ into a project. A couple of examples:
     <!-- ios -->
     <source-file src="CDVFoo.m" />
 
-As with assets, if a `source-file` would overwrite an existing file, plugman will notify the user and stop, like, right away.
 
 #### src (required)
 
 Where the file is located, relative to the `plugin.xml` file.
 
+If `src` does not resolve to a file that can be found, plugman will stop/reverse the installation, notify the user of the problem and exit with a non-zero code.
+
 #### target-dir
+
+TODO: is this an implementation detail leaking through? Can we omit this?
 
 A directory where the files should be copied into, relative to the root of the
 Cordova project.
@@ -288,12 +305,14 @@ the package `com.alunny.foo` has be located under the directory
 `com/alunny/foo`. For platforms where the source directory is not important,
 plugin authors should omit this attribute.
 
+As with assets, if a `source-file`'s `target` would overwrite an existing file, plugman will stop/reverse the installation, notify the user rnd exit with a non-zero code.
+
 ### &lt;config-file&gt;
 
 Identifies an XML-based configuration file to be modified, where in that
 document the modification should take place, and what should be modified.
 
-At this stage in the spec, the `config-file` element only allows for appending
+The `config-file` element only allows for appending
 new children into an XML document. The children are XML literals that are the
 to be inserted in the target document.
 
@@ -312,16 +331,18 @@ Example:
 The file to be modified, and the path relative to the root of the Cordova
 project.
 
-If this file does not exist, the tool will exit.
+If this file does not exist, the tool should stop/reverse the installation process, warn the user, and exit with a non-zero code.
 
 #### parent
 
 An absolute XPath selector pointing to the parent of the elements to be added to
 the config file.
 
+If the selector does not resolve to a child of the specified document, the tool should stop/reverse the installation process, warn the user, and exit with a non-zero code.
+
 ### &lt;plugins-plist&gt;
 
-This is OUTDATED. Only applies to cordova-ios 2.2.0 and below. Use &lt;config-file&gt; tag (same as Android) for newer versions of Cordova.
+This is OUTDATED as it only applies to cordova-ios 2.2.0 and below. Use &lt;config-file&gt; tag (same as Android) for newer versions of Cordova.
 
 Example:
 
@@ -336,8 +357,6 @@ iOS Cordova project. Example:
     <plugins-plist key="Foo"
                    string="CDVFoo" />
 
-This may be an implementation detail leaking through, and could be merged with
-the `config-file` element at some later point.
 
 ### &lt;resource-file&gt; and &lt;header-file&gt;
 
@@ -353,6 +372,7 @@ Examples:
 This is probably an implementation detail leaking through, and future versions
 of this document will likely merge these elements with `source-file`.
 
+TODO: is this necessary?
 
 ### &lt;framework&gt;
 
@@ -367,9 +387,41 @@ plugman identifies the framework through the `src` attribute and attempts to add
 
 The optional `weak` attribute is a boolean denoting whether the framework should be weakly-linked. Default is `false`.
 
+If the file specified by `src` does not exist, the tool should stop/reverse the installation process, warn the user, and exit with a non-zero code.
+
+### &lt;dependencies&gt; and &lt;dependency&gt;
+
+Identifies dependency of the plugin on another plugin.
+
+Example:
+
+    <dependencies>
+        <dependency url="http://plugins.cordova.io/com.facebook.plugin/plugin.xml" />
+        <dependency url="http://plugins.phonegap.com/com.adobe.omniture" version="1.0.0" />
+    </dependencies>
+
+Dependencies denote other plugins that must be installed in order for the current plugin to work properly.
+
+Two different versions of the same plugin cannot be installed into the same application. If the user attempts to do so, the tooling should error out appropriately and exit with a non-zero code.
+
+Dependent plugins should be fetched first and stored in the user's specified plugins directory (or the default enforced by the tool if none is specified). These plugins are then installed into the user's cordova project, one by one, in a recursive fashion.
+If installation of any dependent plugin is not successful, the tool should not proceed with installation of the parent plugin.
+
+#### url
+
+URL pointing to a valid cordova plugin.xml file.
+
+The tooling should retrieve the plugin contents based on this URL.
+
+If the URL does not resolve or does not contain a valid plugin.xml file, the tool should error out and exit with a non-zero code.
+
+#### version
+
+Optionally you can specify a version requirement for the plugin dependency. Identical syntax for the `&lt;engine&gt;` element's `version` attribute above should be employed. 
+
 ### &lt;info&gt;
 
-The tool will provide additionnal information to users. This is useful when you require some extra steps that can't be easily automated or are out of the scope of plugman.
+The tool will provide additional information to users. This is useful when you require some extra steps that can't be easily automated or are out of the scope of plugman.
 
 Examples:
 
@@ -401,7 +453,7 @@ series of capital letters, digits and underscores. For the above example, the
 plugman replaces variable references with the
 correct value, if specified, or the empty string otherwise. The value of the
 variable reference may be detected (in this case, from the `AndroidManifest.xml`
-file, or specified by the user of the tool; the exact process is dependent on
+file), or specified by the user of the tool; the exact process is dependent on
 the particular tool.
 
 plugman can request users to specify variables required by a plugin. For example API keys for C2M and Google Maps can be specified as a command line argument like so:
@@ -411,6 +463,8 @@ plugman can request users to specify variables required by a plugin. For example
 A preference tag will need to be present inside the platform tag to make the variable mandatory like so:
 
     <preference name="API_KEY">
+
+plugman should check that these required preferences are passed in, and if not, should warn the user on how to pass the variable in and exit with a non-zero code.
 
 Certain variable names should be reserved - these are listed below.
 
@@ -447,14 +501,5 @@ These apply to plugman as well as cordova-cli. Keep the two in step, they both h
 
 These are in rough order of priority, most urgent at the top.
 
-* Remove expectation that source, header and resource files are found relative to `src/<platform>`. The `src` parameter should be relative to `plugin.xml` like the others. [CB-2813](http://issues.corodva.io/2813). Assigned to Braden.
-* Fix all the tests, including the www-only tests, which expect the old `www` platform that has been removed. Note that most of the tests will need some rewiring because of the separation of `--fetch` and `--install`. [CB-2814](http://issues.cordova.io/2814). Assigned to Fil.
-* Add tests for the `cordova_plugins.json` creation and copying of plugin Javascript files into `www/plugins/my.plugin/**`. [CB-2815](http://issues.cordova.io/2815). Assigned to Braden.
-* Make sure (I think it's already so) that `--uninstall` uses the local cache to uninstall a plugin, rather than fetching another. This avoids problems with the list of files changing upstream. [CB-2816](http://issues.cordova.io). Assigned to Fil.
-* Add `cordova plugin add ../path/to/my/plugin --link` (and similarly for `plugman --fetch`), that symlinks the plugin rather than copying, so that it updates in real time on every `prepare`. This may have problems with native code until we can make that part of a `prepare` as well. [CB-2817](http://issues.cordova.io/2817). Assigned to Braden.
-* Make sure that when a new platform is `cordova platform add`ed that it gets all the currently loaded plugins installed. [CB-2818](http://issues.cordova.io/2818). Assigned to Fil.
+* Fix all the tests, including the www-only tests, which expect the old `www` platform that has been removed. Note that most of the tests will need some rewiring because of the separation of `--fetch` and `--install`. [CB-2814](http://issues.cordova.io/2814). Assigned to Tim.
 * Implement a `cordova watch` a la `grunt watch` that will re-run `cordova prepare` every time the installed plugins change (including those installed with `--link`). This is definitely a stretch goal, but it would be awesome. Not assigned but tracked at [CB-2819](http://issues.cordova.io/2819).
-
-I (Braden) am willing to do all of these, and my employer has the will to allocate me to them for as long as they take.
-
-Fil, Anis, and Tim are all available resources for cordova-plugman and cordova-cli work! USE US, BRADEN!
