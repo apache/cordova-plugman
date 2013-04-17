@@ -46,7 +46,6 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry' ]
             , 'debug' : Boolean
             , 'prepare' : Boolean
             , 'plugins': path
-            , 'www': path
             , 'link': Boolean
             , 'variable' : Array
             }, shortHands = { 'var' : 'variable' };
@@ -82,8 +81,9 @@ else if (cli_opts.list) {
       }
     });
 }
-else if (cli_opts.prepare && cli_opts.project && cli_opts.www) {
-    plugin_loader.handlePrepare(cli_opts.project, plugins_dir, cli_opts.www, cli_opts.platform);
+else if (cli_opts.prepare && cli_opts.project) {
+    var www_dir = platform_modules[cli_opts.platform].www_dir(cli_opts.project);
+    plugin_loader.handlePrepare(cli_opts.project, plugins_dir, www_dir, cli_opts.platform);
 }
 else if (cli_opts.remove) {
     removePlugin(cli_opts.plugin);
@@ -117,7 +117,7 @@ function printUsage() {
     console.log('Uninstall a plugin:\n\t' + package.name + ' --uninstall --platform <'+ platforms +'> --project <directory> --plugin <name> [--plugins_dir <directory>]\n');
     console.log('Delete the local copy of a plugin:\n\t' + package.name + ' --remove --plugin <name> [--plugins_dir <directory>]\n');
     console.log('List plugins:\n\t' + package.name + ' --list [--plugins_dir <directory>]\n');
-    console.log('Prepare project:\n\t' + package.name + ' --prepare --platform <ios|android|bb10> --project <directory> --www <directory> [--plugins_dir <directory>]');
+    console.log('Prepare project:\n\t' + package.name + ' --prepare --platform <ios|android|bb10> --project <directory> [--plugins_dir <directory>]');
     console.log('\n\t--plugins_dir defaults to <project>/cordova/plugins, but can be any directory containing a subdirectory for each plugin');
 }
 

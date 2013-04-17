@@ -165,3 +165,8 @@ function pluginInstalled(plugin_et, project_dir) {
     return (fs.readFileSync(path.resolve(project_dir, 'config.xml'), 'utf8')
            .match(new RegExp(plugin_name, "g")) != null);
 }
+
+exports.www_dir = function(project_dir) {
+    return path.join(project_dir, 'www');
+};
+

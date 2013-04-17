@@ -36,7 +36,7 @@ List plugins:
 
 Prepare project:
 
-    plugman --prepare --platform <ios|android|bb10> --project <directory> --www <directory> [--plugins_dir <directory>]
+    plugman --prepare --platform <ios|android|bb10> --project <directory> [--plugins_dir <directory>]
 
 `--plugins_dir` defaults to `<project>/cordova/plugins`, but can be any directory containing a subdirectory for each fetched plugin
 

@@ -363,3 +363,8 @@ function updateConfig(action, config_path, plugin_et) {
 function checkLastCommand() {
     if(shell.error() != null) throw {name: "ShellError", message: shell.error()};
 }
+
+exports.www_dir = function(project_dir) {
+    return path.join(project_dir, 'www');
+};
+
