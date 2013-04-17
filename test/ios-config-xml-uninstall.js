@@ -125,8 +125,8 @@ exports['should remove the bundle'] = function (test) {
 
 exports['should edit config.xml even when using old <plugins-plist> approach'] = function (test) {
     // setting up PGSQLitePlugin (with config.xml) 
-    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'PGSQLitePlugin')
-    var dummy_xml_path = path.join(dummy_plugin_dir, 'plugin.xml')
+    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
+    var dummy_xml_path = path.join(dummy_plugin_dir, 'plugin-old.xml')
     
     // overriding some params
     var project_dir = path.join(test_dir, 'projects', 'ios-config-xml')
@@ -140,8 +140,8 @@ exports['should edit config.xml even when using old <plugins-plist> approach'] =
     var configXmlPath = path.join(project_dir, 'SampleApp', 'config.xml');
     var pluginsTxt = fs.readFileSync(configXmlPath, 'utf-8'),
         pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
-        expected = 'plugins/plugin[@name="PGSQLitePlugin"]' +
-                    '[@value="PGSQLitePlugin"]';
+        expected = 'plugins/plugin[@name="com.phonegap.plugins.childbrowser"]' +
+                    '[@value="ChildBrowserCommand"]';
 
     test.ok(!pluginsDoc.find(expected));
 	test.equal(pluginsDoc.findall("access").length, 1, "/access");
