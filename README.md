@@ -14,45 +14,30 @@ This document defines tool usage and the plugin format specification.
 
 ## Usage
 
-Fetch a plugin:
-TODO: is `--plugin` redundant here?
-
     plugman --fetch --plugin <directory|git-url|name> [--plugins_dir <directory>]
-
-
-Install an already fetched plugin:
-
-    plugman --platform <ios|android|bb10> --project <directory> --plugin <name> [--plugins_dir <directory>]
-
-Uninstall a plugin:
-
-    plugman --remove --platform <ios|android|bb10> --project <directory> --plugin <name> [--plugins_dir <directory>]
-
-Delete the local copy of a plugin:
-
+    plugman --install --platform <ios|android|bb10> --project <directory> --plugin <name> [--plugins_dir <directory>]
+    plugman --uninstall --platform <ios|android|bb10> --project <directory> --plugin <name> [--plugins_dir <directory>]
     plugman --remove --plugin <name> [--plugins_dir <directory>]
-
-List plugins:
-
     plugman --list [--plugins_dir <directory>]
-
-Prepare project:
-
     plugman --prepare --platform <ios|android|bb10> --project <directory> [--plugins_dir <directory>]
+
+* `--fetch`: Retrieves and stores a plugin
+* `--install`: Installs an already-`--fetch`'ed plugin into a cordova project
+* `--uninstall`: Uninstalls an already-`--install`'ed plugin from a cordova project
+* `--remove`: Removes a `--fetch`'ed plugin
+* `--list`: Lists all `--fetch`'ed plugins
+* `--prepare`: Based on all installed plugins, will set up properly injecting plugin JavaScript code and setting up permissions properly. Implicitly called after `--install` and `--uninstall` commands. See below for more details.
 
 `--plugins_dir` defaults to `<project>/cordova/plugins`, but can be any directory containing a subdirectory for each fetched plugin
 
-Note that `--fetch` and `--remove` deal with the local cache of the plugin's files and don't care about platforms, while `--install` and `--uninstall` require specifying the target platform and the location of the project, and actually do that copying of the native code.
-TODO: the above sentence mentions `--install` but there is no mention of it in plugman's usage guide above.
-
-Javascript code (see the section below on loading plugin Javascript) and `www` assets are loaded during `--prepare`.
+Note that `--fetch` and `--remove` deal with the local cache of the plugin's files and don't care about platforms, while `--install` and `--uninstall` require specifying the target platform and the location of the project, and actually do installation of plugin code and assets.
 
 
 ### Supported Platforms
 
 * iOS
 * Android
-* BB10?
+* BB10
 
 ### Example Plugins
 
@@ -100,7 +85,7 @@ This structure is suggested, but not required.
 
 ## plugin.xml Manifest Format
 
-Last edited April 16 2013.
+Last edited April 17 2013.
 
 The `plugin.xml` file is an XML document in the plugins namespace -
 `http://apache.org/cordova/ns/plugins/1.0`. It contains a top-level `plugin`
@@ -234,8 +219,8 @@ Details for the `<js-module>` tag:
 * The `src` points to a file in the plugin directory relative to the `plugin.xml` file.
 * The `name` gives the last part of the module name. It can generally be whatever you like, and it only matters if you want to use `cordova.require` to import other parts of your plugins in your JavaScript code. The module name for a `<js-module>` is your plugin's `id` followed by the value of `name`. For the example above, with an `id` of `chrome.socket`, the module name is `chrome.socket.Socket`.
 * Inside the `<js-module>` tag there are three legal sub-tags:
-    * `<clobbers target="some.value" />` indicates that the `module.exports` will be inserted into the `window` object as `window.some.value`. You can have as many `<clobbers>` as you like.
-    * `<merges target="some.value" />` indicates that your module should be merged with any existing value at `window.some.value`. If any key already exists, you module's version overrides the original. You can have as many `<merges>` as you like.
+    * `<clobbers target="some.value" />` indicates that the `module.exports` will be inserted into the `window` object as `window.some.value`. You can have as many `<clobbers>` as you like. If the object(s) does not exist on `window`, they will be created.
+    * `<merges target="some.value" />` indicates that your module should be merged with any existing value at `window.some.value`. If any key already exists, you module's version overrides the original. You can have as many `<merges>` as you like. If the object(s) does not exist on `window`, they will be created.
     * `<runs />` means that your code should be `cordova.require`d, but not installed on the `window` object anywhere. This is useful for initializing the module, attaching event handlers or otherwise. You can only have 0 or 1 `<runs />` tags. Note that including a `<runs />` with `<clobbers />` or `<merges />` is redundant, since they also `cordova.require` your module.
     * An empty `<js-module>` will still be loaded and can be `cordova.require`d in other modules.
 
@@ -294,8 +279,6 @@ Where the file is located, relative to the `plugin.xml` file.
 If `src` does not resolve to a file that can be found, plugman will stop/reverse the installation, notify the user of the problem and exit with a non-zero code.
 
 #### target-dir
-
-TODO: is this an implementation detail leaking through? Can we omit this?
 
 A directory where the files should be copied into, relative to the root of the
 Cordova project.
@@ -369,11 +352,6 @@ Examples:
     <resource-file src="CDVFooViewController.xib" />
     <header-file src="CDVFoo.h" />
 
-This is probably an implementation detail leaking through, and future versions
-of this document will likely merge these elements with `source-file`.
-
-TODO: is this necessary?
-
 ### &lt;framework&gt;
 
 Identifies a framework (usually part of the OS/platform) that the plugin depends on.
@@ -396,8 +374,8 @@ Identifies dependency of the plugin on another plugin.
 Example:
 
     <dependencies>
-        <dependency url="http://plugins.cordova.io/com.facebook.plugin/plugin.xml" />
-        <dependency url="http://plugins.phonegap.com/com.adobe.omniture" version="1.0.0" />
+        <dependency name="com.facebook.plugin" url="http://plugins.cordova.io" />
+        <dependency name="com.adobe.omniture" url="http://plugins.phonegap.com" version="1.0.0" />
     </dependencies>
 
 Dependencies denote other plugins that must be installed in order for the current plugin to work properly.
@@ -405,15 +383,19 @@ Dependencies denote other plugins that must be installed in order for the curren
 Two different versions of the same plugin cannot be installed into the same application. If the user attempts to do so, the tooling should error out appropriately and exit with a non-zero code.
 
 Dependent plugins should be fetched first and stored in the user's specified plugins directory (or the default enforced by the tool if none is specified). These plugins are then installed into the user's cordova project, one by one, in a recursive fashion.
-If installation of any dependent plugin is not successful, the tool should not proceed with installation of the parent plugin.
+If installation of any dependent plugin is not successful, the tool should not proceed with installation of the parent plugin and reverse all changes made to the cordova project by the installation.
+
+#### name
+
+A reverse-style domain identifier, as specified by a plugin in the top-level `plugin` element's `id` attribute.
 
 #### url
 
-URL pointing to a valid cordova plugin.xml file.
+URL pointing to a valid cordova plugin "universe."
 
-The tooling should retrieve the plugin contents based on this URL.
+The tooling should retrieve plugin contents based on a combination of this URL and the `name` attribute, i.e. `url` + '/' + `name`.
 
-If the URL does not resolve or does not contain a valid plugin.xml file, the tool should error out and exit with a non-zero code.
+If the retrieval URL does not resolve or does not contain a valid plugin.xml file, the tool should error out and exit with a non-zero code.
 
 #### version
 
