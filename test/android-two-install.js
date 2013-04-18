@@ -28,10 +28,13 @@ var fs = require('fs')
   , et = require('elementtree')
   , android = require(path.join(__dirname, '..', 'platforms', 'android'))
   , plugin_loader = require('../util/plugin_loader')
+  , plugman = require('../plugman')
   , test_dir = path.join(osenv.tmpdir(), 'test_plugman')
   , test_project_dir = path.join(test_dir, 'projects', 'android_two')
   , test_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
   , xml_path     = path.join(test_dir, 'plugins', 'ChildBrowser', 'plugin.xml')
+  , plugins_dir = path.join(test_dir, 'plugins')
+  , silent = require('../util/test-helpers').suppressOutput
   , xml_text, plugin_et;
 
 
@@ -59,24 +62,20 @@ exports.tearDown = function(callback) {
 }
 
 exports['should install webless plugin'] = function (test) {
-    
-    // setting up a DummyPlugin
-    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'WeblessPlugin')
-    var dummy_xml_path = path.join(test_dir, 'plugins', 'WeblessPlugin', 'plugin.xml')
-    dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
-
-    android.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et, { APP_ID: 12345 });
+    silent(function() {
+        plugman.handlePlugin('install', 'android', test_project_dir, 'WeblessPlugin', plugins_dir);
+    });
 
     test.done();
 }
 
 exports['should move the js file'] = function (test) {
-    var pluginsPath = path.join(test_dir, 'plugins');
     var wwwPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www');
     var jsPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'plugins', 'com.phonegap.plugins.childbrowser', 'www', 'childbrowser.js');
 
-    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
-    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
+    silent(function() {
+        plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
     var stats = fs.statSync(jsPath);
     test.ok(stats);
@@ -85,11 +84,9 @@ exports['should move the js file'] = function (test) {
 }
 
 exports['should move the asset file'] = function(test) {
-    var pluginsPath = path.join(test_dir, 'plugins');
-    var wwwPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www');
-
-    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
-    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
+    silent(function() {
+        plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
     var assetPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'childbrowser_file.html');
     var assets = fs.statSync(assetPath);
@@ -100,12 +97,10 @@ exports['should move the asset file'] = function(test) {
 }
 
 exports['should move the asset directory'] = function (test) {
-    var pluginsPath = path.join(test_dir, 'plugins');
-    var wwwPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www');
-    
-    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
-    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
-    
+    silent(function() {
+        plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
+
     var assetPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'childbrowser');
     var assets = fs.statSync(assetPath);
 
@@ -115,13 +110,11 @@ exports['should move the asset directory'] = function (test) {
 }
 
 exports['should add entries to the cordova_plugins.json file'] = function(test) {
-    var pluginsPath = path.join(test_dir, 'plugins');
-    var wwwPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www');
+    silent(function() {
+        plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
-    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
-    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
-
-    var jsonPath = path.join(wwwPath, 'cordova_plugins.json');
+    var jsonPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'cordova_plugins.json');
     var content = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
 
     test.ok(content);
@@ -131,11 +124,9 @@ exports['should add entries to the cordova_plugins.json file'] = function(test) 
 };
 
 exports['should move the src file'] = function (test) {
-    var pluginsPath = path.join(test_dir, 'plugins');
-    var wwwPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www');
-    
-    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
-    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
+    silent(function() {
+        plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
     var javaPath = path.join(test_dir, 'projects', 'android_two', 'src', 'com', 'phonegap', 'plugins', 'childBrowser', 'ChildBrowser.java');
     test.ok(fs.statSync(javaPath));
@@ -143,7 +134,9 @@ exports['should move the src file'] = function (test) {
 }
 
 exports['should add ChildBrowser to config.xml'] = function (test) {
-    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+    silent(function() {
+        plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
     var pluginsXmlPath = path.join(test_dir, 'projects', 'android_two', 'res', 'xml', 'config.xml');
     var pluginsTxt = fs.readFileSync(pluginsXmlPath, 'utf-8'),
@@ -156,7 +149,9 @@ exports['should add ChildBrowser to config.xml'] = function (test) {
 }
 
 exports['should add ChildBrowser to AndroidManifest.xml'] = function (test) {
-    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+    silent(function() {
+        plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
     var manifestPath = path.join(test_dir, 'projects', 'android_two', 'AndroidManifest.xml');
     var manifestTxt = fs.readFileSync(manifestPath, 'utf-8'),

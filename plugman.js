@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /*
  *
  * Copyright 2013 Anis Kadri
@@ -24,7 +23,6 @@ var fs = require('fs')
   , url = require('url')
   , package = require(path.join(__dirname, 'package'))
   , et = require('elementtree')
-  , nopt = require('nopt')
   , plugins = require('./util/plugins')
   , shell = require('shelljs')
   , plugin_loader = require('./util/plugin_loader')
@@ -34,93 +32,8 @@ var fs = require('fs')
         'blackberry': require('./platforms/blackberry')
     };
 
-var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry' ]
-            , 'project' : path
-            , 'plugin' : [String, path, url]
-            , 'remove' : Boolean
-            , 'install' : Boolean
-            , 'uninstall' : Boolean
-            , 'fetch' : Boolean
-            , 'list' : Boolean
-            , 'v' : Boolean
-            , 'debug' : Boolean
-            , 'prepare' : Boolean
-            , 'plugins': path
-            , 'link': Boolean
-            , 'variable' : Array
-            }, shortHands = { 'var' : 'variable' };
 
-var cli_opts = nopt(known_opts);
-
-// Default the plugins_dir to './cordova/plugins'.
-var plugins_dir;
-
-// Without these arguments, the commands will fail and print the usage anyway.
-if (cli_opts.plugins_dir || cli_opts.project) {
-    plugins_dir = typeof cli_opts.plugins_dir == 'string' ?
-        cli_opts.plugins_dir :
-        path.join(cli_opts.project, 'cordova', 'plugins');
-}
-
-// only dump stack traces in debug mode, otherwise show error message and exit
-if (!cli_opts.debug) {
-    // provide clean output on exceptions rather than dumping a stack trace
-    process.on('uncaughtException', function(error){
-        console.error(error + '\n');
-        process.exit(1);
-    });
-}
-
-if (cli_opts.v) {
-    console.log(package.name + ' version ' + package.version);
-}
-else if (cli_opts.list) {
-    plugins.listAllPlugins(function(plugins) {
-      for(var i = 0, j = plugins.length ; i < j ; i++) {
-        console.log(plugins[i].value.name, '-', plugins[i].value.description);
-      }
-    });
-}
-else if (cli_opts.prepare && cli_opts.project) {
-    handlePrepare(cli_opts.project, cli_opts.platform);
-}
-else if (cli_opts.remove) {
-    removePlugin(cli_opts.plugin);
-}
-else if (cli_opts.fetch) {
-    fetchPlugin(cli_opts.plugin);
-}
-else if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
-    printUsage();
-}
-else if (cli_opts.uninstall) {
-    handlePlugin('uninstall', cli_opts.platform, cli_opts.project, cli_opts.plugin);
-}
-else {
-  var cli_variables = {}
-  if (cli_opts.variable) {
-    cli_opts.variable.forEach(function (variable) {
-        var tokens = variable.split('=');
-        var key = tokens.shift().toUpperCase();
-        if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
-        });
-  }
-  handlePlugin('install', cli_opts.platform, cli_opts.project, cli_opts.plugin, cli_variables);
-}
-
-function printUsage() {
-    platforms = known_opts.platform.join('|');
-    console.log('Usage\n---------');
-    console.log('Fetch a plugin:\n\t' + package.name + ' --fetch --plugin <directory|git-url|name> [--plugins_dir <directory>]\n');
-    console.log('Install an already fetched plugin:\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --plugin <name> [--plugins_dir <directory>]\n');
-    console.log('Uninstall a plugin:\n\t' + package.name + ' --uninstall --platform <'+ platforms +'> --project <directory> --plugin <name> [--plugins_dir <directory>]\n');
-    console.log('Delete the local copy of a plugin:\n\t' + package.name + ' --remove --plugin <name> [--plugins_dir <directory>]\n');
-    console.log('List plugins:\n\t' + package.name + ' --list [--plugins_dir <directory>]\n');
-    console.log('Prepare project:\n\t' + package.name + ' --prepare --platform <ios|android|bb10> --project <directory> [--plugins_dir <directory>]');
-    console.log('\n\t--plugins_dir defaults to <project>/cordova/plugins, but can be any directory containing a subdirectory for each plugin');
-}
-
-function execAction(action, platform, project_dir, plugin_dir, cli_variables) {
+function execAction(action, platform, project_dir, plugin_dir, plugins_dir, cli_variables) {
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , xml_text     = fs.readFileSync(xml_path, 'utf-8')
       , plugin_et    = new et.ElementTree(et.XML(xml_text))
@@ -151,7 +64,7 @@ function execAction(action, platform, project_dir, plugin_dir, cli_variables) {
     // run the platform-specific function
     try {
       platform_modules[platform].handlePlugin(action, project_dir, plugin_dir, plugin_et, filtered_variables);
-      handlePrepare(project_dir, platform);
+      exports.handlePrepare(project_dir, platform, plugins_dir);
       console.log('plugin ' + action + 'ed');
     } catch(e) {
         var revert = (action == "install" ? "force-uninstall" : "force-install" );
@@ -164,26 +77,21 @@ function execAction(action, platform, project_dir, plugin_dir, cli_variables) {
     }
 }
 
-function fetchPlugin(plugin_dir) {
+exports.fetchPlugin = function(plugin_dir, plugins_dir, link) {
     // Ensure the containing directory exists.
     shell.mkdir('-p', plugins_dir);
 
     // clone from git repository
     if(plugin_dir.indexOf('https://') == 0 || plugin_dir.indexOf('git://') == 0) {
-        if (cli_opts.link) {
+        if (link) {
             throw new Error('--link is not supported for git URLs');
         }
         plugin_dir = plugins.clonePluginGitRepo(plugin_dir, plugins_dir);
     } else { // Copy from the local filesystem.
-        var lastSlash = plugin_dir.lastIndexOf(path.sep);
-        var dest = plugin_dir;
-        if (lastSlash >= 0) {
-            dest = dest.substring(lastSlash+1);
-        }
-        dest = path.join(plugins_dir, dest);
+        var dest = path.join(plugins_dir, path.basename(dest));
 
         shell.rm('-rf', dest);
-        if (cli_opts.link) {
+        if (link) {
             fs.symlinkSync(path.resolve(plugin_dir), dest, 'dir');
         } else {
             shell.cp('-R', plugin_dir, plugins_dir); // Yes, not dest.
@@ -191,10 +99,10 @@ function fetchPlugin(plugin_dir) {
 
         plugin_dir = dest;
     }
-}
+};
 
-function removePlugin(name) {
-    var target = path.join(plugins_dir, cli_opts.plugin);
+exports.removePlugin = function(name, plugins_dir) {
+    var target = path.join(plugins_dir, name);
     var stat = fs.lstatSync(target);
 
     if (stat.isSymbolicLink()) {
@@ -202,10 +110,10 @@ function removePlugin(name) {
     } else {
         shell.rm('-rf', target);
     }
-    console.log('Plugin ' + cli_opts.plugin + ' deleted.');
-}
+    console.log('Plugin ' + name + ' deleted.');
+};
 
-function handlePlugin(action, platform, project_dir, name, cli_variables) {
+exports.handlePlugin = function(action, platform, project_dir, name, plugins_dir, cli_variables) {
     var plugin_xml_path, async;
 
     // Check that the plugin has already been fetched.
@@ -234,12 +142,12 @@ function handlePlugin(action, platform, project_dir, name, cli_variables) {
 
     // check arguments and resolve file paths
     if(!async) {
-        execAction(action, platform, project_dir, plugin_dir, cli_variables);
+        execAction(action, platform, project_dir, plugin_dir, plugins_dir, cli_variables);
     }
-}
+};
 
-function handlePrepare(project_dir, platform) {
+exports.handlePrepare = function(project_dir, platform, plugins_dir) {
     var www_dir = platform_modules[platform].www_dir(project_dir);
     plugin_loader.handlePrepare(project_dir, plugins_dir, www_dir, platform);
-}
+};
 

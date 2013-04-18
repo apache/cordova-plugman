@@ -7,7 +7,7 @@
     "type": "git",
     "url": "git://github.com/imhotep/plugman.git"
   },
-  "main": "plugman.js",
+  "main": "main.js",
   "engines": {
     "node": ">=0.6.7"
   },
@@ -24,7 +24,7 @@
   "devDependencies": {
     "nodeunit": "0.7.x"
   },
-  "bin" : { "plugman" : "./plugman.js" },
+  "bin" : { "plugman" : "./main.js" },
   "scripts": {
     "test": "nodeunit test"
   }

@@ -54,7 +54,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
     // we don't want CordovaLib's xcode project
     var project_files = glob.sync(path.join(project_dir, '*.xcodeproj', 'project.pbxproj'));
     
-    if (!project_files.length) throw "does not appear to be an xcode project (no xcode project file)";
+    if (!project_files.length) throw new Error("does not appear to be an xcode project (no xcode project file)");
     var pbxPath = project_files[0];
 
     var xcodeproj = xcode.project(project_files[0]);
@@ -71,7 +71,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
     });
 
     if (!config_files.length) {
-        throw "does not appear to be a PhoneGap project";
+        throw new Error("does not appear to be a PhoneGap project");
     }
 
     var config_file = config_files[0];
@@ -86,9 +86,9 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
     // collision detection 
     if(action.match(/force-/) == null) {
       if(action == "install" && pluginInstalled(plugin_et, config_file)) {
-          throw "Plugin "+plugin_id+" already installed"
+          throw new Error("Plugin "+plugin_id+" already installed");
       } else if(action == "uninstall" && !pluginInstalled(plugin_et, config_file)) {
-          throw "Plugin "+plugin_id+" not installed"
+          throw new Error("Plugin "+plugin_id+" not installed");
       }
     } else {
       action = action.replace('force-', '');

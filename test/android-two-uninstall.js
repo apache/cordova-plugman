@@ -32,6 +32,9 @@ var fs = require('fs')
   , test_dir = path.join(osenv.tmpdir(), 'test_plugman')
   , test_project_dir = path.join(test_dir, 'projects', 'android_two')
   , test_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
+  , plugman = require('../plugman')
+  , plugins_dir = path.join(test_dir, 'plugins')
+  , silent = require('../util/test-helpers').suppressOutput
   , xml_path     = path.join(test_dir, 'plugins', 'ChildBrowser', 'plugin.xml')
   , xml_text, plugin_et;
 
@@ -61,34 +64,45 @@ exports.tearDown = function(callback) {
 exports['should remove the js file'] = function (test) {
     var jsPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'childbrowser.js');
 
-    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-    android.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
+    silent(function() {
+        plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+        plugman.handlePlugin('uninstall', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
     test.ok(!fs.existsSync(jsPath));
     test.done();
 }
 
 exports['should remove the directory'] = function (test) {
-    var pluginsPath = path.join(test_dir, 'plugins');
-    var wwwPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www');
     var assetPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'childbrowser');
 
-    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'android');
+    silent(function() {
+        plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
+
     test.ok(fs.existsSync(assetPath));
 
-    android.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
-    test.ok(!fs.existsSync(assetPath));
+    silent(function() {
+        plugman.handlePlugin('uninstall', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
+    test.ok(!fs.existsSync(assetPath));
     test.done();
 }
 
 exports['should remove the src file'] = function (test) {
     var javaPath = path.join(test_dir, 'projects', 'android_two', 'src', 'com', 'phonegap', 'plugins', 'childBrowser', 'ChildBrowser.java');
-    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+
+    silent(function() {
+        plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
+
     test.ok(fs.statSync(javaPath));
 
-    android.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
+    silent(function() {
+        plugman.handlePlugin('uninstall', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
+
     test.ok(fs.existsSync(path.resolve(test_dir + '/projects/android_two/src')));
     test.ok(!fs.existsSync(path.resolve(javaPath)));
     test.ok(!fs.existsSync(path.resolve(javaPath + '/..')));
@@ -99,24 +113,19 @@ exports['should remove the src file'] = function (test) {
 }
 
 exports['should not remove common package directories when two plugins share a package subname'] = function (test) {
-    
-    // setting up a DummyPlugin
-    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'DummyPlugin')
-    var dummy_xml_path = path.join(test_dir, 'plugins', 'DummyPlugin', 'plugin.xml')
-    dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
-
     var javaPath = path.join(test_dir, 'projects', 'android_two', 'src', 'com', 'phonegap', 'plugins', 'childBrowser', 'ChildBrowser.java');
 
-    // installing two plugins that share some common package directory structure
-    android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-    android.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
+    silent(function() {
+        // installing two plugins that share some common package directory structure
+        plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+        plugman.handlePlugin('install', 'android', test_project_dir, 'DummyPlugin', plugins_dir);
 
-    // uninstalling DummyPlugin should not delete existing ChildBrowser package dir structure
-    android.handlePlugin('uninstall', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
-    
+        // uninstalling DummyPlugin should not delete existing ChildBrowser package dir structure
+        plugman.handlePlugin('uninstall', 'android', test_project_dir, 'DummyPlugin', plugins_dir);
+    });
+
     var stat = fs.statSync(javaPath);
     test.ok(stat.isFile());
-
     test.done();
 }
 
