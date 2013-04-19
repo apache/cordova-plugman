@@ -54,60 +54,54 @@ describe('Installation on Cordova-Android 1.x projects', function() {
         shell.rm('-rf', test_dir);
     });
 
-    it('should install webless plugin', function () {
+    it('should install webless plugin\'s native code', function () {
         // setting up a DummyPlugin
         silent(function() {
             plugman.handlePlugin('install', 'android', test_project_dir, 'WeblessPlugin', plugins_dir);
         });
+        expect(fs.existsSync(path.join(test_project_dir, 'src', 'com', 'phonegap', 'plugins', 'weblessplugin', 'WeblessPlugin.java'))).toBe(true);
     });
 
-    exports['should move the js file'] = function (test) {
+    it('should copy the js file', function () {
         var pluginsPath = path.join(test_dir, 'plugins');
-        var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');
-        var jsPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www', 'plugins', 'com.phonegap.plugins.childbrowser', 'www', 'childbrowser.js');
+        var wwwPath = path.join(test_project_dir, 'assets', 'www');
+        var jsPath = path.join(wwwPath, 'plugins', 'com.phonegap.plugins.childbrowser', 'www', 'childbrowser.js');
 
         silent(function() {
             plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
         });
 
-        var stats = fs.statSync(jsPath);
-        test.ok(stats);
-        test.ok(stats.isFile());
-        test.done();
-    }
+        expect(fs.existsSync(jsPath)).toBe(true);
+    });
 
-    exports['should move the asset file'] = function(test) {
-        var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');
+    it('should move asset files', function() {
+        var wwwPath = path.join(test_project_dir, 'assets', 'www');
 
         silent(function() {
             plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
         });
 
-        var assetPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www', 'childbrowser_file.html');
+        var assetPath = path.join(wwwPath, 'childbrowser_file.html');
+
+        expect(fs.existsSync(assetPath)).toBe(true);
+    });
+
+    it('should move asset directories', function () {
+        var wwwPath = path.join(test_project_dir, 'assets', 'www');
+
+        silent(function() {
+            plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+        });
+
+        var assetPath = path.join(wwwPath, 'childbrowser');
         var assets = fs.statSync(assetPath);
 
-        test.ok(assets);
-        test.ok(assets.isFile());
-        test.done();
-    }
+        expect(assets.isDirectory()).toBe(true);
+        expect(fs.existsSync(path.join(assetPath, 'image.jpg'))).toBe(true);
+    });
 
-    exports['should move the asset directory'] = function (test) {
-        var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');
-
-        silent(function() {
-            plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
-        });
-
-        var assetPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www', 'childbrowser');
-        var assets = fs.statSync(assetPath);
-
-        test.ok(assets.isDirectory());
-        test.ok(fs.statSync(assetPath + '/image.jpg'))
-        test.done();
-    }
-
-    exports['should add entries to the cordova_plugins.json file'] = function(test) {
-        var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');
+    it('should add entries to the cordova_plugins.json file', function() {
+        var wwwPath = path.join(test_project_dir, 'assets', 'www');
 
         silent(function() {
             plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
@@ -116,11 +110,7 @@ describe('Installation on Cordova-Android 1.x projects', function() {
         var jsonPath = path.join(wwwPath, 'cordova_plugins.json');
         var content = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
 
-        test.ok(content);
-        test.ok(content.length > 0);
-        test.ok(content[0].file);
-        test.done();
-    };
+    });
 
     exports['should move the src file'] = function (test) {
         var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');

@@ -23,7 +23,7 @@ var path = require('path')
     , url = require('url')
     , package = require(path.join(__dirname, 'package'))
     , nopt = require('nopt')
-    , plugins = require('./util/plugins')
+    , plugins = require('./src/util/plugins')
     , plugman = require('./plugman');
 
 var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry' ]
@@ -55,49 +55,52 @@ if (cli_opts.plugins_dir || cli_opts.project) {
 }
 
 // only dump stack traces in debug mode, otherwise show error message and exit
-if (!cli_opts.debug) {
-    // provide clean output on exceptions rather than dumping a stack trace
-    process.on('uncaughtException', function(error){
+// provide clean output on exceptions rather than dumping a stack trace
+process.on('uncaughtException', function(error){
+    if (cli_opts.debug) {
+        console.error(error.stack);
+    } else {
         console.error(error + '\n');
-        process.exit(1);
-    });
-}
+    }
+    process.exit(1);
+});
 
 if (cli_opts.v) {
     console.log(package.name + ' version ' + package.version);
 }
 else if (cli_opts.list) {
     plugins.listAllPlugins(function(plugins) {
-      for(var i = 0, j = plugins.length ; i < j ; i++) {
-        console.log(plugins[i].value.name, '-', plugins[i].value.description);
-      }
+        for(var i = 0, j = plugins.length ; i < j ; i++) {
+            console.log(plugins[i].value.name, '-', plugins[i].value.description);
+        }
     });
 }
 else if (cli_opts.prepare && cli_opts.project) {
-    plugman.handlePrepare(cli_opts.project, cli_opts.platform, plugins_dir);
+    plugman.prepare(cli_opts.project, cli_opts.platform, plugins_dir);
 }
 else if (cli_opts.remove) {
-    plugman.removePlugin(cli_opts.plugin, plugins_dir);
+    plugman.remove(cli_opts.plugin, plugins_dir);
+    console.log('Plugin ' + cli_opts.plugin + ' deleted.');
 }
 else if (cli_opts.fetch) {
-    plugman.fetchPlugin(cli_opts.plugin, plugins_dir, cli_opts.link);
+    plugman.fetch(cli_opts.plugin, plugins_dir, cli_opts.link);
 }
 else if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
     printUsage();
 }
 else if (cli_opts.uninstall) {
-    plugman.handlePlugin('uninstall', cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir);
+    plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir);
 }
 else {
-  var cli_variables = {}
-  if (cli_opts.variable) {
-    cli_opts.variable.forEach(function (variable) {
-        var tokens = variable.split('=');
-        var key = tokens.shift().toUpperCase();
-        if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
+    var cli_variables = {}
+    if (cli_opts.variable) {
+        cli_opts.variable.forEach(function (variable) {
+            var tokens = variable.split('=');
+            var key = tokens.shift().toUpperCase();
+            if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
         });
-  }
-  plugman.handlePlugin('install', cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, cli_variables);
+    }
+    plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, cli_variables);
 }
 
 function printUsage() {

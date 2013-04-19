@@ -25,10 +25,28 @@ var fs = require('fs')  // use existsSync in 0.6.x
    , getConfigChanges = require(path.join(__dirname, '..', 'util', 'config-changes'))
    , searchAndReplace = require(path.join(__dirname, '..', 'util', 'search-and-replace'))
    , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'))
-   , assetsDir = 'assets/www'
+   , assetsDir = path.join('assets','www')
    , sourceDir = 'src';
 
-exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, variables) {
+module.exports = {
+    handleInstall:function(project_dir, plugin_dir, plugin_et, variables) {
+        handlePlugin('install', project_dir, plugin_dir, plugin_et, variables);
+    },
+    handleUninstall:function(project_dir, plugin_dir, plugin_et, variables) {
+        handlePlugin('uninstall', project_dir, plugin_dir, plugin_et, variables);
+    },
+    forceInstall:function(project_dir, plugin_dir, plugin_et, variables) {
+        handlePlugin('force-install', project_dir, plugin_dir, plugin_et, variables);
+    },
+    forceUninstall:function(project_dir, plugin_dir, plugin_et, variables) {
+        handlePlugin('force-uninstall', project_dir, plugin_dir, plugin_et, variables);
+    },
+    www_dir:function(project_dir) {
+        return path.join(project_dir, 'assets', 'www');
+    }
+};
+
+function handlePlugin(action, project_dir, plugin_dir, plugin_et, variables) {
     var plugin_id = plugin_et._root.attrib['id']
       , version = plugin_et._root.attrib['version']
       , external_hosts = []
@@ -50,30 +68,30 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
     variables = variables || {}
 
 	  // get config.xml filename
-	  var config_xml_filename = 'res/xml/config.xml';
+	var config_xml_filename = 'res/xml/config.xml';
     if(fs.existsSync(path.resolve(project_dir, 'res/xml/plugins.xml'))) {
         config_xml_filename = 'res/xml/plugins.xml';
     }
 
     // collision detection 
     if(action.match(/force-/) == null) {
-      if(action == "install" && pluginInstalled(plugin_et, project_dir, config_xml_filename)) {
-          throw new Error("Plugin "+plugin_id+" already installed");
-      } else if(action == "uninstall" && !pluginInstalled(plugin_et, project_dir, config_xml_filename)) {
-          throw new Error("Plugin "+plugin_id+" not installed");
-      }
+        if(action == "install" && pluginInstalled(plugin_et, project_dir, config_xml_filename)) {
+            throw new Error("Plugin "+plugin_id+" already installed");
+        } else if(action == "uninstall" && !pluginInstalled(plugin_et, project_dir, config_xml_filename)) {
+            throw new Error("Plugin "+plugin_id+" not installed");
+        }
     } else {
-      action = action.replace('force-', '');
+        action = action.replace('force-', '');
     }
 
     root = et.Element("config-file");
     root.attrib['parent'] = '.'
-      plugin_et.findall('./access').forEach(function (tag) { 
-      root.append(tag);
+        plugin_et.findall('./access').forEach(function (tag) { 
+        root.append(tag);
     });
 
     if (root.len()) {
-      (configChanges[config_xml_filename]) ?
+        (configChanges[config_xml_filename]) ?
             configChanges[config_xml_filename].push(root) :
             configChanges[config_xml_filename] = [root];
     }
@@ -209,8 +227,3 @@ function pluginInstalled(plugin_et, project_dir, config_xml_filename) {
     return (fs.readFileSync(path.resolve(project_dir, config_xml_filename), 'utf8')
            .match(new RegExp(plugin_name, "g")) != null);
 }
-
-exports.www_dir = function(project_dir) {
-    return path.join(project_dir, 'assets', 'www');
-};
-

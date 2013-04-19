@@ -24,10 +24,10 @@ var http = require('http'),
     fs = require('fs'),
     util = require('util'),
     shell = require('shelljs'),
-    remote = require(path.join(__dirname, '..', 'config', 'remote'));
+    remote = require(path.join(__dirname, '..', '..', 'config', 'remote'));
 
 // Fetches plugin information from remote server
-exports.getPluginInfo = function(plugin_name, success, error) {
+exports.getPluginInfo = function(plugin_name, callback) {
     var responded = false;
     http.get(remote.url + util.format(remote.query_path, plugin_name), function(res) {
         var str = '';
@@ -39,15 +39,14 @@ exports.getPluginInfo = function(plugin_name, success, error) {
             var response, plugin_info;
             if((response = JSON.parse(str)).rows.length == 1) {
                 plugin_info = response.rows[0].value;
-                success(plugin_info);
+                callback(null, plugin_info);
             } else {
-                error("Could not find information on "+plugin_name+" plugin");
+                callback("Could not find information on "+plugin_name+" plugin");
             }
         });
 
     }).on('error', function(e) {
-        console.log("Got error: " + e.message);
-        error(e.message);
+        callback(e);
     });
 
     setTimeout(function() {
@@ -75,16 +74,18 @@ exports.listAllPlugins = function(success, error) {
     });
 }
 
-exports.clonePluginGitRepo = function(plugin_git_url, plugins_dir) {
+exports.clonePluginGitRepo = function(plugin_git_url, plugins_dir, callback) {
     if(!shell.which('git')) {
-        throw new Error('git command line is not installed');
+        var err = new Error('git command line is not installed');
+        if (callback) callback(err);
+        else throw err;
     }
     // use osenv to get a temp directory in a portable way
     var lastSlash = plugin_git_url.lastIndexOf('/');
     var basename = plugin_git_url.substring(lastSlash+1);
     var dotGitIndex = basename.lastIndexOf('.git');
     if (dotGitIndex >= 0) {
-      basename = basename.substring(0, dotGitIndex);
+        basename = basename.substring(0, dotGitIndex);
     }
 
     var plugin_dir = path.join(plugins_dir, basename);
@@ -94,11 +95,15 @@ exports.clonePluginGitRepo = function(plugin_git_url, plugins_dir) {
         shell.rm('-rf', plugin_dir);
     }
 
-    if(shell.exec('git clone ' + plugin_git_url + ' ' + plugin_dir + ' 2>&1 1>/dev/null', {silent: true}).code != 0) {
-        throw new Error('failed to get the plugin via git URL '+ plugin_git_url);
-    }
-    
-    return plugin_dir;
+    shell.exec('git clone ' + plugin_git_url + ' ' + plugin_dir + ' 2>&1 1>/dev/null', {silent: true, async:true}, function(code, output) {
+        if (code > 0) {
+            var err = new Error('failed to get the plugin via git from URL '+ plugin_git_url);
+            if (callback) callback(err)
+            else throw err;
+        } else {
+            if (callback) callback(null);
+        }
+    });
 }
 
 // TODO add method for archives and other formats

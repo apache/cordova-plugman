@@ -5,9 +5,9 @@
   "version": "0.5.7",
   "repository": {
     "type": "git",
-    "url": "git://github.com/imhotep/plugman.git"
+    "url": "git://git-wip-us.apache.org/repos/asf/cordova-plugman.git"
   },
-  "main": "main.js",
+  "main": "plugman.js",
   "engines": {
     "node": ">=0.6.7"
   },

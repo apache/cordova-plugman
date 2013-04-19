@@ -17,7 +17,8 @@
     under the License.
 */
 
-var path            = require('path'),
+var platform_modules = require('./platforms'),
+    path            = require('path'),
     fs              = require('fs'),
     shell           = require('shelljs'),
     ls              = fs.readdirSync,
@@ -25,12 +26,11 @@ var path            = require('path'),
     exec            = require('child_process').exec,
     et              = require('elementtree');
 
-
 // Called on --prepare.
 // Sets up each plugin's Javascript code to be loaded properly.
 // Expects a path to the project (platforms/android in CLI, . in plugman-only),
 // a path to where the plugins are downloaded, the www dir, and the platform ('android', 'ios', etc.).
-exports.handlePrepare = function(projectRoot, plugins_dir, wwwDir, platform) {
+module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     // Process:
     // - List all plugins in plugins_dir
     // - Load and parse their plugin.xml files.
@@ -40,6 +40,7 @@ exports.handlePrepare = function(projectRoot, plugins_dir, wwwDir, platform) {
     // - Write this object into www/plugins.json.
     // - Cordova.js contains code to load them at runtime from that file.
 
+    var wwwDir = platform_modules[platform].www_dir(project_dir);
     var plugins = ls(plugins_dir);
 
     // This array holds all the metadata for each module and ends up in cordova_plugins.json
@@ -149,4 +150,3 @@ exports.handlePrepare = function(projectRoot, plugins_dir, wwwDir, platform) {
     // Write out moduleObjects as JSON to cordova_plugins.json
     fs.writeFileSync(path.join(wwwDir, 'cordova_plugins.json'), JSON.stringify(moduleObjects), 'utf-8');
 };
-
