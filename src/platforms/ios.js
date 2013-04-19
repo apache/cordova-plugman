@@ -28,8 +28,26 @@ var path = require('path')
   , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'))
   , searchAndReplace = require(path.join(__dirname, '..', 'util', 'search-and-replace'))
   , getConfigChanges = require(path.join(__dirname, '..', 'util', 'config-changes'));
+
+module.exports = {
+    handleInstall:function(project_dir, plugin_dir, plugin_et, variables) {
+        handlePlugin('install', project_dir, plugin_dir, plugin_et, variables);
+    },
+    handleUninstall:function(project_dir, plugin_dir, plugin_et, variables) {
+        handlePlugin('uninstall', project_dir, plugin_dir, plugin_et, variables);
+    },
+    forceInstall:function(project_dir, plugin_dir, plugin_et, variables) {
+        handlePlugin('force-install', project_dir, plugin_dir, plugin_et, variables);
+    },
+    forceUninstall:function(project_dir, plugin_dir, plugin_et, variables) {
+        handlePlugin('force-uninstall', project_dir, plugin_dir, plugin_et, variables);
+    },
+    www_dir:function(project_dir) {
+        return path.join(project_dir, 'www');
+    }
+};
   
-exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, variables) {
+function handlePlugin (action, project_dir, plugin_dir, plugin_et, variables) {
     var plugin_id = plugin_et._root.attrib['id']
       , version = plugin_et._root.attrib['version']
       , i = 0
@@ -364,7 +382,4 @@ function checkLastCommand() {
     if(shell.error() != null) throw {name: "ShellError", message: shell.error()};
 }
 
-exports.www_dir = function(project_dir) {
-    return path.join(project_dir, 'www');
-};
 

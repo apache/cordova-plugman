@@ -25,8 +25,25 @@ var fs = require('fs')  // use existsSync in 0.6.x
    , sourceDir = 'src'
    , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'));
 
+module.exports = {
+    handleInstall:function(project_dir, plugin_dir, plugin_et, variables) {
+        handlePlugin('install', project_dir, plugin_dir, plugin_et, variables);
+    },
+    handleUninstall:function(project_dir, plugin_dir, plugin_et, variables) {
+        handlePlugin('uninstall', project_dir, plugin_dir, plugin_et, variables);
+    },
+    forceInstall:function(project_dir, plugin_dir, plugin_et, variables) {
+        handlePlugin('force-install', project_dir, plugin_dir, plugin_et, variables);
+    },
+    forceUninstall:function(project_dir, plugin_dir, plugin_et, variables) {
+        handlePlugin('force-uninstall', project_dir, plugin_dir, plugin_et, variables);
+    },
+    www_dir:function(project_dir) {
+        return path.join(project_dir, 'www');
+    }
+};
 
-exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
+function handlePlugin = (action, project_dir, plugin_dir, plugin_et, variables) {
     var plugin_id = plugin_et._root.attrib['id']
       , version = plugin_et._root.attrib['version']
       , external_hosts = []
@@ -165,8 +182,4 @@ function pluginInstalled(plugin_et, project_dir) {
     return (fs.readFileSync(path.resolve(project_dir, 'config.xml'), 'utf8')
            .match(new RegExp(plugin_name, "g")) != null);
 }
-
-exports.www_dir = function(project_dir) {
-    return path.join(project_dir, 'www');
-};
 

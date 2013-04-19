@@ -1,5 +1,6 @@
 var path = require('path'),
     fs   = require('fs'),
+    et   = require('elementtree'),
     platform_modules = require('./platforms');
 
 function runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, callback) {
