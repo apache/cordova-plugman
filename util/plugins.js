@@ -28,25 +28,34 @@ var http = require('http'),
 
 // Fetches plugin information from remote server
 exports.getPluginInfo = function(plugin_name, success, error) {
+    var responded = false;
     http.get(remote.url + util.format(remote.query_path, plugin_name), function(res) {
-      var str = '';
-      res.on('data', function (chunk) {
-        str += chunk;
-      });
-      res.on('end', function () {
-          var response, plugin_info;
-          if((response = JSON.parse(str)).rows.length == 1) {
-            plugin_info = response.rows[0].value;
-            success(plugin_info);
-          } else {
-            error("Could not find information on "+plugin_name+" plugin");
-          }
-      });
-      
+        var str = '';
+        res.on('data', function (chunk) {
+            str += chunk;
+        });
+        res.on('end', function () {
+            responded = true;
+            var response, plugin_info;
+            if((response = JSON.parse(str)).rows.length == 1) {
+                plugin_info = response.rows[0].value;
+                success(plugin_info);
+            } else {
+                error("Could not find information on "+plugin_name+" plugin");
+            }
+        });
+
     }).on('error', function(e) {
-      console.log("Got error: " + e.message);
-      error(e.message);
+        console.log("Got error: " + e.message);
+        error(e.message);
     });
+
+    setTimeout(function() {
+        if (!responded) {
+            console.log('timed out');
+            error('timed out')
+        }
+    }, 3000);
 }
 
 exports.listAllPlugins = function(success, error) {

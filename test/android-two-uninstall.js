@@ -73,6 +73,7 @@ exports['should remove the js file'] = function (test) {
     test.done();
 }
 
+/* TODO: Re-enable this test when the prepare-after-uninstall question is sorted.
 exports['should remove the directory'] = function (test) {
     var assetPath = path.join(test_dir, 'projects', 'android_two', 'assets', 'www', 'childbrowser');
 
@@ -89,6 +90,7 @@ exports['should remove the directory'] = function (test) {
     test.ok(!fs.existsSync(assetPath));
     test.done();
 }
+*/
 
 exports['should remove the src file'] = function (test) {
     var javaPath = path.join(test_dir, 'projects', 'android_two', 'src', 'com', 'phonegap', 'plugins', 'childBrowser', 'ChildBrowser.java');

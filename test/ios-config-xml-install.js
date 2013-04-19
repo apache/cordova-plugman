@@ -31,10 +31,14 @@ var fs = require('fs')
   , xml_path     = path.join(test_dir, 'plugins', 'ChildBrowser', 'plugin.xml')
   , xml_text, plugin_et
 
+  , plugman = require('../plugman')
+  , plugins_dir = path.join(test_dir, 'plugins')
+  , silent = require('../util/test-helpers').suppressOutput
+
   //, assetsDir = path.resolve(config.projectPath, 'www')
-  , srcDir = path.resolve(test_project_dir, 'SampleApp/Plugins')
+  , srcDir = path.resolve(test_project_dir, 'SampleApp', 'Plugins')
   , wwwDir = path.resolve(test_project_dir, 'www')
-  , resDir = path.resolve(test_project_dir, 'SampleApp/Resources');
+  , resDir = path.resolve(test_project_dir, 'SampleApp', 'Resources');
 
 exports.setUp = function(callback) {
     shell.mkdir('-p', test_dir);
@@ -60,26 +64,19 @@ exports.tearDown = function(callback) {
 
 exports['should install webless plugin'] = function (test) {
     // setting up a DummyPlugin
-    var pluginsPath = path.join(test_dir, 'plugins');
-    var wwwPath = path.join(test_dir, 'projects', 'ios', 'www');
-    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'WeblessPlugin')
-    var dummy_xml_path = path.join(test_dir, 'plugins', 'WeblessPlugin', 'plugin.xml')
-    var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'WeblessPlugin', plugins_dir);
+    });
 
-    ios.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et, { APP_ID: 12345 });
-    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'ios');
-    
     test.done();
 }
 
 exports['should move the js file'] = function (test) {
-    var pluginsPath = path.join(test_dir, 'plugins');
-    var wwwPath = path.join(test_dir, 'projects', 'ios-config-xml', 'www');
     var jsPath = path.join(test_dir, 'projects', 'ios-config-xml', 'www', 'plugins', 'com.phonegap.plugins.childbrowser', 'www', 'childbrowser.js');
-    
-    // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
-    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'ios');
+
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
     test.ok(fs.existsSync(jsPath));
     test.ok(fs.statSync(jsPath).isFile());
@@ -87,78 +84,60 @@ exports['should move the js file'] = function (test) {
 }
 
 exports['should move the source files'] = function (test) {
-    var pluginsPath = path.join(test_dir, 'plugins');
-    var wwwPath = path.join(test_dir, 'projects', 'ios-config-xml', 'www');
-    var preserveDirPath = path.join(srcDir, 'src', 'ios');
-    
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
-    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'ios');
-    
-    test.ok(fs.existsSync(srcDir + '/ChildBrowserCommand.m'))
-    test.ok(fs.existsSync(srcDir + '/ChildBrowserViewController.m'))
-    test.ok(fs.existsSync(preserveDirPath + '/preserveDirs/PreserveDirsTest.m'))
-    test.ok(fs.existsSync(srcDir + '/targetDir/TargetDirTest.m'))
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
+
+    test.ok(fs.existsSync(path.join(srcDir, 'ChildBrowserCommand.m')));
+    test.ok(fs.existsSync(path.join(srcDir, 'ChildBrowserViewController.m')));
+    test.ok(fs.existsSync(path.join(srcDir, 'src', 'ios', 'preserveDirs', 'PreserveDirsTest.m')));
+    test.ok(fs.existsSync(path.join(srcDir, 'targetDir', 'TargetDirTest.m')));
     test.done();
 }
 
 exports['should move the header files'] = function (test) {
-    var pluginsPath = path.join(test_dir, 'plugins');
-    var wwwPath = path.join(test_dir, 'projects', 'ios-config-xml', 'www');
-    var preserveDirPath = path.join(srcDir, 'src', 'ios');
+    // run the platform-specific function
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
-    // run the platform-specific function    
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
-    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'ios');
-    
-    test.ok(fs.statSync(srcDir + '/ChildBrowserCommand.h'));
-    test.ok(fs.statSync(srcDir + '/ChildBrowserViewController.h'));
-    test.ok(fs.statSync(preserveDirPath + '/preserveDirs/PreserveDirsTest.h'));
-    test.ok(fs.statSync(srcDir + '/targetDir/TargetDirTest.h'));
+    test.ok(fs.existsSync(path.join(srcDir, 'ChildBrowserCommand.h')));
+    test.ok(fs.existsSync(path.join(srcDir, 'ChildBrowserViewController.h')));
+    test.ok(fs.existsSync(path.join(srcDir, 'src', 'ios', 'preserveDirs', 'PreserveDirsTest.h')));
+    test.ok(fs.existsSync(path.join(srcDir, 'targetDir', 'TargetDirTest.h')));
     test.done();
 }
 
 
 exports['should move the xib file'] = function (test) {
-    var pluginsPath = path.join(test_dir, 'plugins');
-    var wwwPath = path.join(test_dir, 'projects', 'ios-config-xml', 'www');
+    // run the platform-specific function
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
-    // run the platform-specific function    
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
-    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'ios');
-    
-    test.ok(fs.statSync(resDir + '/ChildBrowserViewController.xib'));
+    test.ok(fs.statSync(path.join(resDir, 'ChildBrowserViewController.xib')));
     test.done();
 }
 
 exports['should move the bundle'] = function (test) {
-    var pluginsPath = path.join(test_dir, 'plugins');
-    var wwwPath = path.join(test_dir, 'projects', 'ios-config-xml', 'www');
-    
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
-    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'ios');
-    
-    var bundle = fs.statSync(resDir + '/ChildBrowser.bundle');
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
+
+    var bundle = fs.statSync(path.join(resDir, 'ChildBrowser.bundle'));
 
     test.ok(bundle.isDirectory());
     test.done();
 }
 
 exports['should edit config.xml'] = function (test) {
-    // setting up WebNotification (with config.xml) 
-    var pluginsPath = path.join(test_dir, 'plugins');
-    var wwwPath = path.join(test_dir, 'projects', 'ios-config-xml', 'www');
-    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'WebNotifications')
-    var dummy_xml_path = path.join(test_dir, 'plugins', 'WebNotifications', 'plugin.xml')
-    
-    // overriding some params
-    var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
-
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
-    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'ios');
-        
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'WebNotifications', plugins_dir);
+    });
+
     var configXmlPath = path.join(test_project_dir, 'SampleApp', 'config.xml');
     var pluginsTxt = fs.readFileSync(configXmlPath, 'utf-8'),
         pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
@@ -172,43 +151,13 @@ exports['should edit config.xml'] = function (test) {
     test.done();
 }
 
-exports['should edit config.xml even when using old <plugins-plist> approach'] = function (test) {
-    // setting up PGSQLitePlugin (with config.xml) 
-    var pluginsPath = path.join(test_dir, 'plugins');
-    var wwwPath = path.join(test_dir, 'projects', 'ios-config-xml', 'www');
-    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
-    var dummy_xml_path = path.join(dummy_plugin_dir, 'plugin-old.xml')
-    
-    // overriding some params
-    var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
-
-    // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et, { APP_ID: 12345 });
-    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'ios');
-    
-    var configXmlPath = path.join(test_project_dir, 'SampleApp', 'config.xml');
-    var pluginsTxt = fs.readFileSync(configXmlPath, 'utf-8'),
-        pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
-        expected = 'plugins/plugin[@name="com.phonegap.plugins.childbrowser"]' +
-                    '[@value="ChildBrowserCommand"]';
-
-    test.ok(pluginsDoc.find(expected));
-    test.equal(pluginsDoc.findall("access").length, 3, "/access");
-    test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "build.phonegap.com")
-    test.equal(pluginsDoc.findall("access")[2].attrib["origin"], "12345.s3.amazonaws.com")
-
-    test.done();
-}
-
 exports['should edit the pbxproj file'] = function (test) {
-    var pluginsPath = path.join(test_dir, 'plugins');
-    var wwwPath = path.join(test_dir, 'projects', 'ios-config-xml', 'www');
-    
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
-    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'ios');
-    
-    var projPath = test_project_dir + '/SampleApp.xcodeproj/project.pbxproj';
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
+
+    var projPath = path.join(test_project_dir, 'SampleApp.xcodeproj', 'project.pbxproj');
 
     obj = xcode.project(projPath).parseSync();
     var fileRefSection = obj.hash.project.objects['PBXFileReference'],
@@ -220,14 +169,12 @@ exports['should edit the pbxproj file'] = function (test) {
 }
 
 exports['should add the framework references to the pbxproj file'] = function (test) {
-    var pluginsPath = path.join(test_dir, 'plugins');
-    var wwwPath = path.join(test_dir, 'projects', 'ios-config-xml', 'www');
-    
-    // run the platform-specific function    
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
-    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'ios');
-    
-    var projPath = test_project_dir + '/SampleApp.xcodeproj/project.pbxproj',
+    // run the platform-specific function
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
+
+    var projPath = path.join(test_project_dir, 'SampleApp.xcodeproj', 'project.pbxproj'),
         projContents = fs.readFileSync(projPath, 'utf8'),
         projLines = projContents.split("\n"),
 		weak_linked = "settings = {ATTRIBUTES = (Weak, ); };",
@@ -235,7 +182,7 @@ exports['should add the framework references to the pbxproj file'] = function (t
 
     references = projLines.filter(function (line) {
         return !!(line.match("libsqlite3.dylib"));
-    })
+    });
 
     // should be four libsqlite3 reference lines added
     // pretty low-rent test eh
@@ -245,17 +192,12 @@ exports['should add the framework references to the pbxproj file'] = function (t
 }
 
 exports['should add the framework references with weak option to the pbxproj file'] = function (test) {
-    var pluginsPath = path.join(test_dir, 'plugins');
-    var wwwPath = path.join(test_dir, 'projects', 'ios-config-xml', 'www');
-    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
-    var dummy_xml_path = path.join(test_dir, 'plugins', 'ChildBrowser', 'plugin.xml')
-    var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
-    
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et, { APP_ID: 12345 });
-    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'ios');
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
-    var projPath = test_project_dir + '/SampleApp.xcodeproj/project.pbxproj',
+    var projPath = path.join(test_project_dir, 'SampleApp.xcodeproj', 'project.pbxproj'),
         projContents = fs.readFileSync(projPath, 'utf8'),
         projLines = projContents.split("\n"),
 		weak_linked = "settings = {ATTRIBUTES = (Weak, ); };",
@@ -263,34 +205,39 @@ exports['should add the framework references with weak option to the pbxproj fil
 
     weak_references = projLines.filter(function (line) {
         return !!(line.match("social.framework"));
-    })
+    });
 
     non_weak_references = projLines.filter(function (line) {
         return !!(line.match("music.framework"));
-    })
+    });
 
     // should be four libsqlite3 reference lines added
     // pretty low-rent test eh
     test.equal(weak_references.length, 4);
     test.ok(weak_references[0].indexOf(weak_linked) != -1);
-    
+
     test.equal(non_weak_references.length, 4);
     test.ok(non_weak_references[0].indexOf(weak_linked) == -1);
-    
+
     test.done();
 }
 
 exports['should not install a plugin that is already installed'] = function (test) {
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
-    test.throws(function(){ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et); }, 
+    test.throws(function(){ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et); },
                 /already installed/
                );
     test.done();
 }
 
 exports['should skip collision check when installation is forced'] = function (test) {
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
+
     // deleting files because only presence in config.xml determines installation
     shell.rm('-rf', srcDir + '/*');
     shell.rm('-rf', resDir + '/*');

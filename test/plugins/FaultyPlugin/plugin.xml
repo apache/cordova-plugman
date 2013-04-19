@@ -50,7 +50,7 @@
                 value="com.phonegap.plugins.faultyplugin.FaultyPlugin"/>
         </config-file>
 
-        <source-file src="FaultyPlugin.java"
+        <source-file src="src/android/FaultyPlugin.java"
                 target-dir="src/com/phonegap/plugins/faultyplugin" />
     </platform>
 
@@ -62,12 +62,12 @@
             <plugin name="FaultyPlugin"
                 value="FaultyPlugin"/>
         </config-file>
-            
-        <header-file src="FaultyPlugin.h" />
-        <source-file src="FaultyPlugin.m" />
+
+        <header-file src="src/ios/FaultyPlugin.h" />
+        <source-file src="src/ios/FaultyPlugin.m" />
         <!-- these files don't exist -->
-        <header-file src="FaultyPluginCommand.h" />
-        <source-file src="FaultyPluginCommand.m" />
+        <header-file src="src/ios/FaultyPluginCommand.h" />
+        <source-file src="src/ios/FaultyPluginCommand.m" />
 
     </platform>
 </plugin>

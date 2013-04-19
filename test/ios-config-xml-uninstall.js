@@ -32,9 +32,13 @@ var fs = require('fs')
   , xml_path     = path.join(test_dir, 'plugins', 'ChildBrowser', 'plugin.xml')
   , xml_text, plugin_et
 
+  , plugman = require('../plugman')
+  , plugins_dir = path.join(test_dir, 'plugins')
+  , silent = require('../util/test-helpers').suppressOutput
+
   //, assetsDir = path.resolve(config.projectPath, 'www')
-  , srcDir = path.resolve(test_project_dir, 'SampleApp/Plugins')
-  , resDir = path.resolve(test_project_dir, 'SampleApp/Resources');
+  , srcDir = path.resolve(test_project_dir, 'SampleApp', 'Plugins')
+  , resDir = path.resolve(test_project_dir, 'SampleApp', 'Resources');
 
 exports.setUp = function(callback) {
     shell.mkdir('-p', test_dir);
@@ -59,111 +63,84 @@ exports.tearDown = function(callback) {
 }
 
 exports['should remove webless plugin'] = function (test) {
-    
-    // setting up a DummyPlugin
-    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'WeblessPlugin')
-    var dummy_xml_path = path.join(test_dir, 'plugins', 'WeblessPlugin', 'plugin.xml')
-    var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
-
-    ios.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
-    ios.handlePlugin('uninstall', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'WeblessPlugin', plugins_dir);
+        plugman.handlePlugin('uninstall', 'ios', test_project_dir, 'WeblessPlugin', plugins_dir);
+    });
 
     test.done();
 }
 
 exports['should remove the js file'] = function (test) {
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-    ios.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+        plugman.handlePlugin('uninstall', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
-    var jsPath = path.join(test_dir, 'projects', 'ios-config-xml', 'www', 'childbrowser.js');
+    var jsPath = path.join(test_dir, 'projects', 'ios-config-xml', 'plugins', 'com.phonegap.plugins.childbrowser', 'www', 'childbrowser.js');
     test.ok(!fs.existsSync(jsPath))
     test.done();
 }
 
 exports['should remove the source files'] = function (test) {
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-    ios.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+        plugman.handlePlugin('uninstall', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
-    test.ok(!fs.existsSync(srcDir + '/ChildBrowserCommand.m'))
-    test.ok(!fs.existsSync(srcDir + '/ChildBrowserViewController.m'))
-    test.ok(!fs.existsSync(srcDir + '/preserveDirs/PreserveDirsTest.m'))
-    test.ok(!fs.existsSync(srcDir + '/targetDir/TargetDirTest.m'))
+    test.ok(!fs.existsSync(path.join(srcDir, 'ChildBrowserCommand.m')));
+    test.ok(!fs.existsSync(path.join(srcDir, 'ChildBrowserViewController.m')));
+    test.ok(!fs.existsSync(path.join(srcDir, 'src', 'ios', 'preserveDirs', 'PreserveDirsTest.m')));
+    test.ok(!fs.existsSync(path.join(srcDir, 'targetDir', 'TargetDirTest.m')));
     test.done();
 }
 
 exports['should remove the header files'] = function (test) {
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-    ios.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+        plugman.handlePlugin('uninstall', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
-    test.ok(!fs.existsSync(srcDir + '/ChildBrowserCommand.h'))
-    test.ok(!fs.existsSync(srcDir + '/ChildBrowserViewController.h'))
-    test.ok(!fs.existsSync(srcDir + '/preserveDirs/PreserveDirsTest.h'))
-    test.ok(!fs.existsSync(srcDir + '/targetDir/TargetDirTest.h'))
+    test.ok(!fs.existsSync(path.join(srcDir, 'ChildBrowserCommand.h')));
+    test.ok(!fs.existsSync(path.join(srcDir, 'ChildBrowserViewController.h')));
+    test.ok(!fs.existsSync(path.join(srcDir, 'src', 'ios', 'preserveDirs', 'PreserveDirsTest.h')));
+    test.ok(!fs.existsSync(path.join(srcDir, 'targetDir', 'TargetDirTest.h')));
     test.done();
 }
 
 exports['should remove the xib file'] = function (test) {
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-    ios.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+        plugman.handlePlugin('uninstall', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
-    test.ok(!fs.existsSync(resDir + '/ChildBrowserViewController.xib'))
+    test.ok(!fs.existsSync(path.join(resDir, 'ChildBrowserViewController.xib')));
     test.done();
 }
 
 exports['should remove the bundle'] = function (test) {
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-    ios.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+        plugman.handlePlugin('uninstall', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
-    test.ok(!fs.existsSync(resDir + '/ChildBrowser.bundle'))
-    test.done();
-}
-
-exports['should edit config.xml even when using old <plugins-plist> approach'] = function (test) {
-    // setting up PGSQLitePlugin (with config.xml) 
-    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
-    var dummy_xml_path = path.join(dummy_plugin_dir, 'plugin-old.xml')
-    
-    // overriding some params
-    var project_dir = path.join(test_dir, 'projects', 'ios-config-xml')
-    var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
-
-    // run the platform-specific function
-    ios.handlePlugin('install', project_dir, dummy_plugin_dir, dummy_plugin_et);
-    
-    ios.handlePlugin('uninstall', project_dir, dummy_plugin_dir, dummy_plugin_et);
-    
-    var configXmlPath = path.join(project_dir, 'SampleApp', 'config.xml');
-    var pluginsTxt = fs.readFileSync(configXmlPath, 'utf-8'),
-        pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
-        expected = 'plugins/plugin[@name="com.phonegap.plugins.childbrowser"]' +
-                    '[@value="ChildBrowserCommand"]';
-
-    test.ok(!pluginsDoc.find(expected));
-	test.equal(pluginsDoc.findall("access").length, 1, "/access");
-
+    test.ok(!fs.existsSync(path.join(resDir, 'ChildBrowser.bundle')));
     test.done();
 }
 
 exports['should edit config.xml'] = function (test) {
-    // setting up WebNotification (with config.xml) 
-    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'WebNotifications')
-    var dummy_xml_path = path.join(test_dir, 'plugins', 'WebNotifications', 'plugin.xml')
-    
-    // overriding some params
-    var project_dir = path.join(test_dir, 'projects', 'ios-config-xml')
-    var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
-
     // run the platform-specific function
-    ios.handlePlugin('install', project_dir, dummy_plugin_dir, dummy_plugin_et);
-    
-    ios.handlePlugin('uninstall', project_dir, dummy_plugin_dir, dummy_plugin_et);
-    
-    var configXmlPath = path.join(project_dir, 'SampleApp', 'config.xml');
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'WebNotifications', plugins_dir);
+        plugman.handlePlugin('uninstall', 'ios', test_project_dir, 'WebNotifications', plugins_dir);
+    });
+
+    var configXmlPath = path.join(test_project_dir, 'SampleApp', 'config.xml');
     var pluginsTxt = fs.readFileSync(configXmlPath, 'utf-8'),
         pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
         expected = 'plugins/plugin[@name="WebNotifications"]' +
@@ -177,10 +154,12 @@ exports['should edit config.xml'] = function (test) {
 
 exports['should edit the pbxproj file'] = function (test) {
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-    ios.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+        plugman.handlePlugin('uninstall', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
-    var projPath = test_project_dir + '/SampleApp.xcodeproj/project.pbxproj';
+    var projPath = path.join(test_project_dir, 'SampleApp.xcodeproj', 'project.pbxproj');
 
     obj = xcode.project(projPath).parseSync();
     var fileRefSection = obj.hash.project.objects['PBXFileReference'],
@@ -193,11 +172,12 @@ exports['should edit the pbxproj file'] = function (test) {
 
 exports['should remove the framework references from the pbxproj file'] = function (test) {
     // run the platform-specific function
-    ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-    ios.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
+    silent(function() {
+        plugman.handlePlugin('install', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+        plugman.handlePlugin('uninstall', 'ios', test_project_dir, 'ChildBrowser', plugins_dir);
+    });
 
-    
-    var projPath = test_project_dir + '/SampleApp.xcodeproj/project.pbxproj',
+    var projPath = path.join(test_project_dir, 'SampleApp.xcodeproj', 'project.pbxproj'),
         projContents = fs.readFileSync(projPath, 'utf8'),
         projLines = projContents.split("\n"),
         references;
