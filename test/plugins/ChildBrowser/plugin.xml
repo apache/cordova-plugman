@@ -70,6 +70,19 @@
                 value="ChildBrowserCommand" />
         </config-file>
 
+        <config-file target="*-Info.plist" parent="AppId">
+            <string>$APP_ID</string>
+        </config-file>
+        
+        <config-file target="*-Info.plist" parent="CFBundleURLTypes">
+            <array>
+              <dict>
+                <key>PackageName</key>
+                <string>$PACKAGE_NAME</string>
+              </dict>
+            </array>
+        </config-file>
+
         <resource-file src="ChildBrowser.bundle" />
         <resource-file src="ChildBrowserViewController.xib" />
 
