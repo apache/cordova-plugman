@@ -10,11 +10,14 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, link, callback) {
     // clone from git repository
     if(plugin_dir.indexOf('https://') == 0 || plugin_dir.indexOf('git://') == 0) {
         if (link) {
-            throw new Error('--link is not supported for git URLs');
+            var err = new Error('--link is not supported for git URLs');
+            if (callback) callback(err);
+            else throw err;
+        } else {
+            plugins.clonePluginGitRepo(plugin_dir, plugins_dir, callback);
         }
-        plugins.clonePluginGitRepo(plugin_dir, plugins_dir, callback);
     } else { // Copy from the local filesystem.
-        var dest = path.join(plugins_dir, path.basename(dest));
+        var dest = path.join(plugins_dir, path.basename(plugin_dir));
 
         shell.rm('-rf', dest);
         if (link) {
@@ -23,7 +26,6 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, link, callback) {
             shell.cp('-R', plugin_dir, plugins_dir); // Yes, not dest.
         }
 
-        plugin_dir = dest;
         if (callback) callback(null);
     }
 };
