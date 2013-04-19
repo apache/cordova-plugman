@@ -22,10 +22,10 @@
     "osenv": "0.0.x"
   },
   "devDependencies": {
-    "nodeunit": "0.7.x"
+    "jasmine-node": "1.1.x"
   },
   "bin" : { "plugman" : "./main.js" },
   "scripts": {
-    "test": "nodeunit test"
+    "test": "./node_modules/jasmine-node/bin/jasmine-node --color test"
   }
 }

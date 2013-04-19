@@ -17,8 +17,6 @@
  *
 */
 
-// Test installation on Cordova 1.x project
-
 var fs = require('fs')
   , path = require('path')
   , plist = require('plist')
@@ -37,180 +35,177 @@ var fs = require('fs')
   , silent = require('../util/test-helpers').suppressOutput
   , xml_text, plugin_et;
 
+describe('Installation on Cordova-Android 1.x projects', function() {
+    beforeEach(function() {
+        shell.mkdir('-p', test_dir);
+        
+        // copy the ios test project to a temp directory
+        shell.cp('-r', path.join(__dirname, 'projects'), test_dir);
 
-exports.setUp = function(callback) {
-    shell.mkdir('-p', test_dir);
-    
-    // copy the ios test project to a temp directory
-    shell.cp('-r', path.join(__dirname, 'projects'), test_dir);
+        // copy the ios test plugin to a temp directory
+        shell.cp('-r', path.join(__dirname, 'plugins'), test_dir);
 
-    // copy the ios test plugin to a temp directory
-    shell.cp('-r', path.join(__dirname, 'plugins'), test_dir);
-
-    // parse the plugin.xml into an elementtree object
-    xml_text   = fs.readFileSync(xml_path, 'utf-8')
-    plugin_et  = new et.ElementTree(et.XML(xml_text));
-
-    callback();
-}
-
-exports.tearDown = function(callback) {
-    // remove the temp files (projects and plugins)
-    shell.rm('-rf', test_dir);
-    callback();
-}
-
-exports['should install webless plugin'] = function (test) {
-    // setting up a DummyPlugin
-    silent(function() {
-        plugman.handlePlugin('install', 'android', test_project_dir, 'WeblessPlugin', plugins_dir);
+        // parse the plugin.xml into an elementtree object
+        xml_text   = fs.readFileSync(xml_path, 'utf-8')
+        plugin_et  = new et.ElementTree(et.XML(xml_text));
     });
-    test.done();
-}
-
-exports['should move the js file'] = function (test) {
-    var pluginsPath = path.join(test_dir, 'plugins');
-    var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');
-    var jsPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www', 'plugins', 'com.phonegap.plugins.childbrowser', 'www', 'childbrowser.js');
-
-    silent(function() {
-        plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+    afterEach(function() {
+        // remove the temp files (projects and plugins)
+        shell.rm('-rf', test_dir);
     });
 
-    var stats = fs.statSync(jsPath);
-    test.ok(stats);
-    test.ok(stats.isFile());
-    test.done();
-}
-
-exports['should move the asset file'] = function(test) {
-    var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');
-
-    silent(function() {
-        plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+    it('should install webless plugin', function () {
+        // setting up a DummyPlugin
+        silent(function() {
+            plugman.handlePlugin('install', 'android', test_project_dir, 'WeblessPlugin', plugins_dir);
+        });
     });
 
-    var assetPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www', 'childbrowser_file.html');
-    var assets = fs.statSync(assetPath);
+    exports['should move the js file'] = function (test) {
+        var pluginsPath = path.join(test_dir, 'plugins');
+        var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');
+        var jsPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www', 'plugins', 'com.phonegap.plugins.childbrowser', 'www', 'childbrowser.js');
 
-    test.ok(assets);
-    test.ok(assets.isFile());
-    test.done();
-}
+        silent(function() {
+            plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+        });
 
-exports['should move the asset directory'] = function (test) {
-    var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');
-
-    silent(function() {
-        plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
-    });
-
-    var assetPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www', 'childbrowser');
-    var assets = fs.statSync(assetPath);
-
-    test.ok(assets.isDirectory());
-    test.ok(fs.statSync(assetPath + '/image.jpg'))
-    test.done();
-}
-
-exports['should add entries to the cordova_plugins.json file'] = function(test) {
-    var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');
-
-    silent(function() {
-        plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
-    });
-
-    var jsonPath = path.join(wwwPath, 'cordova_plugins.json');
-    var content = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
-
-    test.ok(content);
-    test.ok(content.length > 0);
-    test.ok(content[0].file);
-    test.done();
-};
-
-exports['should move the src file'] = function (test) {
-    var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');
-
-    silent(function() {
-        plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
-    });
-
-    var javaPath = path.join(test_dir, 'projects', 'android_one', 'src', 'com', 'phonegap', 'plugins', 'childBrowser', 'ChildBrowser.java');
-
-    test.ok(fs.statSync(javaPath));
-    test.done();
-}
-
-exports['should add ChildBrowser to plugins.xml'] = function (test) {
-    silent(function() {
-        plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
-    });
-
-    var pluginsXmlPath = path.join(test_dir, 'projects', 'android_one', 'res', 'xml', 'plugins.xml');
-    var pluginsTxt = fs.readFileSync(pluginsXmlPath, 'utf-8'),
-        pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
-        expected = 'plugin[@name="ChildBrowser"]' +
-                    '[@value="com.phonegap.plugins.childBrowser.ChildBrowser"]';
-
-    test.ok(pluginsDoc.find(expected));
-    test.done();
-}
-
-exports['should add ChildBrowser to AndroidManifest.xml'] = function (test) {
-    silent(function() {
-        plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
-    });
-
-    var manifestPath = path.join(test_dir, 'projects', 'android_one', 'AndroidManifest.xml');
-    var manifestTxt = fs.readFileSync(manifestPath, 'utf-8'),
-        manifestDoc = new et.ElementTree(et.XML(manifestTxt)),
-        activities = manifestDoc.findall('application/activity'), i;
-
-    var found = false;
-    for (i=0; i<activities.length; i++) {
-        if ( activities[i].attrib['android:name'] === 'com.phonegap.plugins.childBrowser.ChildBrowser' ) {
-            found = true;
-            break;
-        }
+        var stats = fs.statSync(jsPath);
+        test.ok(stats);
+        test.ok(stats.isFile());
+        test.done();
     }
-    test.ok(found);
-    test.done();
-}
 
-exports['should add whitelist hosts'] = function (test) {
-	android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+    exports['should move the asset file'] = function(test) {
+        var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');
 
-    var pluginsXmlPath = path.join(test_dir, 'projects', 'android_one', 'res', 'xml', 'plugins.xml');
-    var pluginsTxt = fs.readFileSync(pluginsXmlPath, 'utf-8'),
-        pluginsDoc = new et.ElementTree(et.XML(pluginsTxt));
+        silent(function() {
+            plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+        });
 
-    test.equal(pluginsDoc.findall("access").length, 2, "/access");
-	test.equal(pluginsDoc.findall("access")[0].attrib["origin"], "build.phonegap.com")
-    test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "12345.s3.amazonaws.com")
-    test.done();
-}
+        var assetPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www', 'childbrowser_file.html');
+        var assets = fs.statSync(assetPath);
 
-exports['should search/replace plugin.xml'] = function (test) {
-	android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+        test.ok(assets);
+        test.ok(assets.isFile());
+        test.done();
+    }
 
-    var pluginsXmlPath = path.join(test_dir, 'projects', 'android_one', 'res', 'xml', 'plugins.xml');
-    var pluginsTxt = fs.readFileSync(pluginsXmlPath, 'utf-8'),
-        pluginsDoc = new et.ElementTree(et.XML(pluginsTxt));
+    exports['should move the asset directory'] = function (test) {
+        var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');
 
-    test.equal(pluginsDoc.findall("access").length, 2, "/access");
-	test.equal(pluginsDoc.findall("access")[0].attrib["origin"], "build.phonegap.com")
-    test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "12345.s3.amazonaws.com")
-    test.done();
-}
+        silent(function() {
+            plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+        });
 
-exports['should search/replace manifest.xml files'] = function (test) {
-	android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+        var assetPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www', 'childbrowser');
+        var assets = fs.statSync(assetPath);
 
-    var manifestXmlPath = path.join(test_dir, 'projects', 'android_one', 'AndroidManifest.xml');
-    var manifestTxt = fs.readFileSync(manifestXmlPath, 'utf-8'),
-        manifestDoc = new et.ElementTree(et.XML(manifestTxt));
+        test.ok(assets.isDirectory());
+        test.ok(fs.statSync(assetPath + '/image.jpg'))
+        test.done();
+    }
 
-	test.equal(manifestDoc.findall("appid")[0].attrib["value"], "12345")
-    test.done();
-}
+    exports['should add entries to the cordova_plugins.json file'] = function(test) {
+        var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');
+
+        silent(function() {
+            plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+        });
+
+        var jsonPath = path.join(wwwPath, 'cordova_plugins.json');
+        var content = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+
+        test.ok(content);
+        test.ok(content.length > 0);
+        test.ok(content[0].file);
+        test.done();
+    };
+
+    exports['should move the src file'] = function (test) {
+        var wwwPath = path.join(test_dir, 'projects', 'android_one', 'assets', 'www');
+
+        silent(function() {
+            plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+        });
+
+        var javaPath = path.join(test_dir, 'projects', 'android_one', 'src', 'com', 'phonegap', 'plugins', 'childBrowser', 'ChildBrowser.java');
+
+        test.ok(fs.statSync(javaPath));
+        test.done();
+    }
+
+    exports['should add ChildBrowser to plugins.xml'] = function (test) {
+        silent(function() {
+            plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+        });
+
+        var pluginsXmlPath = path.join(test_dir, 'projects', 'android_one', 'res', 'xml', 'plugins.xml');
+        var pluginsTxt = fs.readFileSync(pluginsXmlPath, 'utf-8'),
+            pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
+            expected = 'plugin[@name="ChildBrowser"]' +
+                        '[@value="com.phonegap.plugins.childBrowser.ChildBrowser"]';
+
+        test.ok(pluginsDoc.find(expected));
+        test.done();
+    }
+
+    exports['should add ChildBrowser to AndroidManifest.xml'] = function (test) {
+        silent(function() {
+            plugman.handlePlugin('install', 'android', test_project_dir, 'ChildBrowser', plugins_dir);
+        });
+
+        var manifestPath = path.join(test_dir, 'projects', 'android_one', 'AndroidManifest.xml');
+        var manifestTxt = fs.readFileSync(manifestPath, 'utf-8'),
+            manifestDoc = new et.ElementTree(et.XML(manifestTxt)),
+            activities = manifestDoc.findall('application/activity'), i;
+
+        var found = false;
+        for (i=0; i<activities.length; i++) {
+            if ( activities[i].attrib['android:name'] === 'com.phonegap.plugins.childBrowser.ChildBrowser' ) {
+                found = true;
+                break;
+            }
+        }
+        test.ok(found);
+        test.done();
+    }
+
+    exports['should add whitelist hosts'] = function (test) {
+        android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+
+        var pluginsXmlPath = path.join(test_dir, 'projects', 'android_one', 'res', 'xml', 'plugins.xml');
+        var pluginsTxt = fs.readFileSync(pluginsXmlPath, 'utf-8'),
+            pluginsDoc = new et.ElementTree(et.XML(pluginsTxt));
+
+        test.equal(pluginsDoc.findall("access").length, 2, "/access");
+        test.equal(pluginsDoc.findall("access")[0].attrib["origin"], "build.phonegap.com")
+        test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "12345.s3.amazonaws.com")
+        test.done();
+    }
+
+    exports['should search/replace plugin.xml'] = function (test) {
+        android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+
+        var pluginsXmlPath = path.join(test_dir, 'projects', 'android_one', 'res', 'xml', 'plugins.xml');
+        var pluginsTxt = fs.readFileSync(pluginsXmlPath, 'utf-8'),
+            pluginsDoc = new et.ElementTree(et.XML(pluginsTxt));
+
+        test.equal(pluginsDoc.findall("access").length, 2, "/access");
+        test.equal(pluginsDoc.findall("access")[0].attrib["origin"], "build.phonegap.com")
+        test.equal(pluginsDoc.findall("access")[1].attrib["origin"], "12345.s3.amazonaws.com")
+        test.done();
+    }
+
+    exports['should search/replace manifest.xml files'] = function (test) {
+        android.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+
+        var manifestXmlPath = path.join(test_dir, 'projects', 'android_one', 'AndroidManifest.xml');
+        var manifestTxt = fs.readFileSync(manifestXmlPath, 'utf-8'),
+            manifestDoc = new et.ElementTree(et.XML(manifestTxt));
+
+        test.equal(manifestDoc.findall("appid")[0].attrib["value"], "12345")
+        test.done();
+    }
+});
+
