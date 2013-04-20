@@ -200,9 +200,13 @@ function handlePlugin(action, project_dir, plugin_dir, plugin_et, variables) {
     }
 }
 
-
+// TODO: resolvePath, and should be used everywhere (even across platform impls)
 function srcPath(pluginPath, filename) {
-    return path.resolve(pluginPath, filename);
+    var file = path.resolve(pluginPath, filename);
+    if (!fs.existsSync(path)) {
+        throw new Error('Path "' + file + '" does not exist.');
+    }
+    return file;
 }
 
 // reads the package name out of the Android Manifest file

@@ -47,7 +47,7 @@ module.exports = {
     }
 };
   
-function handlePlugin (action, project_dir, plugin_dir, plugin_et, variables) {
+function handlePlugin(action, project_dir, plugin_dir, plugin_et, variables) {
     var plugin_id = plugin_et._root.attrib['id']
       , version = plugin_et._root.attrib['version']
       , i = 0

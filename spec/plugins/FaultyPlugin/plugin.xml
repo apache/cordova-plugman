@@ -50,7 +50,8 @@
                 value="com.phonegap.plugins.faultyplugin.FaultyPlugin"/>
         </config-file>
 
-        <source-file src="src/android/FaultyPlugin.java"
+        <!-- this file doesn't exist -->
+        <source-file src="src/android/NotHere.java"
                 target-dir="src/com/phonegap/plugins/faultyplugin" />
     </platform>
 

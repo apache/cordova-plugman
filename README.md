@@ -444,7 +444,7 @@ plugman can request users to specify variables required by a plugin. For example
 
 A preference tag will need to be present inside the platform tag to make the variable mandatory like so:
 
-    <preference name="API_KEY">
+    <preference name="API_KEY" />
 
 plugman should check that these required preferences are passed in, and if not, should warn the user on how to pass the variable in and exit with a non-zero code.
 
