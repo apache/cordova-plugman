@@ -37,7 +37,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     // - Skip those without support for this platform. (No <platform> tags means JS-only!)
     // - Build a list of all their js-modules, including platform-specific js-modules.
     // - For each js-module (general first, then platform) build up an object storing the path and any clobbers, merges and runs for it.
-    // - Write this object into www/plugins.json.
+    // - Write this object into www/cordova_plugins.json.
     // - Cordova.js contains code to load them at runtime from that file.
 
     var wwwDir = platform_modules[platform].www_dir(project_dir);

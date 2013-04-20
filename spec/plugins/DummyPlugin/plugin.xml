@@ -66,6 +66,9 @@
         <source-file src="src/blackberry/client.js" target-dir="ext-qnx/cordova.echo" />
         <source-file src="src/blackberry/index.js" target-dir="ext-qnx/cordova.echo" />
         <source-file src="src/blackberry/manifest.json" target-dir="ext-qnx/cordova.echo" />
+        <js-module src="www/dummyplugin.js" name="Dummy">
+            <clobbers target="dummy" />
+        </js-module>
     </platform>
 
         

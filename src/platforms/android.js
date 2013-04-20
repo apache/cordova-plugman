@@ -203,7 +203,7 @@ function handlePlugin(action, project_dir, plugin_dir, plugin_et, variables) {
 // TODO: resolvePath, and should be used everywhere (even across platform impls)
 function srcPath(pluginPath, filename) {
     var file = path.resolve(pluginPath, filename);
-    if (!fs.existsSync(path)) {
+    if (!fs.existsSync(file)) {
         throw new Error('Path "' + file + '" does not exist.');
     }
     return file;
