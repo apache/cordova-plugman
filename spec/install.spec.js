@@ -33,10 +33,11 @@ describe('install', function() {
             shell.cp('-rf', dummyplugin, plugins_dir);
         });
 
-        it('should call fetch if provided plugin cannot be resolved locally');
-        it('should generate an array of transactions required to run an installation');
-        it('should pass transaction log to appropriate platform handler\'s install');
-
+        it('should call fetch if provided plugin cannot be resolved locally', function() {
+        });
+        // TODO: possibly test how diff platform transaction logs are created
+        it('should generate an array of transactions required to run an installation and pass into appropriate platform handler\'s install method', function() {
+        });
         it('should call prepare after a successful install', function() {
             shell.cp('-rf', android_one_project, temp);
             var s = spyOn(plugman, 'prepare');
@@ -58,5 +59,6 @@ describe('install', function() {
             }).toThrow('Variable(s) missing: API_KEY');
         });
         it('should handle a failed install by passing completed transactions into appropriate handler\'s uninstall method'); 
+        it('should throw if plugin is already installed into project');
     });
 });

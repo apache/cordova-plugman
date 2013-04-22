@@ -30,8 +30,15 @@ describe('uninstall', function() {
     });
 
     describe('success', function() {
-        it('should generate an array of transactions required to run an uninstallation');
-        it('should pass transaction log to appropriate platform handler\'s uninstall');
+        beforeEach(function() {
+            shell.cp('-rf', android_one_project, temp);
+            shell.cp('-rf', dummyplugin, plugins_dir);
+            install('android', temp, 'DummyPlugin', plugins_dir, {});
+        });
+
+        // TODO: possibly test how diff platform transaction logs are created
+        it('should generate and pass uninstall transaction log to appropriate platform handler\'s uninstall', function() {
+        });
     });
 
     describe('failure', function() {
@@ -39,9 +46,6 @@ describe('uninstall', function() {
             shell.cp('-rf', android_one_project, temp);
             shell.cp('-rf', dummyplugin, plugins_dir);
             install('android', temp, 'DummyPlugin', plugins_dir, {});
-        });
-        afterEach(function() {
-            shell.rm('-rf', temp);
         });
         it('should throw if platform is unrecognized', function() {
             expect(function() {

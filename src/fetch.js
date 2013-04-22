@@ -16,8 +16,11 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, link, callback) {
         } else {
             plugins.clonePluginGitRepo(plugin_dir, plugins_dir, callback);
         }
-    } else { // Copy from the local filesystem.
+    } else {
+        // Copy from the local filesystem.
         var dest = path.join(plugins_dir, path.basename(plugin_dir));
+        // TODO: throw if local cant be resolved
+        // TODO: if local cant be resolved, query remote service.
 
         shell.rm('-rf', dest);
         if (link) {
