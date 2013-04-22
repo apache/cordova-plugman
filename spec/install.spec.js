@@ -23,30 +23,37 @@ describe('install', function() {
     beforeEach(function() {
         shell.mkdir('-p', temp);
         shell.mkdir('-p', plugins_dir);
+        shell.cp('-rf', android_one_project, temp);
     });
     afterEach(function() {
         shell.rm('-rf', temp);
     });
 
     describe('success', function() {
+        var android_installer;
         beforeEach(function() {
             shell.cp('-rf', dummyplugin, plugins_dir);
+            android_installer = spyOn(android, 'install');
+        });
+        it('should call prepare after a successful install', function() {
+            var s = spyOn(plugman, 'prepare');
+            install('android', temp, 'DummyPlugin', plugins_dir, {});
+            android_installer.mostRecentCall.args[5](); // fake the installer calling back successfully
+            expect(s).toHaveBeenCalled();
         });
 
         it('should call fetch if provided plugin cannot be resolved locally', function() {
-            shell.cp('-rf', android_one_project, temp);
             var s = spyOn(plugman, 'fetch');
             install('android', temp, 'CLEANYOURSHORTS', plugins_dir, {});
             expect(s).toHaveBeenCalled();
         });
         // TODO: possibly test how diff platform transaction logs are created
         it('should generate an array of transactions required to run an installation and pass into appropriate platform handler\'s install method', function() {
-        });
-        it('should call prepare after a successful install', function() {
-            shell.cp('-rf', android_one_project, temp);
-            var s = spyOn(plugman, 'prepare');
             install('android', temp, 'DummyPlugin', plugins_dir, {});
-            expect(s).toHaveBeenCalled();
+            var transactions = android_installer.mostRecentCall.args[0];
+
+            expect(transactions.length).toEqual(6);
+            expect(transactions[0].tag).toBe('source-file');
         });
     });
 
@@ -62,7 +69,22 @@ describe('install', function() {
                 install('android', temp, 'VariablePlugin', plugins_dir, {});
             }).toThrow('Variable(s) missing: API_KEY');
         });
-        it('should handle a failed install by passing completed transactions into appropriate handler\'s uninstall method'); 
-        it('should throw if plugin is already installed into project');
+        it('should handle a failed install by passing completed transactions into appropriate handler\'s uninstall method', function() {
+            shell.cp('-rf', faultyplugin, plugins_dir);
+            var s = spyOn(android, 'uninstall');
+            install('android', temp, 'FaultyPlugin', plugins_dir, {});
+
+            var executed_txs = s.mostRecentCall.args[0];
+            expect(executed_txs.length).toEqual(0);
+        }); 
+        it('should throw if plugin is already installed into project', function() {
+            shell.cp('-rf', dummyplugin, plugins_dir);
+            expect(function() {
+                install('android', temp, 'DummyPlugin', plugins_dir, {});
+            }).not.toThrow();
+            expect(function() {
+                install('android', temp, 'DummyPlugin', plugins_dir, {});
+            }).toThrow();
+        });
     });
 });

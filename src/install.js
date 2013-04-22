@@ -35,8 +35,7 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , xml_text     = fs.readFileSync(xml_path, 'utf-8')
       , plugin_et    = new et.ElementTree(et.XML(xml_text))
-      , filtered_variables = {}
-      , info;
+      , filtered_variables = {};
     var name         = plugin_et.findall('name').text;
     var plugin_id    = plugin_et._root.attrib['id'];
     
@@ -104,8 +103,9 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
             require('./../plugman').prepare(project_dir, platform, plugins_dir);
 
             // Log out plugin INFO element contents in case additional install steps are necessary
-            if((info = platformTag.findAll('./info'))) {
-                console.log(info.text);
+            var info = platformTag.findall('./info');
+            if(info.length) {
+                console.log(info[0].text);
             }
             if (callback) callback();
         }

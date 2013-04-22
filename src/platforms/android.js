@@ -19,15 +19,11 @@
 
 var fs = require('fs')  // use existsSync in 0.6.x
    , path = require('path')
-   , util = require('util')
    , shell = require('shelljs')
-   , et = require('elementtree')
    , common = require('./common')
    , getConfigChanges = require(path.join(__dirname, '..', 'util', 'config-changes'))
    , searchAndReplace = require(path.join(__dirname, '..', 'util', 'search-and-replace'))
-   , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'))
-   , assetsDir = path.join('assets','www')
-   , sourceDir = 'src';
+   , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'));
 
 module.exports = {
     install:function(transactions, plugin_id, project_dir, plugin_dir, variables, callback) {

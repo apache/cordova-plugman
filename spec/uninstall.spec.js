@@ -24,29 +24,20 @@ describe('uninstall', function() {
     beforeEach(function() {
         shell.mkdir('-p', temp);
         shell.mkdir('-p', plugins_dir);
+        shell.cp('-rf', android_one_project, temp);
+        shell.cp('-rf', dummyplugin, plugins_dir);
     });
     afterEach(function() {
         shell.rm('-rf', temp);
     });
 
     describe('success', function() {
-        beforeEach(function() {
-            shell.cp('-rf', android_one_project, temp);
-            shell.cp('-rf', dummyplugin, plugins_dir);
-            install('android', temp, 'DummyPlugin', plugins_dir, {});
-        });
-
         // TODO: possibly test how diff platform transaction logs are created
         it('should generate and pass uninstall transaction log to appropriate platform handler\'s uninstall', function() {
         });
     });
 
     describe('failure', function() {
-        beforeEach(function() {
-            shell.cp('-rf', android_one_project, temp);
-            shell.cp('-rf', dummyplugin, plugins_dir);
-            install('android', temp, 'DummyPlugin', plugins_dir, {});
-        });
         it('should throw if platform is unrecognized', function() {
             expect(function() {
                 uninstall('atari', temp, 'SomePlugin', plugins_dir, {});
