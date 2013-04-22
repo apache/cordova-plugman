@@ -33,28 +33,14 @@ describe('install', function() {
             shell.cp('-rf', dummyplugin, plugins_dir);
         });
 
+        it('should call fetch if provided plugin cannot be resolved locally');
+        it('should generate an array of transactions required to run an installation');
+        it('should pass transaction log to appropriate platform handler\'s install');
+
         it('should call prepare after a successful install', function() {
             shell.cp('-rf', android_one_project, temp);
             var s = spyOn(plugman, 'prepare');
             install('android', temp, 'DummyPlugin', plugins_dir, {});
-            expect(s).toHaveBeenCalled();
-        });
-        it('on an Android project should call into Android module\'s handleInstall', function() {
-            shell.cp('-rf', android_one_project, temp);
-            var s = spyOn(android, 'handleInstall');
-            install('android', temp, 'DummyPlugin', plugins_dir, {});
-            expect(s).toHaveBeenCalled();
-        });
-        it('on a BlackBerry project should call into BlackBerry module\'s handleInstall', function() {
-            shell.cp('-rf', blackberry_project, temp);
-            var s = spyOn(blackberry, 'handleInstall');
-            install('blackberry', temp, 'DummyPlugin', plugins_dir, {});
-            expect(s).toHaveBeenCalled();
-        });
-        it('on an iOS project should call into iOS module\'s handleInstall', function() {
-            shell.cp('-rf', ios_project, temp);
-            var s = spyOn(ios, 'handleInstall');
-            install('ios', temp, 'DummyPlugin', plugins_dir, {});
             expect(s).toHaveBeenCalled();
         });
     });
@@ -71,38 +57,6 @@ describe('install', function() {
                 install('android', temp, 'VariablePlugin', plugins_dir, {});
             }).toThrow('Variable(s) missing: API_KEY');
         });
-        it('should throw if installation failed', function() {
-            shell.cp('-rf', android_one_project, temp);
-            shell.cp('-rf', faultyplugin, plugins_dir);
-            var didThrow = false;
-            try {
-                install('android', temp, 'FaultyPlugin', plugins_dir, {});
-            } catch(e) {
-                didThrow = true;
-                expect(e.message).toMatch(/does not exist/);
-            }
-            expect(didThrow).toBe(true);
-        });
-        it('should call forceUninstall if installation fails to revert changes', function() {
-            shell.cp('-rf', android_one_project, temp);
-            shell.cp('-rf', faultyplugin, plugins_dir);
-            var s = spyOn(android, 'forceUninstall');
-            expect(function() {
-                install('android', temp, 'FaultyPlugin', plugins_dir, {});
-            }).toThrow();
-            expect(s).toHaveBeenCalled();
-        });
-        it('should throw an extra-long error if both installation and reversion failed', function() {
-            shell.cp('-rf', android_one_project, temp);
-            shell.cp('-rf', faultyplugin, plugins_dir);
-            var didThrow = false;
-            try {
-                install('android', temp, 'FaultyPlugin', plugins_dir, {});
-            } catch(e) {
-                didThrow = true;
-                expect(e.message).toMatch(/reverting changes also caused issues!/);
-            }
-            expect(didThrow).toBe(true);
-        });
+        it('should handle a failed install by passing completed transactions into appropriate handler\'s uninstall method'); 
     });
 });

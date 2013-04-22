@@ -30,36 +30,8 @@ describe('uninstall', function() {
     });
 
     describe('success', function() {
-        it('on an Android project should call into Android module\'s handleUninstall', function() {
-            // Set up android project w/ one plugin
-            shell.cp('-rf', android_one_project, temp);
-            shell.cp('-rf', dummyplugin, plugins_dir);
-            install('android', temp, 'DummyPlugin', plugins_dir, {});
-
-            var s = spyOn(android, 'handleUninstall');
-            uninstall('android', temp, 'DummyPlugin', plugins_dir, {});
-            expect(s).toHaveBeenCalled();
-        });
-        it('on a BlackBerry project should call into BlackBerry module\'s handleUninstall', function() {
-            // Set up blackberry project w/ one plugin
-            shell.cp('-rf', blackberry_project, temp);
-            shell.cp('-rf', dummyplugin, plugins_dir);
-            install('blackberry', temp, 'DummyPlugin', plugins_dir, {});
-
-            var s = spyOn(blackberry, 'handleUninstall');
-            uninstall('blackberry', temp, 'DummyPlugin', plugins_dir, {});
-            expect(s).toHaveBeenCalled();
-        });
-        it('on an iOS project should call into iOS module\'s handleUninstall', function() {
-            // Set up ios project w/ one plugin
-            shell.cp('-rf', ios_project, temp);
-            shell.cp('-rf', dummyplugin, plugins_dir);
-            install('ios', temp, 'DummyPlugin', plugins_dir, {});
-
-            var s = spyOn(ios, 'handleUninstall');
-            uninstall('ios', temp, 'DummyPlugin', plugins_dir, {});
-            expect(s).toHaveBeenCalled();
-        });
+        it('should generate an array of transactions required to run an uninstallation');
+        it('should pass transaction log to appropriate platform handler\'s uninstall');
     });
 
     describe('failure', function() {
@@ -81,5 +53,6 @@ describe('uninstall', function() {
                 uninstall('android', temp, 'SomePlugin', plugins_dir, {});
             }).toThrow('Plugin "SomePlugin" not found. Already uninstalled?');
         });
+        it('should handle a failed uninstall by passing completed transactions into appropriate handler\'s uninstall method'); 
     });
 });
