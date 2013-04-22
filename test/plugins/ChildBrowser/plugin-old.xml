@@ -65,6 +65,19 @@
         <resource-file src="ChildBrowser.bundle" />
         <resource-file src="ChildBrowserViewController.xib" />
 
+        <config-file target="*-Info.plist" parent="AppId">
+            <string>$APP_ID</string>
+        </config-file>
+        
+        <config-file target="*-Info.plist" parent="CFBundleURLTypes">
+            <array>
+              <dict>
+                <key>PackageName</key>
+                <string>$PACKAGE_NAME</string>
+              </dict>
+            </array>
+        </config-file>
+
         <header-file src="ChildBrowserCommand.h" />
         <header-file src="ChildBrowserViewController.h" />
         <header-file src="preserveDirs/PreserveDirsTest.h" preserve-dirs="true" />

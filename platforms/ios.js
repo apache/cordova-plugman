@@ -26,6 +26,8 @@ var path = require('path')
   , bplist = require('bplist-parser')
   , shell = require('shelljs')
   , xml_helpers = require('../util/xml-helpers')
+  , plist_helpers = require('../util/plist-helpers')
+  , getConfigChanges = require('../util/config-changes')
   , searchAndReplace = require('../util/search-and-replace')
   , getConfigChanges = require('../util/config-changes')
   , assetsDir = 'www';    // relative path to project's web assets
@@ -86,7 +88,8 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
         sourceFiles = platformTag.findall('./source-file'),
         headerFiles = platformTag.findall('./header-file'),
         resourceFiles = platformTag.findall('./resource-file'),
-        frameworks = platformTag.findall('./framework');
+        frameworks = platformTag.findall('./framework'),
+        configChanges = getConfigChanges(platformTag);
 
     // move asset files into www
     assets && assets.forEach(function (asset) {
@@ -193,9 +196,17 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
     // write out xcodeproj file
     fs.writeFileSync(pbxPath, xcodeproj.writeSync());
 
-    // add plugin and whitelisted hosts
     try {
+      // add plugin and whitelisted hosts
       updateConfig(action, config_file, plugin_et);
+      
+      // edit custom configuration items
+      Object.keys(configChanges).forEach(function (filename) {
+          var filepaths = glob.sync(path.resolve(xcode_dir, filename));
+          for (var i in filepaths) {
+              updateCustomConfig(action, filepaths[i], configChanges[filename]);
+          }
+      });
     } catch(e) {
       throw {
         name: "ConfigurationError",
@@ -352,7 +363,8 @@ function updateConfigXml(action, config_path, plugin_et) {
                     throw new Error('failed to remove children from ' + selector + ' in ' + config_path);
                 }
             }
-      });
+            delete configChanges[base_config_path][configNode];
+        });
     }
 
     output = xmlDoc.write({indent: 4});
@@ -367,7 +379,60 @@ function updateConfig(action, config_path, plugin_et) {
         updatePlistFile(action, config_path, plugin_et);
     }
 }
+
 // throws error if last command returns code != 0
 function checkLastCommand() {
     if(shell.error() != null) throw {name: "ShellError", message: shell.error()};
+}
+
+// updates plist file and/or config.xml
+function updateCustomConfig(action, filepath, configNodes) {
+
+    if (path.extname(filepath) == ".xml") {
+        var xmlDoc = xml_helpers.parseElementtreeSync(filepath),
+            output;
+
+        configNodes.forEach(function (configNode) {
+            var selector = configNode.attrib["parent"],
+                children = configNode.findall('*');
+            
+            if( action == 'install') {
+                if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
+                    throw new Error('failed to add children to ' + filepath);
+                }
+            } else {
+                if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
+                    throw new Error('failed to remove children from' + filepath);
+                }
+            }
+        });
+        
+        output = xmlDoc.write({indent: 4});
+        fs.writeFileSync(filepath, output);
+        
+    }
+    else { // PLIST
+        var pl = (isBinaryPlist(filepath) ? bplist : plist),
+            plistObj = pl.parseFileSync(filepath);
+
+        configNodes.forEach(function (configNode) {
+
+            var selector = configNode.attrib["parent"],
+                children = configNode.find("./*");
+
+            if( action == 'install') {
+                if (!plist_helpers.graftPLIST(plistObj, children, selector)) {
+                    throw new Error('failed to add children to ' + filepath);
+                }
+            } else {
+                if (!plist_helpers.prunePLIST(plistObj, children, selector)) {
+                    throw new Error('failed to remove children from' + filepath);
+                }
+            }
+
+        });
+
+        // write out plist
+        fs.writeFileSync(filepath, plist.build(plistObj));
+    }
 }

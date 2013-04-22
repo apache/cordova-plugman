@@ -175,6 +175,26 @@ exports['should edit config.xml'] = function (test) {
     test.done();
 }
 
+exports['should remove custom config-file elements'] = function (test) {
+    // setting up WebNotification (with config.xml) 
+    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
+    var dummy_xml_path = path.join(test_dir, 'plugins', 'ChildBrowser', 'plugin.xml')
+    
+    // overriding some params
+    var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
+
+    // run the platform-specific function
+    ios.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et, { APP_ID: '1234'  });
+    ios.handlePlugin('uninstall', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
+    
+    var configPath = path.join(test_project_dir, 'SampleApp', 'SampleApp-Info.plist');
+    var configPList = plist.parseFileSync(configPath);
+
+    test.equal(configPList['AppId'], null);
+    test.equal(configPList['CFBundleURLTypes'], null);
+    test.done();
+}
+
 exports['should edit the pbxproj file'] = function (test) {
     // run the platform-specific function
     ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
