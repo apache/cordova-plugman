@@ -26,94 +26,97 @@ var http = require('http'),
     shell = require('shelljs'),
     remote = require(path.join(__dirname, '..', '..', 'config', 'remote'));
 
-// Fetches plugin information from remote server
-exports.getPluginInfo = function(plugin_name, callback) {
-    var responded = false;
-    http.get(remote.url + util.format(remote.query_path, plugin_name), function(res) {
-        var str = '';
-        res.on('data', function (chunk) {
-            str += chunk;
+module.exports = {
+    // Fetches plugin information from remote server
+    getPluginInfo:function(plugin_name, callback) {
+        var responded = false;
+        http.get(remote.url + util.format(remote.query_path, plugin_name), function(res) {
+            var str = '';
+            res.on('data', function (chunk) {
+                str += chunk;
+            });
+            res.on('end', function () {
+                responded = true;
+                var response, plugin_info;
+                if((response = JSON.parse(str)).rows.length == 1) {
+                    plugin_info = response.rows[0].value;
+                    callback(null, plugin_info);
+                } else {
+                    callback("Could not find information on "+plugin_name+" plugin");
+                }
+            });
+
+        }).on('error', function(e) {
+            callback(e);
         });
-        res.on('end', function () {
-            responded = true;
-            var response, plugin_info;
-            if((response = JSON.parse(str)).rows.length == 1) {
-                plugin_info = response.rows[0].value;
-                callback(null, plugin_info);
+
+        setTimeout(function() {
+            if (!responded) {
+                console.log('timed out');
+                error('timed out')
+            }
+        }, 3000);
+    },
+    listAllPlugins:function(success, error) {
+        http.get(remote.url + remote.list_path, function(res) {
+          var str = '';
+          res.on('data', function (chunk) {
+            str += chunk;
+          });
+          res.on('end', function () {
+              var plugins = (JSON.parse(str)).rows;
+              success(plugins);
+          });
+          
+        }).on('error', function(e) {
+          console.log("Got error: " + e.message);
+          error(e.message);
+        });
+    },
+    clonePluginGitRepo:function(plugin_git_url, plugins_dir, callback) {
+        if(!shell.which('git')) {
+            var err = new Error('git command line is not installed');
+            if (callback) callback(err);
+            else throw err;
+        }
+        // use osenv to get a temp directory in a portable way
+        var lastSlash = plugin_git_url.lastIndexOf('/');
+        var basename = plugin_git_url.substring(lastSlash+1);
+        var dotGitIndex = basename.lastIndexOf('.git');
+        if (dotGitIndex >= 0) {
+            basename = basename.substring(0, dotGitIndex);
+        }
+
+        var plugin_dir = path.join(plugins_dir, basename);
+
+        // trash it if it already exists (something went wrong before probably)
+        if(fs.existsSync(plugin_dir)) {
+            shell.rm('-rf', plugin_dir);
+        }
+
+        shell.exec('git clone ' + plugin_git_url + ' ' + plugin_dir + ' 2>&1 1>/dev/null', {silent: true, async:true}, function(code, output) {
+            if (code > 0) {
+                var err = new Error('failed to get the plugin via git from URL '+ plugin_git_url);
+                if (callback) callback(err)
+                else throw err;
             } else {
-                callback("Could not find information on "+plugin_name+" plugin");
+                if (callback) callback(null);
             }
         });
-
-    }).on('error', function(e) {
-        callback(e);
-    });
-
-    setTimeout(function() {
-        if (!responded) {
-            console.log('timed out');
-            error('timed out')
-        }
-    }, 3000);
-}
-
-exports.listAllPlugins = function(success, error) {
-    http.get(remote.url + remote.list_path, function(res) {
-      var str = '';
-      res.on('data', function (chunk) {
-        str += chunk;
-      });
-      res.on('end', function () {
-          var plugins = (JSON.parse(str)).rows;
-          success(plugins);
-      });
-      
-    }).on('error', function(e) {
-      console.log("Got error: " + e.message);
-      error(e.message);
-    });
-}
-
-exports.clonePluginGitRepo = function(plugin_git_url, plugins_dir, callback) {
-    if(!shell.which('git')) {
-        var err = new Error('git command line is not installed');
-        if (callback) callback(err);
-        else throw err;
     }
-    // use osenv to get a temp directory in a portable way
-    var lastSlash = plugin_git_url.lastIndexOf('/');
-    var basename = plugin_git_url.substring(lastSlash+1);
-    var dotGitIndex = basename.lastIndexOf('.git');
-    if (dotGitIndex >= 0) {
-        basename = basename.substring(0, dotGitIndex);
-    }
+    // TODO add method for archives and other formats
+    // extractArchive:function(plugin_dir) {
+    // }
 
-    var plugin_dir = path.join(plugins_dir, basename);
+    // TODO add method to publish plugin from cli 
+    // publishPlugin:function(plugin_dir) {
+    // }
 
-    // trash it if it already exists (something went wrong before probably)
-    if(fs.existsSync(plugin_dir)) {
-        shell.rm('-rf', plugin_dir);
-    }
+    // TODO add method to unpublish plugin from cli 
+    // unpublishPlugin:function(plugin_dir) {
+    // }
+};
 
-    shell.exec('git clone ' + plugin_git_url + ' ' + plugin_dir + ' 2>&1 1>/dev/null', {silent: true, async:true}, function(code, output) {
-        if (code > 0) {
-            var err = new Error('failed to get the plugin via git from URL '+ plugin_git_url);
-            if (callback) callback(err)
-            else throw err;
-        } else {
-            if (callback) callback(null);
-        }
-    });
-}
 
-// TODO add method for archives and other formats
-// exports.extractArchive = function(plugin_dir) {
-// }
 
-// TODO add method to publish plugin from cli 
-// exports.publishPlugin = function(plugin_dir) {
-// }
 
-// TODO add method to unpublish plugin from cli 
-// exports.unpublishPlugin = function(plugin_dir) {
-// }

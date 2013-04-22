@@ -1,8 +1,4 @@
 var prepare = require('../src/prepare'),
-    android = require('../src/platforms/android'),
-    ios     = require('../src/platforms/ios'),
-    blackberry = require('../src/platforms/blackberry'),
-    plugman = require('../plugman'),
     fs      = require('fs'),
     os      = require('osenv'),
     path    = require('path'),
@@ -11,10 +7,7 @@ var prepare = require('../src/prepare'),
     childbrowser = path.join(__dirname, 'plugins', 'ChildBrowser'),
     dummyplugin = path.join(__dirname, 'plugins', 'DummyPlugin'),
     androidplugin = path.join(__dirname, 'plugins', 'AndroidJS'),
-    faultyplugin = path.join(__dirname, 'plugins', 'FaultyPlugin'),
     android_one_project = path.join(__dirname, 'projects', 'android_one', '*');
-    blackberry_project = path.join(__dirname, 'projects', 'blackberry', '*');
-    ios_project = path.join(__dirname, 'projects', 'ios-config-xml', '*');
     plugins_dir = path.join(temp, 'cordova', 'plugins');
 
 describe('prepare', function() {

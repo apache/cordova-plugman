@@ -84,7 +84,7 @@ function handlePlugin(action, project_dir, plugin_dir, plugin_et, variables) {
         action = action.replace('force-', '');
     }
 
-    root = et.Element("config-file");
+    var root = et.Element("config-file");
     root.attrib['parent'] = '.'
         plugin_et.findall('./access').forEach(function (tag) { 
         root.append(tag);

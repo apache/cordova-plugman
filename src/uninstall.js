@@ -41,7 +41,7 @@ module.exports = function uninstallPlugin(platform, project_dir, name, plugins_d
     var plugin_xml_path = path.join(plugin_dir, 'plugin.xml');
 
     if (!fs.existsSync(plugin_dir)) {
-        var err = new Error('Plugin ' + name + ' not found. Already uninstalled?');
+        var err = new Error('Plugin "' + name + '" not found. Already uninstalled?');
         if (callback) {
             callback(err);
             return;
@@ -49,6 +49,7 @@ module.exports = function uninstallPlugin(platform, project_dir, name, plugins_d
         else throw err;
     }
 
+    // TODO: uninstall if plugin does not exist? this should not be here.
     if (!fs.existsSync(plugin_xml_path)) {
         // try querying the plugin database
         plugins.getPluginInfo(plugin_dir,
