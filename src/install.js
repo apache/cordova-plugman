@@ -1,9 +1,9 @@
 var path = require('path'),
     fs   = require('fs'),
     et   = require('elementtree'),
-    fetch= require('./fetch'),
     platform_modules = require('./platforms');
 
+// TODO: is name necessary as a param ehre?
 module.exports = function installPlugin(platform, project_dir, name, plugins_dir, cli_variables, callback) {
     if (!platform_modules[platform]) {
         var err = new Error(platform + " not supported.");
@@ -19,7 +19,7 @@ module.exports = function installPlugin(platform, project_dir, name, plugins_dir
     // Check that the plugin has already been fetched.
     if (!fs.existsSync(plugin_dir)) {
         // if plugin doesnt exist, use fetch to get it.
-        fetch(name, plugins_dir, false, function(err) {
+        require('../plugman').fetch(name, plugins_dir, false, function(err) {
             if (err) {
                 callback(err);
             } else {

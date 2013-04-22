@@ -55,8 +55,6 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
     });
     */
     var completed = [];
-    console.log(txs);
-    return;
     while(txs.length) {
         var mod = txs.shift();
         try {
@@ -127,10 +125,13 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
 
     if (action == 'install') {
         variables['PACKAGE_NAME'] = androidPackageName(project_dir);
-        searchAndReplace(path.resolve(project_dir, config_xml_filename), variables);
+        var config_filename = path.resolve(project_dir, 'res', 'xml', 'config.xml');
+        if (!fs.existsSync(config_filename)) config_filename = path.resolve(project_dir, 'res', 'xml', 'plugins.xml');
+        searchAndReplace(config_filename, variables);
         searchAndReplace(path.resolve(project_dir, 'AndroidManifest.xml'), variables);
     }
 
+    if (callback) callback();
 }
 
 // reads the package name out of the Android Manifest file

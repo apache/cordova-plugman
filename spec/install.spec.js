@@ -34,6 +34,10 @@ describe('install', function() {
         });
 
         it('should call fetch if provided plugin cannot be resolved locally', function() {
+            shell.cp('-rf', android_one_project, temp);
+            var s = spyOn(plugman, 'fetch');
+            install('android', temp, 'CLEANYOURSHORTS', plugins_dir, {});
+            expect(s).toHaveBeenCalled();
         });
         // TODO: possibly test how diff platform transaction logs are created
         it('should generate an array of transactions required to run an installation and pass into appropriate platform handler\'s install method', function() {
