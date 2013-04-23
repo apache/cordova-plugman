@@ -301,7 +301,7 @@ function pluginInstalled(plugin_et, config_path) {
     }
     var plugin_name = config_tag.attrib.name || config_tag.attrib.key,
         plugin_id = plugin_et._root.attrib['id'],
-        readfile = fs.readFileSync(path.resolve(project_dir, config_xml_filename), 'utf8');
+        readfile = fs.readFileSync(config_path, 'utf8');
     if ((readfile.match(new RegExp(plugin_name, "g")) != null) || (readfile.match(new RegExp(plugin_id, "g")) != null)){
         return true;
     }

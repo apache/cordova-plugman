@@ -174,9 +174,9 @@ function pluginInstalled(plugin_et, project_dir) {
     if (!config_tag) {
         return false;
     }
-    var plugin_name = plugin_tag.attrib.name,
+    var plugin_name = config_tag.attrib.id,
         plugin_id = plugin_et._root.attrib['id'],
-        readfile = fs.readFileSync(path.resolve(project_dir, config_xml_filename), 'utf8');     
+        readfile = fs.readFileSync(path.resolve(project_dir, 'config.xml'), 'utf8');    
     if ((readfile.match(new RegExp(plugin_name, "g")) != null) || (readfile.match(new RegExp(plugin_id, "g")) != null)){
         return true;
     }
