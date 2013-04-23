@@ -48,9 +48,9 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et) {
     // collision detection 
     if(action.match(/force-/) == null) {
       if(action == "install" && pluginInstalled(plugin_et, project_dir)) {
-          throw "Plugin "+plugin_id+" already installed"
+          throw new Error("Plugin "+plugin_id+" already installed")
       } else if(action == "uninstall" && !pluginInstalled(plugin_et, project_dir)) {
-          throw "Plugin "+plugin_id+" not installed"
+          throw new Error("Plugin "+plugin_id+" not installed")
       }
     } else {
       action = action.replace('force-', '');
@@ -174,7 +174,10 @@ function pluginInstalled(plugin_et, project_dir) {
     if (!config_tag) {
         return false;
     }
-    var plugin_name = config_tag.attrib.id;
-    return (fs.readFileSync(path.resolve(project_dir, 'config.xml'), 'utf8')
-           .match(new RegExp(plugin_name, "g")) != null);
+    var plugin_name = plugin_tag.attrib.name,
+        plugin_id = plugin_et._root.attrib['id'],
+        readfile = fs.readFileSync(path.resolve(project_dir, config_xml_filename), 'utf8');     
+    if ((readfile.match(new RegExp(plugin_name, "g")) != null) || (readfile.match(new RegExp(plugin_id, "g")) != null)){
+        return true;
+    }
 }

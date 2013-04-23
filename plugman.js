@@ -130,6 +130,7 @@ function execAction(action, platform, project_dir, plugin_dir, cli_variables) {
           platform_modules[platform].handlePlugin(revert, project_dir, plugin_dir, plugin_et, filtered_variables);
         } catch(e) {
           console.log("Changes might have not been reverted: "+e.message);
+          process.exit(1);
         }
     }
 }

@@ -42,23 +42,24 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
       , configChanges = getConfigChanges(platformTag);
 
     variables = variables || {}
-
+    
 	  // get config.xml filename
 	  var config_xml_filename = 'res/xml/config.xml';
     if(fs.existsSync(path.resolve(project_dir, 'res/xml/plugins.xml'))) {
         config_xml_filename = 'res/xml/plugins.xml';
     }
-
+    
     // collision detection 
     if(action.match(/force-/) == null) {
       if(action == "install" && pluginInstalled(plugin_et, project_dir, config_xml_filename)) {
-          throw "Plugin "+plugin_id+" already installed"
+          throw new Error("Plugin "+plugin_id+" already installed");
       } else if(action == "uninstall" && !pluginInstalled(plugin_et, project_dir, config_xml_filename)) {
-          throw "Plugin "+plugin_id+" not installed"
+          throw new Error("Plugin "+plugin_id+" not installed");
       }
     } else {
       action = action.replace('force-', '');
     }
+    
 
     root = et.Element("config-file");
     root.attrib['parent'] = '.'
@@ -212,13 +213,14 @@ function androidPackageName(project_dir) {
 
 function pluginInstalled(plugin_et, project_dir, config_xml_filename) {
     var tag_xpath = util.format('./platform[@name="android"]/config-file[@target="%s"]/plugin', config_xml_filename);
-
-    var plugin_tag = plugin_et.find(tag_xpath);
+    var plugin_tag = plugin_et.find(tag_xpath); 
     if (!plugin_tag) {
         return false;
     }
-    var plugin_name = plugin_tag.attrib.name;
-
-    return (fs.readFileSync(path.resolve(project_dir, config_xml_filename), 'utf8')
-           .match(new RegExp(plugin_name, "g")) != null);
+    var plugin_name = plugin_tag.attrib.name,
+        plugin_id = plugin_et._root.attrib['id'],
+        readfile = fs.readFileSync(path.resolve(project_dir, config_xml_filename), 'utf8');   
+    if ((readfile.match(new RegExp(plugin_name, "g")) != null) || (readfile.match(new RegExp(plugin_id, "g")) != null)){
+        return true;
+    }
 }

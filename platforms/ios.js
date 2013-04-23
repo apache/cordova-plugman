@@ -41,7 +41,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
     // we don't want CordovaLib's xcode project
     var project_files = glob.sync(project_dir + '/*.xcodeproj/project.pbxproj');
     
-    if (!project_files.length) throw "does not appear to be an xcode project (no xcode project file)";
+    if (!project_files.length) throw new Error("does not appear to be an xcode project (no xcode project file)");
     var pbxPath = project_files[0];
 
     var xcodeproj = xcode.project(project_files[0]);
@@ -58,7 +58,7 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
     });
 
     if (!config_files.length) {
-        throw "does not appear to be a PhoneGap project";
+        throw new Error("does not appear to be a PhoneGap project");
     }
 
     var config_file = config_files[0];
@@ -73,9 +73,9 @@ exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, var
     // collision detection 
     if(action.match(/force-/) == null) {
       if(action == "install" && pluginInstalled(plugin_et, config_file)) {
-          throw "Plugin "+plugin_id+" already installed"
+          throw new Error("Plugin "+plugin_id+" already installed")
       } else if(action == "uninstall" && !pluginInstalled(plugin_et, config_file)) {
-          throw "Plugin "+plugin_id+" not installed"
+          throw new Error("Plugin "+plugin_id+" not installed")
       }
     } else {
       action = action.replace('force-', '');
@@ -287,8 +287,12 @@ function pluginInstalled(plugin_et, config_path) {
     if (!config_tag) {
         return false;
     }
-    var plugin_name = config_tag.attrib.name || config_tag.attrib.key;
-    return (fs.readFileSync(config_path, 'utf8').match(new RegExp(plugin_name, "g")) != null);
+    var plugin_name = config_tag.attrib.name || config_tag.attrib.key,
+        plugin_id = plugin_et._root.attrib['id'],
+        readfile = fs.readFileSync(path.resolve(project_dir, config_xml_filename), 'utf8');
+    if ((readfile.match(new RegExp(plugin_name, "g")) != null) || (readfile.match(new RegExp(plugin_id, "g")) != null)){
+        return true;
+    }
 }
 
 function updateConfigXml(action, config_path, plugin_et) {
