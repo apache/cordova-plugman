@@ -27,5 +27,31 @@
   "bin" : { "plugman" : "./main.js" },
   "scripts": {
     "test": "./node_modules/jasmine-node/bin/jasmine-node --color spec"
-  }
+  },
+  "contributors":[
+    {
+        "name":"Anis Kadri"
+    },
+    {
+        "name":"Tim Kim"
+    },
+    {
+        "name":"Braden Shepherdson"
+    },
+    {
+        "name":"Ryan Willoughby"
+    },
+    {
+        "name":"Brett Rudd"
+    },
+    {
+        "name":"Mike Reinstein"
+    },
+    {
+        "name":"Shazron Abdullah"
+    },
+    {
+        "name":"Fil Maj"
+    }
+  ],
 }

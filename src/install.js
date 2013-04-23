@@ -86,17 +86,23 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
     handler.install(txs, plugin_id, project_dir, plugin_dir, filtered_variables, function(err) {
         if (err) {
             // FAIL
-            handler.uninstall(err.transactions.executed, plugin_id, project_dir, plugin_dir, function(superr) {
-                var issue = '';
-                if (superr) {
-                    // Even reversion failed. super fail.
-                    issue = 'Install failed, then reversion of installation failed. Sorry :(. Instalation issue: ' + err.message + ', reversion issue: ' + superr.message;
-                } else {
-                    issue = 'Install failed, plugin reversion successful so you should be good to go. Installation issue: ' + err.message;
-                }
-                if (callback) callback(issue);
-                else console.error(issue);
-            });
+            if (err. transactions) {
+                handler.uninstall(err.transactions.executed, plugin_id, project_dir, plugin_dir, function(superr) {
+                    var issue = '';
+                    if (superr) {
+                        // Even reversion failed. super fail.
+                        issue = 'Install failed, then reversion of installation failed. Sorry :(. Instalation issue: ' + err.message + ', reversion issue: ' + superr.message;
+                    } else {
+                        issue = 'Install failed, plugin reversion successful so you should be good to go. Installation issue: ' + err.message;
+                    }
+                    var error = new Error(issue);
+                    if (callback) callback(error);
+                    else throw error;
+                });
+            } else {
+                if (callback) callback(err);
+                else throw err;
+            }
         } else {
             // WIN!
             // call prepare after a successful install

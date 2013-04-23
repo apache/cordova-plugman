@@ -8,7 +8,7 @@ describe('blackberry project handler', function() {
         expect(typeof blackberry.uninstall).toEqual('function');
     });
     it('should return cordova-blackberry project www location using www_dir', function() {
-        expect(android.www_dir('/')).toEqual('/www');
+        expect(blackberry.www_dir('/')).toEqual('/www');
     });
 
     describe('installation', function() {
