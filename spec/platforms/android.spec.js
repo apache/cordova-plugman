@@ -27,6 +27,7 @@ describe('android project handler', function() {
             it('should only target plugins.xml if that is applicable');
             it('should call into xml helper\'s graftXML');
         });
+        it('should interpolate variables properly');
     });
 
     describe('uninstallation', function() {
@@ -41,6 +42,10 @@ describe('android project handler', function() {
             it('should only target config.xml if that is applicable');
             it('should only target plugins.xml if that is applicable');
             it('should call into xml helper\'s pruneXML');
+        });
+        describe('of <asset> elements', function() {
+            it('should remove www\'s plugins <plugin-id> directory');
+            it('should remove stuff specified by the element');
         });
     });
 });

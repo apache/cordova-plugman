@@ -26,7 +26,7 @@ module.exports = {
     },
     // Sometimes we want to remove some java, and prune any unnecessary empty directories
     deleteJava:function(project_dir, destFile) {
-        fs.unlinkSync(destFile);
+        fs.unlinkSync(path.resolve(project_dir,destFile));
         // check if directory is empty
         var curDir = path.resolve(project_dir, path.basename(destFile));
         while(curDir !== path.resolve(project_dir, 'src')) {
