@@ -38,7 +38,6 @@ module.exports = function uninstallPlugin(platform, project_dir, name, plugins_d
 
     // Check that the plugin has already been fetched.
     var plugin_dir = path.join(plugins_dir, name);
-    var plugin_xml_path = path.join(plugin_dir, 'plugin.xml');
 
     if (!fs.existsSync(plugin_dir)) {
         var err = new Error('Plugin "' + name + '" not found. Already uninstalled?');
@@ -49,29 +48,5 @@ module.exports = function uninstallPlugin(platform, project_dir, name, plugins_d
         else throw err;
     }
 
-    // TODO: uninstall if plugin does not exist? this should not be here.
-    if (!fs.existsSync(plugin_xml_path)) {
-        // try querying the plugin database
-        plugins.getPluginInfo(plugin_dir,
-            function(err, plugin_info) {
-                if (err) {
-                    var err_obj = new Error('uninstall failed. plugin.xml at "' + plugin_xml_path + '" not found and couldnt query remote server for information about the plugin because ' + err.message);
-                    if (callback) callback(err_obj);
-                    else throw err_obj;
-                } else {
-                    plugins.clonePluginGitRepo(plugin_info.url, plugins_dir, function(err, plugin_dir) {
-                        if (err) {
-                            var err_obj = new Error('uninstall failed. plugin.xml at "' + plugin_xml_path + '" not found and couldnt clone plugin repo because ' + err.message);
-                            if (callback) callback(err_obj);
-                            else throw err_obj;
-                        } else {
-                            runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, callback);
-                        }
-                    });
-                }
-            }
-        );
-    } else {
-        runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, callback);
-    }
+    runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, callback);
 };

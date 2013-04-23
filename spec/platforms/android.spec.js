@@ -1,11 +1,13 @@
 var android = require('../../src/platforms/android'),
     common  = require('../../src/platforms/common'),
+    install = require('../../src/install'),
     path    = require('path'),
     fs      = require('fs'),
     shell   = require('shelljs'),
     et      = require('elementtree'),
     os      = require('osenv'),
     temp    = path.join(os.tmpdir(), 'plugman'),
+    plugins_dir = path.join(temp, 'cordova', 'plugins'),
     xml_helpers = require('../../src/util/xml-helpers'),
     plugins_module = require('../../src/util/plugins'),
     dummyplugin = path.join(__dirname, '..', 'plugins', 'DummyPlugin'),
@@ -132,18 +134,84 @@ describe('android project handler', function() {
     });
 
     describe('uninstallation', function() {
+        beforeEach(function() {
+            shell.mkdir('-p', temp);
+            shell.mkdir('-p', plugins_dir);
+            shell.cp('-rf', android_two_project, temp);
+            shell.cp('-rf', dummyplugin, plugins_dir);
+        });
+        afterEach(function() {
+            shell.rm('-rf', temp);
+        });
         describe('of <source-file> elements', function() {
-            it('should remove stuff by calling common.deleteJava');
-            it('should remove empty dirs from java src dir heirarchy');
+            it('should remove stuff by calling common.deleteJava', function(done) {
+                var s = spyOn(common, 'deleteJava');
+                install('android', temp, 'DummyPlugin', plugins_dir, {}, function() {
+                    var source = copyArray(valid_source);
+                    android.uninstall(source, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
+                    expect(s).toHaveBeenCalledWith(temp, 'src/com/phonegap/plugins/dummyplugin/DummyPlugin.java');
+                    done();
+                });
+            });
         });
         describe('of <config-file> elements', function() {
-            it('should only target config.xml if that is applicable');
-            it('should only target plugins.xml if that is applicable');
-            it('should call into xml helper\'s pruneXML');
+            it('should only target config.xml if that is applicable', function(done) {
+                var config = copyArray(configChanges);
+                var s = spyOn(xml_helpers, 'parseElementtreeSync').andCallThrough();
+                install('android', temp, 'DummyPlugin', plugins_dir, {}, function() {
+                    var config = copyArray(configChanges);
+                    android.uninstall(config, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
+                    expect(s).toHaveBeenCalledWith(path.join(temp, 'res', 'xml', 'config.xml'));
+                    expect(s).not.toHaveBeenCalledWith(path.join(temp, 'res', 'xml', 'plugins.xml'));
+                    done();
+                });
+            });
+            it('should only target plugins.xml if that is applicable', function(done) {
+                shell.rm('-rf', temp);
+                shell.mkdir('-p', temp);
+                shell.mkdir('-p', plugins_dir);
+                shell.cp('-rf', android_one_project, temp);
+                shell.cp('-rf', dummyplugin, plugins_dir);
+                var config = copyArray(configChanges);
+                var s = spyOn(xml_helpers, 'parseElementtreeSync').andCallThrough();
+                install('android', temp, 'DummyPlugin', plugins_dir, {}, function() {
+                    var config = copyArray(configChanges);
+                    android.uninstall(config, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
+                    expect(s).not.toHaveBeenCalledWith(path.join(temp, 'res', 'xml', 'config.xml'));
+                    expect(s).toHaveBeenCalledWith(path.join(temp, 'res', 'xml', 'plugins.xml'));
+                    done();
+                });
+            });
+            it('should call into xml helper\'s pruneXML', function(done) {
+                var config = copyArray(configChanges);
+                install('android', temp, 'DummyPlugin', plugins_dir, {}, function() {
+                    var s = spyOn(xml_helpers, 'pruneXML').andReturn(true);
+                    android.uninstall(config, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
+                    expect(s).toHaveBeenCalled();
+                    done();
+                });
+            });
         });
         describe('of <asset> elements', function() {
-            it('should remove www\'s plugins <plugin-id> directory');
-            it('should remove stuff specified by the element');
+            it('should remove www\'s plugins/<plugin-id> directory', function(done) {
+                var as = copyArray(assets);
+                install('android', temp, 'DummyPlugin', plugins_dir, {}, function() {
+                    var s = spyOn(shell, 'rm');
+                    android.uninstall(as, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
+                    expect(s).toHaveBeenCalledWith('-rf', path.join(temp, 'assets', 'www', 'plugins', dummy_id));
+                    done();
+                });
+            });
+            it('should remove stuff specified by the element', function(done) {
+                var as = copyArray(assets);
+                install('android', temp, 'DummyPlugin', plugins_dir, {}, function() {
+                    var s = spyOn(shell, 'rm');
+                    android.uninstall(as, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
+                    expect(s).toHaveBeenCalledWith('-rf', path.join(temp, 'assets', 'www', 'dummyplugin.js'));
+                    expect(s).toHaveBeenCalledWith('-rf', path.join(temp, 'assets', 'www', 'dummyplugin'));
+                    done();
+                });
+            });
         });
     });
 });

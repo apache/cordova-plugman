@@ -89,8 +89,8 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                 case 'asset':
                     if (action == 'uninstall') {
                         var target = mod.attrib.target;
-                        shell.rm('-rf', path.resolve(module.exports.www_dir(), target));
-                        shell.rm('-rf', path.resolve(module.exports.www_dir(), 'plugins', plugin_id));
+                        shell.rm('-rf', path.resolve(module.exports.www_dir(project_dir), target));
+                        shell.rm('-rf', path.resolve(module.exports.www_dir(project_dir), 'plugins', plugin_id));
                     }
                     break;
                 default:
