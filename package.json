@@ -5,7 +5,7 @@
   "version": "0.5.8",
   "repository": {
     "type": "git",
-    "url": "git://github.com/imhotep/plugman.git"
+    "url": "git://git-wip-us.apache.org/repos/asf/cordova-plugman.git"
   },
   "main": "plugman.js",
   "engines": {
@@ -22,10 +22,36 @@
     "osenv": "0.0.x"
   },
   "devDependencies": {
-    "nodeunit": "0.7.x"
+    "jasmine-node": "1.7.0"
   },
-  "bin" : { "plugman" : "./plugman.js" },
+  "bin" : { "plugman" : "./main.js" },
   "scripts": {
-    "test": "nodeunit test"
-  }
+    "test": "./node_modules/jasmine-node/bin/jasmine-node --color spec"
+  },
+  "contributors":[
+    {
+        "name":"Anis Kadri"
+    },
+    {
+        "name":"Tim Kim"
+    },
+    {
+        "name":"Braden Shepherdson"
+    },
+    {
+        "name":"Ryan Willoughby"
+    },
+    {
+        "name":"Brett Rudd"
+    },
+    {
+        "name":"Mike Reinstein"
+    },
+    {
+        "name":"Shazron Abdullah"
+    },
+    {
+        "name":"Fil Maj"
+    }
+  ]
 }

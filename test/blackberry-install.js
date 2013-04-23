@@ -23,13 +23,17 @@ var fs = require('fs')
   , et = require('elementtree')
   , osenv = require('osenv')
   , blackberry = require(path.join(__dirname, '..', 'platforms', 'blackberry'))
+  , plugin_loader = require('../util/plugin_loader')
   , test_dir = path.join(osenv.tmpdir(), 'test_plugman')
   , test_project_dir = path.join(test_dir, 'projects', 'blackberry', 'www')
   , test_plugin_dir = path.join(test_dir, 'plugins', 'cordova.echo')
   , xml_path     = path.join(test_dir, 'plugins', 'cordova.echo', 'plugin.xml')
   , xml_text, plugin_et
+  , plugman = require('../plugman')
+  , plugins_dir = path.join(test_dir, 'plugins')
+  , silent = require('../util/test-helpers').suppressOutput
   , srcDir = path.resolve(test_project_dir, 'ext-qnx/cordova.echo');
-  
+
 exports.setUp = function(callback) {
     shell.mkdir('-p', test_dir);
     
@@ -54,7 +58,9 @@ exports.tearDown = function(callback) {
 
 exports['should move the source files'] = function (test) {
     // run the platform-specific function
-    blackberry.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
+    silent(function() {
+        plugman.handlePlugin('install', 'blackberry', test_project_dir, 'cordova.echo', plugins_dir);
+    });
 
     test.ok(fs.existsSync(srcDir + '/client.js'));
     test.ok(fs.existsSync(srcDir + '/index.js'));
@@ -62,25 +68,24 @@ exports['should move the source files'] = function (test) {
     test.ok(fs.existsSync(srcDir + '/device/echoJnext.so'));
     test.ok(fs.existsSync(srcDir + '/simulator/echoJnext.so'));
     test.done();
-}
+};
 
 exports['should move the js file'] = function (test) {
-    // setting up a DummyPlugin
-    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'DummyPlugin')
-    var dummy_xml_path = path.join(test_dir, 'plugins', 'DummyPlugin', 'plugin.xml')
-    var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
-
     // run the platform-specific function
-    blackberry.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
+    silent(function() {
+        plugman.handlePlugin('install', 'blackberry', test_project_dir, 'DummyPlugin', plugins_dir);
+    });
 
-    var jsPath = path.join(test_project_dir, 'dummyplugin.js');
+    var jsPath = path.join(test_project_dir, 'www', 'dummyplugin.js');
     test.ok(fs.existsSync(jsPath));
     test.done();
 }
 
 exports['should edit config.xml'] = function (test) {
-    blackberry.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-    
+    silent(function() {
+        plugman.handlePlugin('install', 'blackberry', test_project_dir, 'cordova.echo', plugins_dir);
+    });
+
     var configXmlPath = path.join(test_project_dir, 'config.xml');
     var pluginsTxt = fs.readFileSync(configXmlPath, 'utf-8'),
         pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),

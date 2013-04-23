@@ -28,6 +28,9 @@ var fs = require('fs')
   , test_plugin_dir = path.join(test_dir, 'plugins', 'cordova.echo')
   , xml_path     = path.join(test_dir, 'plugins', 'cordova.echo', 'plugin.xml')
   , xml_text, plugin_et
+  , plugman = require('../plugman')
+  , plugins_dir = path.join(test_dir, 'plugins')
+  , silent = require('../util/test-helpers').suppressOutput
   , srcDir = path.resolve(test_project_dir, 'ext-qnx/cordova.echo');
   
 exports.setUp = function(callback) {
@@ -54,21 +57,21 @@ exports.tearDown = function(callback) {
 
 exports['should remove cordova echo plugin'] = function (test) {
     // run the platform-specific function
-    blackberry.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-    blackberry.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
+    silent(function() {
+        plugman.handlePlugin('install', 'blackberry', test_project_dir, 'cordova.echo', plugins_dir);
+        plugman.handlePlugin('uninstall', 'blackberry', test_project_dir, 'cordova.echo', plugins_dir);
+    });
 
     test.done();
 }
 
 
 exports['should remove the js file'] = function (test) {
+    silent(function() {
+        plugman.handlePlugin('install', 'blackberry', test_project_dir, 'DummyPlugin', plugins_dir);
+        plugman.handlePlugin('uninstall', 'blackberry', test_project_dir, 'DummyPlugin', plugins_dir);
+    });
 
-    var dummy_plugin_dir = path.join(test_dir, 'plugins', 'DummyPlugin')
-    var dummy_xml_path = path.join(test_dir, 'plugins', 'DummyPlugin', 'plugin.xml')
-    var dummy_plugin_et  = new et.ElementTree(et.XML(fs.readFileSync(dummy_xml_path, 'utf-8')));
-
-    blackberry.handlePlugin('install', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
-    blackberry.handlePlugin('uninstall', test_project_dir, dummy_plugin_dir, dummy_plugin_et);
     var jsPath = path.join(test_dir, 'projects', 'blackberry', 'www', 'dummyplugin.js');
     test.ok(!fs.existsSync(jsPath))
     test.done();
@@ -77,8 +80,10 @@ exports['should remove the js file'] = function (test) {
 
 exports['should remove the source files'] = function (test) {
     // run the platform-specific function
-    blackberry.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-    blackberry.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
+    silent(function() {
+        plugman.handlePlugin('install', 'blackberry', test_project_dir, 'cordova.echo', plugins_dir);
+        plugman.handlePlugin('uninstall', 'blackberry', test_project_dir, 'cordova.echo', plugins_dir);
+    });
 
     test.ok(!fs.existsSync(srcDir + '/index.js'))
     test.ok(!fs.existsSync(srcDir + '/client.js'))
@@ -88,18 +93,19 @@ exports['should remove the source files'] = function (test) {
     test.done();
 }
 
-exports['should edit config.xml'] = function (test) {   
+exports['should edit config.xml'] = function (test) {
     // run the platform-specific function
-    blackberry.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et);
-    
-    blackberry.handlePlugin('uninstall', test_project_dir, test_plugin_dir, plugin_et);
-    
+    silent(function() {
+        plugman.handlePlugin('install', 'blackberry', test_project_dir, 'cordova.echo', plugins_dir);
+        plugman.handlePlugin('uninstall', 'blackberry', test_project_dir, 'cordova.echo', plugins_dir);
+    });
+
     var configXmlPath = path.join(test_project_dir, 'config.xml');
     var pluginsTxt = fs.readFileSync(configXmlPath, 'utf-8'),
         pluginsDoc = new et.ElementTree(et.XML(pluginsTxt)),
         expected = 'feature[@id="cordova.echo"]';
+
     test.ok(!pluginsDoc.find(expected));
-    
     test.done();
 }
 

@@ -25,7 +25,7 @@ var fs = require('fs')
   , shell = require('shelljs')
   , et = require('elementtree')
   , ios = require(path.join(__dirname, '..', 'platforms', 'ios'))
-
+  , plugin_loader = require('../util/plugin_loader')
   , test_dir = path.join(osenv.tmpdir(), 'test_plugman')
   , test_project_dir = path.join(test_dir, 'projects', 'ios-plist')
   , test_plugin_dir = path.join(test_dir, 'plugins', 'ChildBrowser')
@@ -72,33 +72,47 @@ exports['should install webless plugin'] = function (test) {
 }
 
 exports['should move the js file'] = function (test) {
+    var pluginsPath = path.join(test_dir, 'plugins');
+    var wwwPath = path.join(test_dir, 'projects', 'ios-plist', 'www');
+    var jsPath = path.join(test_dir, 'projects', 'ios-plist', 'www', 'plugins', 'com.phonegap.plugins.childbrowser', 'www', 'childbrowser.js');
+    
     // run the platform-specific function
     ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
+    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'ios');
 
-    var jsPath = path.join(test_dir, 'projects', 'ios-plist', 'www', 'childbrowser.js');
     test.ok(fs.existsSync(jsPath));
     test.ok(fs.statSync(jsPath).isFile());
     test.done();
 }
 
 exports['should move the source files'] = function (test) {
+    var pluginsPath = path.join(test_dir, 'plugins');
+    var wwwPath = path.join(test_dir, 'projects', 'ios-plist', 'www');
+    var preserveDirPath = path.join(srcDir, 'src', 'ios');
+    
     // run the platform-specific function
     ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
-
+    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'ios');
+    
     test.ok(fs.existsSync(srcDir + '/ChildBrowserCommand.m'))
     test.ok(fs.existsSync(srcDir + '/ChildBrowserViewController.m'))
-    test.ok(fs.existsSync(srcDir + '/preserveDirs/PreserveDirsTest.m'))
+    test.ok(fs.existsSync(preserveDirPath + '/preserveDirs/PreserveDirsTest.m'))
     test.ok(fs.existsSync(srcDir + '/targetDir/TargetDirTest.m'))
     test.done();
 }
 
 exports['should move the header files'] = function (test) {
+    var pluginsPath = path.join(test_dir, 'plugins');
+    var wwwPath = path.join(test_dir, 'projects', 'ios-plist', 'www');
+    var preserveDirPath = path.join(srcDir, 'src', 'ios');
+    
     // run the platform-specific function
     ios.handlePlugin('install', test_project_dir, test_plugin_dir, plugin_et, { APP_ID: 12345 });
-
+    plugin_loader.handlePrepare(test_project_dir, pluginsPath, wwwPath, 'ios');
+    
     test.ok(fs.statSync(srcDir + '/ChildBrowserCommand.h'));
     test.ok(fs.statSync(srcDir + '/ChildBrowserViewController.h'));
-    test.ok(fs.statSync(srcDir + '/preserveDirs/PreserveDirsTest.h'));
+    test.ok(fs.statSync(preserveDirPath + '/preserveDirs/PreserveDirsTest.h'));
     test.ok(fs.statSync(srcDir + '/targetDir/TargetDirTest.h'));
     test.done();
 }
