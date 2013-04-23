@@ -25,7 +25,7 @@ var fs = require('fs')
   , path = require('path')
   , et = require('elementtree');
 
-module.exports = {
+exports = module.exports = {
     moveProjFile: function(origFile, projPath, callback) {
         var src = path.resolve(projPath, origFile)
           , dest = src.replace('.orig', '');
