@@ -6,9 +6,13 @@ var android = require('../../src/platforms/android'),
     et      = require('elementtree'),
     os      = require('osenv'),
     temp    = path.join(os.tmpdir(), 'plugman'),
+    xml_helpers = require('../../src/util/xml-helpers'),
+    plugins_module = require('../../src/util/plugins'),
     dummyplugin = path.join(__dirname, '..', 'plugins', 'DummyPlugin'),
     faultyplugin = path.join(__dirname, '..', 'plugins', 'FaultyPlugin'),
-    android_one_project = path.join(__dirname, '..', 'projects', 'android_one', '*');
+    variableplugin = path.join(__dirname, '..', 'plugins', 'VariablePlugin'),
+    android_one_project = path.join(__dirname, '..', 'projects', 'android_one', '*'),
+    android_two_project = path.join(__dirname, '..', 'projects', 'android_two', '*');
 
 var xml_path     = path.join(dummyplugin, 'plugin.xml')
   , xml_text     = fs.readFileSync(xml_path, 'utf-8')
@@ -29,6 +33,14 @@ platformTag = plugin_et.find('./platform[@name="android"]');
 var invalid_source = platformTag.findall('./source-file');
 var faulty_id = plugin_et._root.attrib['id'];
 
+xml_path  = path.join(variableplugin, 'plugin.xml')
+xml_text  = fs.readFileSync(xml_path, 'utf-8')
+plugin_et = new et.ElementTree(et.XML(xml_text));
+platformTag = plugin_et.find('./platform[@name="android"]');
+
+var variable_id = plugin_et._root.attrib['id'];
+var variable_configs = platformTag.findall('./config-file');
+
 function copyArray(arr) {
     return Array.prototype.slice.call(arr, 0);
 }
@@ -47,12 +59,15 @@ describe('android project handler', function() {
     describe('installation', function() {
         beforeEach(function() {
             shell.mkdir('-p', temp);
-            shell.cp('-rf', android_one_project, temp);
         });
         afterEach(function() {
             shell.rm('-rf', temp);
         });
         describe('of <source-file> elements', function() {
+            beforeEach(function() {
+                shell.cp('-rf', android_one_project, temp);
+            });
+
             it('should copy stuff from one location to another by calling common.straightCopy', function() {
                 var source = copyArray(valid_source);
                 var s = spyOn(common, 'straightCopy');
@@ -78,26 +93,48 @@ describe('android project handler', function() {
                 }).toThrow('"' + target + '" already exists!');
             });
         });
-        describe('of <library-file> elements', function() {
-            it('should copy stuff from one location to another by calling common.straightCopy');
-            it('should throw if source file cannot be found');
-            it('should throw if target file already exists');
-        });
         describe('of <config-file> elements', function() {
-            it('should only target config.xml if that is applicable');
-            it('should only target plugins.xml if that is applicable');
-            it('should call into xml helper\'s graftXML');
+            it('should only target config.xml if that is applicable', function() {
+                var config = copyArray(configChanges);
+                shell.cp('-rf', android_two_project, temp);
+                var s = spyOn(xml_helpers, 'parseElementtreeSync').andCallThrough();
+                android.install(config, dummy_id, temp, dummyplugin, {});
+                expect(s).toHaveBeenCalledWith(path.join(temp, 'res', 'xml', 'config.xml'));
+                expect(s).not.toHaveBeenCalledWith(path.join(temp, 'res', 'xml', 'plugins.xml'));
+            });
+            it('should only target plugins.xml if that is applicable', function() {
+                shell.cp('-rf', android_one_project, temp);
+                var config = copyArray(configChanges);
+                var s = spyOn(xml_helpers, 'parseElementtreeSync').andCallThrough();
+                android.install(config, dummy_id, temp, dummyplugin, {});
+                expect(s).not.toHaveBeenCalledWith(path.join(temp, 'res', 'xml', 'config.xml'));
+                expect(s).toHaveBeenCalledWith(path.join(temp, 'res', 'xml', 'plugins.xml'));
+            });
+            it('should call into xml helper\'s graftXML', function() {
+                shell.cp('-rf', android_one_project, temp);
+                var config = copyArray(configChanges);
+                var s = spyOn(xml_helpers, 'graftXML').andReturn(true);
+                android.install(config, dummy_id, temp, dummyplugin, {});
+                expect(s).toHaveBeenCalled();
+            });
         });
-        it('should interpolate variables properly');
+        it('should call into plugins\'s searchAndReplace to interpolate variables properly', function() {
+            shell.cp('-rf', android_one_project, temp);
+            var config = copyArray(variable_configs);
+            var s = spyOn(plugins_module, 'searchAndReplace');
+            var vars = {
+                'API_KEY':'batcountry'
+            };
+            android.install(config, variable_id, temp, variableplugin, vars);
+            expect(s).toHaveBeenCalledWith(path.resolve(temp, 'AndroidManifest.xml'), vars);
+            expect(s).toHaveBeenCalledWith(path.resolve(temp, 'res', 'xml', 'plugins.xml'), vars);
+        });
     });
 
     describe('uninstallation', function() {
         describe('of <source-file> elements', function() {
             it('should remove stuff by calling common.deleteJava');
             it('should remove empty dirs from java src dir heirarchy');
-        });
-        describe('of <library-file> elements', function() {
-            it('should remove stuff using fs.unlinkSync');
         });
         describe('of <config-file> elements', function() {
             it('should only target config.xml if that is applicable');

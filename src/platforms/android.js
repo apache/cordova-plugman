@@ -22,7 +22,7 @@ var fs = require('fs')  // use existsSync in 0.6.x
    , shell = require('shelljs')
    , common = require('./common')
    , getConfigChanges = require(path.join(__dirname, '..', 'util', 'config-changes'))
-   , searchAndReplace = require(path.join(__dirname, '..', 'util', 'search-and-replace'))
+   , plugins_module = require(path.join(__dirname, '..', 'util', 'plugins'))
    , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'));
 
 module.exports = {
@@ -64,15 +64,6 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                         common.deleteJava(project_dir, destFile);
                     }
                     break;
-                case 'library-file':
-                    var destFile = path.join(mod.attrib['target-dir'], path.basename(mod.attrib['src']));
-
-                    if (action == 'install') {
-                        common.straightCopy(plugin_dir, mod.attrib['src'], project_dir, destFile);
-                    } else {
-                        fs.unlinkSync(path.resolve(project_dir, destFile));
-                    }
-                    break;
                 case 'config-file':
                     // Only modify config files that exist.
                     var config_file = path.resolve(project_dir, mod.attrib['target']);
@@ -83,11 +74,11 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
 
                         if (action == 'install') {
                             if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
-                                throw new Error('failed to add config-file children to "' + selector + '" to "'+ filename + '"');
+                                throw new Error('failed to add config-file children to "' + selector + '" to "'+ config_file + '"');
                             }
                         } else {
                             if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
-                                throw new Error('failed to remove config-file children from "' + selector + '" from "' + filename + '"');
+                                throw new Error('failed to remove config-file children from "' + selector + '" from "' + config_file + '"');
                             }
                         }
 
@@ -123,8 +114,8 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
         variables['PACKAGE_NAME'] = androidPackageName(project_dir);
         var config_filename = path.resolve(project_dir, 'res', 'xml', 'config.xml');
         if (!fs.existsSync(config_filename)) config_filename = path.resolve(project_dir, 'res', 'xml', 'plugins.xml');
-        searchAndReplace(config_filename, variables);
-        searchAndReplace(path.resolve(project_dir, 'AndroidManifest.xml'), variables);
+        plugins_module.searchAndReplace(config_filename, variables);
+        plugins_module.searchAndReplace(path.resolve(project_dir, 'AndroidManifest.xml'), variables);
     }
 
     if (callback) callback();
@@ -134,8 +125,7 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
 // @param string project_dir the absolute path to the directory containing the project
 // @return string the name of the package
 function androidPackageName(project_dir) {
-    var mDoc = xml_helpers.parseElementtreeSync(
-            path.resolve(project_dir, 'AndroidManifest.xml'));
+    var mDoc = xml_helpers.parseElementtreeSync(path.resolve(project_dir, 'AndroidManifest.xml'));
 
     return mDoc._root.attrib['package'];
 }

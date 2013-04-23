@@ -73,7 +73,6 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
     // parse plugin.xml into transactions
     var txs = [];
     var sourceFiles = platformTag.findall('./source-file'),
-        libFiles = platformTag.findall('./library-file'),
         headerFiles = platformTag.findall('./header-file'),
         resourceFiles = platformTag.findall('./resource-file'),
         assets = platformTag.findall('./asset'),
@@ -83,7 +82,7 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
 
     assets = assets.concat(plugin_et.findall('./asset'));
 
-    txs = txs.concat(sourceFiles, libFiles, headerFiles, resourceFiles, frameworks, configChanges, assets, pluginsPlist);
+    txs = txs.concat(sourceFiles, headerFiles, resourceFiles, frameworks, configChanges, assets, pluginsPlist);
 
     // pass platform-specific transactions into install
     handler.install(txs, plugin_id, project_dir, plugin_dir, filtered_variables, function(err) {

@@ -27,6 +27,7 @@ var http = require('http'),
     remote = require(path.join(__dirname, '..', '..', 'config', 'remote'));
 
 module.exports = {
+    searchAndReplace:require('./search-and-replace'),
     // Fetches plugin information from remote server
     getPluginInfo:function(plugin_name, callback) {
         var responded = false;

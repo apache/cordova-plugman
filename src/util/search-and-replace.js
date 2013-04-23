@@ -22,16 +22,16 @@ var glob = require('glob'),
     fs = require('fs');
 
 module.exports = function searchAndReplace(srcGlob, variables) {
-  var files = glob.sync(srcGlob);
-  for (var i in files) {
-    var file = files[i];
-    if (fs.lstatSync(file).isFile()) {
-      var contents = fs.readFileSync(file, "utf-8");
-      for (var key in variables) {
-          var regExp = new RegExp("\\$" + key, "g");
-          contents = contents.replace(regExp, variables[key]);
-      }
-      fs.writeFileSync(file, contents);
+    var files = glob.sync(srcGlob);
+    for (var i in files) {
+        var file = files[i];
+        if (fs.lstatSync(file).isFile()) {
+            var contents = fs.readFileSync(file, "utf-8");
+            for (var key in variables) {
+                var regExp = new RegExp("\\$" + key, "g");
+                contents = contents.replace(regExp, variables[key]);
+            }
+            fs.writeFileSync(file, contents);
+        }
     }
-  }
 }
