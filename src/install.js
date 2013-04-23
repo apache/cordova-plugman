@@ -78,9 +78,10 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
         resourceFiles = platformTag.findall('./resource-file'),
         assets = plugin_et.findall('./asset'),
         frameworks = platformTag.findall('./framework'),
+        pluginsPlist = platformTag.findall('./plugins-plist'),
         configChanges = platformTag.findall('./config-file');
 
-    txs = txs.concat(sourceFiles, libFiles, headerFiles, resourceFiles, frameworks, configChanges, assets);
+    txs = txs.concat(sourceFiles, libFiles, headerFiles, resourceFiles, frameworks, configChanges, assets, pluginsPlist);
 
     // pass platform-specific transactions into install
     handler.install(txs, plugin_id, project_dir, plugin_dir, filtered_variables, function(err) {

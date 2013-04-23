@@ -83,11 +83,11 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
 
                         if (action == 'install') {
                             if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
-                                throw new Error('failed to add config-file children to "' + filename + '"');
+                                throw new Error('failed to add config-file children to "' + selector + '" to "'+ filename + '"');
                             }
                         } else {
                             if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
-                                throw new Error('failed to remove config-file children from "' + filename + '"');
+                                throw new Error('failed to remove config-file children from "' + selector + '" from "' + filename + '"');
                             }
                         }
 
