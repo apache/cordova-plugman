@@ -76,10 +76,12 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
         libFiles = platformTag.findall('./library-file'),
         headerFiles = platformTag.findall('./header-file'),
         resourceFiles = platformTag.findall('./resource-file'),
-        assets = plugin_et.findall('./asset'),
+        assets = platformTag.findall('./asset'),
         frameworks = platformTag.findall('./framework'),
         pluginsPlist = platformTag.findall('./plugins-plist'),
         configChanges = platformTag.findall('./config-file');
+
+    assets = assets.concat(plugin_et.findall('./asset'));
 
     txs = txs.concat(sourceFiles, libFiles, headerFiles, resourceFiles, frameworks, configChanges, assets, pluginsPlist);
 
