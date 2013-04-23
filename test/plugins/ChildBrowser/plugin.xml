@@ -29,7 +29,7 @@
     <asset src="www/childbrowser" target="childbrowser" />
 
     <access origin="build.phonegap.com" />
-    <access origin="$APP_ID.s3.amazonaws.com" />
+    <access origin="s3.amazonaws.com" />
 
     <!-- android -->
     <platform name="android">
@@ -70,6 +70,19 @@
                 value="ChildBrowserCommand" />
         </config-file>
 
+        <config-file target="*-Info.plist" parent="AppId">
+            <string>$APP_ID</string>
+        </config-file>
+        
+        <config-file target="*-Info.plist" parent="CFBundleURLTypes">
+            <array>
+              <dict>
+                <key>PackageName</key>
+                <string>$PACKAGE_NAME</string>
+              </dict>
+            </array>
+        </config-file>
+
         <resource-file src="ChildBrowser.bundle" />
         <resource-file src="ChildBrowserViewController.xib" />
 
@@ -87,5 +100,39 @@
         <framework src="libsqlite3.dylib" />
         <framework src="social.framework" weak="true" />
         <framework src="music.framework" weak="rabbit" />
+    </platform>
+
+    <!-- wp7 -->
+    <platform name="wp7">
+        <resource-file src="src\wp7\Images\appbar.back.rest.png" />
+        <config-file target="config.xml" parent="/widget/plugins">
+            <plugin name="ChildBrowser"
+                value="ChildBrowser"/>
+        </config-file>
+
+        <source-file src="src\wp7\ChildBrowserCommand.cs"
+                     target-dir="Plugins\" />
+
+        <!-- modify the project file to include the added files -->
+        <config-file target=".csproj" parent=".">  
+        </config-file> 
+
+    </platform>
+
+    <!-- wp8 -->
+    <platform name="wp8">
+        <resource-file src="src\wp7\Images\appbar.back.rest.png" />
+        <config-file target="config.xml" parent="/widget/plugins">
+            <plugin name="ChildBrowser"
+                value="ChildBrowser"/>
+        </config-file>
+
+        <source-file src="src\wp7\ChildBrowserCommand.cs"
+                     target-dir="Plugins\" />
+
+        <!-- modify the project file to include the added files -->
+        <config-file target=".csproj" parent=".">  
+        </config-file> 
+
     </platform>
 </plugin>
