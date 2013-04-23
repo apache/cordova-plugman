@@ -81,7 +81,7 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                         var selector = mod.attrib["parent"];
                         var children = mod.findall('*');
 
-                        if( action == 'install') {
+                        if (action == 'install') {
                             if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
                                 throw new Error('failed to add config-file children to "' + filename + '"');
                             }
