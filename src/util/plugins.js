@@ -54,7 +54,7 @@ module.exports = {
         setTimeout(function() {
             if (!responded) {
                 console.log('timed out');
-                error('timed out')
+                callback('timed out')
             }
         }, 3000);
     },

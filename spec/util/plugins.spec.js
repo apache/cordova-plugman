@@ -27,52 +27,38 @@ var http   = require('http'),
 
 describe('plugins', function(){
     describe('server', function(){
-        it('should be able to retrieve information for an existing plugin', function(done){
-            plugins.getPluginInfo('ChildBrowser', function(error, plugin) {  
-                expect(error).toBe(null);
-                expect(plugin).not.toBe(null);
-                expect(plugin.url).toBe('https://github.com/imhotep/ChildBrowser');
-                expect(plugin.name).toBe('ChildBrowser');
-                expect(plugin.description).toBe('ChildBrowser plugin');
-                done();
-            });
+        it('should receive the correct request when searching for a plugin', function(){
+            var mySpy = spyOn(http, 'get').andCallThrough();
+            // this clears the timeout in plugins.js
+            var spyTimeout = spyOn(global, 'setTimeout');
+            
+            plugins.getPluginInfo('ChildBrowser', function() {});
+            
+            expect(mySpy).toHaveBeenCalled();
+            expect(mySpy.argsForCall[0][0]).toBe('http://plugins.cordova.io/cordova_plugins/_design/cordova_plugins/_view/by_name?key="ChildBrowser"');
+        });
+
+        it('should receive the correct request when searching for a list of plugins', function(){
+            var mySpy = spyOn(http, 'get').andCallThrough();
+            // this clears the timeout in plugins.js
+            var spyTimeout = spyOn(global, 'setTimeout');
+            
+            plugins.listAllPlugins(function(){});
+            
+            expect(mySpy).toHaveBeenCalled();
+            expect(mySpy.argsForCall[0][0]).toBe('http://plugins.cordova.io/cordova_plugins/_design/cordova_plugins/_view/by_name');
         });
         
-        it('should error if searching for a non-existant plugin', function(done){
-            plugins.getPluginInfo('MEAT_POPSICLE', function(error, plugin) { 
-                expect(error).not.toBe(null);
-                expect(error).toBe('Could not find information on MEAT_POPSICLE plugin');
-                done();
-            });        
+        it('should be able to receive the correct git clone arguments', function(){
+            var mySpy = spyOn(plugins, 'clonePluginGitRepo');
+            var plugin_git_url = 'https://github.com/imhotep/ChildBrowser'
+            var myFunction = function(){};
+            
+            plugins.clonePluginGitRepo(plugin_git_url, temp, myFunction);
+            
+             expect(mySpy).toHaveBeenCalled();
+             expect(mySpy).toHaveBeenCalledWith(plugin_git_url, temp, myFunction);
         });
-        
-        it('should list all plugins', function(done){
-            plugins.listAllPlugins(function(plugin){
-                expect(plugin).not.toBe(null);
-                expect(plugin.length).toBeGreaterThan(0);
-                done();
-            });
-        });
-        
-        it('should be able to clone to local from url', function(done){
-            plugins.getPluginInfo('ChildBrowser', function(error, plugin) {  
-                shell.mkdir('-p', temp);
-                plugins.clonePluginGitRepo(plugin.url, temp, function(error){
-                    expect(error).toBe(null);
-                    done();
-                });       
-                shell.rm('-rf', temp);
-            });
-        });
-        
-        it('should error if cloning a non-existant plugin', function(done){
-            shell.mkdir('-p', temp);
-            plugins.clonePluginGitRepo('MEAT_POPSICLE', temp, function(error){
-                expect(error).not.toBe(null);
-                done();      
-            });
-            shell.rm('-rf', temp);
-        });       
     });
 });
 
