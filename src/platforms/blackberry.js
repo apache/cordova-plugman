@@ -26,160 +26,85 @@ var fs = require('fs')  // use existsSync in 0.6.x
    , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'));
 
 module.exports = {
-    handleInstall:function(project_dir, plugin_dir, plugin_et, variables) {
-        handlePlugin('install', project_dir, plugin_dir, plugin_et, variables);
+    install:function(transactions, plugin_id, project_dir, plugin_dir, variables, callback) {
+        handlePlugin('install', plugin_id, transactions, project_dir, plugin_dir, variables, callback);
     },
-    handleUninstall:function(project_dir, plugin_dir, plugin_et, variables) {
-        handlePlugin('uninstall', project_dir, plugin_dir, plugin_et, variables);
-    },
-    forceInstall:function(project_dir, plugin_dir, plugin_et, variables) {
-        handlePlugin('force-install', project_dir, plugin_dir, plugin_et, variables);
-    },
-    forceUninstall:function(project_dir, plugin_dir, plugin_et, variables) {
-        handlePlugin('force-uninstall', project_dir, plugin_dir, plugin_et, variables);
+    uninstall:function(transactions, plugin_id, project_dir, plugin_dir, callback) {
+        handlePlugin('uninstall', plugin_id, transactions, project_dir, plugin_dir, null, callback);
     },
     www_dir:function(project_dir) {
         return path.join(project_dir, 'www');
     }
 };
 
-function handlePlugin(action, project_dir, plugin_dir, plugin_et, variables) {
-    var plugin_id = plugin_et._root.attrib['id']
-      , version = plugin_et._root.attrib['version']
-      , external_hosts = []
-      , platformTag = plugin_et.find('./platform[@name="blackberry"]')
+function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables, callback) {
+    var completed = [];
+    while(txs.length) {
+        var mod = txs.shift();
+        try {
+            switch(mod.tag.toLowerCase()) {
+                case 'source-file':
+                    var destFile = path.join(mod.attrib['target-dir'], path.basename(mod.attrib['src']));
 
-    if (!platformTag) {
-        // Either this plugin doesn't support this platform, or it's a JS-only plugin.
-        // Either way, return now.
-        return;
-    }
-
-    var sourceFiles = platformTag.findall('./source-file')
-      , libFiles = platformTag.findall('./library-file')
-      , configChanges = getConfigChanges(platformTag);
-    // find which config-files we're interested in
-    Object.keys(configChanges).forEach(function (configFile) {
-        if (!fs.existsSync(path.resolve(project_dir, configFile))) {
-            delete configChanges[configFile];
-        }
-    });
-
-    // collision detection 
-    if(action.match(/force-/) == null) {
-      if(action == "install" && pluginInstalled(plugin_et, project_dir)) {
-          throw new Error("Plugin "+plugin_id+" already installed");
-      } else if(action == "uninstall" && !pluginInstalled(plugin_et, project_dir)) {
-          throw new Error("Plugin "+plugin_id+" not installed");
-      }
-    } else {
-      action = action.replace('force-', '');
-    }
-    
-    // move source files
-    sourceFiles.forEach(function (sourceFile) {
-        var srcDir = path.resolve(project_dir,
-                                sourceFile.attrib['target-dir'])
-          , destFile = path.resolve(srcDir,
-                                path.basename(sourceFile.attrib['src']));
-
-        if (action == 'install') {
-            shell.mkdir('-p', srcDir);
-            var srcFile = srcPath(plugin_dir, sourceFile.attrib['src']);
-            shell.cp(srcFile, destFile);
-        } else {
-            fs.unlinkSync(destFile);
-            // check if directory is empty
-            var curDir = srcDir;
-            while(curDir !== path.join(project_dir, 'src')) {
-                if(fs.readdirSync(curDir).length == 0) {
-                    fs.rmdirSync(curDir);
-                    curDir = path.resolve(curDir, '..');
-                } else {
-                    // directory not empty...do nothing
+                    if (action == 'install') {
+                        common.straightCopy(plugin_dir, mod.attrib['src'], project_dir, destFile);
+                    } else {
+                        common.deleteJava(project_dir, destFile);
+                    }
                     break;
-                }
+                case 'library-file':
+                    var destFile = path.join(mod.attrib['target-dir'], path.basename(mod.attrib['src']));
+
+                    if (action == 'install') {
+                        common.straightCopy(plugin_dir, mod.attrib['src'], project_dir, destFile);
+                    } else {
+                        fs.unlinkSync(path.resolve(project_dir, destFile));
+                    }
+                    break;
+                case 'config-file':
+                    // Only modify config files that exist.
+                    var config_file = path.resolve(project_dir, mod.attrib['target']);
+                    if (fs.existsSync(config_file)) {
+                        var xmlDoc = xml_helpers.parseElementtreeSync(config_file);
+                        var selector = mod.attrib["parent"];
+                        var children = mod.findall('*');
+
+                        if (action == 'install') {
+                            if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
+                                throw new Error('failed to add config-file children to "' + filename + '"');
+                            }
+                        } else {
+                            if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
+                                throw new Error('failed to remove config-file children from "' + filename + '"');
+                            }
+                        }
+
+                        var output = xmlDoc.write({indent: 4});
+                        fs.writeFileSync(config_file, output);
+                    }
+                    break;
+                case 'asset':
+                    if (action == 'uninstall') {
+                        var target = mod.attrib.target;
+                        shell.rm('-rf', path.resolve(module.exports.www_dir(), target));
+                        shell.rm('-rf', path.resolve(module.exports.www_dir(), 'plugins', plugin_id));
+                    }
+                    break;
+                default:
+                    throw new Error('Unrecognized plugin.xml element/action in blackberry installer: ' + mod.tag);
+                    break;
             }
+        } catch(e) {
+            // propagate error up and provide completed tx log
+            e.transactions = {
+                executed:completed,
+                incomplete:txs.unshift(mod)
+            };
+            if (callback) callback(e);
+            else throw e;
+            return;
         }
-    })
-
-    // move library files
-    libFiles.forEach(function (libFile) {
-        var libDir = path.resolve(project_dir,
-                                libFile.attrib['target-dir'])
-
-        if (action == 'install') {
-            shell.mkdir('-p', libDir);
-
-            var src = path.resolve(plugin_dir,
-                                        libFile.attrib['src']),
-                dest = path.resolve(libDir,
-                                path.basename(libFile.attrib['src']));
-            
-            shell.cp(src, dest);
-        } else {
-            var destFile = path.resolve(libDir,
-                            path.basename(libFile.attrib['src']));
-
-            fs.unlinkSync(destFile);
-            // check if directory is empty
-            var files = fs.readdirSync(libDir);
-            if(files.length == 0) {
-                shell.rm('-rf', libDir);
-            }
-        }
-    })
-
-
-    // edit configuration files
-    Object.keys(configChanges).forEach(function (filename) {
-        var filepath = path.resolve(project_dir, filename),
-            xmlDoc = xml_helpers.parseElementtreeSync(filepath),
-            output;
-
-        configChanges[filename].forEach(function (configNode) {
-            var selector = configNode.attrib["parent"],
-                children = configNode.findall('*');
-
-            if( action == 'install') {
-                if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
-                    throw new Error('failed to add children to ' + filename);
-                }
-            } else {
-                if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
-                    throw new Error('failed to remove children from' + filename);
-                }
-            }
-        });
-
-        output = xmlDoc.write({indent: 4});
-        fs.writeFileSync(filepath, output);
-    });
-
-    // Remove all assets and JS modules installed by this plugin.
-    if (action == 'uninstall') {
-        var assets = plugin_et.findall('./asset');
-        assets && assets.forEach(function(asset) {
-            var target = asset.attrib.target;
-            shell.rm('-rf', path.join(project_dir, 'www', target));
-        });
-
-        shell.rm('-rf', path.join(project_dir, 'www', 'plugins', plugin_id));
+        completed.push(mod);
     }
+    if (callback) callback();
 }
-
-
-function srcPath(pluginPath, filename) {
-    return path.resolve(pluginPath, filename);
-}
-
-function pluginInstalled(plugin_et, project_dir) {
-    var config_tag = plugin_et.find('./platform[@name="blackberry"]/config-file[@target="config.xml"]/feature');
-    if (!config_tag) {
-        return false;
-    }
-    var plugin_name = config_tag.attrib.id;
-    return (fs.readFileSync(path.resolve(project_dir, 'config.xml'), 'utf8')
-           .match(new RegExp(plugin_name, "g")) != null);
-}
-
