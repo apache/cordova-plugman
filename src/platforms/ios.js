@@ -86,7 +86,7 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
     var projectPListPath = project_plists[0];
 
     // for certain config changes, we need to know if plugins-plist elements are present
-    var plistEle = txs.filter(function(t) { return t.tag.toLowerCase() == 'plugins-plist'; });
+    var plistEle = txs.filter(function(t) { return t.tag.toLowerCase() == 'plugins-plist'; })[0];
 
     var completed = [];
     while(txs.length) {
@@ -145,7 +145,7 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                     if (mod.attrib['target'] == base_config_path) {
                         // edit configuration files
                         var xmlDoc = xml_helpers.parseElementtreeSync(config_file),
-                            pListOnly = plistEle;
+                            pListOnly = !!plistEle;
                         
                         if (mod.find("plugin")) pListOnly = false;
 
