@@ -19,10 +19,11 @@ module.exports = function installPlugin(platform, project_dir, name, plugins_dir
     // Check that the plugin has already been fetched.
     if (!fs.existsSync(plugin_dir)) {
         // if plugin doesnt exist, use fetch to get it.
-        require('../plugman').fetch(name, plugins_dir, false, function(err) {
+        require('../plugman').fetch(name, plugins_dir, false, function(err, plugin_dir) {
             if (err) {
                 callback(err);
             } else {
+                // update ref to plugin_dir after successful fetch, via fetch callback
                 runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, callback);
             }
         });
@@ -49,7 +50,7 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
             missing_vars.push(key)
         else
             filtered_variables[key] = cli_variables[key]
-    })
+    });
     if (missing_vars.length > 0) {
         var err = new Error('Variable(s) missing: ' + missing_vars.join(", "));
         if (callback) {

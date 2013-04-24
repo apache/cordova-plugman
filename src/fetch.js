@@ -29,6 +29,6 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, link, callback) {
             shell.cp('-R', plugin_dir, plugins_dir); // Yes, not dest.
         }
 
-        if (callback) callback(null);
+        if (callback) callback(null, dest);
     }
 };

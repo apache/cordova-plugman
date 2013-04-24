@@ -91,17 +91,18 @@ module.exports = {
         var plugin_dir = path.join(plugins_dir, basename);
 
         // trash it if it already exists (something went wrong before probably)
+        // TODO: is this the correct behaviour?
         if(fs.existsSync(plugin_dir)) {
             shell.rm('-rf', plugin_dir);
         }
 
-        shell.exec('git clone ' + plugin_git_url + ' ' + plugin_dir + ' 2>&1 1>/dev/null', {silent: true, async:true}, function(code, output) {
+        shell.exec('git clone ' + plugin_git_url + ' ' + plugin_dir, {silent: true, async:true}, function(code, output) {
             if (code > 0) {
                 var err = new Error('failed to get the plugin via git from URL '+ plugin_git_url);
                 if (callback) callback(err)
                 else throw err;
             } else {
-                if (callback) callback(null);
+                if (callback) callback(null, plugin_dir);
             }
         });
     }
