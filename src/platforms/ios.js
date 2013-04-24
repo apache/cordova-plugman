@@ -161,13 +161,12 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                     if (mod.attrib['target'] == config_filename) {
                         // edit configuration files
                         var xmlDoc = xml_helpers.parseElementtreeSync(config_file);
-                        
 
                         var selector = mod.attrib["parent"],
                             children = mod.findall('*');
                         if( action == 'install') {
                             if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
-                                throw new Error('failed to add config-file children to "' + selector + '" to "' + config_file + '"');
+                                throw new Error('failed to add config-file children to xpath "' + selector + '" in "' + config_file + '" because xpath selector could not be resolved.');
                             }
                         } else {
                             if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {

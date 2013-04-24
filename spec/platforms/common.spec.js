@@ -35,7 +35,9 @@ describe('common platform handler', function() {
         
         it('should not throw if path exists', function(){
             shell.mkdir('-p', test_dir);
-            expect(function(){common.resolveSrcPath(test_dir)}).not.toThrow();
+            var target = path.join(test_dir, 'somefile');
+            fs.writeFileSync(target, '80085', 'utf-8');
+            expect(function(){common.resolveSrcPath(test_dir, 'somefile')}).not.toThrow();
             shell.rm('-rf', test_dir);
         });
     });
@@ -48,7 +50,7 @@ describe('common platform handler', function() {
         });
         
         it('should not throw if path cannot be resolved', function(){
-            expect(function(){common.resolveTargetPath(test_dir)}).not.toThrow();
+            expect(function(){common.resolveTargetPath(test_dir, 'somefile')}).not.toThrow();
         });
     });
 
