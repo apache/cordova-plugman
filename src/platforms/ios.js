@@ -106,19 +106,11 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                         shell.mkdir('-p', targetDir);
                         shell.cp(srcFile, destFile);
                     } else {
+                        // TODO: doesnt preserve-dirs affect what the originally-added path to xcodeproj (see above) affect how we should call remove too?
                         xcodeproj.removeSourceFile(path.join('Plugins', path.basename(src)));
                         shell.rm('-rf', destFile);
                         // TODO: is this right, should we check if dir is empty?
                         shell.rm('-rf', targetDir);    
-                    }
-                    break;
-                case 'library-file':
-                    var destFile = path.join(mod.attrib['target-dir'], path.basename(mod.attrib['src']));
-
-                    if (action == 'install') {
-                        common.straightCopy(plugin_dir, mod.attrib['src'], project_dir, destFile);
-                    } else {
-                        fs.unlinkSync(path.resolve(project_dir, destFile));
                     }
                     break;
                 case 'plugins-plist':
@@ -208,6 +200,7 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                         shell.mkdir('-p', targetDir);
                         shell.cp(srcFile, destFile);
                     } else {
+                        // TODO: doesnt preserve-dirs affect what the originally-added path to xcodeproj (see above) affect how we should call remove too?
                         xcodeproj.removeHeaderFile(path.join('Plugins', path.basename(src)));
                         shell.rm('-rf', destFile);
                         // TODO: again.. is this right? same as source-file
