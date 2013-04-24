@@ -56,9 +56,9 @@ describe('blackberry project handler', function() {
             shell.rm('-rf', temp);
         });
         describe('of <source-file> elements', function() {
-            it('should copy stuff from one location to another by calling common.straightCopy', function() {
+            it('should copy stuff from one location to another by calling common.copyFile', function() {
                 var source = copyArray(valid_source);
-                var s = spyOn(common, 'straightCopy');
+                var s = spyOn(common, 'copyFile');
                 blackberry.install(source, dummy_id, temp, dummyplugin, {});
                 expect(s).toHaveBeenCalledWith(dummyplugin, 'src/blackberry/client.js', temp, 'ext-qnx/cordova.echo/client.js');
                 expect(s).toHaveBeenCalledWith(dummyplugin, 'src/blackberry/index.js', temp, 'ext-qnx/cordova.echo/index.js');

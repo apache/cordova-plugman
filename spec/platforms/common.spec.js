@@ -11,11 +11,11 @@ describe('common platform handler', function() {
         it('should not throw if path cannot be resolved');
     });
 
-    describe('straightCopy', function() {
+    describe('copyFile', function() {
         it('should throw if source path cannot be resolved');
         it('should throw if target path exists');
         it('should call mkdir -p on target path');
-        it('should call cp -f with source/dest paths');
+        it('should call cp with source/dest paths');
     });
 
     describe('deleteJava', function() {

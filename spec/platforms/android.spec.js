@@ -69,9 +69,9 @@ describe('android project handler', function() {
                 shell.cp('-rf', android_one_project, temp);
             });
 
-            it('should copy stuff from one location to another by calling common.straightCopy', function() {
+            it('should copy stuff from one location to another by calling common.copyFile', function() {
                 var source = copyArray(valid_source);
-                var s = spyOn(common, 'straightCopy');
+                var s = spyOn(common, 'copyFile');
                 android.install(source, dummy_id, temp, dummyplugin, {});
                 expect(s).toHaveBeenCalledWith(dummyplugin, 'src/android/DummyPlugin.java', temp, 'src/com/phonegap/plugins/dummyplugin/DummyPlugin.java');
             });

@@ -59,7 +59,7 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                     var destFile = path.join(mod.attrib['target-dir'], path.basename(mod.attrib['src']));
 
                     if (action == 'install') {
-                        common.straightCopy(plugin_dir, mod.attrib['src'], project_dir, destFile);
+                        common.copyFile(plugin_dir, mod.attrib['src'], project_dir, destFile);
                     } else {
                         common.deleteJava(project_dir, destFile);
                     }

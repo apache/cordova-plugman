@@ -18,11 +18,11 @@ module.exports = {
         else return full_path;
     },
     // Many times we simply need to copy shit over, knowing if a source path doesnt exist or if a target path already exists
-    straightCopy:function(plugin_dir, src, project_dir, dest) {
+    copyFile:function(plugin_dir, src, project_dir, dest) {
         src = module.exports.resolveSrcPath(plugin_dir, src);
         dest = module.exports.resolveTargetPath(project_dir, dest);
         shell.mkdir('-p', path.dirname(dest));
-        shell.cp('-r', src, dest);
+        shell.cp(src, dest);
     },
     // Sometimes we want to remove some java, and prune any unnecessary empty directories
     deleteJava:function(project_dir, destFile) {
