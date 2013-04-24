@@ -93,9 +93,9 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
                     var issue = '';
                     if (superr) {
                         // Even reversion failed. super fail.
-                        issue = 'Install failed, then reversion of installation failed. Sorry :(. Instalation issue: ' + err.message + ', reversion issue: ' + superr.message;
+                        issue = 'Install failed, then reversion of installation failed. Sorry :(. Instalation issue: ' + err.stack + ', reversion issue: ' + superr.stack;
                     } else {
-                        issue = 'Install failed, plugin reversion successful so you should be good to go. Installation issue: ' + err.message;
+                        issue = 'Install failed, plugin reversion successful so you should be good to go. Installation issue: ' + err.stack;
                     }
                     var error = new Error(issue);
                     if (callback) callback(error);
