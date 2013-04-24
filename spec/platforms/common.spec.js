@@ -32,6 +32,7 @@ describe('common platform handler', function() {
         it('should throw if path cannot be resolved', function(){  
             expect(function(){common.resolveSrcPath(test_dir, 'I_dont_exist')}).toThrow();
         });
+        
         it('should not throw if path exists', function(){
             shell.mkdir('-p', test_dir);
             expect(function(){common.resolveSrcPath(test_dir)}).not.toThrow();
@@ -45,6 +46,7 @@ describe('common platform handler', function() {
             expect(function(){common.resolveTargetPath(test_dir)}).toThrow();
             shell.rm('-rf', test_dir);
         });
+        
         it('should not throw if path cannot be resolved', function(){
             expect(function(){common.resolveTargetPath(test_dir)}).not.toThrow();
         });
@@ -75,7 +77,7 @@ describe('common platform handler', function() {
             shell.rm('-rf', project_dir);            
         });
             
-        it('should call cp -f source/dest paths', function(){
+        it('should call cp source/dest paths', function(){
             shell.mkdir('-p', java_dir);
             fs.writeFileSync(java_file, 'contents', 'utf-8');
             
