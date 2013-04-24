@@ -84,20 +84,15 @@
                 value="DummyPluginCommand"/>
         </config-file>
 
-        <resource-file src="DummyPlugin.bundle" />
-        <resource-file src="DummyPluginViewController.xib" />
+        <resource-file src="src/ios/DummyPlugin.bundle" />
 
-        <header-file src="DummyPluginCommand.h" />
-        <header-file src="DummyPluginViewController.h" />
-        <header-file src="preserveDirs/PreserveDirsTest.h" preserve-dirs="true" />
-        <header-file src="TargetDirTest.h" target-dir="targetDir"/>
+        <header-file src="src/ios/DummyPluginCommand.h" />
+        <source-file src="src/ios/DummyPluginCommand.m"/>
 
-        <source-file src="DummyPluginCommand.m" />
-        <source-file src="DummyPluginViewController.m" />
-        <source-file src="preserveDirs/PreserveDirsTest.m" preserve-dirs="true" />
-        <header-file src="TargetDirTest.m" target-dir="targetDir"/>
+        <header-file src="src/ios/TargetDirTest.h" target-dir="targetDir" />
+        <source-file src="src/ios/TargetDirTest.m" target-dir="targetDir" />
 
         <!-- framework for testing (not actual dependency of DummyPlugin -->
-        <framework src="libsqlite3.dylib" />
+        <framework src="src/ios/libsqlite3.dylib" />
     </platform>
 </plugin>

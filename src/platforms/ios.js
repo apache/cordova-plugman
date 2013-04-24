@@ -77,7 +77,7 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
     }
 
     var config_file = config_files[0];
-    var base_config_path = path.basename(config_file);
+    var config_filename = path.basename(config_file);
     var xcode_dir = path.dirname(config_file);
     var pluginsDir = path.resolve(xcode_dir, 'Plugins');
     var resourcesDir = path.resolve(xcode_dir, 'Resources');
@@ -106,7 +106,6 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                         shell.mkdir('-p', targetDir);
                         shell.cp(srcFile, destFile);
                     } else {
-                        // TODO: doesnt preserve-dirs affect what the originally-added path to xcodeproj (see above) affect how we should call remove too?
                         xcodeproj.removeSourceFile(path.join('Plugins', path.basename(src)));
                         shell.rm('-rf', destFile);
                         // TODO: is this right, should we check if dir is empty?
@@ -114,7 +113,9 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                     }
                     break;
                 case 'plugins-plist':
-                    // Only handle this if the config file is cordova/phonegap plist.
+                    var name = mod.attrib.key;
+                    var value = mod.attrib.string;
+                    // Tack on stuff into plist if this is an old-style project
                     if (path.extname(config_file) == '.plist') {
                         // determine if this is a binary or ascii plist and choose the parser
                         // TODO: this is temporary until binary support is added to node-plist
@@ -131,39 +132,36 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                             */
 
                             // add plugin to plist
-                            plistObj.Plugins[mod.attrib['key']] = mod.attrib['string'];
+                            plistObj.Plugins[name] = value;
                         } else {
-                            delete plistObj.Plugins[mod.attrib['key']];
+                            delete plistObj.Plugins[name];
                         }
                         
                         // write out plist
                         fs.writeFileSync(config_file, plist.build(plistObj));
+                    } else {
+                        // If it's a config.xml-based project, we should still add/remove plugin entry to config.xml
+                        var xmlDoc = xml_helpers.parseElementtreeSync(config_file);
+                        var pluginsEl = xmlDoc.find('plugins');
+                        if ( action == 'install') {
+                            var new_plugin = new et.Element('plugin');
+                            new_plugin.attrib.name = name;
+                            new_plugin.attrib.value = value;
+                            pluginsEl.append(new_plugin);
+                        } else {
+                            var culprit = pluginsEl.find("plugin[@name='"+name+"']");
+                            pluginsEl.remove(0, culprit);
+                        }
+                        var output = xmlDoc.write({indent: 4});
+                        fs.writeFileSync(config_file, output);
                     }
                     break;
                 case 'config-file':
                     // Only use config file appropriate for the current cordova-ios project
-                    if (mod.attrib['target'] == base_config_path) {
+                    if (mod.attrib['target'] == config_filename) {
                         // edit configuration files
-                        var xmlDoc = xml_helpers.parseElementtreeSync(config_file),
-                            pListOnly = !!plistEle;
+                        var xmlDoc = xml_helpers.parseElementtreeSync(config_file);
                         
-                        if (mod.find("plugin")) pListOnly = false;
-
-                        if (pListOnly) {
-                            // if the plugin supports the old plugins-plist element only
-                            var name = plistEle.attrib.key;
-                            var value = plistEle.attrib.string;
-                            var pluginsEl = xmlDoc.find('plugins');
-                            if ( action == 'install') {
-                                var new_plugin = new et.Element('plugin');
-                                new_plugin.attrib.name = name;
-                                new_plugin.attrib.value = value;
-                                pluginsEl.append(new_plugin);
-                            } else {
-                                var culprit = pluginsEl.find("plugin[@name='"+name+"']");
-                                pluginsEl.remove(0, culprit);
-                            }
-                        }
 
                         var selector = mod.attrib["parent"],
                             children = mod.findall('*');
@@ -263,12 +261,8 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
 }
 
 function getRelativeDir(file) {
-    var targetDir = file.attrib['target-dir'],
-        preserveDirs = file.attrib['preserve-dirs'];
-
-    if (preserveDirs && preserveDirs.toLowerCase() == 'true') {
-        return path.dirname(file.attrib['src']);
-    } else if (targetDir) {
+    var targetDir = file.attrib['target-dir'];
+    if (targetDir) {
         return targetDir;
     } else {
         return '';

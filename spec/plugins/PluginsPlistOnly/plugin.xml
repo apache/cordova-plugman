@@ -19,26 +19,13 @@
 -->
 
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
-    xmlns="http://www.phonegap.com/ns/plugins/1.0"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    id="com.pushwoosh.plugins.pushwoosh"
-    version="3.0.0">
+    id="com.phonegap.plugins.oldskewl"
+    version="0.0.1">
 
-    <name>Use Variables</name>
-
-    <preference name="API_KEY" />
-    <!-- android -->
-    <platform name="android">
-		<config-file target="AndroidManifest.xml" parent="/manifest">
-            <poop name="GoogleMapsApiKey" value="$API_KEY" />
-		</config-file>
-		
-    </platform>
+    <name>Old Skewl Plugin using Plists</name>
 
     <!-- ios -->
     <platform name="ios">
-        <config-file target="config.xml" parent="/widget">
-            <awesome value="$API_KEY" />
-        </config-file>
+        <plugins-plist key="OldSkewl" string="OldSkewlCommand" />
     </platform>
 </plugin>

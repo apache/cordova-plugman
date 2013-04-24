@@ -269,7 +269,7 @@ into a project. A couple of examples:
     <source-file src="src/android/Foo.java"
                     target-dir="src/com/alunny/foo" />
     <!-- ios -->
-    <source-file src="CDVFoo.m" />
+    <source-file src="src/ios/CDVFoo.m" />
 
 
 #### src (required)
@@ -288,7 +288,7 @@ the package `com.alunny.foo` has be located under the directory
 `com/alunny/foo`. For platforms where the source directory is not important,
 plugin authors should omit this attribute.
 
-As with assets, if a `source-file`'s `target` would overwrite an existing file, plugman will stop/reverse the installation, notify the user rnd exit with a non-zero code.
+As with assets, if a `source-file`'s `target` would overwrite an existing file, plugman will stop/reverse the installation, notify the user and exit with a non-zero code.
 
 ### &lt;config-file&gt;
 
