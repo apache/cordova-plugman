@@ -228,7 +228,8 @@ describe('ios project handler', function() {
         describe('of <source-file> elements', function() {
             it('should call into xcodeproj\'s removeSourceFile appropriately when element has no target-dir');
             it('should call into xcodeproj\'s removeSourceFile appropriately when element a no target-dir');
-            it('should rm the file from the right target location');
+            it('should rm the file from the right target location when element has a target-dir');
+            it('should rm the file from the right target location when element has no target-dir');
         });
 
         describe('of <plugins-plist> elements', function() {
