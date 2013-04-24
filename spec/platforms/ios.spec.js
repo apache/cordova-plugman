@@ -26,6 +26,7 @@ var platformTag = plugin_et.find('./platform[@name="ios"]');
 var dummy_id = plugin_et._root.attrib['id'];
 var valid_source = platformTag.findall('./source-file'),
     assets = plugin_et.findall('./asset'),
+    valid_headers = platformTag.findall('./header-file'),
     plist_els = platformTag.findall('./plugins-plist'),
     dummy_configs = platformTag.findall('./config-file');
 
@@ -44,6 +45,7 @@ platformTag = plugin_et.find('./platform[@name="ios"]');
 
 var faulty_id = plugin_et._root.attrib['id'];
 var invalid_source = platformTag.findall('./source-file');
+var invalid_headers = platformTag.findall('./header-file');
 
 xml_path = path.join(plistplugin, 'plugin.xml');
 xml_test = fs.readFileSync(xml_path, 'utf-8');
@@ -181,23 +183,109 @@ describe('ios project handler', function() {
             it('should add a <plugin> element in applicably new cordova-ios projects with old-style plugins using only <plugins-plist> elements', function() {
                 shell.cp('-rf', ios_config_xml_project, temp);
                 var pls = copyArray(plist_only_els);
+                ios.install(pls, plist_id, temp, plistplugin, {});
+                expect(fs.readFileSync(path.join(temp, 'SampleApp', 'config.xml'), 'utf-8')).toMatch(/<plugin name="OldSkewl"/gi);
             });
         });
 
         describe('of <config-file> elements', function() {
-            it('should call xml_helpers\' graftXML');
-            it('should write the new config file out after successfully grafting');
+            beforeEach(function() {
+                shell.cp('-rf', ios_config_xml_project, temp);
+            });
+            it('should call xml_helpers\' graftXML', function() {
+                var config = copyArray(dummy_configs);
+                var spy = spyOn(xml_helpers, 'graftXML').andReturn(true);
+                ios.install(config, dummy_id, temp, dummyplugin, {});
+                expect(spy).toHaveBeenCalledWith(jasmine.any(Object), dummy_configs[0]._children, '/widget/plugins');
+            });
+            it('should write the new config file out after successfully grafting', function() {
+                var config = copyArray(dummy_configs);
+                var spy = spyOn(fs, 'writeFileSync');
+                ios.install(config, dummy_id, temp, dummyplugin, {});
+                expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'config.xml'), jasmine.any(String));
+            });
         });
 
         describe('of <header-file> elements', function() {
-            it('should throw if header-file src cannot be found');
-            it('should throw if header-file target already exists');
-            it('should call into xcodeproj\'s addHeaderFile appropriately when element has no target-dir');
-            it('should call into xcodeproj\'s addHeaderFile appropriately when element a no target-dir');
-            it('should cp the file to the right target location');
+            beforeEach(function() {
+                shell.cp('-rf', ios_config_xml_project, temp);
+            });
+
+            it('should throw if header-file src cannot be found', function() {
+                var headers = copyArray(invalid_headers);
+                expect(function() {
+                    ios.install(headers, faulty_id, temp, faultyplugin, {});
+                }).toThrow('cannot find "' + path.resolve(faultyplugin, 'src/ios/FaultyPluginCommand.h') + '" ios <header-file>');
+            });
+            it('should throw if header-file target already exists', function() {
+                var headers = copyArray(valid_headers);
+                var target = path.join(temp, 'SampleApp', 'Plugins', 'DummyPluginCommand.h');
+                fs.writeFileSync(target, 'some bs', 'utf-8');
+                expect(function() {
+                    ios.install(headers, dummy_id, temp, dummyplugin, {});
+                }).toThrow('target destination "' + target + '" already exists');
+            });
+            it('should call into xcodeproj\'s addHeaderFile appropriately when element has no target-dir', function() {
+                var headers = copyArray(valid_headers).filter(function(s) { return s.attrib['target-dir'] == undefined});
+                var spy = jasmine.createSpy();
+                spyOn(xcode, 'project').andReturn({
+                    parseSync:function(){},
+                    writeSync:function(){},
+                    addHeaderFile:spy
+                });
+                ios.install(headers, dummy_id, temp, dummyplugin, {});
+                expect(spy).toHaveBeenCalledWith(path.join('Plugins', 'DummyPluginCommand.h'));
+            });
+            it('should call into xcodeproj\'s addHeaderFile appropriately when element a no target-dir', function() {
+                var headers = copyArray(valid_headers).filter(function(s) { return s.attrib['target-dir'] != undefined});
+                var spy = jasmine.createSpy();
+                spyOn(xcode, 'project').andReturn({
+                    parseSync:function(){},
+                    writeSync:function(){},
+                    addHeaderFile:spy
+                });
+                ios.install(headers, dummy_id, temp, dummyplugin, {});
+                expect(spy).toHaveBeenCalledWith(path.join('Plugins', 'targetDir', 'TargetDirTest.h'));
+            });
+            it('should cp the file to the right target location when element has no target-dir', function() {
+                var headers = copyArray(valid_headers).filter(function(s) { return s.attrib['target-dir'] == undefined});
+                spyOn(xcode, 'project').andReturn({
+                    parseSync:function(){},
+                    writeSync:function(){},
+                    addHeaderFile:function() {}
+                });
+                var spy = spyOn(shell, 'cp');
+                ios.install(headers, dummy_id, temp, dummyplugin, {});
+                expect(spy).toHaveBeenCalledWith(path.join(dummyplugin, 'src', 'ios', 'DummyPluginCommand.h'), path.join(temp, 'SampleApp', 'Plugins', 'DummyPluginCommand.h'));
+            });
+            it('should cp the file to the right target location when element has a target-dir', function() {
+                var headers = copyArray(valid_headers).filter(function(s) { return s.attrib['target-dir'] != undefined});
+                spyOn(xcode, 'project').andReturn({
+                    parseSync:function(){},
+                    writeSync:function(){},
+                    addHeaderFile:function() {}
+                });
+                var spy = spyOn(shell, 'cp');
+                ios.install(headers, dummy_id, temp, dummyplugin, {});
+                expect(spy).toHaveBeenCalledWith(path.join(dummyplugin, 'src', 'ios', 'TargetDirTest.h'), path.join(temp, 'SampleApp', 'Plugins', 'targetDir', 'TargetDirTest.h'));
+            });
         });
 
-        describe('of <resource-file> elements', function() {
+        xdescribe('of <resource-file> elements', function() {
+            it('should throw if resource-file src cannot be found', function() {
+                var headers = copyArray(invalid_headers);
+                expect(function() {
+                    ios.install(headers, faulty_id, temp, faultyplugin, {});
+                }).toThrow('cannot find "' + path.resolve(faultyplugin, 'src/ios/FaultyPluginCommand.h') + '" ios <header-file>');
+            });
+            it('should throw if header-file target already exists', function() {
+                var headers = copyArray(valid_headers);
+                var target = path.join(temp, 'SampleApp', 'Plugins', 'DummyPluginCommand.h');
+                fs.writeFileSync(target, 'some bs', 'utf-8');
+                expect(function() {
+                    ios.install(headers, dummy_id, temp, dummyplugin, {});
+                }).toThrow('target destination "' + target + '" already exists');
+            });
             it('should throw if resource-file src cannot be found');
             it('should throw if resource-file target already exists');
             it('should call into xcodeproj\'s addResourceFile');

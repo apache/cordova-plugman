@@ -143,17 +143,20 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                         // If it's a config.xml-based project, we should still add/remove plugin entry to config.xml
                         var xmlDoc = xml_helpers.parseElementtreeSync(config_file);
                         var pluginsEl = xmlDoc.find('plugins');
-                        if ( action == 'install') {
-                            var new_plugin = new et.Element('plugin');
-                            new_plugin.attrib.name = name;
-                            new_plugin.attrib.value = value;
-                            pluginsEl.append(new_plugin);
-                        } else {
-                            var culprit = pluginsEl.find("plugin[@name='"+name+"']");
-                            pluginsEl.remove(0, culprit);
+                        // Only add if it's not already there.
+                        if (pluginsEl.findall('./plugin[@name="' + name + '"]').length === 0) {
+                            if ( action == 'install') {
+                                var new_plugin = new et.Element('plugin');
+                                new_plugin.attrib.name = name;
+                                new_plugin.attrib.value = value;
+                                pluginsEl.append(new_plugin);
+                            } else {
+                                var culprit = pluginsEl.find("plugin[@name='"+name+"']");
+                                pluginsEl.remove(0, culprit);
+                            }
+                            var output = xmlDoc.write({indent: 4});
+                            fs.writeFileSync(config_file, output);
                         }
-                        var output = xmlDoc.write({indent: 4});
-                        fs.writeFileSync(config_file, output);
                     }
                     break;
                 case 'config-file':
@@ -164,11 +167,18 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
 
                         var selector = mod.attrib["parent"],
                             children = mod.findall('*');
+
                         if( action == 'install') {
+                            // Ignore if plugin was already added.
+                            if (children.length == 1 && children[0].tag.toLowerCase() == 'plugin' && xmlDoc.find('plugins').findall('./plugin[@name="' + children[0].attrib.name + '"]').length === 1) break;
+
                             if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
                                 throw new Error('failed to add config-file children to xpath "' + selector + '" in "' + config_file + '" because xpath selector could not be resolved.');
                             }
                         } else {
+                            // Ignore if plugin was already removed.
+                            if (children.length == 1 && children[0].tag.toLowerCase() == 'plugin' && xmlDoc.find('plugins').findall('./plugin[@name="' + children[0].attrib.name + '"]').length === 0) break;
+
                             if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
                                 throw new Error('failed to remove config-file children from "' + selector + '" from "' + config_path + '"');
                             }
