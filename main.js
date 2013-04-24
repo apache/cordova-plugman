@@ -54,14 +54,8 @@ if (cli_opts.plugins_dir || cli_opts.project) {
         path.join(cli_opts.project, 'cordova', 'plugins');
 }
 
-// only dump stack traces in debug mode, otherwise show error message and exit
-// provide clean output on exceptions rather than dumping a stack trace
 process.on('uncaughtException', function(error){
-    if (cli_opts.debug) {
-        console.error(error.stack);
-    } else {
-        console.error(error + '\n');
-    }
+    console.error(error.stack);
     process.exit(1);
 });
 
