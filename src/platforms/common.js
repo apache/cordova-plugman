@@ -28,8 +28,10 @@ module.exports = {
     deleteJava:function(project_dir, destFile) {
         fs.unlinkSync(path.resolve(project_dir,destFile));
         // check if directory is empty
-        var curDir = path.resolve(project_dir, path.basename(destFile));
+
+        var curDir = path.resolve(project_dir, path.dirname(destFile));
         while(curDir !== path.resolve(project_dir, 'src')) {
+            //console.log('curDir ' + curDir);
             if(fs.readdirSync(curDir).length == 0) {
                 fs.rmdirSync(curDir);
                 curDir = path.resolve(curDir, '..');
@@ -37,6 +39,6 @@ module.exports = {
                 // directory not empty...do nothing
                 break;
             }
-        }
+        }   
     }
 };
