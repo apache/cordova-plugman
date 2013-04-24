@@ -71,4 +71,14 @@
         <source-file src="src/ios/FaultyPluginCommand.m" />
 
     </platform>
+    <platform name="blackberry">
+        <config-file target="config.xml" parent="/widget">
+            <feature id="cordova.echo" required="true" version="1.0.0.0"/>
+        </config-file>
+
+        <source-file src="src/blackberry/client.js" target-dir="ext-qnx/cordova.echo" />
+        <!-- these dont exist -->
+        <source-file src="src/blackberry/device/echoJnext.so" target-dir="ext-qnx/cordova.echo/device" />
+        <source-file src="src/blackberry/simulator/echoJnext.so" target-dir="ext-qnx/cordova.echo/simulator" />
+    </platform>
 </plugin>

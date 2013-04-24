@@ -23,7 +23,6 @@ var xml_path     = path.join(dummyplugin, 'plugin.xml')
 var platformTag = plugin_et.find('./platform[@name="android"]');
 var dummy_id = plugin_et._root.attrib['id'];
 var valid_source = platformTag.findall('./source-file'),
-    libFiles = platformTag.findall('./library-file'),
     assets = plugin_et.findall('./asset'),
     configChanges = platformTag.findall('./config-file');
 

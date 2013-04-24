@@ -22,7 +22,7 @@ var fs = require('fs')  // use existsSync in 0.6.x
    , shell = require('shelljs')
    , et = require('elementtree')
    , getConfigChanges = require('../util/config-changes')
-   , sourceDir = 'src'
+   , common = require('./common')
    , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'));
 
 module.exports = {
@@ -52,15 +52,6 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                         common.deleteJava(project_dir, destFile);
                     }
                     break;
-                case 'library-file':
-                    var destFile = path.join(mod.attrib['target-dir'], path.basename(mod.attrib['src']));
-
-                    if (action == 'install') {
-                        common.straightCopy(plugin_dir, mod.attrib['src'], project_dir, destFile);
-                    } else {
-                        fs.unlinkSync(path.resolve(project_dir, destFile));
-                    }
-                    break;
                 case 'config-file':
                     // Only modify config files that exist.
                     var config_file = path.resolve(project_dir, mod.attrib['target']);
@@ -86,8 +77,8 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                 case 'asset':
                     if (action == 'uninstall') {
                         var target = mod.attrib.target;
-                        shell.rm('-rf', path.resolve(module.exports.www_dir(), target));
-                        shell.rm('-rf', path.resolve(module.exports.www_dir(), 'plugins', plugin_id));
+                        shell.rm('-rf', path.resolve(module.exports.www_dir(project_dir), target));
+                        shell.rm('-rf', path.resolve(module.exports.www_dir(project_dir), 'plugins', plugin_id));
                     }
                     break;
                 default:

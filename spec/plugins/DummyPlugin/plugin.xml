@@ -59,7 +59,7 @@
 
     <!-- blackberry -->
     <platform name="blackberry">
-        <config-file target="config.xml" parent="/widget">
+        <config-file target="www/config.xml" parent="/widget">
             <feature id="dummyPlugin" required="true" version="1.0.0.0"/>
         </config-file>
 
