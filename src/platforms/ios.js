@@ -142,7 +142,7 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                     break;
                 case 'config-file':
                     // Only use config file appropriate for the current cordova-ios project
-                    if (mod.attribs['target'] == base_config_path) {
+                    if (mod.attrib['target'] == base_config_path) {
                         // edit configuration files
                         var xmlDoc = xml_helpers.parseElementtreeSync(config_file),
                             pListOnly = plistEle;
