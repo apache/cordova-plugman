@@ -64,6 +64,8 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
     if (!platformTag) {
         // Either this plugin doesn't support this platform, or it's a JS-only plugin.
         // Either way, return now.
+        // should call prepare probably!
+        require('./../plugman').prepare(project_dir, platform, plugins_dir);
         if (callback) callback();
         return;
     }

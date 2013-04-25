@@ -62,4 +62,13 @@ describe('prepare', function() {
         var plugins = JSON.parse(fs.readFileSync(path.join(www, 'cordova_plugins.json'), 'utf-8'));
         expect(plugins.length).toEqual(0);
     });
+
+    describe('config handling', function() {
+        it('needs to know about the stock app config.xml somehow?');
+        describe('single plugin', function() {
+        });
+
+        describe('multiple plugins', function() {
+        });
+    });
 });
