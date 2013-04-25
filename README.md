@@ -365,8 +365,6 @@ plugman identifies the framework through the `src` attribute and attempts to add
 
 The optional `weak` attribute is a boolean denoting whether the framework should be weakly-linked. Default is `false`.
 
-If the file specified by `src` does not exist, the tool should stop/reverse the installation process, warn the user, and exit with a non-zero code.
-
 ### &lt;dependencies&gt; and &lt;dependency&gt;
 
 Identifies dependency of the plugin on another plugin.

@@ -233,8 +233,7 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                     var src = mod.attrib['src'],
                         weak = mod.attrib['weak'];
                     if (action == 'install') {
-                        // TODO: check for src existence/collision?
-                        var opt = { weak: (weak && weak.toLowerCase() == 'true') };
+                        var opt = { weak: (weak == undefined || weak == null || weak != 'true' ? false : true ) };
                         xcodeproj.addFramework(src, opt);
                     } else {
                         xcodeproj.removeFramework(src);

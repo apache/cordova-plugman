@@ -28,6 +28,7 @@ var valid_source = platformTag.findall('./source-file'),
     assets = plugin_et.findall('./asset'),
     valid_headers = platformTag.findall('./header-file'),
     valid_resources = platformTag.findall('./resource-file'),
+    valid_frameworks = platformTag.findall('./framework'),
     plist_els = platformTag.findall('./plugins-plist'),
     dummy_configs = platformTag.findall('./config-file');
 
@@ -48,6 +49,7 @@ var faulty_id = plugin_et._root.attrib['id'];
 var invalid_source = platformTag.findall('./source-file');
 var invalid_headers = platformTag.findall('./header-file');
 var invalid_resources = platformTag.findall('./resource-file');
+var invalid_frameworks = platformTag.findall('./framework');
 
 xml_path = path.join(plistplugin, 'plugin.xml');
 xml_test = fs.readFileSync(xml_path, 'utf-8');
@@ -283,7 +285,7 @@ describe('ios project handler', function() {
                     ios.install(resources, faulty_id, temp, faultyplugin, {});
                 }).toThrow('cannot find "' + path.resolve(faultyplugin, 'src/ios/IDontExist.bundle') + '" ios <resource-file>');
             });
-            it('should throw if resrouce-file target already exists', function() {
+            it('should throw if resource-file target already exists', function() {
                 var resources = copyArray(valid_resources);
                 var target = path.join(temp, 'SampleApp', 'Resources', 'DummyPlugin.bundle');
                 fs.writeFileSync(target, 'some bs', 'utf-8');
@@ -291,16 +293,56 @@ describe('ios project handler', function() {
                     ios.install(resources, dummy_id, temp, dummyplugin, {});
                 }).toThrow('target destination "' + target + '" already exists');
             });
-            it('should throw if resource-file src cannot be found');
-            it('should throw if resource-file target already exists');
-            it('should call into xcodeproj\'s addResourceFile');
-            it('should cp the file to the right target location');
+            it('should call into xcodeproj\'s addResourceFile', function() {
+                var resources = copyArray(valid_resources);
+                var spy = jasmine.createSpy();
+                spyOn(xcode, 'project').andReturn({
+                    parseSync:function(){},
+                    writeSync:function(){},
+                    addResourceFile:spy
+                });
+                ios.install(resources, dummy_id, temp, dummyplugin, {});
+                expect(spy).toHaveBeenCalledWith(path.join('Resources', 'DummyPlugin.bundle'));
+            });
+            it('should cp the file to the right target location', function() {
+                var resources = copyArray(valid_resources);
+                spyOn(xcode, 'project').andReturn({
+                    parseSync:function(){},
+                    writeSync:function(){},
+                    addResourceFile:function() {}
+                });
+                var spy = spyOn(shell, 'cp');
+                ios.install(resources, dummy_id, temp, dummyplugin, {});
+                expect(spy).toHaveBeenCalledWith('-R', path.join(dummyplugin, 'src', 'ios', 'DummyPlugin.bundle'), path.join(temp, 'SampleApp', 'Resources'));
+            });
         });
 
         describe('of <framework> elements', function() {
-            it('should throw if framework src cannot be found');
-            it('should call into xcodeproj\'s addFramework');
-            it('should pass in whether the framework is weak or not into xcodeproj');
+            beforeEach(function() {
+                shell.cp('-rf', ios_config_xml_project, temp);
+            });
+            it('should call into xcodeproj\'s addFramework with weak false by default' ,function() {
+                var frameworks = copyArray(valid_frameworks).filter(function(f) { return f.attrib.weak == undefined; });
+                var spy = jasmine.createSpy();
+                spyOn(xcode, 'project').andReturn({
+                    parseSync:function(){},
+                    writeSync:function(){},
+                    addFramework:spy
+                });
+                ios.install(frameworks, dummy_id, temp, dummyplugin, {});
+                expect(spy).toHaveBeenCalledWith(path.join('src', 'ios', 'libsqlite3.dylib'), {weak:false});
+            });
+            it('should pass in whether the framework is weak or not to xcodeproj.addFramework', function() {
+                var frameworks = copyArray(valid_frameworks).filter(function(f) { return f.attrib.weak != undefined; });;
+                var spy = jasmine.createSpy();
+                spyOn(xcode, 'project').andReturn({
+                    parseSync:function(){},
+                    writeSync:function(){},
+                    addFramework:spy
+                });
+                ios.install(frameworks, dummy_id, temp, dummyplugin, {});
+                expect(spy).toHaveBeenCalledWith(path.join('src', 'ios', 'libsqlite3.dylib'), {weak:true});
+            });
         });
     });
 

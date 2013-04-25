@@ -70,6 +70,7 @@
         <header-file src="src/ios/FaultyPluginCommand.h" />
         <source-file src="src/ios/FaultyPluginCommand.m" />
         <resource-file src="src/ios/IDontExist.bundle" />
+        <framework src="src/ios/Nopers.lib" />
     </platform>
     <platform name="blackberry">
         <config-file target="config.xml" parent="/widget">
