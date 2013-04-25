@@ -47,7 +47,6 @@ describe('install', function() {
             install('android', temp, 'CLEANYOURSHORTS', plugins_dir, {});
             expect(s).toHaveBeenCalled();
         });
-        // TODO: possibly test how diff platform transaction logs are created
         it('should generate an array of transactions required to run an installation and pass into appropriate platform handler\'s install method', function() {
             install('android', temp, 'DummyPlugin', plugins_dir, {});
             var transactions = android_installer.mostRecentCall.args[0];
