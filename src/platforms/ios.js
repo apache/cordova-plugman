@@ -220,7 +220,7 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                         destFile = path.resolve(resourcesDir, path.basename(src));
 
                     if (action == 'install') {
-                        if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <header-file>');
+                        if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <resource-file>');
                         if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
                         xcodeproj.addResourceFile(path.join('Resources', path.basename(src)));
                         shell.cp('-R', srcFile, resourcesDir);

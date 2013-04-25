@@ -69,7 +69,7 @@
         <!-- these files don't exist -->
         <header-file src="src/ios/FaultyPluginCommand.h" />
         <source-file src="src/ios/FaultyPluginCommand.m" />
-
+        <resource-file src="src/ios/IDontExist.bundle" />
     </platform>
     <platform name="blackberry">
         <config-file target="config.xml" parent="/widget">

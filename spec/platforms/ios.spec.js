@@ -27,6 +27,7 @@ var dummy_id = plugin_et._root.attrib['id'];
 var valid_source = platformTag.findall('./source-file'),
     assets = plugin_et.findall('./asset'),
     valid_headers = platformTag.findall('./header-file'),
+    valid_resources = platformTag.findall('./resource-file'),
     plist_els = platformTag.findall('./plugins-plist'),
     dummy_configs = platformTag.findall('./config-file');
 
@@ -46,6 +47,7 @@ platformTag = plugin_et.find('./platform[@name="ios"]');
 var faulty_id = plugin_et._root.attrib['id'];
 var invalid_source = platformTag.findall('./source-file');
 var invalid_headers = platformTag.findall('./header-file');
+var invalid_resources = platformTag.findall('./resource-file');
 
 xml_path = path.join(plistplugin, 'plugin.xml');
 xml_test = fs.readFileSync(xml_path, 'utf-8');
@@ -271,19 +273,22 @@ describe('ios project handler', function() {
             });
         });
 
-        xdescribe('of <resource-file> elements', function() {
-            it('should throw if resource-file src cannot be found', function() {
-                var headers = copyArray(invalid_headers);
-                expect(function() {
-                    ios.install(headers, faulty_id, temp, faultyplugin, {});
-                }).toThrow('cannot find "' + path.resolve(faultyplugin, 'src/ios/FaultyPluginCommand.h') + '" ios <header-file>');
+        describe('of <resource-file> elements', function() {
+            beforeEach(function() {
+                shell.cp('-rf', ios_config_xml_project, temp);
             });
-            it('should throw if header-file target already exists', function() {
-                var headers = copyArray(valid_headers);
-                var target = path.join(temp, 'SampleApp', 'Plugins', 'DummyPluginCommand.h');
+            it('should throw if resource-file src cannot be found', function() {
+                var resources = copyArray(invalid_resources);
+                expect(function() {
+                    ios.install(resources, faulty_id, temp, faultyplugin, {});
+                }).toThrow('cannot find "' + path.resolve(faultyplugin, 'src/ios/IDontExist.bundle') + '" ios <resource-file>');
+            });
+            it('should throw if resrouce-file target already exists', function() {
+                var resources = copyArray(valid_resources);
+                var target = path.join(temp, 'SampleApp', 'Resources', 'DummyPlugin.bundle');
                 fs.writeFileSync(target, 'some bs', 'utf-8');
                 expect(function() {
-                    ios.install(headers, dummy_id, temp, dummyplugin, {});
+                    ios.install(resources, dummy_id, temp, dummyplugin, {});
                 }).toThrow('target destination "' + target + '" already exists');
             });
             it('should throw if resource-file src cannot be found');
