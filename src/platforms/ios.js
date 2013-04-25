@@ -169,8 +169,11 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                             children = mod.findall('*');
 
                         if( action == 'install') {
-                            // Ignore if plugin was already added.
-                            if (children.length == 1 && children[0].tag.toLowerCase() == 'plugin' && xmlDoc.find('plugins').findall('./plugin[@name="' + children[0].attrib.name + '"]').length === 1) break;
+                            // Throw error if plugin was already added.
+                            if (children.length == 1 && children[0].tag.toLowerCase() == 'plugin' && (xmlDoc.find('plugins').findall('./plugin[@name="' + children[0].attrib.name + '"]').length === 1)
+                                ||(xmlDoc.find('plugins').findall('./plugin[@value="' + children[0].attrib.value + '"]').length === 1)){
+                                throw new Error('faild to add '+children[0].attrib.name+' to config.xml because it already exists');
+                            }
 
                             if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
                                 throw new Error('failed to add config-file children to xpath "' + selector + '" in "' + config_file + '" because xpath selector could not be resolved.');
