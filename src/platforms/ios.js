@@ -98,7 +98,6 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                     var srcFile = path.resolve(plugin_dir, src);
                     var targetDir = path.resolve(pluginsDir, getRelativeDir(mod));
                     var destFile = path.resolve(targetDir, path.basename(src));
-                     
                     if (action == 'install') {
                         if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <source-file>');
                         if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
@@ -106,10 +105,12 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                         shell.mkdir('-p', targetDir);
                         shell.cp(srcFile, destFile);
                     } else {
-                        xcodeproj.removeSourceFile(path.join('Plugins', path.basename(src)));
+                        xcodeproj.removeSourceFile(path.join('Plugins', path.relative(pluginsDir, destFile)));
                         shell.rm('-rf', destFile);
-                        // TODO: is this right, should we check if dir is empty?
-                        shell.rm('-rf', targetDir);    
+                        
+                        if(fs.existsSync(targetDir) && fs.readdirSync(targetDir).length>0){
+                            shell.rm('-rf', targetDir); 
+                        }
                     }
                     break;
                 case 'asset':

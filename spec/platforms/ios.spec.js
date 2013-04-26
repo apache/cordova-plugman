@@ -356,16 +356,83 @@ describe('ios project handler', function() {
         });
 
         describe('of <source-file> elements', function() {
-            it('should call into xcodeproj\'s removeSourceFile appropriately when element has no target-dir');
-            it('should call into xcodeproj\'s removeSourceFile appropriately when element a no target-dir');
-            it('should rm the file from the right target location when element has a target-dir');
-            it('should rm the file from the right target location when element has no target-dir');
+            it('should call into xcodeproj\'s removeSourceFile appropriately when element has no target-dir', function(){
+                var source = copyArray(valid_source).filter(function(s) { return s.attrib['target-dir'] == undefined});
+                shell.cp('-rf', ios_config_xml_project, temp);
+                var spy = jasmine.createSpy();
+                spyOn(xcode, 'project').andReturn({
+                    parseSync:function(){},
+                    writeSync:function(){},
+                    removeSourceFile:spy
+                });
+                
+                ios.uninstall(source, dummy_id, temp, dummyplugin);
+                expect(spy).toHaveBeenCalledWith(path.join('Plugins', 'DummyPluginCommand.m'));
+            });
+            it('should call into xcodeproj\'s removeSourceFile appropriately when element a target-dir', function(){
+                var source = copyArray(valid_source).filter(function(s) { return s.attrib['target-dir'] != undefined});
+                shell.cp('-rf', ios_config_xml_project, temp);
+                var spy = jasmine.createSpy();
+                spyOn(xcode, 'project').andReturn({
+                    parseSync:function(){},
+                    writeSync:function(){},
+                    removeSourceFile:function(){}
+                });
+                
+                var spy = spyOn(shell, 'rm');
+                ios.uninstall(source, dummy_id, temp, dummyplugin);
+                expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'SampleApp', 'Plugins', 'targetDir', 'TargetDirTest.m'));
+            });
+            it('should rm the file from the right target location when element has no target-dir', function(){
+                var source = copyArray(valid_source).filter(function(s) { return s.attrib['target-dir'] == undefined});
+                shell.cp('-rf', ios_config_xml_project, temp);
+                var spy = jasmine.createSpy();
+                spyOn(xcode, 'project').andReturn({
+                    parseSync:function(){},
+                    writeSync:function(){},
+                    removeSourceFile:function(){}
+                });
+                
+                var spy = spyOn(shell, 'rm');
+                ios.uninstall(source, dummy_id, temp, dummyplugin);
+                expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'SampleApp', 'Plugins', 'DummyPluginCommand.m'));
+            });
+            it('should rm the file from the right target location when element has a target-dir', function(){
+                var source = copyArray(valid_source).filter(function(s) { return s.attrib['target-dir'] != undefined});
+                shell.cp('-rf', ios_config_xml_project, temp);
+                var spy = jasmine.createSpy();
+                spyOn(xcode, 'project').andReturn({
+                    parseSync:function(){},
+                    writeSync:function(){},
+                    removeSourceFile:function(){}
+                });
+                
+                var spy = spyOn(shell, 'rm');
+                ios.uninstall(source, dummy_id, temp, dummyplugin);
+                expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'SampleApp', 'Plugins', 'targetDir', 'TargetDirTest.m'));
+            });
         });
 
         describe('of <plugins-plist> elements', function() {
-            it('should only be used in an applicably old cordova-ios project');
-            it('should not be used in an applicably old cordova-ios project');
+            it('should only be used in an applicably old cordova-ios project', function(){
+                shell.cp('-rf', ios_plist_project, temp);
+                var pls = copyArray(plist_els);
+                var spy = spyOn(plist, 'parseFileSync').andReturn({Plugins:{}});
+                ios.uninstall(pls, dummy_id, temp, dummyplugin);
+                expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'PhoneGap.plist'));
+            });
+            it('should not be used in an applicably old cordova-ios project', function() {
+                shell.cp('-rf', ios_config_xml_project, temp);
+                var pls = copyArray(plist_els);
+                var spy = spyOn(plist, 'parseFileSync').andReturn({Plugins:{}});
+                ios.uninstall(pls, dummy_id, temp, dummyplugin);
+                expect(spy).not.toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'config.xml'));
+            });
             it('should remove the <plugin> element in applicably new cordova-ios projects with old-style plugins using only <plugins-plist> elements', function() {
+                shell.cp('-rf', ios_config_xml_project, temp);
+                var pls = copyArray(plist_only_els);
+                ios.uninstall(pls, plist_id, temp, plistplugin);
+                expect(fs.readFileSync(path.join(temp, 'SampleApp', 'config.xml'), 'utf-8')).toMatch(/<plugin name="OldSkewl"/gi);
             });
         });
 
@@ -377,12 +444,10 @@ describe('ios project handler', function() {
         });
 
         describe('of <asset> elements', function() {
-            it('should call rm on specified asset', function() {
-                
+            it('should call rm on specified asset',function(){
+            
             });
-            it('should call rm on the www/plugins/<plugin_id> folder', function() {
-                
-            });
+            it('should call rm on the www/plugins/<plugin_id> folder');
         });
 
         describe('of <header-file> elements', function() {
