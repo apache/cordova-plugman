@@ -16,11 +16,19 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, link, callback) {
         } else {
             plugins.clonePluginGitRepo(plugin_dir, plugins_dir, callback);
         }
+    } else if(!fs.existsSync(plugin_dir)) {
+        if (link) {
+            var err = new Error('--link is not supported for name installations');
+            if (callback) callback(err);
+            else throw err;
+        } else {
+            plugins.getPluginInfo(plugin_dir, function(err, plugin_info) {
+                plugins.clonePluginGitRepo(plugin_info.url, plugins_dir, callback);
+            });
+        }
     } else {
         // Copy from the local filesystem.
         var dest = path.join(plugins_dir, path.basename(plugin_dir));
-        // TODO: throw if local cant be resolved
-        // TODO: if local cant be resolved, query remote service.
 
         shell.rm('-rf', dest);
         if (link) {
