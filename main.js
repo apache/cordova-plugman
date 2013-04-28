@@ -29,7 +29,6 @@ var path = require('path')
 var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry', 'wp7', 'wp8' ]
             , 'project' : path
             , 'plugin' : [String, path, url]
-            , 'remove' : Boolean
             , 'install' : Boolean
             , 'uninstall' : Boolean
             , 'fetch' : Boolean
@@ -72,10 +71,6 @@ else if (cli_opts.list) {
 else if (cli_opts.prepare && cli_opts.project) {
     plugman.prepare(cli_opts.project, cli_opts.platform, plugins_dir);
 }
-else if (cli_opts.remove) {
-    plugman.remove(cli_opts.plugin, plugins_dir);
-    console.log('Plugin ' + cli_opts.plugin + ' deleted.');
-}
 else if (cli_opts.fetch) {
     plugman.fetch(cli_opts.plugin, plugins_dir, cli_opts.link);
 }
@@ -103,7 +98,6 @@ function printUsage() {
     console.log('Fetch a plugin:\n\t' + package.name + ' --fetch --plugin <directory|git-url|name> [--plugins_dir <directory>]\n');
     console.log('Install an already fetched plugin:\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --plugin <name> [--plugins_dir <directory>]\n');
     console.log('Uninstall a plugin:\n\t' + package.name + ' --uninstall --platform <'+ platforms +'> --project <directory> --plugin <name> [--plugins_dir <directory>]\n');
-    console.log('Delete the local copy of a plugin:\n\t' + package.name + ' --remove --plugin <name> [--plugins_dir <directory>]\n');
     console.log('List plugins:\n\t' + package.name + ' --list [--plugins_dir <directory>]\n');
     console.log('Prepare project:\n\t' + package.name + ' --prepare --platform <ios|android|bb10> --project <directory> [--plugins_dir <directory>]');
     console.log('\n\t--plugins_dir defaults to <project>/cordova/plugins, but can be any directory containing a subdirectory for each plugin');
