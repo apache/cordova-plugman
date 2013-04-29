@@ -85,7 +85,7 @@ module.exports = {
             var key = pl.attrib['key'];
             var value = pl.attrib['string'];
             if (!munge['plugins-plist'][key]) {
-                munge['plugins-plist'][key] = string;
+                munge['plugins-plist'][key] = value;
             }
         });
 
@@ -206,7 +206,7 @@ module.exports = {
                     global_munge[file] = {};
                 }
                 Object.keys(config_munge[file]).forEach(function(selector) {
-                    if (file == 'config.xml' && platform == 'ios') {
+                    if (file == 'plugins-plist' && platform == 'ios') {
                         var key = selector;
                         if (!global_munge[file][key]) {
                             // this key does not exist, so add it to plist

@@ -4,6 +4,7 @@ var configChanges = require('../../src/util/config-changes'),
     os      = require('osenv'),
     et      = require('elementtree'),
     path    = require('path'),
+    plist = require('plist'),
     shell   = require('shelljs'),
     temp    = path.join(os.tmpdir(), 'plugman'),
     dummyplugin = path.join(__dirname, '..', 'plugins', 'DummyPlugin'),
@@ -12,6 +13,7 @@ var configChanges = require('../../src/util/config-changes'),
     varplugin = path.join(__dirname, '..', 'plugins', 'VariablePlugin'),
     android_two_project = path.join(__dirname, '..', 'projects', 'android_two', '*'),
     ios_plist_project = path.join(__dirname, '..', 'projects', 'ios-plist', '*'),
+    ios_config_xml = path.join(__dirname, '..', 'projects', 'ios-config-xml', '*'),
     plugins_dir = path.join(temp, 'cordova', 'plugins');
 
 var dummy_xml = new et.ElementTree(et.XML(fs.readFileSync(path.join(dummyplugin, 'plugin.xml'), 'utf-8')));
@@ -186,6 +188,9 @@ describe('config-changes module', function() {
             expect(munge['AndroidManifest.xml']['/manifest']['<uses-permission android:name="ca.filmaj.plugins.permission.C2D_MESSAGE" />']).toBeDefined();
         });
         it('should special case plugins-plist elements into own property', function() {
+            var munge = configChanges.generate_plugin_config_munge(dummyplugin, 'ios', {});
+            expect(munge['plugins-plist']).toBeDefined();
+            expect(munge['plugins-plist']['com.phonegap.plugins.dummyplugin']).toEqual('DummyPluginCommand');
         });
     });
 
@@ -280,24 +285,33 @@ describe('config-changes module', function() {
             describe('of <plugins-plist> elements', function() {
                 it('should only be used in an applicably old cordova-ios projects', function() {
                     shell.cp('-rf', ios_plist_project, temp);
-                });
-                it('should not be used in an applicably new cordova-ios projects', function() {
-                    shell.cp('-rf', ios_config_xml_project, temp);
-                    var pls = copyArray(plist_els);
+                    shell.cp('-rf', dummyplugin, plugins_dir);
+                    var cfg = configChanges.get_platform_json(plugins_dir, 'ios');
+                    cfg.prepare_queue.installed = [{'plugin':'DummyPlugin', 'vars':{}}];
+                    configChanges.save_platform_json(cfg, plugins_dir, 'ios');
+
                     var spy = spyOn(plist, 'parseFileSync').andReturn({Plugins:{}});
-                    ios.install(pls, dummy_id, temp, dummyplugin, {});
-                    expect(spy).not.toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'config.xml'));
+                    configChanges.process(plugins_dir, temp, 'ios');
+                    expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'PhoneGap.plist'));
                 });
             });
         });
 
         describe(': uninstallation', function() {
-            it('should call pruneXML for every config munge it completely removes from the app (every leaf that is decremented to 0)');
-            it('should call pruneXML with variables to interpolate if applicable');
-            it('should not call pruneXML for a config munge that another plugin depends on');
-            it('should not call pruneXML for a config munge targeting a config file that does not exist');
-            it('should remove uninstalled plugins from installed plugins list');
-            it('should save changes to global config munge after completing an uninstall');
+            it('should call pruneXML for every config munge it completely removes from the app (every leaf that is decremented to 0)', function() {
+            });
+            it('should call pruneXML with variables to interpolate if applicable', function() {
+            });
+            it('should not call pruneXML for a config munge that another plugin depends on', function() {
+            });
+            it('should not call pruneXML for a config munge targeting a config file that does not exist', function() {
+            });
+            it('should remove uninstalled plugins from installed plugins list', function() {
+            });
+            it('should only parse + remove plist plugin entries in applicably old ios projects', function() {
+            });
+            it('should save changes to global config munge after completing an uninstall', function() {
+            });
         });
     });
 });
