@@ -94,42 +94,6 @@ describe('android project handler', function() {
                 }).toThrow('"' + target + '" already exists!');
             });
         });
-        describe('of <config-file> elements', function() {
-            it('should only target config.xml if that is applicable', function() {
-                var config = copyArray(configChanges);
-                shell.cp('-rf', android_two_project, temp);
-                var s = spyOn(xml_helpers, 'parseElementtreeSync').andCallThrough();
-                android.install(config, dummy_id, temp, dummyplugin, {});
-                expect(s).toHaveBeenCalledWith(path.join(temp, 'res', 'xml', 'config.xml'));
-                expect(s).not.toHaveBeenCalledWith(path.join(temp, 'res', 'xml', 'plugins.xml'));
-            });
-            it('should only target plugins.xml if that is applicable', function() {
-                shell.cp('-rf', android_one_project, temp);
-                var config = copyArray(configChanges);
-                var s = spyOn(xml_helpers, 'parseElementtreeSync').andCallThrough();
-                android.install(config, dummy_id, temp, dummyplugin, {});
-                expect(s).not.toHaveBeenCalledWith(path.join(temp, 'res', 'xml', 'config.xml'));
-                expect(s).toHaveBeenCalledWith(path.join(temp, 'res', 'xml', 'plugins.xml'));
-            });
-            it('should call into xml helper\'s graftXML', function() {
-                shell.cp('-rf', android_one_project, temp);
-                var config = copyArray(configChanges);
-                var s = spyOn(xml_helpers, 'graftXML').andReturn(true);
-                android.install(config, dummy_id, temp, dummyplugin, {});
-                expect(s).toHaveBeenCalled();
-            });
-        });
-        it('should call into plugins\'s searchAndReplace to interpolate variables properly', function() {
-            shell.cp('-rf', android_one_project, temp);
-            var config = copyArray(variable_configs);
-            var s = spyOn(plugins_module, 'searchAndReplace');
-            var vars = {
-                'API_KEY':'batcountry'
-            };
-            android.install(config, variable_id, temp, variableplugin, vars);
-            expect(s).toHaveBeenCalledWith(path.resolve(temp, 'AndroidManifest.xml'), vars);
-            expect(s).toHaveBeenCalledWith(path.resolve(temp, 'res', 'xml', 'plugins.xml'), vars);
-        });
     });
 
     describe('uninstallation', function() {
@@ -149,44 +113,6 @@ describe('android project handler', function() {
                     var source = copyArray(valid_source);
                     android.uninstall(source, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
                     expect(s).toHaveBeenCalledWith(temp, 'src/com/phonegap/plugins/dummyplugin/DummyPlugin.java');
-                    done();
-                });
-            });
-        });
-        describe('of <config-file> elements', function() {
-            it('should only target config.xml if that is applicable', function(done) {
-                var config = copyArray(configChanges);
-                var s = spyOn(xml_helpers, 'parseElementtreeSync').andCallThrough();
-                install('android', temp, 'DummyPlugin', plugins_dir, {}, function() {
-                    var config = copyArray(configChanges);
-                    android.uninstall(config, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
-                    expect(s).toHaveBeenCalledWith(path.join(temp, 'res', 'xml', 'config.xml'));
-                    expect(s).not.toHaveBeenCalledWith(path.join(temp, 'res', 'xml', 'plugins.xml'));
-                    done();
-                });
-            });
-            it('should only target plugins.xml if that is applicable', function(done) {
-                shell.rm('-rf', temp);
-                shell.mkdir('-p', temp);
-                shell.mkdir('-p', plugins_dir);
-                shell.cp('-rf', android_one_project, temp);
-                shell.cp('-rf', dummyplugin, plugins_dir);
-                var config = copyArray(configChanges);
-                var s = spyOn(xml_helpers, 'parseElementtreeSync').andCallThrough();
-                install('android', temp, 'DummyPlugin', plugins_dir, {}, function() {
-                    var config = copyArray(configChanges);
-                    android.uninstall(config, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
-                    expect(s).not.toHaveBeenCalledWith(path.join(temp, 'res', 'xml', 'config.xml'));
-                    expect(s).toHaveBeenCalledWith(path.join(temp, 'res', 'xml', 'plugins.xml'));
-                    done();
-                });
-            });
-            it('should call into xml helper\'s pruneXML', function(done) {
-                var config = copyArray(configChanges);
-                install('android', temp, 'DummyPlugin', plugins_dir, {}, function() {
-                    var s = spyOn(xml_helpers, 'pruneXML').andReturn(true);
-                    android.uninstall(config, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
-                    expect(s).toHaveBeenCalled();
                     done();
                 });
             });

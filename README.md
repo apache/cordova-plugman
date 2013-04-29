@@ -15,14 +15,14 @@ This document defines tool usage and the plugin format specification.
 ## Usage
 
     plugman --fetch --plugin <directory|git-url|name> [--plugins_dir <directory>]
-    plugman --install --platform <ios|android|bb10> --project <directory> --plugin <name> [--plugins_dir <directory>]
+    plugman --install --platform <ios|android|bb10> --project <directory> --plugin <name|url> [--plugins_dir <directory>]
     plugman --uninstall --platform <ios|android|bb10> --project <directory> --plugin <name> [--plugins_dir <directory>]
     plugman --remove --plugin <name> [--plugins_dir <directory>]
     plugman --list [--plugins_dir <directory>]
     plugman --prepare --platform <ios|android|bb10> --project <directory> [--plugins_dir <directory>]
 
 * `--fetch`: Retrieves and stores a plugin
-* `--install`: Installs an already-`--fetch`'ed plugin into a cordova project
+* `--install`: Installs a plugin into a cordova project. if `<name|url>` does not exist under the `plugins_dir`, will call `fetch` to retrieve it first.
 * `--uninstall`: Uninstalls an already-`--install`'ed plugin from a cordova project
 * `--remove`: Removes a `--fetch`'ed plugin
 * `--list`: Lists all `--fetch`'ed plugins

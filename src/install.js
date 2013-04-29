@@ -1,6 +1,7 @@
 var path = require('path'),
     fs   = require('fs'),
     et   = require('elementtree'),
+    config_changes = require('./util/config-changes');
     platform_modules = require('./platforms');
 
 // TODO: is name necessary as a param ehre?
@@ -53,13 +54,35 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
     });
     if (missing_vars.length > 0) {
         var err = new Error('Variable(s) missing: ' + missing_vars.join(", "));
-        if (callback) {
-            callback(err);
-            return;
-        }
+        if (callback) callback(err);
         else throw err;
+        return;
     }
 
+    // check if platform has plugin fully installed or queued already.
+    var platform_config = config_changes.get_platform_json(plugins_dir, platform);
+    var plugin_basename = path.basename(plugin_dir);
+    if (platform_config.prepare_queue.installed.indexOf(plugin_basename) > -1) {
+        var err = new Error('plugin "' + plugin_basename + '" is already installed (but needs to be prepared)');
+        if (callback) callback(err);
+        else throw err;
+        return;
+    }
+    var is_fully_installed = false;
+    Object.keys(platform_config.installed_plugins).forEach(function(installed_plugin_id) {
+        if (installed_plugin_id == plugin_id) {
+            is_fully_installed = true;
+        }
+    });
+    if (is_fully_installed) {
+        var err = new Error('plugin "' + plugin_basename + '" (id: '+plugin_id+') is already installed');
+        if (callback) callback(err);
+        else throw err;
+        return;
+    }
+    // TODO: handle asset elements
+
+    // TODO: if plugin does not have platform tag but has platform-agnostic config changes, should we queue it up?
     var platformTag = plugin_et.find('./platform[@name="'+platform+'"]');
     if (!platformTag) {
         // Either this plugin doesn't support this platform, or it's a JS-only plugin.
@@ -69,23 +92,19 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
         if (callback) callback();
         return;
     }
-    var handler = platform_modules[platform];
-
-    // TODO: check if platform has plugin installed already.
 
     // parse plugin.xml into transactions
+    var handler = platform_modules[platform];
     var txs = [];
     var sourceFiles = platformTag.findall('./source-file'),
         headerFiles = platformTag.findall('./header-file'),
         resourceFiles = platformTag.findall('./resource-file'),
         assets = platformTag.findall('./asset'),
-        frameworks = platformTag.findall('./framework'),
-        pluginsPlist = platformTag.findall('./plugins-plist'),
-        configChanges = platformTag.findall('./config-file');
+        frameworks = platformTag.findall('./framework');
 
     assets = assets.concat(plugin_et.findall('./asset'));
 
-    txs = txs.concat(sourceFiles, headerFiles, resourceFiles, frameworks, configChanges, assets, pluginsPlist);
+    txs = txs.concat(sourceFiles, headerFiles, resourceFiles, frameworks, assets);
 
     // pass platform-specific transactions into install
     handler.install(txs, plugin_id, project_dir, plugin_dir, filtered_variables, function(err) {
@@ -110,6 +129,8 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
             }
         } else {
             // WIN!
+            // queue up the plugin so prepare knows what to do.
+            config_changes.add_installed_plugin_to_prepare_queue(plugins_dir, path.basename(plugin_dir), platform, filtered_variables);
             // call prepare after a successful install
             require('./../plugman').prepare(project_dir, platform, plugins_dir);
 

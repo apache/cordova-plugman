@@ -17,22 +17,267 @@
  *
 */
 
-// takes an xml list of config-file tags
-// returns a JS object with an easy to use structure
+var fs   = require('fs'),
+    path = require('path'),
+    glob = require('glob'),
+    plist = require('plist'),
+    bplist = require('bplist-parser'),
+    et   = require('elementtree'),
+    platforms = require('./../platforms'),
+    xml_helpers = require('./../util/xml-helpers');
 
-module.exports = function configChanges(baseTag) {
-    var tags = baseTag.findall('./config-file'),
-        files = {};
+function checkPlatform(platform) {
+    if (!(platform in platforms)) throw new Error('platform "' + platform + '" not recognized.');
+}
 
-    tags.forEach(function (tag) {
-        var target = tag.attrib['target'];
+module.exports = {
+    add_installed_plugin_to_prepare_queue:function(plugins_dir, plugin, platform, vars) {
+        checkPlatform(platform);
 
-        if (files[target]) {
-            files[target].push(tag);
+        var config = module.exports.get_platform_json(plugins_dir, platform);
+        config.prepare_queue.installed.push({'plugin':plugin, 'vars':vars});
+        module.exports.save_platform_json(config, plugins_dir, platform);
+    },
+    add_uninstalled_plugin_to_prepare_queue:function(plugins_dir, plugin, platform) {
+        checkPlatform(platform);
+
+        var plugin_xml = new et.ElementTree(et.XML(fs.readFileSync(path.join(plugins_dir, plugin, 'plugin.xml'), 'utf-8')));
+        var config = module.exports.get_platform_json(plugins_dir, platform);
+        config.prepare_queue.uninstalled.push({'plugin':plugin, 'id':plugin_xml._root.attrib['id']});
+        module.exports.save_platform_json(config, plugins_dir, platform);
+    },
+    get_platform_json:function(plugins_dir, platform) {
+        checkPlatform(platform);
+
+        var filepath = path.join(plugins_dir, platform + '.json'); 
+        if (fs.existsSync(filepath)) {
+            return JSON.parse(fs.readFileSync(filepath, 'utf-8'));
         } else {
-            files[target] = [tag];
+            var config = {
+                prepare_queue:{installed:[], uninstalled:[]},
+                config_munge:{},
+                installed_plugins:{}
+            };
+            fs.writeFileSync(filepath, JSON.stringify(config), 'utf-8');
+            return config;
         }
-    });
+    },
+    save_platform_json:function(config, plugins_dir, platform) {
+        checkPlatform(platform);
 
-    return files;
+        var filepath = path.join(plugins_dir, platform + '.json'); 
+        fs.writeFileSync(filepath, JSON.stringify(config), 'utf-8');
+    },
+    generate_plugin_config_munge:function(plugin_dir, platform, vars) {
+        checkPlatform(platform);
+
+        var munge = {};
+        var plugin_xml = new et.ElementTree(et.XML(fs.readFileSync(path.join(plugin_dir, 'plugin.xml'), 'utf-8')));
+
+        var platformTag = plugin_xml.find('platform[@name="' + platform + '"]');
+        var changes = platformTag.findall('config-file');
+        // note down plugins-plist munges in special section of munge obj
+        var plugins_plist = platformTag.findall('plugins-plist');
+        plugins_plist.forEach(function(pl) {
+            if (!munge['plugins-plist']) {
+                munge['plugins-plist'] = {};
+            }
+            var key = pl.attrib['key'];
+            var value = pl.attrib['string'];
+            if (!munge['plugins-plist'][key]) {
+                munge['plugins-plist'][key] = string;
+            }
+        });
+
+        changes.forEach(function(change) {
+            var target = change.attrib['target'];
+            if (!munge[target]) {
+                munge[target] = {};
+            }
+            if (!munge[target][change.attrib['parent']]) {
+                munge[target][change.attrib['parent']] = {};
+            }
+            var xmls = change.getchildren();
+            xmls.forEach(function(xml) {
+                // 1. stringify each xml
+                var stringified = (new et.ElementTree(xml)).write({xml_declaration:false});
+                // interp vars
+                vars && Object.keys(vars).forEach(function(key) {
+                    var regExp = new RegExp("\\$" + key, "g");
+                    stringified = stringified.replace(regExp, vars[key]);
+                });
+                // 2. add into munge
+                if (!munge[target][change.attrib['parent']][stringified]) {
+                    munge[target][change.attrib['parent']][stringified] = 0;
+                }
+                munge[target][change.attrib['parent']][stringified] += 1;
+            });
+        });
+        return munge;
+    },
+    process:function(plugins_dir, project_dir, platform) {
+        checkPlatform(platform);
+
+        var platform_config = module.exports.get_platform_json(plugins_dir, platform);
+        // Uninstallation first
+        platform_config.prepare_queue.uninstalled.forEach(function(u) {
+            var plugin_dir = path.join(plugins_dir, u.plugin);
+            var plugin_id = u.id;
+            var plugin_vars = platform_config.installed_plugins[plugin_id].vars;
+
+            // get config munge, aka how did this plugin change various config files
+            var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, platform, plugin_vars);
+            // global munge looks at all plugins' changes to config files
+            var global_munge = platform_config.config_munge;
+            
+            // Traverse config munge and decrement global munge
+            Object.keys(config_munge).forEach(function(file) {
+                if (file == 'plugins-plist' && platform == 'ios') {
+                    if (global_munge[file]) {
+                        Object.keys(config_munge[file]).forEach(function(key) {
+                            if (global_munge[file][key]) {
+                                // prune from old plist if exists
+                                var plistfile = glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist'));
+                                if (plistfile.length > 0) {
+                                    plistfile = plistfile[0];
+                                    // determine if this is a binary or ascii plist and choose the parser
+                                    // this is temporary until binary support is added to node-plist
+                                    var pl = (isBinaryPlist(plistfile) ? bplist : plist);
+                                    var plistObj = pl.parseFileSync(plistfile);
+                                    delete plistObj.Plugins[key];
+                                    fs.writeFileSync(plistfile, plist.build(plistObj));
+                                }
+                                delete global_munge[file][key];
+                            }
+                        });
+                    }
+                } else if (global_munge[file]) {
+                    Object.keys(config_munge[file]).forEach(function(selector) {
+                        if (global_munge[file][selector]) {
+                            Object.keys(config_munge[file][selector]).forEach(function(xml_child) {
+                                if (global_munge[file][selector][xml_child]) {
+                                    global_munge[file][selector][xml_child] -= 1;
+                                    if (global_munge[file][selector][xml_child] === 0) {
+                                        // this xml child is no longer necessary, prune it
+                                        // config.xml referenced in ios config changes refer to the project's config.xml, which we need to glob for.
+                                        var filepath = resolveConfigFilePath(project_dir, platform, file);
+                                        if (fs.existsSync(filepath)) {
+                                            var doc = new et.ElementTree(et.XML(fs.readFileSync(filepath, 'utf-8')));
+                                            var xml_to_prune = [new et.ElementTree(et.XML(xml_child)).getroot()];
+                                            if (xml_helpers.pruneXML(doc, xml_to_prune, selector)) {
+                                                // were good, write out the file!
+                                                fs.writeFileSync(filepath, doc.write(), 'utf-8');
+                                            } else {
+                                                // uh oh
+                                                throw new Error('pruning xml during config uninstall went bad :(');
+                                            }
+                                        }
+                                        delete global_munge[file][selector][xml_child];
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+            platform_config.config_munge = global_munge;
+
+            // Remove from installed_plugins
+            delete platform_config.installed_plugins[plugin_id]
+        });
+
+        // Empty out uninstalled queue.
+        platform_config.prepare_queue.uninstalled = [];
+
+        // Now handle instalation
+        platform_config.prepare_queue.installed.forEach(function(u) {
+            var plugin_dir = path.join(plugins_dir, u.plugin);
+            var plugin_vars = u.vars;
+            var plugin_id = (new et.ElementTree(et.XML(fs.readFileSync(path.join(plugin_dir, 'plugin.xml'), 'utf-8'))))._root.attrib['id'];
+
+            // get config munge, aka how should this plugin change various config files
+            var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, platform, plugin_vars);
+            // global munge looks at all plugins' changes to config files
+            var global_munge = platform_config.config_munge;
+            
+            // Traverse config munge and decrement global munge
+            Object.keys(config_munge).forEach(function(file) {
+                if (!global_munge[file]) {
+                    global_munge[file] = {};
+                }
+                Object.keys(config_munge[file]).forEach(function(selector) {
+                    if (file == 'config.xml' && platform == 'ios') {
+                        var key = selector;
+                        if (!global_munge[file][key]) {
+                            // this key does not exist, so add it to plist
+                            global_munge[file][key] = config_munge[file][key];
+                            var plistfile = glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist'));
+                            if (plistfile.length > 0) {
+                                plistfile = plistfile[0];
+                                // determine if this is a binary or ascii plist and choose the parser
+                                // this is temporary until binary support is added to node-plist
+                                var pl = (isBinaryPlist(plistfile) ? bplist : plist);
+                                var plistObj = pl.parseFileSync(plistfile);
+                                plistObj.Plugins[key] = config_munge[file][key];
+                                fs.writeFileSync(plistfile, plist.build(plistObj));
+                            }
+                        }
+                    } else {
+                        if (!global_munge[file][selector]) {
+                            global_munge[file][selector] = {};
+                        }
+                        Object.keys(config_munge[file][selector]).forEach(function(xml_child) {
+                            if (!global_munge[file][selector][xml_child]) {
+                                global_munge[file][selector][xml_child] = 0;
+                            }
+                            global_munge[file][selector][xml_child] += 1;
+                            if (global_munge[file][selector][xml_child] == 1) {
+                                // this xml child is new, graft it (only if config file exists)
+                                // config file may be in a place not exactly specified in the target
+                                var filepath = resolveConfigFilePath(project_dir, platform, file);
+                                if (fs.existsSync(filepath)) {
+                                    var doc = new et.ElementTree(et.XML(fs.readFileSync(filepath, 'utf-8')));
+                                    var xml_to_graft = [new et.ElementTree(et.XML(xml_child)).getroot()];
+                                    if (xml_helpers.graftXML(doc, xml_to_graft, selector)) {
+                                        // were good, write out the file!
+                                        fs.writeFileSync(filepath, doc.write(), 'utf-8');
+                                    } else {
+                                        // uh oh
+                                        throw new Error('grafting xml during config install went bad :(');
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+            platform_config.config_munge = global_munge;
+
+            // Move to installed_plugins
+            platform_config.installed_plugins[plugin_id] = plugin_vars;
+        });
+
+        // Empty out installed queue.
+        platform_config.prepare_queue.installed = [];
+
+        // save
+        module.exports.save_platform_json(platform_config, plugins_dir, platform);
+    }
+};
+
+// determine if a plist file is binary
+function isBinaryPlist(filename) {
+    // I wish there was a synchronous way to read only the first 6 bytes of a
+    // file. This is wasteful :/ 
+    var buf = '' + fs.readFileSync(filename, 'utf8');
+    // binary plists start with a magic header, "bplist"
+    return buf.substring(0, 6) === 'bplist';
+}
+
+function resolveConfigFilePath(project_dir, platform, file) {
+    var filepath = path.join(project_dir, file);
+    if (platform == 'ios' && file == 'config.xml') {
+        filepath = glob.sync(path.join(project_dir, '**', 'config.xml'))[0];
+    }
+    return filepath;
 }

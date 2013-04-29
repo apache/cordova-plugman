@@ -4,6 +4,7 @@ var uninstall = require('../src/uninstall'),
     ios     = require('../src/platforms/ios'),
     blackberry = require('../src/platforms/blackberry'),
     xml_helpers = require('../src/util/xml-helpers'),
+    config_changes = require('../src/util/config-changes'),
     plugman = require('../plugman'),
     fs      = require('fs'),
     et      = require('elementtree'),
@@ -45,6 +46,12 @@ describe('uninstall', function() {
 
             expect(transactions.length).toEqual(6);
             expect(transactions[0].tag).toBe('source-file');
+        });
+        it('should call the config-changes module\'s add_uninstalled_plugin_to_prepare_queue method', function() {
+            uninstall('android', temp, 'DummyPlugin', plugins_dir, {});
+            var spy = spyOn(config_changes, 'add_uninstalled_plugin_to_prepare_queue');
+            android_uninstaller.mostRecentCall.args[4](null); // fake out handler uninstall callback
+            expect(spy).toHaveBeenCalledWith(plugins_dir, 'DummyPlugin', 'android');
         });
     });
 

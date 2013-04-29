@@ -97,13 +97,6 @@ describe('ios project handler', function() {
                 ios.install([], 'someid', temp, plugins_dir, {});
             }).toThrow('could not find PhoneGap/Cordova plist file, or config.xml file.');
         });
-        it('should interpolate any variables correctly into pbx, plist and config files', function() {
-            shell.cp('-rf', ios_config_xml_project, temp);
-            ios.install(variable_configs, variable_id, temp, plugins_dir, {'API_KEY':'ruthless competency'});
-            var config_file = path.join(temp, 'SampleApp', 'config.xml');
-            var contents = fs.readFileSync(config_file, 'utf-8');
-            expect(contents).toMatch(/awesome value="ruthless competency"/gi);
-        });
 
         describe('of <source-file> elements', function() {
             beforeEach(function() {
@@ -168,47 +161,6 @@ describe('ios project handler', function() {
                 var spy = spyOn(shell, 'cp');
                 ios.install(source, dummy_id, temp, dummyplugin, {});
                 expect(spy).toHaveBeenCalledWith(path.join(dummyplugin, 'src', 'ios', 'TargetDirTest.m'), path.join(temp, 'SampleApp', 'Plugins', 'targetDir', 'TargetDirTest.m'));
-            });
-        });
-
-        describe('of <plugins-plist> elements', function() {
-            it('should only be used in an applicably old cordova-ios projects', function() {
-                shell.cp('-rf', ios_plist_project, temp);
-                var pls = copyArray(plist_els);
-                var spy = spyOn(plist, 'parseFileSync').andReturn({Plugins:{}});
-                ios.install(pls, dummy_id, temp, dummyplugin, {});
-                expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'PhoneGap.plist'));
-            });
-            it('should not be used in an applicably new cordova-ios projects', function() {
-                shell.cp('-rf', ios_config_xml_project, temp);
-                var pls = copyArray(plist_els);
-                var spy = spyOn(plist, 'parseFileSync').andReturn({Plugins:{}});
-                ios.install(pls, dummy_id, temp, dummyplugin, {});
-                expect(spy).not.toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'config.xml'));
-            });
-            it('should add a <plugin> element in applicably new cordova-ios projects with old-style plugins using only <plugins-plist> elements', function() {
-                shell.cp('-rf', ios_config_xml_project, temp);
-                var pls = copyArray(plist_only_els);
-                ios.install(pls, plist_id, temp, plistplugin, {});
-                expect(fs.readFileSync(path.join(temp, 'SampleApp', 'config.xml'), 'utf-8')).toMatch(/<plugin name="OldSkewl"/gi);
-            });
-        });
-
-        describe('of <config-file> elements', function() {
-            beforeEach(function() {
-                shell.cp('-rf', ios_config_xml_project, temp);
-            });
-            it('should call xml_helpers\' graftXML', function() {
-                var config = copyArray(dummy_configs);
-                var spy = spyOn(xml_helpers, 'graftXML').andReturn(true);
-                ios.install(config, dummy_id, temp, dummyplugin, {});
-                expect(spy).toHaveBeenCalledWith(jasmine.any(Object), dummy_configs[0]._children, '/widget/plugins');
-            });
-            it('should write the new config file out after successfully grafting', function() {
-                var config = copyArray(dummy_configs);
-                var spy = spyOn(fs, 'writeFileSync');
-                ios.install(config, dummy_id, temp, dummyplugin, {});
-                expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'config.xml'), jasmine.any(String));
             });
         });
 

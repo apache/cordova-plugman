@@ -1,17 +1,15 @@
 var path = require('path'),
     fs   = require('fs'),
     et   = require('elementtree'),
-    platform_modules = require('./platforms');
-
+    platform_modules = require('./platforms'),
+    config_changes = require('./util/config-changes');
 
 module.exports = function uninstallPlugin(platform, project_dir, name, plugins_dir, cli_variables, callback) {
     if (!platform_modules[platform]) {
         var err = new Error(platform + " not supported.");
-        if (callback) {
-            callback(err);
-            return;
-        }
+        if (callback) callback(err);
         else throw err;
+        return;
     }
 
     // Check that the plugin has already been fetched.
@@ -19,11 +17,9 @@ module.exports = function uninstallPlugin(platform, project_dir, name, plugins_d
 
     if (!fs.existsSync(plugin_dir)) {
         var err = new Error('Plugin "' + name + '" not found. Already uninstalled?');
-        if (callback) {
-            callback(err);
-            return;
-        }
+        if (callback) callback(err);
         else throw err;
+        return;
     }
 
     runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, callback);
@@ -36,6 +32,8 @@ function runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variab
     var name         = plugin_et.findall('name').text;
     var plugin_id    = plugin_et._root.attrib['id'];
 
+    // TODO: remove any asset elements
+
     var platformTag = plugin_et.find('./platform[@name="'+platform+'"]');
     var platformTag = plugin_et.find('./platform[@name="'+platform+'"]');
     if (!platformTag) {
@@ -46,9 +44,9 @@ function runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variab
         if (callback) callback();
         return;
     }
-    var handler = platform_modules[platform];
 
     // parse plugin.xml into transactions
+    var handler = platform_modules[platform];
     var txs = [];
     var sourceFiles = platformTag.findall('./source-file'),
         headerFiles = platformTag.findall('./header-file'),
@@ -84,6 +82,8 @@ function runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variab
             }
         } else {
             // WIN!
+            // queue up the plugin so prepare can remove the config changes
+            config_changes.add_uninstalled_plugin_to_prepare_queue(plugins_dir, path.basename(plugin_dir), platform);
             // call prepare after a successful uninstall
             require('./../plugman').prepare(project_dir, platform, plugins_dir);
             if (callback) callback();

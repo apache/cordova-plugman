@@ -83,21 +83,6 @@ describe('blackberry project handler', function() {
                 }).toThrow('"' + target + '" already exists!');
             });
         });
-        describe('of <config-file> elements', function() {
-            it('should target config.xml', function() {
-                var config = copyArray(configChanges);
-                var s = spyOn(xml_helpers, 'parseElementtreeSync').andCallThrough();
-                blackberry.install(config, dummy_id, temp, dummyplugin, {});
-                expect(s).toHaveBeenCalledWith(path.join(temp, 'www', 'config.xml'));
-            });
-            it('should call into xml helper\'s graftXML', function() {
-                shell.cp('-rf', blackberry_project, temp);
-                var config = copyArray(configChanges);
-                var s = spyOn(xml_helpers, 'graftXML').andReturn(true);
-                blackberry.install(config, dummy_id, temp, dummyplugin, {});
-                expect(s).toHaveBeenCalled();
-            });
-        });
     });
 
     describe('uninstallation', function() {
@@ -119,27 +104,6 @@ describe('blackberry project handler', function() {
                     expect(s).toHaveBeenCalledWith(temp, 'ext-qnx/cordova.echo/client.js');
                     expect(s).toHaveBeenCalledWith(temp, 'ext-qnx/cordova.echo/index.js');
                     expect(s).toHaveBeenCalledWith(temp, 'ext-qnx/cordova.echo/manifest.json');
-                    done();
-                });
-            });
-        });
-        describe('of <config-file> elements', function() {
-            it('should target config.xml', function(done) {
-                var config = copyArray(configChanges);
-                var s = spyOn(xml_helpers, 'parseElementtreeSync').andCallThrough();
-                install('blackberry', temp, 'DummyPlugin', plugins_dir, {}, function() {
-                    var config = copyArray(configChanges);
-                    blackberry.uninstall(config, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
-                    expect(s).toHaveBeenCalledWith(path.join(temp, 'www', 'config.xml'));
-                    done();
-                });
-            });
-            it('should call into xml helper\'s pruneXML', function(done) {
-                var config = copyArray(configChanges);
-                install('blackberry', temp, 'DummyPlugin', plugins_dir, {}, function() {
-                    var s = spyOn(xml_helpers, 'pruneXML').andReturn(true);
-                    blackberry.uninstall(config, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
-                    expect(s).toHaveBeenCalled();
                     done();
                 });
             });

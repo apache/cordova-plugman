@@ -2,6 +2,7 @@ var install = require('../src/install'),
     android = require('../src/platforms/android'),
     ios     = require('../src/platforms/ios'),
     blackberry = require('../src/platforms/blackberry'),
+    config_changes = require('../src/util/config-changes'),
     plugman = require('../plugman'),
     fs      = require('fs'),
     os      = require('osenv'),
@@ -51,8 +52,14 @@ describe('install', function() {
             install('android', temp, 'DummyPlugin', plugins_dir, {});
             var transactions = android_installer.mostRecentCall.args[0];
 
-            expect(transactions.length).toEqual(6);
+            expect(transactions.length).toEqual(3);
             expect(transactions[0].tag).toBe('source-file');
+        });
+        it('should call the config-changes module\'s add_installed_plugin_to_prepare_queue method', function() {
+            install('android', temp, 'DummyPlugin', plugins_dir, {});
+            var spy = spyOn(config_changes, 'add_installed_plugin_to_prepare_queue');
+            android_installer.mostRecentCall.args[5](null); // fake out handler install callback
+            expect(spy).toHaveBeenCalledWith(plugins_dir, 'DummyPlugin', 'android', {});
         });
     });
 
@@ -77,6 +84,7 @@ describe('install', function() {
             expect(executed_txs.length).toEqual(0);
         }); 
         it('should throw if plugin is already installed into project', function() {
+            // TODO: plugins and their version can be recognized using the platform.json file
             shell.cp('-rf', dummyplugin, plugins_dir);
             expect(function() {
                 install('android', temp, 'DummyPlugin', plugins_dir, {});

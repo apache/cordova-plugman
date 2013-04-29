@@ -25,7 +25,7 @@ var fs = require('fs')
   , path = require('path')
   , et = require('elementtree');
 
-exports = module.exports = {
+module.exports = {
     moveProjFile: function(origFile, projPath, callback) {
         var src = path.resolve(projPath, origFile)
           , dest = src.replace('.orig', '');
@@ -63,7 +63,7 @@ exports = module.exports = {
         }
 
         for (i; i < one._children.length; i++) {
-            if (!exports.equalNodes(one._children[i], two._children[i])) {
+            if (!module.exports.equalNodes(one._children[i], two._children[i])) {
                 return false;
             }
         }
@@ -72,7 +72,7 @@ exports = module.exports = {
     },
 
     // adds node to doc at selector
-    graftXML: function (doc, nodes, selector) {
+    graftXML: function(doc, nodes, selector) {
         var ROOT = /^\/([^\/]*)/
           , ABSOLUTE = /^\/([^\/]*)\/(.*)/
           , parent, tagName, subSelector;
@@ -166,7 +166,7 @@ function uniqueChild(node, parent) {
         return true;
     } else  {
         for (i; i < matchingKids.length; i++) {
-            if (exports.equalNodes(node, matchingKids[i])) {
+            if (module.exports.equalNodes(node, matchingKids[i])) {
                 return false;
             }
         }

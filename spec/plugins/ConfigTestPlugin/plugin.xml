@@ -19,26 +19,19 @@
 -->
 
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
-    xmlns="http://www.phonegap.com/ns/plugins/1.0"
     xmlns:android="http://schemas.android.com/apk/res/android"
-    id="com.adobe.vars"
+    id="com.phonegap.configtest"
     version="3.0.0">
 
-    <name>Use Variables</name>
+    <name>Does Code Fil Write Even Work? Hopefully the Tests Will Tell Us</name>
 
-    <preference name="API_KEY" />
     <!-- android -->
     <platform name="android">
-		<config-file target="AndroidManifest.xml" parent="/manifest">
-            <poop name="GoogleMapsApiKey" value="$API_KEY" />
-		</config-file>
-		
-    </platform>
-
-    <!-- ios -->
-    <platform name="ios">
-        <config-file target="config.xml" parent="/widget">
-            <awesome value="$API_KEY" />
+        <config-file target="res/xml/config.xml" parent="/widget">
+            <poop/>
+        </config-file>
+        <config-file target="res/xml/config.xml" parent="/widget">
+            <poop/>
         </config-file>
     </platform>
 </plugin>
