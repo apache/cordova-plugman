@@ -123,7 +123,7 @@ module.exports = {
         platform_config.prepare_queue.uninstalled.forEach(function(u) {
             var plugin_dir = path.join(plugins_dir, u.plugin);
             var plugin_id = u.id;
-            var plugin_vars = platform_config.installed_plugins[plugin_id].vars;
+            var plugin_vars = platform_config.installed_plugins[plugin_id];
 
             // get config munge, aka how did this plugin change various config files
             var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, platform, plugin_vars);
@@ -254,7 +254,7 @@ module.exports = {
             platform_config.config_munge = global_munge;
 
             // Move to installed_plugins
-            platform_config.installed_plugins[plugin_id] = plugin_vars;
+            platform_config.installed_plugins[plugin_id] = plugin_vars || {};
         });
 
         // Empty out installed queue.

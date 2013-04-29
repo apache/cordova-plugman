@@ -299,8 +299,34 @@ describe('config-changes module', function() {
 
         describe(': uninstallation', function() {
             it('should call pruneXML for every config munge it completely removes from the app (every leaf that is decremented to 0)', function() {
+                shell.cp('-rf', android_two_project, temp);
+                // Run through an "install"
+                configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'DummyPlugin', 'android', {});
+                configChanges.process(plugins_dir, temp, 'android');
+
+                // Now set up an uninstall and make sure prunexml is called properly
+                configChanges.add_uninstalled_plugin_to_prepare_queue(plugins_dir, 'DummyPlugin', 'android');
+                var spy = spyOn(xml_helpers, 'pruneXML').andReturn(true);
+                configChanges.process(plugins_dir, temp, 'android');
+                expect(spy.calls.length).toEqual(2);
+                expect(spy.argsForCall[0][2]).toEqual('/manifest/application');
+                expect(spy.argsForCall[1][2]).toEqual('/cordova/plugins');
             });
-            it('should call pruneXML with variables to interpolate if applicable', function() {
+            it('should generate a config munge that interpolates variables into config changes, if applicable', function() {
+                shell.cp('-rf', android_two_project, temp);
+                shell.cp('-rf', varplugin, plugins_dir);
+                // Run through an "install"
+                configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'VariablePlugin', 'android', {"API_KEY":"canucks"});
+                configChanges.process(plugins_dir, temp, 'android');
+
+                // Now set up an uninstall and make sure prunexml is called properly
+                configChanges.add_uninstalled_plugin_to_prepare_queue(plugins_dir, 'VariablePlugin', 'android');
+                var spy = spyOn(configChanges, 'generate_plugin_config_munge').andReturn({});
+                configChanges.process(plugins_dir, temp, 'android');
+                var munge_params = spy.mostRecentCall.args;
+                expect(munge_params[0]).toEqual(path.join(plugins_dir, 'VariablePlugin'));
+                expect(munge_params[1]).toEqual('android');
+                expect(munge_params[2]['API_KEY']).toEqual('canucks');
             });
             it('should not call pruneXML for a config munge that another plugin depends on', function() {
             });
