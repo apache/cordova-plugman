@@ -80,8 +80,6 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
         else throw err;
         return;
     }
-    // TODO: handle asset elements
-
     // TODO: if plugin does not have platform tag but has platform-agnostic config changes, should we queue it up?
     var platformTag = plugin_et.find('./platform[@name="'+platform+'"]');
     if (!platformTag) {

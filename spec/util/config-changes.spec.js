@@ -8,6 +8,7 @@ var configChanges = require('../../src/util/config-changes'),
     shell   = require('shelljs'),
     temp    = path.join(os.tmpdir(), 'plugman'),
     dummyplugin = path.join(__dirname, '..', 'plugins', 'DummyPlugin'),
+    cbplugin = path.join(__dirname, '..', 'plugins', 'ChildBrowser'),
     childrenplugin = path.join(__dirname, '..', 'plugins', 'multiple-children'),
     shareddepsplugin = path.join(__dirname, '..', 'plugins', 'shared-deps-multi-child'),
     configplugin = path.join(__dirname, '..', 'plugins', 'ConfigTestPlugin'),
@@ -189,6 +190,8 @@ describe('config-changes module', function() {
             var munge = configChanges.generate_plugin_config_munge(childrenplugin, 'android', {PACKAGE_NAME:'ca.filmaj.plugins'});
             expect(munge['AndroidManifest.xml']['/manifest']['<uses-permission android:name="ca.filmaj.plugins.permission.C2D_MESSAGE" />']).toBeDefined();
         });
+        it('should automatically add on ios bundle identifier as PACKAGE_NAME variable for ios config munges');
+        it('should automatically add on app java identifier as PACKAGE_NAME variable for android config munges');
         it('should special case plugins-plist elements into own property', function() {
             var munge = configChanges.generate_plugin_config_munge(dummyplugin, 'ios', {});
             expect(munge['plugins-plist']).toBeDefined();
@@ -241,9 +244,7 @@ describe('config-changes module', function() {
             it('should not call graftXML for a config munge that already exists from another plugin', function() {
                 shell.cp('-rf', android_two_project, temp);
                 shell.cp('-rf', configplugin, plugins_dir);
-                var cfg = configChanges.get_platform_json(plugins_dir, 'android');
-                cfg.prepare_queue.installed = [{'plugin':'ConfigTestPlugin', 'vars':{}}];
-                configChanges.save_platform_json(cfg, plugins_dir, 'android');
+                configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'ConfigTestPlugin', 'android', {});
 
                 var spy = spyOn(xml_helpers, 'graftXML').andReturn(true);
                 configChanges.process(plugins_dir, temp, 'android');
@@ -251,20 +252,25 @@ describe('config-changes module', function() {
             });
             it('should not call graftXML for a config munge targeting a config file that does not exist', function() {
                 shell.cp('-rf', android_two_project, temp);
-                var cfg = configChanges.get_platform_json(plugins_dir, 'android');
-                cfg.prepare_queue.installed = [{'plugin':'DummyPlugin', 'vars':{}}];
-                configChanges.save_platform_json(cfg, plugins_dir, 'android');
+                configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'DummyPlugin', 'android', {});
 
                 var spy = spyOn(fs, 'readFileSync').andCallThrough();
 
                 configChanges.process(plugins_dir, temp, 'android');
                 expect(spy).not.toHaveBeenCalledWith(path.join(temp, 'res', 'xml', 'plugins.xml'), 'utf-8');
             });
+            it('should resolve wildcard config-file targets to the project, if applicable', function() {
+                shell.cp('-rf', ios_config_xml, temp);
+                shell.cp('-rf', cbplugin, plugins_dir);
+                configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'ChildBrowser', 'ios', {});
+                var spy = spyOn(fs, 'readFileSync').andCallThrough();
+
+                configChanges.process(plugins_dir, temp, 'ios');
+                expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'SampleApp-Info.plist'), 'utf8');
+            });
             it('should move successfully installed plugins from queue to installed plugins section, and include/retain vars if applicable', function() {
                 shell.cp('-rf', varplugin, plugins_dir);
-                var cfg = configChanges.get_platform_json(plugins_dir, 'android');
-                cfg.prepare_queue.installed = [{'plugin':'VariablePlugin', 'vars':{"API_KEY":"hi"}}];
-                configChanges.save_platform_json(cfg, plugins_dir, 'android');
+                configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'VariablePlugin', 'android', {"API_KEY":"hi"});
 
                 configChanges.process(plugins_dir, temp, 'android');
 
@@ -276,9 +282,7 @@ describe('config-changes module', function() {
             it('should save changes to global config munge after completing an install', function() {
                 shell.cp('-rf', android_two_project, temp);
                 shell.cp('-rf', varplugin, plugins_dir);
-                var cfg = configChanges.get_platform_json(plugins_dir, 'android');
-                cfg.prepare_queue.installed = [{'plugin':'VariablePlugin', 'vars':{"API_KEY":"hi"}}];
-                configChanges.save_platform_json(cfg, plugins_dir, 'android');
+                configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'VariablePlugin', 'android', {"API_KEY":"hi"});
 
                 var spy = spyOn(configChanges, 'save_platform_json');
                 configChanges.process(plugins_dir, temp, 'android');

@@ -90,10 +90,9 @@
             </array>
         </config-file>
 
-        <header-file src="ChildBrowserCommand.h" />
-        <header-file src="ChildBrowserViewController.h" />
-        <header-file src="preserveDirs/PreserveDirsTest.h" preserve-dirs="true" />
-        <header-file src="TargetDirTest.h" target-dir="targetDir"/>
+        <header-file src="src/ios/ChildBrowserCommand.h" />
+        <header-file src="src/ios/ChildBrowserViewController.h" />
+        <header-file src="src/ios/TargetDirTest.h" target-dir="targetDir"/>
 
         <source-file src="src/ios/ChildBrowserCommand.m" />
         <source-file src="src/ios/ChildBrowserViewController.m" />

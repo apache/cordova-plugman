@@ -24,7 +24,8 @@ var fs   = require('fs'),
     bplist = require('bplist-parser'),
     et   = require('elementtree'),
     platforms = require('./../platforms'),
-    xml_helpers = require('./../util/xml-helpers');
+    xml_helpers = require('./../util/xml-helpers'),
+    plist_helpers = require('./../util/plist-helpers');
 
 function checkPlatform(platform) {
     if (!(platform in platforms)) throw new Error('platform "' + platform + '" not recognized.');
@@ -162,14 +163,25 @@ module.exports = {
                                         // config.xml referenced in ios config changes refer to the project's config.xml, which we need to glob for.
                                         var filepath = resolveConfigFilePath(project_dir, platform, file);
                                         if (fs.existsSync(filepath)) {
-                                            var doc = new et.ElementTree(et.XML(fs.readFileSync(filepath, 'utf-8')));
-                                            var xml_to_prune = [new et.ElementTree(et.XML(xml_child)).getroot()];
-                                            if (xml_helpers.pruneXML(doc, xml_to_prune, selector)) {
-                                                // were good, write out the file!
-                                                fs.writeFileSync(filepath, doc.write(), 'utf-8');
+                                            if (path.extname(filepath) == '.xml') {
+                                                var xml_to_prune = [new et.ElementTree(et.XML(xml_child)).getroot()];
+                                                var doc = new et.ElementTree(et.XML(fs.readFileSync(filepath, 'utf-8')));
+                                                if (xml_helpers.pruneXML(doc, xml_to_prune, selector)) {
+                                                    // were good, write out the file!
+                                                    fs.writeFileSync(filepath, doc.write(), 'utf-8');
+                                                } else {
+                                                    // uh oh
+                                                    throw new Error('pruning xml during config uninstall went bad :(');
+                                                }
                                             } else {
-                                                // uh oh
-                                                throw new Error('pruning xml during config uninstall went bad :(');
+                                                // plist file
+                                                var pl = (isBinaryPlist(filepath) ? bplist : plist);
+                                                var plistObj = pl.parseFileSync(filepath);
+                                                if (plist_helpers.prunePLIST(plistObj, xml_child, selector)) {
+                                                    fs.writeFileSync(filepath, plist.build(plistObj));
+                                                } else {
+                                                    throw new Error('grafting to plist during config install went bad :(');
+                                                }
                                             }
                                         }
                                         delete global_munge[file][selector][xml_child];
@@ -236,14 +248,26 @@ module.exports = {
                                 // config file may be in a place not exactly specified in the target
                                 var filepath = resolveConfigFilePath(project_dir, platform, file);
                                 if (fs.existsSync(filepath)) {
-                                    var doc = new et.ElementTree(et.XML(fs.readFileSync(filepath, 'utf-8')));
-                                    var xml_to_graft = [new et.ElementTree(et.XML(xml_child)).getroot()];
-                                    if (xml_helpers.graftXML(doc, xml_to_graft, selector)) {
-                                        // were good, write out the file!
-                                        fs.writeFileSync(filepath, doc.write(), 'utf-8');
+                                    // look at ext and do proper config change based on file type
+                                    if (path.extname(filepath) == '.xml') {
+                                        var xml_to_graft = [new et.ElementTree(et.XML(xml_child)).getroot()];
+                                        var doc = new et.ElementTree(et.XML(fs.readFileSync(filepath, 'utf-8')));
+                                        if (xml_helpers.graftXML(doc, xml_to_graft, selector)) {
+                                            // were good, write out the file!
+                                            fs.writeFileSync(filepath, doc.write(), 'utf-8');
+                                        } else {
+                                            // uh oh
+                                            throw new Error('grafting xml during config install went bad :(');
+                                        }
                                     } else {
-                                        // uh oh
-                                        throw new Error('grafting xml during config install went bad :(');
+                                        // plist file
+                                        var pl = (isBinaryPlist(filepath) ? bplist : plist);
+                                        var plistObj = pl.parseFileSync(filepath);
+                                        if (plist_helpers.graftPLIST(plistObj, xml_child, selector)) {
+                                            fs.writeFileSync(filepath, plist.build(plistObj));
+                                        } else {
+                                            throw new Error('grafting to plist during config install went bad :(');
+                                        }
                                     }
                                 }
                             }
@@ -274,10 +298,18 @@ function isBinaryPlist(filename) {
     return buf.substring(0, 6) === 'bplist';
 }
 
+// Some config-file target attributes are not qualified with a full leading directory, or contain wildcards. resolve to a real path in this function
 function resolveConfigFilePath(project_dir, platform, file) {
     var filepath = path.join(project_dir, file);
-    if (platform == 'ios' && file == 'config.xml') {
-        filepath = glob.sync(path.join(project_dir, '**', 'config.xml'))[0];
+    if (file.indexOf('*') > -1) {
+        // handle wildcards in targets using glob.
+        var matches = glob.sync(path.join(project_dir, '**', file));
+        if (matches.length) filepath = matches[0];
+    } else {
+        // ios has a special-case config.xml target that is just "config.xml". this should be resolved to the real location of the file.
+        if (platform == 'ios' && file == 'config.xml') {
+            filepath = glob.sync(path.join(project_dir, '**', 'config.xml'))[0];
+        }
     }
     return filepath;
 }

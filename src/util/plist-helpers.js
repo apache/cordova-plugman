@@ -23,27 +23,26 @@ var et = require('elementtree'),
     plist = require('plist');
  
 // adds node to doc at selector
-exports.graftPLIST = function (doc, nodes, selector) {
-    var text = et.tostring(nodes, { xml_declaration: false });
-        obj = plist.parseStringSync("<plist>"+text+"</plist>");
+module.exports = {
+    graftPLIST:function (doc, xml, selector) {
+        var obj = plist.parseStringSync("<plist>"+xml+"</plist>");
 
-    var node = doc[selector];
-    if (node && Array.isArray(node) && Array.isArray(obj))
-        doc[selector] = node.concat(obj);
-    else
-        doc[selector] = obj;
+        var node = doc[selector];
+        if (node && Array.isArray(node) && Array.isArray(obj))
+            doc[selector] = node.concat(obj);
+        else
+            doc[selector] = obj;
 
-    return true;
-}
+        return true;
+    },
+    // removes node from doc at selector
+    prunePLIST:function(doc, xml, selector) {
+        var obj = plist.parseStringSync("<plist>"+xml+"</plist>");
+            
+        pruneOBJECT(doc, selector, obj);
 
-// removes node from doc at selector
-exports.prunePLIST = function(doc, nodes, selector) {
-    var text = et.tostring(nodes, { xml_declaration: false }),
-        obj = plist.parseStringSync("<plist>"+text+"</plist>");
-        
-    pruneOBJECT(doc, selector, obj);
-
-    return true;
+        return true;
+    }
 }
 
 function pruneOBJECT(doc, selector, fragment) {
@@ -87,4 +86,3 @@ function nodeEqual(node1, node2) {
 function escapeRE(str) {
      return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\$&");
 };
- 

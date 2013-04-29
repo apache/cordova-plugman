@@ -64,28 +64,6 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                         common.deleteJava(project_dir, destFile);
                     }
                     break;
-                case 'config-file':
-                    // Only modify config files that exist.
-                    var config_file = path.resolve(project_dir, mod.attrib['target']);
-                    if (fs.existsSync(config_file)) {
-                        var xmlDoc = xml_helpers.parseElementtreeSync(config_file);
-                        var selector = mod.attrib["parent"];
-                        var children = mod.findall('*');
-
-                        if (action == 'install') {
-                            if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
-                                throw new Error('failed to add config-file children to "' + selector + '" to "'+ config_file + '"');
-                            }
-                        } else {
-                            if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
-                                throw new Error('failed to remove config-file children from "' + selector + '" from "' + config_file + '"');
-                            }
-                        }
-
-                        var output = xmlDoc.write({indent: 4});
-                        fs.writeFileSync(config_file, output);
-                    }
-                    break;
                 case 'asset':
                     var src = mod.attrib['src'];
                     var target = mod.attrib['target'];

@@ -32,9 +32,6 @@ function runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variab
     var name         = plugin_et.findall('name').text;
     var plugin_id    = plugin_et._root.attrib['id'];
 
-    // TODO: remove any asset elements
-
-    var platformTag = plugin_et.find('./platform[@name="'+platform+'"]');
     var platformTag = plugin_et.find('./platform[@name="'+platform+'"]');
     if (!platformTag) {
         // Either this plugin doesn't support this platform, or it's a JS-only plugin.
@@ -52,12 +49,10 @@ function runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variab
         headerFiles = platformTag.findall('./header-file'),
         resourceFiles = platformTag.findall('./resource-file'),
         assets = platformTag.findall('./asset'),
-        frameworks = platformTag.findall('./framework'),
-        pluginsPlist = platformTag.findall('./plugins-plist'),
-        configChanges = platformTag.findall('./config-file');
+        frameworks = platformTag.findall('./framework');
     assets = assets.concat(plugin_et.findall('./asset'));
     
-    txs = txs.concat(sourceFiles, headerFiles, resourceFiles, frameworks, configChanges, assets, pluginsPlist);
+    txs = txs.concat(sourceFiles, headerFiles, resourceFiles, frameworks, assets);
 
     // pass platform-specific transactions into uninstall
     handler.uninstall(txs, plugin_id, project_dir, plugin_dir, function(err) {

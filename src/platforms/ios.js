@@ -112,85 +112,6 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                         shell.rm('-rf', targetDir);    
                     }
                     break;
-                case 'plugins-plist':
-                    var name = mod.attrib.key;
-                    var value = mod.attrib.string;
-                    // Tack on stuff into plist if this is an old-style project
-                    if (path.extname(config_file) == '.plist') {
-                        // determine if this is a binary or ascii plist and choose the parser
-                        // TODO: this is temporary until binary support is added to node-plist
-                        var pl = (isBinaryPlist(config_file) ? bplist : plist);
-                        var plistObj = pl.parseFileSync(config_file);
-                        
-                        if (action == 'install') {
-                            // TODO: move to prepare?
-                            // add hosts to whitelist (ExternalHosts) in plist
-                            /*
-                            hosts && hosts.forEach(function(host) {
-                                plistObj.ExternalHosts.push(host.attrib['origin']);
-                            });
-                            */
-
-                            // add plugin to plist
-                            plistObj.Plugins[name] = value;
-                        } else {
-                            delete plistObj.Plugins[name];
-                        }
-                        
-                        // write out plist
-                        fs.writeFileSync(config_file, plist.build(plistObj));
-                    } else {
-                        // If it's a config.xml-based project, we should still add/remove plugin entry to config.xml
-                        var xmlDoc = xml_helpers.parseElementtreeSync(config_file);
-                        var pluginsEl = xmlDoc.find('plugins');
-                        // Only add if it's not already there.
-                        if (pluginsEl.findall('./plugin[@name="' + name + '"]').length === 0) {
-                            if ( action == 'install') {
-                                var new_plugin = new et.Element('plugin');
-                                new_plugin.attrib.name = name;
-                                new_plugin.attrib.value = value;
-                                pluginsEl.append(new_plugin);
-                            } else {
-                                var culprit = pluginsEl.find("plugin[@name='"+name+"']");
-                                pluginsEl.remove(0, culprit);
-                            }
-                            var output = xmlDoc.write({indent: 4});
-                            fs.writeFileSync(config_file, output);
-                        }
-                    }
-                    break;
-                case 'config-file':
-                    // Only use config file appropriate for the current cordova-ios project
-                    if (mod.attrib['target'] == config_filename) {
-                        // edit configuration files
-                        var xmlDoc = xml_helpers.parseElementtreeSync(config_file);
-
-                        var selector = mod.attrib["parent"],
-                            children = mod.findall('*');
-
-                        if( action == 'install') {
-                            // Throw error if plugin was already added.
-                            if (children.length == 1 && children[0].tag.toLowerCase() == 'plugin' && (xmlDoc.find('plugins').findall('./plugin[@name="' + children[0].attrib.name + '"]').length === 1)
-                                ||(xmlDoc.find('plugins').findall('./plugin[@value="' + children[0].attrib.value + '"]').length === 1)){
-                                throw new Error('faild to add '+children[0].attrib.name+' to config.xml because it already exists');
-                            }
-
-                            if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
-                                throw new Error('failed to add config-file children to xpath "' + selector + '" in "' + config_file + '" because xpath selector could not be resolved.');
-                            }
-                        } else {
-                            // Ignore if plugin was already removed.
-                            if (children.length == 1 && children[0].tag.toLowerCase() == 'plugin' && xmlDoc.find('plugins').findall('./plugin[@name="' + children[0].attrib.name + '"]').length === 0) break;
-
-                            if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
-                                throw new Error('failed to remove config-file children from "' + selector + '" from "' + config_path + '"');
-                            }
-                        }
-
-                        var output = xmlDoc.write({indent: 4});
-                        fs.writeFileSync(config_file, output);
-                    }
-                    break;
                 case 'asset':
                     var src = mod.attrib['src'];
                     var target = mod.attrib['target'];
@@ -198,7 +119,7 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                         common.copyFile(plugin_dir, src, module.exports.www_dir(project_dir), target);
                     } else {
                         common.removeFile(module.exports.www_dir(project_dir), target);
-                        common.removeFile(path.resolve(module.exports.www_dir(project_dir), 'plugins', plugin_id));
+                        common.removeFile(path.join(module.exports.www_dir(project_dir), 'plugins'), plugin_id);
                     }
                     break;
                 case 'header-file':
@@ -246,7 +167,7 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                     }
                     break;
                 default:
-                    throw new Error('Unrecognized plugin.xml element/action in android installer: ' + mod.tag);
+                    throw new Error('Unrecognized plugin.xml element/action in ios installer: ' + mod.tag);
                     break;
             }
         } catch(e) {
