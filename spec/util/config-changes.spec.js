@@ -9,9 +9,11 @@ var configChanges = require('../../src/util/config-changes'),
     temp    = path.join(os.tmpdir(), 'plugman'),
     dummyplugin = path.join(__dirname, '..', 'plugins', 'DummyPlugin'),
     childrenplugin = path.join(__dirname, '..', 'plugins', 'multiple-children'),
+    shareddepsplugin = path.join(__dirname, '..', 'plugins', 'shared-deps-multi-child'),
     configplugin = path.join(__dirname, '..', 'plugins', 'ConfigTestPlugin'),
     varplugin = path.join(__dirname, '..', 'plugins', 'VariablePlugin'),
     android_two_project = path.join(__dirname, '..', 'projects', 'android_two', '*'),
+    android_two_no_perms_project = path.join(__dirname, '..', 'projects', 'android_two_no_perms', '*'),
     ios_plist_project = path.join(__dirname, '..', 'projects', 'ios-plist', '*'),
     ios_config_xml = path.join(__dirname, '..', 'projects', 'ios-config-xml', '*'),
     plugins_dir = path.join(temp, 'cordova', 'plugins');
@@ -329,14 +331,73 @@ describe('config-changes module', function() {
                 expect(munge_params[2]['API_KEY']).toEqual('canucks');
             });
             it('should not call pruneXML for a config munge that another plugin depends on', function() {
+                shell.cp('-rf', android_two_no_perms_project, temp);
+                shell.cp('-rf', childrenplugin, plugins_dir);
+                shell.cp('-rf', shareddepsplugin, plugins_dir);
+
+                // Run through and "install" two plugins (they share a permission for INTERNET)
+                configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'multiple-children', 'android', {});
+                configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'shared-deps-multi-child', 'android', {});
+                configChanges.process(plugins_dir, temp, 'android');
+
+                // Now set up an uninstall for multi-child plugin
+                configChanges.add_uninstalled_plugin_to_prepare_queue(plugins_dir, 'multiple-children', 'android');
+                configChanges.process(plugins_dir, temp, 'android');
+                var am_xml = new et.ElementTree(et.XML(fs.readFileSync(path.join(temp, 'AndroidManifest.xml'), 'utf-8')));
+                var permission = am_xml.find('./uses-permission');
+                expect(permission).toBeDefined();
+                expect(permission.attrib['android:name']).toEqual('android.permission.INTERNET');
             });
             it('should not call pruneXML for a config munge targeting a config file that does not exist', function() {
+                shell.cp('-rf', android_two_project, temp);
+                // install a plugin
+                configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'DummyPlugin', 'android', {});
+                configChanges.process(plugins_dir, temp, 'android');
+                // set up an uninstall for the same plugin
+                configChanges.add_uninstalled_plugin_to_prepare_queue(plugins_dir, 'DummyPlugin', 'android', {});
+
+                var spy = spyOn(fs, 'readFileSync').andCallThrough();
+                configChanges.process(plugins_dir, temp, 'android');
+
+                expect(spy).not.toHaveBeenCalledWith(path.join(temp, 'res', 'xml', 'plugins.xml'), 'utf-8');
             });
             it('should remove uninstalled plugins from installed plugins list', function() {
+                shell.cp('-rf', varplugin, plugins_dir);
+                // install the var plugin
+                configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'VariablePlugin', 'android', {"API_KEY":"eat my shorts"});
+                configChanges.process(plugins_dir, temp, 'android');
+                // queue up an uninstall for the same plugin
+                configChanges.add_uninstalled_plugin_to_prepare_queue(plugins_dir, 'VariablePlugin', 'android');
+                configChanges.process(plugins_dir, temp, 'android');
+
+                var cfg = configChanges.get_platform_json(plugins_dir, 'android');
+                expect(cfg.prepare_queue.uninstalled.length).toEqual(0);
+                expect(cfg.installed_plugins['com.adobe.vars']).not.toBeDefined();
             });
             it('should only parse + remove plist plugin entries in applicably old ios projects', function() {
+                shell.cp('-rf', ios_plist_project, temp);
+                // install plugin
+                configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'DummyPlugin', 'ios', {});
+                configChanges.process(plugins_dir, temp, 'ios');
+                // set up an uninstall
+                configChanges.add_uninstalled_plugin_to_prepare_queue(plugins_dir, 'DummyPlugin', 'ios');
+
+                var spy = spyOn(plist, 'parseFileSync').andReturn({Plugins:{}});
+                configChanges.process(plugins_dir, temp, 'ios');
+                expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'PhoneGap.plist'));
             });
             it('should save changes to global config munge after completing an uninstall', function() {
+                shell.cp('-rf', android_two_project, temp);
+                shell.cp('-rf', varplugin, plugins_dir);
+                // install a plugin
+                configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'VariablePlugin', 'android', {"API_KEY":"eat my shorts"});
+                configChanges.process(plugins_dir, temp, 'android');
+                // set up an uninstall for the plugin
+                configChanges.add_uninstalled_plugin_to_prepare_queue(plugins_dir, 'VariablePlugin', 'android');
+
+                var spy = spyOn(configChanges, 'save_platform_json');
+                configChanges.process(plugins_dir, temp, 'android');
+                expect(spy).toHaveBeenCalled();
             });
         });
     });

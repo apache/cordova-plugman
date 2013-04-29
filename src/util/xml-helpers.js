@@ -151,7 +151,7 @@ function findChild(node, parent) {
       , i, j;
 
     for (i = 0, j = matchingKids.length ; i < j ; i++) {
-        if (exports.equalNodes(node, matchingKids[i])) {
+        if (module.exports.equalNodes(node, matchingKids[i])) {
             return matchingKids[i];
         }
     }
