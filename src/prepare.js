@@ -54,35 +54,36 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
             var plugin_id = xml.getroot().attrib.id;
     
             // Copy all the <asset>s into the platform's www/
-            var assets = xml.findall('./asset');
-            assets && assets.forEach(function(asset) {
-                var target = asset.attrib.target;
-               
-                var lastSlash = target.lastIndexOf('/');
-                var dirname  = lastSlash < 0 ? ''     : target.substring(0, lastSlash);
-                var basename = lastSlash < 0 ? target : target.substring(lastSlash + 1);
+           // var assets = xml.findall('./asset');
+           // assets && assets.forEach(function(asset) {
+           //     var target = asset.attrib.target;
+           //    
+           //     var lastSlash = target.lastIndexOf('/');
+           //     var dirname  = lastSlash < 0 ? ''     : target.substring(0, lastSlash);
+           //     var basename = lastSlash < 0 ? target : target.substring(lastSlash + 1);
     
-                var targetDir = path.join(wwwDir, dirname);
-                 
-                shell.mkdir('-p', targetDir);
+           //     var targetDir = path.join(wwwDir, dirname);
+           //      
+           //     shell.mkdir('-p', targetDir);
     
-                var srcFile = path.join(pluginDir, asset.attrib.src);
-                var targetFile = path.join(targetDir, basename);
+           //     var srcFile = path.join(pluginDir, asset.attrib.src);
+           //     var targetFile = path.join(targetDir, basename);
     
-                var cpOptions = '-f';
-                
-                if(fs.statSync(srcFile).isDirectory()){
-                    shell.mkdir('-p',targetFile);
-                    srcFile = srcFile+'/*';
-                    cpOptions = '-Rf';
-                }
+           //     var cpOptions = '-f';
+           //     
+           //     if(fs.statSync(srcFile).isDirectory()){
+           //         shell.mkdir('-p',targetFile);
+           //         srcFile = srcFile+'/*';
+           //         cpOptions = '-Rf';
+           //     }
     
-                shell.cp(cpOptions, [srcFile], targetFile);
-                
-            });
+           //     shell.cp(cpOptions, [srcFile], targetFile);
+           //     
+           // });
     
             // And then add the plugins dir to the platform's www.
             var platformPluginsDir = path.join(wwwDir, 'plugins');
+            // XXX this should not be here if there are no js-module. It leaves an empty plugins/ directory
             shell.mkdir('-p', platformPluginsDir);
     
             var generalModules = xml.findall('./js-module');
@@ -94,13 +95,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     
             allModules.forEach(function(module) {
                 // Copy the plugin's files into the www directory.
-                var dirname = module.attrib.src;
-                var lastSlash = dirname.lastIndexOf('/');
-                if (lastSlash >= 0) {
-                    dirname = dirname.substring(0, lastSlash);
-                } else {
-                    dirname = ''; // Just the file, no subdir.
-                }
+                var dirname = path.dirname(module.attrib.src);
     
                 var dir = path.join(platformPluginsDir, plugin_id, dirname);
                 shell.mkdir('-p', dir);

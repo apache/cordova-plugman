@@ -150,7 +150,7 @@ describe('blackberry project handler', function() {
                 install('blackberry', temp, 'DummyPlugin', plugins_dir, {}, function() {
                     var s = spyOn(shell, 'rm');
                     blackberry.uninstall(as, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
-                    expect(s).toHaveBeenCalledWith('-rf', path.join(temp, 'www', 'plugins', dummy_id));
+                    expect(s).toHaveBeenCalledWith('-Rf', path.join(temp, 'www', 'plugins', dummy_id));
                     done();
                 });
             });
@@ -159,8 +159,8 @@ describe('blackberry project handler', function() {
                 install('blackberry', temp, 'DummyPlugin', plugins_dir, {}, function() {
                     var s = spyOn(shell, 'rm');
                     blackberry.uninstall(as, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
-                    expect(s).toHaveBeenCalledWith('-rf', path.join(temp, 'www', 'dummyplugin.js'));
-                    expect(s).toHaveBeenCalledWith('-rf', path.join(temp, 'www', 'dummyplugin'));
+                    expect(s).toHaveBeenCalledWith('-Rf', path.join(temp, 'www', 'dummyplugin.js'));
+                    expect(s).toHaveBeenCalledWith('-Rf', path.join(temp, 'www', 'dummyplugin'));
                     done();
                 });
             });

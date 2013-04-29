@@ -197,7 +197,7 @@ describe('android project handler', function() {
                 install('android', temp, 'DummyPlugin', plugins_dir, {}, function() {
                     var s = spyOn(shell, 'rm');
                     android.uninstall(as, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
-                    expect(s).toHaveBeenCalledWith('-rf', path.join(temp, 'assets', 'www', 'plugins', dummy_id));
+                    expect(s).toHaveBeenCalledWith('-Rf', path.join(temp, 'assets', 'www', 'plugins', dummy_id));
                     done();
                 });
             });
@@ -206,8 +206,8 @@ describe('android project handler', function() {
                 install('android', temp, 'DummyPlugin', plugins_dir, {}, function() {
                     var s = spyOn(shell, 'rm');
                     android.uninstall(as, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
-                    expect(s).toHaveBeenCalledWith('-rf', path.join(temp, 'assets', 'www', 'dummyplugin.js'));
-                    expect(s).toHaveBeenCalledWith('-rf', path.join(temp, 'assets', 'www', 'dummyplugin'));
+                    expect(s).toHaveBeenCalledWith('-Rf', path.join(temp, 'assets', 'www', 'dummyplugin.js'));
+                    expect(s).toHaveBeenCalledWith('-Rf', path.join(temp, 'assets', 'www', 'dummyplugin'));
                     done();
                 });
             });

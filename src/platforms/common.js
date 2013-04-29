@@ -22,7 +22,22 @@ module.exports = {
         src = module.exports.resolveSrcPath(plugin_dir, src);
         dest = module.exports.resolveTargetPath(project_dir, dest);
         shell.mkdir('-p', path.dirname(dest));
-        shell.cp(src, dest);
+
+        // XXX sheljs decides to create a directory when -R|-r is used which sucks. http://goo.gl/nbsjq
+        if(fs.statSync(src).isDirectory()) {
+            shell.cp('-R', src+'/*', dest);
+        } else {
+            shell.cp(src, dest);
+        }
+    },
+    // checks if file exists and then deletes. Error if doesn't exist
+    removeFile:function(project_dir, src) {
+        var file = module.exports.resolveSrcPath(project_dir, src);
+        shell.rm('-Rf', file);
+    },
+    // deletes file/directory without checking
+    removeFileF:function(file) {
+        shell.rm('-Rf', file);
     },
     // Sometimes we want to remove some java, and prune any unnecessary empty directories
     deleteJava:function(project_dir, destFile) {

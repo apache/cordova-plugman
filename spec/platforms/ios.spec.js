@@ -25,7 +25,7 @@ var xml_path = path.join(dummyplugin, 'plugin.xml'),
 var platformTag = plugin_et.find('./platform[@name="ios"]');
 var dummy_id = plugin_et._root.attrib['id'];
 var valid_source = platformTag.findall('./source-file'),
-    assets = plugin_et.findall('./asset'),
+    valid_assets = plugin_et.findall('./asset'),
     valid_headers = platformTag.findall('./header-file'),
     valid_resources = platformTag.findall('./resource-file'),
     valid_frameworks = platformTag.findall('./framework'),
@@ -46,6 +46,7 @@ plugin_et = new et.ElementTree(et.XML(xml_test));
 platformTag = plugin_et.find('./platform[@name="ios"]');
 
 var faulty_id = plugin_et._root.attrib['id'];
+var invalid_assets = plugin_et.findall('./asset');
 var invalid_source = platformTag.findall('./source-file');
 var invalid_headers = platformTag.findall('./header-file');
 var invalid_resources = platformTag.findall('./resource-file');
@@ -118,6 +119,7 @@ describe('ios project handler', function() {
             it('should throw if source-file target already exists', function() {
                 var source = copyArray(valid_source);
                 var target = path.join(temp, 'SampleApp', 'Plugins', 'DummyPluginCommand.m');
+                shell.mkdir('-p', path.dirname(target));
                 fs.writeFileSync(target, 'some bs', 'utf-8');
                 expect(function() {
                     ios.install(source, dummy_id, temp, dummyplugin, {});
@@ -224,6 +226,7 @@ describe('ios project handler', function() {
             it('should throw if header-file target already exists', function() {
                 var headers = copyArray(valid_headers);
                 var target = path.join(temp, 'SampleApp', 'Plugins', 'DummyPluginCommand.h');
+                shell.mkdir('-p', path.dirname(target));
                 fs.writeFileSync(target, 'some bs', 'utf-8');
                 expect(function() {
                     ios.install(headers, dummy_id, temp, dummyplugin, {});
@@ -288,6 +291,7 @@ describe('ios project handler', function() {
             it('should throw if resource-file target already exists', function() {
                 var resources = copyArray(valid_resources);
                 var target = path.join(temp, 'SampleApp', 'Resources', 'DummyPlugin.bundle');
+                shell.mkdir('-p', path.dirname(target));
                 fs.writeFileSync(target, 'some bs', 'utf-8');
                 expect(function() {
                     ios.install(resources, dummy_id, temp, dummyplugin, {});
@@ -314,6 +318,45 @@ describe('ios project handler', function() {
                 var spy = spyOn(shell, 'cp');
                 ios.install(resources, dummy_id, temp, dummyplugin, {});
                 expect(spy).toHaveBeenCalledWith('-R', path.join(dummyplugin, 'src', 'ios', 'DummyPlugin.bundle'), path.join(temp, 'SampleApp', 'Resources'));
+            });
+        });
+        
+        describe('of <asset> elements', function() {
+            beforeEach(function() {
+                shell.cp('-rf', ios_config_xml_project, temp);
+            });
+            it('should throw if asset src cannot be found', function() {
+                var assets = copyArray(invalid_assets);
+                expect(function() {
+                    ios.install(assets, faulty_id, temp, faultyplugin, {});
+                }).toThrow('"' + path.resolve(faultyplugin, 'www/main.js') + '" not found!');
+            });
+            it('should throw if asset target already exists', function() {
+                var assets = copyArray(valid_assets);
+                var target = path.join(temp, 'www', 'dummyplugin.js');
+                fs.writeFileSync(target, 'some bs', 'utf-8');
+                expect(function() {
+                    ios.install(assets, dummy_id, temp, dummyplugin, {});
+                }).toThrow('"'+ target + '" already exists!');
+            });
+            it('should cp the file and directory to the right target location', function() {
+                var assets = copyArray(valid_assets);
+                var spy_cp = spyOn(shell, 'cp').andCallThrough();
+                var spy_mkdir = spyOn(shell, 'mkdir').andCallThrough();
+                ios.install(assets, dummy_id, temp, dummyplugin, {});
+                expect(spy_mkdir).toHaveBeenCalledWith('-p', path.join(temp, 'www'));
+                expect(spy_cp).toHaveBeenCalledWith(path.join(dummyplugin, 'www', 'dummyplugin.js'), path.join(temp, 'www', 'dummyplugin.js'));
+                expect(spy_cp).toHaveBeenCalledWith('-R', path.join(dummyplugin, 'www', 'dummyplugin/*'), path.join(temp, 'www', 'dummyplugin'));
+                
+                // make sure the file and directory are properly copies
+                expect(fs.existsSync(path.join(temp, 'www', 'dummyplugin.js'))).toBe(true);
+                expect(fs.statSync(path.join(temp, 'www', 'dummyplugin.js')).isFile()).toBe(true);
+                
+                expect(fs.existsSync(path.join(temp, 'www', 'dummyplugin'))).toBe(true);
+                expect(fs.statSync(path.join(temp, 'www', 'dummyplugin')).isDirectory()).toBe(true);
+                
+                expect(fs.existsSync(path.join(temp, 'www', 'dummyplugin', 'image.jpg'))).toBe(true);
+                expect(fs.statSync(path.join(temp, 'www', 'dummyplugin', 'image.jpg')).isFile()).toBe(true);
             });
         });
 
@@ -382,8 +425,12 @@ describe('ios project handler', function() {
         });
 
         describe('of <asset> elements', function() {
-            it('should call rm on specified asset');
-            it('should call rm on the www/plugins/<plugin_id> folder');
+            it('should call rm on specified asset', function() {
+                
+            });
+            it('should call rm on the www/plugins/<plugin_id> folder', function() {
+                
+            });
         });
 
         describe('of <header-file> elements', function() {
