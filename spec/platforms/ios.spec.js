@@ -5,6 +5,7 @@ var ios = require('../../src/platforms/ios'),
     et = require('elementtree'),
     shell = require('shelljs'),
     os = require('osenv'),
+    common = require('../../src/platforms/common'),
     xcode = require('xcode'),
     plist = require('plist'),
     bplist = require('bplist-parser'),
@@ -395,78 +396,24 @@ describe('ios project handler', function() {
             });
         });
 
-        describe('of <plugins-plist> elements', function() {
-            it('should only be used in an applicably old cordova-ios project', function(){
-                shell.cp('-rf', ios_plist_project, temp);
-                var pls = copyArray(plist_els);
-                var spy = spyOn(plist, 'parseFileSync').andReturn({Plugins:{}});
-                
-                ios.uninstall(pls, dummy_id, temp, dummyplugin);
-                expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'PhoneGap.plist'));
-            });
-            it('should not be used in an applicably old cordova-ios project', function() {
-                shell.cp('-rf', ios_config_xml_project, temp);
-                var pls = copyArray(plist_els);
-                var spy = spyOn(xml_helpers, 'parseElementtreeSync').andCallThrough();
-                ios.uninstall(pls, dummy_id, temp, dummyplugin);
-                expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'config.xml'));
-            });
-            it('should remove the <plugin> element in applicably new cordova-ios projects with old-style plugins using only <plugins-plist> elements', function() {
-                shell.cp('-rf', ios_config_xml_project, temp);
-                var pls = copyArray(plist_only_els);
-                //ios.install(pls, plist_id, temp, plistplugin, {});
-                var spy = spyOn(plist, 'parseFileSync').andReturn({Plugins:{}});
-                ios.uninstall(pls, dummy_id, temp, plistplugin);
-                expect(fs.readFileSync(path.join(temp, 'SampleApp', 'config.xml'), 'utf-8')).not.toMatch(/<plugin name="OldSkewl"/gi);
-            });
-        });
-  
-        describe('of <config-file> elements', function() {
-            beforeEach(function() {
-                shell.cp('-rf', ios_config_xml_project, temp);
-            });
-            it('should call xml_helpers\' pruneXML', function(){
-                var config = copyArray(dummy_configs);
-                // add an extra child element to avoid an if statement in ios.js
-                config[0]._children[1] = config[0]._children[0];
-                
-                var spy = spyOn(xml_helpers, 'pruneXML').andReturn({config_path: ''});
-
-                ios.uninstall(config, dummy_id, temp, dummyplugin);
-                expect(spy).toHaveBeenCalledWith(jasmine.any(Object), dummy_configs[0]._children, '/widget/plugins');                
-            });
-            it('should write the new config file out after successfully pruning', function(){
-                var config = copyArray(dummy_configs);
-                // add an extra child element to avoid an if statement in ios.js
-                config[0]._children[1] = config[0]._children[0];
-                
-                var spyPrune = spyOn(xml_helpers, 'pruneXML').andCallThrough();
-                var spyWrite = spyOn(fs, 'writeFileSync');
-
-                ios.uninstall(config, dummy_id, temp, dummyplugin);
-                expect(spyPrune).toHaveBeenCalled();
-                expect(spyWrite).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'config.xml'), jasmine.any(String));    
-            });
-        });
-
         describe('of <asset> elements', function() {
             beforeEach(function() {
                 shell.cp('-rf', ios_config_xml_project, temp);
             });
             it('should call rm on specified asset',function(){
-                var config = copyArray(assets);
-                var spy = spyOn(shell, 'rm');
+                var config = copyArray(valid_assets);
+                var spy = spyOn(common, 'removeFile');
                 
                 ios.uninstall(config, dummy_id, temp, dummyplugin);
-                expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'www', 'dummyplugin.js'));    
-                expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'www', 'dummyplugin'));  
+                expect(spy).toHaveBeenCalledWith(path.join(temp, 'www'), 'dummyplugin.js');    
+                expect(spy).toHaveBeenCalledWith(path.join(temp, 'www'), 'dummyplugin');  
             });
             it('should call rm on the www/plugins/<plugin_id> folder',function(){
-                var config = copyArray(assets);
-                var spy = spyOn(shell, 'rm');
+                var config = copyArray(valid_assets);
+                var spy = spyOn(common, 'removeFile');
                 
                 ios.uninstall(config, dummy_id, temp, dummyplugin);
-                expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'www', 'plugins', dummy_id));    
+                expect(spy).toHaveBeenCalledWith(path.join(temp, 'www', 'plugins'), dummy_id);    
             });
         });
 
