@@ -44,7 +44,7 @@ describe('uninstall', function() {
             uninstall('android', temp, 'DummyPlugin', plugins_dir, {});
             var transactions = android_uninstaller.mostRecentCall.args[0];
 
-            expect(transactions.length).toEqual(6);
+            expect(transactions.length).toEqual(3);
             expect(transactions[0].tag).toBe('source-file');
         });
         it('should call the config-changes module\'s add_uninstalled_plugin_to_prepare_queue method', function() {
@@ -69,15 +69,10 @@ describe('uninstall', function() {
         it('should handle a failed uninstall by passing completed transactions into appropriate handler\'s install method', function() {
             shell.cp('-rf', faultyplugin, plugins_dir);
             install('android', temp, 'DummyPlugin', plugins_dir, {});
-            var s = spyOn(android, 'install');
-            // destroy android manifest /manifest/application so pruneXML fails 
-            var manifest_path = path.join(temp, 'AndroidManifest.xml');
-            var manifest = xml_helpers.parseElementtreeSync(manifest_path);
-            var app_el = manifest.find('application');
-            manifest.getroot().remove(0, app_el);
-            var output = manifest.write({indent:4});
-            fs.writeFileSync(manifest_path, output);
 
+            // make uninstall fail by removing a js asset
+            shell.rm(path.join(temp, 'assets', 'www', 'dummyplugin.js'));
+            var s = spyOn(android, 'install');
             uninstall('android', temp, 'DummyPlugin', plugins_dir, {});
             var executed_txs = s.mostRecentCall.args[0];
             expect(executed_txs.length).toEqual(1);
