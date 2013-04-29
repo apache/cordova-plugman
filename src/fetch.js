@@ -34,7 +34,8 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, link, callback) {
         if (link) {
             fs.symlinkSync(path.resolve(plugin_dir), dest, 'dir');
         } else {
-            shell.cp('-R', plugin_dir, plugins_dir); // Yes, not dest.
+            //  XXX if you don't path.resolve(plugin_dir) and plugin_dir has a trailing slash shelljs shits itself.
+            shell.cp('-R', path.resolve(plugin_dir), plugins_dir); // Yes, not dest.
         }
 
         if (callback) callback(null, dest);

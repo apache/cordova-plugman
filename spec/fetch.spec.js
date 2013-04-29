@@ -22,6 +22,10 @@ describe('fetch', function() {
             fetch(test_plugin, temp, false);
             expect(fs.existsSync(copied_plugin_path)).toBe(true);
         });
+        it('should copy locally-available plugin to plugins directory when specified with a trailing slash', function() {
+            fetch(test_plugin+'/', temp, false);
+            expect(fs.existsSync(copied_plugin_path)).toBe(true);
+        });
         it('should create a symlink if used with `link` param', function() {
             fetch(test_plugin, temp, true);
             expect(fs.lstatSync(copied_plugin_path).isSymbolicLink()).toBe(true);
