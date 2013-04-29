@@ -31,6 +31,7 @@
     <platform name="android">
 		<config-file target="AndroidManifest.xml" parent="/manifest">
             <poop name="GoogleMapsApiKey" value="$API_KEY" />
+            <package>$PACKAGE_NAME</package>
 		</config-file>
 		
     </platform>
@@ -39,6 +40,7 @@
     <platform name="ios">
         <config-file target="config.xml" parent="/widget">
             <awesome value="$API_KEY" />
+            <cfbundleid>$PACKAGE_NAME</cfbundleid>
         </config-file>
     </platform>
 </plugin>

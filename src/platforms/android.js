@@ -34,11 +34,18 @@ module.exports = {
     },
     www_dir:function(project_dir) {
         return path.join(project_dir, 'assets', 'www');
+    },
+    // reads the package name out of the Android Manifest file
+    // @param string project_dir the absolute path to the directory containing the project
+    // @return string the name of the package
+    package_name:function (project_dir) {
+        var mDoc = xml_helpers.parseElementtreeSync(path.join(project_dir, 'AndroidManifest.xml'));
+
+        return mDoc._root.attrib['package'];
     }
 };
 
 function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables, callback) {
-    var PACKAGE_NAME = androidPackageName(project_dir);
     variables = variables || {};
 
     // TODO: adding access tags?
@@ -91,22 +98,5 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
         completed.push(mod);
     }
 
-    if (action == 'install') {
-        variables['PACKAGE_NAME'] = androidPackageName(project_dir);
-        var config_filename = path.resolve(project_dir, 'res', 'xml', 'config.xml');
-        if (!fs.existsSync(config_filename)) config_filename = path.resolve(project_dir, 'res', 'xml', 'plugins.xml');
-        plugins_module.searchAndReplace(config_filename, variables);
-        plugins_module.searchAndReplace(path.resolve(project_dir, 'AndroidManifest.xml'), variables);
-    }
-
     if (callback) callback();
-}
-
-// reads the package name out of the Android Manifest file
-// @param string project_dir the absolute path to the directory containing the project
-// @return string the name of the package
-function androidPackageName(project_dir) {
-    var mDoc = xml_helpers.parseElementtreeSync(path.resolve(project_dir, 'AndroidManifest.xml'));
-
-    return mDoc._root.attrib['package'];
 }

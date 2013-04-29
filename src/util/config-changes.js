@@ -69,8 +69,15 @@ module.exports = {
         var filepath = path.join(plugins_dir, platform + '.json'); 
         fs.writeFileSync(filepath, JSON.stringify(config), 'utf-8');
     },
-    generate_plugin_config_munge:function(plugin_dir, platform, vars) {
+    generate_plugin_config_munge:function(plugin_dir, platform, project_dir, vars) {
         checkPlatform(platform);
+
+        vars = vars || {};
+        var platform_handler = platforms[platform];
+        // Add PACKAGE_NAME variable into vars
+        if (!vars['PACKAGE_NAME']) {
+            vars['PACKAGE_NAME'] = platform_handler.package_name(project_dir);
+        }
 
         var munge = {};
         var plugin_xml = new et.ElementTree(et.XML(fs.readFileSync(path.join(plugin_dir, 'plugin.xml'), 'utf-8')));
@@ -127,7 +134,7 @@ module.exports = {
             var plugin_vars = platform_config.installed_plugins[plugin_id];
 
             // get config munge, aka how did this plugin change various config files
-            var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, platform, plugin_vars);
+            var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, platform, project_dir, plugin_vars);
             // global munge looks at all plugins' changes to config files
             var global_munge = platform_config.config_munge;
             
@@ -208,7 +215,7 @@ module.exports = {
             var plugin_id = (new et.ElementTree(et.XML(fs.readFileSync(path.join(plugin_dir, 'plugin.xml'), 'utf-8'))))._root.attrib['id'];
 
             // get config munge, aka how should this plugin change various config files
-            var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, platform, plugin_vars);
+            var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, platform, project_dir, plugin_vars);
             // global munge looks at all plugins' changes to config files
             var global_munge = platform_config.config_munge;
             

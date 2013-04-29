@@ -39,6 +39,10 @@ module.exports = {
     },
     www_dir:function(project_dir) {
         return path.join(project_dir, 'www');
+    },
+    package_name:function(project_dir) {
+        var plist_file = glob.sync(path.join(project_dir, '**', '*-Info.plist'))[0];
+        return plist.parseFileSync(plist_file).CFBundleIdentifier;
     }
 };
  
@@ -183,16 +187,9 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
         }
         completed.push(mod);
     }
-    
     // write out xcodeproj file
     fs.writeFileSync(pbxPath, xcodeproj.writeSync());
 
-    if (action == 'install') {
-        variables['PACKAGE_NAME'] = plist.parseFileSync(projectPListPath).CFBundleIdentifier;
-        searchAndReplace(pbxPath, variables);
-        searchAndReplace(projectPListPath, variables);
-        searchAndReplace(config_file, variables);
-    }
     if (callback) callback();
 }
 

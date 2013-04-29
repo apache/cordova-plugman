@@ -34,6 +34,11 @@ module.exports = {
     },
     www_dir:function(project_dir) {
         return path.join(project_dir, 'www');
+    },
+    package_name:function(project_dir) {
+        var config_path = path.join(module.exports.www_dir(project_dir), 'config.xml');
+        var widget_doc = new et.ElementTree(et.XML(fs.readFileSync(config_path, 'utf-8')));
+        return widget_doc._root.attrib['id'];
     }
 };
 
