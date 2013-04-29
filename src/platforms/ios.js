@@ -136,7 +136,7 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                         shell.cp(srcFile, destFile);
                     } else {
                         // TODO: doesnt preserve-dirs affect what the originally-added path to xcodeproj (see above) affect how we should call remove too?
-                        xcodeproj.removeHeaderFile(path.join('Plugins', path.basename(src)));
+                        xcodeproj.removeHeaderFile(path.join('Plugins', path.relative(pluginsDir, destFile)));
                         shell.rm('-rf', destFile);
                         // TODO: again.. is this right? same as source-file
                         shell.rm('-rf', targetDir);
