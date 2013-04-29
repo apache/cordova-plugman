@@ -4,6 +4,9 @@ A command line tool to distribute and package plugins for use with Apache Cordov
 
 This document defines tool usage and the plugin format specification.
 
+## Quickstart
+
+    npm install -g plugman
 
 ## Design Goals
 
@@ -17,20 +20,18 @@ This document defines tool usage and the plugin format specification.
     plugman --fetch --plugin <directory|git-url|name> [--plugins_dir <directory>]
     plugman --install --platform <ios|android|bb10> --project <directory> --plugin <name|url> [--plugins_dir <directory>]
     plugman --uninstall --platform <ios|android|bb10> --project <directory> --plugin <name> [--plugins_dir <directory>]
-    plugman --remove --plugin <name> [--plugins_dir <directory>]
     plugman --list [--plugins_dir <directory>]
     plugman --prepare --platform <ios|android|bb10> --project <directory> [--plugins_dir <directory>]
 
 * `--fetch`: Retrieves and stores a plugin
 * `--install`: Installs a plugin into a cordova project. if `<name|url>` does not exist under the `plugins_dir`, will call `fetch` to retrieve it first.
 * `--uninstall`: Uninstalls an already-`--install`'ed plugin from a cordova project
-* `--remove`: Removes a `--fetch`'ed plugin
 * `--list`: Lists all `--fetch`'ed plugins
 * `--prepare`: Based on all installed plugins, will set up properly injecting plugin JavaScript code and setting up permissions properly. Implicitly called after `--install` and `--uninstall` commands. See below for more details.
 
 `--plugins_dir` defaults to `<project>/cordova/plugins`, but can be any directory containing a subdirectory for each fetched plugin
 
-Note that `--fetch` and `--remove` deal with the local cache of the plugin's files and don't care about platforms, while `--install` and `--uninstall` require specifying the target platform and the location of the project, and actually do installation of plugin code and assets.
+Note that `--fetch` deals with the local cache of the plugin's files and doesn't care about platforms, while `--install` and `--uninstall` require specifying the target platform and the location of the project, and actually do installation of plugin code and assets.
 
 
 ### Supported Platforms
@@ -41,7 +42,8 @@ Note that `--fetch` and `--remove` deal with the local cache of the plugin's fil
 
 ### Example Plugins
 
-The plugins found [https://github.com/MobileChromeApps/chrome-cordova/plugins](here) are maintained actively by a contributor to plugman, and should serve as good examples.
+- Google has a [https://github.com/MobileChromeApps/chrome-cordova/plugins](bunch of plugins) which are maintained actively by a contributor to plugman
+- Adobe maintains plugins for its Build cloud service, which are open sourced and [available on GitHub](https://github.com/phonegap-build)
 
 ## Development
 
@@ -85,7 +87,7 @@ This structure is suggested, but not required.
 
 ## plugin.xml Manifest Format
 
-Last edited April 17 2013.
+Last edited April 29 2013.
 
 The `plugin.xml` file is an XML document in the plugins namespace -
 `http://apache.org/cordova/ns/plugins/1.0`. It contains a top-level `plugin`
@@ -182,7 +184,7 @@ Web-only plugins would contains mainly &lt;asset&gt; elements.
 Where the file or directory is located in the plugin package, relative to the
 `plugin.xml` document.
 
-If a file does not exist at the source location, plugman will stop/reverse the installation process and notify the user, and exit with a non-zero code.
+If a file does not exist at the specified `src` location, plugman will stop/reverse the installation process and notify the user, and exit with a non-zero code.
 
 #### target (required)
 
@@ -314,6 +316,8 @@ Example:
 The file to be modified, and the path relative to the root of the Cordova
 project.
 
+On iOS, the location of configuration files relative to the project directory root is not known. Therefore, for iOS configuration files, the `target` does not need to be qualified with subdirectories relative to a cordova-ios project root. Specifying a target of `config.xml` will resolve to `cordova-ios-project/MyAppName/config.xml`, for example.
+
 If this file does not exist, the tool should stop/reverse the installation process, warn the user, and exit with a non-zero code.
 
 #### parent
@@ -405,13 +409,13 @@ The tool will provide additional information to users. This is useful when you r
 
 Examples:
 
-<info>
-You need to install **Google Play Services** from the `Android Extras` section using the Android SDK manager (run `android`).
+    <info>
+    You need to install **Google Play Services** from the `Android Extras` section using the Android SDK manager (run `android`).
 
-You need to add the following line to your `local.properties`
-    
-android.library.reference.1=PATH_TO_ANDROID_SDK/sdk/extras/google/google_play_services/libproject/google-play-services_lib
-</info>
+    You need to add the following line to your `local.properties`
+        
+    android.library.reference.1=PATH_TO_ANDROID_SDK/sdk/extras/google/google_play_services/libproject/google-play-services_lib
+    </info>
 
 ## Variables
 
@@ -458,28 +462,10 @@ the `CFBundleIdentifier` on iOS or the `package` attribute of the top-level
 
 TODO: show how the foo plugin example from above will have its files placed in a cordova project after running plugman
 
-## Authors
-
-* Andrew Lunny
-* Fil Maj
-* Mike Reinstein
-* Anis Kadri
-* Braden Shepherdson
-* Tim Kim 
-
 ## Contributors
 
-* Michael Brooks
+See the package.json file for attribution notes.
 
 ## License
 
-Apache
-
-## TODO
-
-These apply to plugman as well as cordova-cli. Keep the two in step, they both have `future` branches.
-
-These are in rough order of priority, most urgent at the top.
-
-* Fix all the tests, including the www-only tests, which expect the old `www` platform that has been removed. Note that most of the tests will need some rewiring because of the separation of `--fetch` and `--install`. [CB-2814](http://issues.cordova.io/2814). Assigned to Tim.
-* Implement a `cordova watch` a la `grunt watch` that will re-run `cordova prepare` every time the installed plugins change (including those installed with `--link`). This is definitely a stretch goal, but it would be awesome. Not assigned but tracked at [CB-2819](http://issues.cordova.io/2819).
+Apache License 2.0
