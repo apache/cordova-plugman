@@ -3,6 +3,7 @@ var prepare = require('../src/prepare'),
     os      = require('osenv'),
     path    = require('path'),
     shell   = require('shelljs'),
+    config_changes = require('../src/util/config-changes'),
     temp    = path.join(os.tmpdir(), 'plugman'),
     childbrowser = path.join(__dirname, 'plugins', 'ChildBrowser'),
     dummyplugin = path.join(__dirname, 'plugins', 'DummyPlugin'),
@@ -63,12 +64,9 @@ describe('prepare', function() {
         expect(plugins.length).toEqual(0);
     });
 
-    describe('config handling', function() {
-        it('needs to know about the stock app config.xml somehow?');
-        describe('single plugin', function() {
-        });
-
-        describe('multiple plugins', function() {
-        });
+    it('should call into config-changes\' process method to do config processing', function() {
+        var spy = spyOn(config_changes, 'process');
+        prepare(temp, 'android', plugins_dir);
+        expect(spy).toHaveBeenCalledWith(plugins_dir, temp, 'android');
     });
 });

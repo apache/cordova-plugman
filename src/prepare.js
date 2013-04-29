@@ -19,6 +19,7 @@
 
 var platform_modules = require('./platforms'),
     path            = require('path'),
+    config_changes  = require('./util/config-changes'),
     fs              = require('fs'),
     shell           = require('shelljs'),
     ls              = fs.readdirSync,
@@ -32,13 +33,17 @@ var platform_modules = require('./platforms'),
 // a path to where the plugins are downloaded, the www dir, and the platform ('android', 'ios', etc.).
 module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     // Process:
+    // - Do config munging by calling into config-changes module
     // - List all plugins in plugins_dir
+    // TODO: should look into platform json file to determine which plugins are properly installed into the project
     // - Load and parse their plugin.xml files.
     // - Skip those without support for this platform. (No <platform> tags means JS-only!)
     // - Build a list of all their js-modules, including platform-specific js-modules.
     // - For each js-module (general first, then platform) build up an object storing the path and any clobbers, merges and runs for it.
     // - Write this object into www/cordova_plugins.json.
     // - Cordova.js contains code to load them at runtime from that file.
+
+    config_changes.process(plugins_dir, project_dir, platform);
 
     var wwwDir = platform_modules[platform].www_dir(project_dir);
     var plugins = ls(plugins_dir);
@@ -144,4 +149,5 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
 
     // Write out moduleObjects as JSON to cordova_plugins.json
     fs.writeFileSync(path.join(wwwDir, 'cordova_plugins.json'), JSON.stringify(moduleObjects), 'utf-8');
+
 };
