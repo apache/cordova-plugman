@@ -195,6 +195,12 @@ describe('config-changes module', function() {
             var munge = configChanges.generate_plugin_config_munge(childrenplugin, 'android', temp, {PACKAGE_NAME:'ca.filmaj.plugins'});
             expect(munge['AndroidManifest.xml']['/manifest']['<uses-permission android:name="ca.filmaj.plugins.permission.C2D_MESSAGE" />']).toBeDefined();
         });
+        it('should create munges for platform-agnostic config.xml changes', function() {
+            shell.cp('-rf', android_two_project, temp);
+            var munge = configChanges.generate_plugin_config_munge(dummyplugin, 'android', temp, {});
+            expect(munge['config.xml']['/*']['<access origin="build.phonegap.com" />']).toBeDefined();
+            expect(munge['config.xml']['/*']['<access origin="s3.amazonaws.com" />']).toBeDefined();
+        });
         it('should automatically add on ios bundle identifier as PACKAGE_NAME variable for ios config munges', function() {
             shell.cp('-rf', ios_config_xml, temp);
             var munge = configChanges.generate_plugin_config_munge(varplugin, 'ios', temp, {});
@@ -253,9 +259,11 @@ describe('config-changes module', function() {
                 var manifest_doc = new et.ElementTree(et.XML(fs.readFileSync(path.join(temp, 'AndroidManifest.xml'), 'utf-8')));
                 var munge = dummy_xml.find('./platform[@name="android"]/config-file[@target="AndroidManifest.xml"]');
                 configChanges.process(plugins_dir, temp, 'android');
-                expect(spy.calls.length).toEqual(2);
-                expect(spy.argsForCall[0][2]).toEqual('/manifest/application');
-                expect(spy.argsForCall[1][2]).toEqual('/cordova/plugins');
+                expect(spy.calls.length).toEqual(4);
+                expect(spy.argsForCall[0][2]).toEqual('/*');
+                expect(spy.argsForCall[1][2]).toEqual('/*');
+                expect(spy.argsForCall[2][2]).toEqual('/manifest/application');
+                expect(spy.argsForCall[3][2]).toEqual('/cordova/plugins');
             });
             it('should not call graftXML for a config munge that already exists from another plugin', function() {
                 shell.cp('-rf', android_two_project, temp);
@@ -331,9 +339,11 @@ describe('config-changes module', function() {
                 configChanges.add_uninstalled_plugin_to_prepare_queue(plugins_dir, 'DummyPlugin', 'android');
                 var spy = spyOn(xml_helpers, 'pruneXML').andReturn(true);
                 configChanges.process(plugins_dir, temp, 'android');
-                expect(spy.calls.length).toEqual(2);
-                expect(spy.argsForCall[0][2]).toEqual('/manifest/application');
-                expect(spy.argsForCall[1][2]).toEqual('/cordova/plugins');
+                expect(spy.calls.length).toEqual(4);
+                expect(spy.argsForCall[0][2]).toEqual('/*');
+                expect(spy.argsForCall[1][2]).toEqual('/*');
+                expect(spy.argsForCall[2][2]).toEqual('/manifest/application');
+                expect(spy.argsForCall[3][2]).toEqual('/cordova/plugins');
             });
             it('should generate a config munge that interpolates variables into config changes, if applicable', function() {
                 shell.cp('-rf', android_two_project, temp);

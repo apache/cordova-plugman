@@ -83,27 +83,35 @@ module.exports = {
         var plugin_xml = new et.ElementTree(et.XML(fs.readFileSync(path.join(plugin_dir, 'plugin.xml'), 'utf-8')));
 
         var platformTag = plugin_xml.find('platform[@name="' + platform + '"]');
-        var changes = platformTag.findall('config-file');
-        // note down plugins-plist munges in special section of munge obj
-        var plugins_plist = platformTag.findall('plugins-plist');
-        plugins_plist.forEach(function(pl) {
-            if (!munge['plugins-plist']) {
-                munge['plugins-plist'] = {};
-            }
-            var key = pl.attrib['key'];
-            var value = pl.attrib['string'];
-            if (!munge['plugins-plist'][key]) {
-                munge['plugins-plist'][key] = value;
-            }
-        });
+        var changes = [];
+        // add platform-agnostic config changes
+        changes = changes.concat(plugin_xml.findall('config-file'));
+        if (platformTag) {
+            // add platform-specific config changes if they exist
+            changes = changes.concat(platformTag.findall('config-file'));
+
+            // note down plugins-plist munges in special section of munge obj
+            var plugins_plist = platformTag.findall('plugins-plist');
+            plugins_plist.forEach(function(pl) {
+                if (!munge['plugins-plist']) {
+                    munge['plugins-plist'] = {};
+                }
+                var key = pl.attrib['key'];
+                var value = pl.attrib['string'];
+                if (!munge['plugins-plist'][key]) {
+                    munge['plugins-plist'][key] = value;
+                }
+            });
+        }
 
         changes.forEach(function(change) {
             var target = change.attrib['target'];
+            var parent = change.attrib['parent'];
             if (!munge[target]) {
                 munge[target] = {};
             }
-            if (!munge[target][change.attrib['parent']]) {
-                munge[target][change.attrib['parent']] = {};
+            if (!munge[target][parent]) {
+                munge[target][parent] = {};
             }
             var xmls = change.getchildren();
             xmls.forEach(function(xml) {
@@ -115,10 +123,10 @@ module.exports = {
                     stringified = stringified.replace(regExp, vars[key]);
                 });
                 // 2. add into munge
-                if (!munge[target][change.attrib['parent']][stringified]) {
-                    munge[target][change.attrib['parent']][stringified] = 0;
+                if (!munge[target][parent][stringified]) {
+                    munge[target][parent][stringified] = 0;
                 }
-                munge[target][change.attrib['parent']][stringified] += 1;
+                munge[target][parent][stringified] += 1;
             });
         });
         return munge;
@@ -171,14 +179,14 @@ module.exports = {
                                         var filepath = resolveConfigFilePath(project_dir, platform, file);
                                         if (fs.existsSync(filepath)) {
                                             if (path.extname(filepath) == '.xml') {
-                                                var xml_to_prune = [new et.ElementTree(et.XML(xml_child)).getroot()];
+                                                var xml_to_prune = [et.XML(xml_child)];
                                                 var doc = new et.ElementTree(et.XML(fs.readFileSync(filepath, 'utf-8')));
                                                 if (xml_helpers.pruneXML(doc, xml_to_prune, selector)) {
                                                     // were good, write out the file!
                                                     fs.writeFileSync(filepath, doc.write(), 'utf-8');
                                                 } else {
                                                     // uh oh
-                                                    throw new Error('pruning xml during config uninstall went bad :(');
+                                                    throw new Error('pruning xml at selector "' + selector + '" from "' + filepath + '" during config uninstall went bad :(');
                                                 }
                                             } else {
                                                 // plist file
@@ -187,7 +195,7 @@ module.exports = {
                                                 if (plist_helpers.prunePLIST(plistObj, xml_child, selector)) {
                                                     fs.writeFileSync(filepath, plist.build(plistObj));
                                                 } else {
-                                                    throw new Error('grafting to plist during config install went bad :(');
+                                                    throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
                                                 }
                                             }
                                         }
@@ -257,14 +265,14 @@ module.exports = {
                                 if (fs.existsSync(filepath)) {
                                     // look at ext and do proper config change based on file type
                                     if (path.extname(filepath) == '.xml') {
-                                        var xml_to_graft = [new et.ElementTree(et.XML(xml_child)).getroot()];
+                                        var xml_to_graft = [et.XML(xml_child)];
                                         var doc = new et.ElementTree(et.XML(fs.readFileSync(filepath, 'utf-8')));
                                         if (xml_helpers.graftXML(doc, xml_to_graft, selector)) {
                                             // were good, write out the file!
                                             fs.writeFileSync(filepath, doc.write(), 'utf-8');
                                         } else {
                                             // uh oh
-                                            throw new Error('grafting xml during config install went bad :(');
+                                            throw new Error('grafting xml at selector "' + selector + '" from "' + filepath + '" during config install went bad :(');
                                         }
                                     } else {
                                         // plist file
@@ -273,7 +281,7 @@ module.exports = {
                                         if (plist_helpers.graftPLIST(plistObj, xml_child, selector)) {
                                             fs.writeFileSync(filepath, plist.build(plistObj));
                                         } else {
-                                            throw new Error('grafting to plist during config install went bad :(');
+                                            throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
                                         }
                                     }
                                 }
@@ -313,9 +321,10 @@ function resolveConfigFilePath(project_dir, platform, file) {
         var matches = glob.sync(path.join(project_dir, '**', file));
         if (matches.length) filepath = matches[0];
     } else {
-        // ios has a special-case config.xml target that is just "config.xml". this should be resolved to the real location of the file.
-        if (platform == 'ios' && file == 'config.xml') {
-            filepath = glob.sync(path.join(project_dir, '**', 'config.xml'))[0];
+        // special-case config.xml target that is just "config.xml". this should be resolved to the real location of the file.
+        if (file == 'config.xml') {
+            var matches = glob.sync(path.join(project_dir, '**', 'config.xml'));
+            if (matches.length) filepath = matches[0];
         }
     }
     return filepath;

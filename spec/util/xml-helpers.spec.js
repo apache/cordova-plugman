@@ -31,42 +31,98 @@ var path = require('path')
   , goodbyeTag = et.XML("<h1>GOODBYE</h1>")
   , helloTagTwo = et.XML("<h1>  HELLO  </h1>");
 
+
 describe('xml-helpers', function(){
-    it('should return false for different tags', function(){
-        expect(xml_helpers.equalNodes(usesNetworkOne, title)).toBe(false);
+    describe('equalNodes', function() {
+        it('should return false for different tags', function(){
+            expect(xml_helpers.equalNodes(usesNetworkOne, title)).toBe(false);
+        });
+
+        it('should return true for identical tags', function(){
+            expect(xml_helpers.equalNodes(usesNetworkOne, usesNetworkTwo)).toBe(true);
+        });   
+        
+        it('should return false for different attributes', function(){
+            expect(xml_helpers.equalNodes(usesNetworkOne, usesReceive)).toBe(false);
+        });  
+        
+        it('should distinguish between text', function(){
+            expect(xml_helpers.equalNodes(helloTagOne, goodbyeTag)).toBe(false);
+        });  
+        
+        it('should ignore whitespace in text', function(){
+            expect(xml_helpers.equalNodes(helloTagOne, helloTagTwo)).toBe(true);
+        });    
+        
+        describe('should compare children', function(){
+            it('by child quantity', function(){
+                var one = et.XML('<i><b>o</b></i>'),
+                    two = et.XML('<i><b>o</b><u></u></i>');
+        
+                expect(xml_helpers.equalNodes(one, two)).toBe(false);        
+            });
+            
+            it('by child equality', function(){
+                var one = et.XML('<i><b>o</b></i>'),
+                    two = et.XML('<i><u></u></i>'),
+                    uno = et.XML('<i>\n<b>o</b>\n</i>');
+        
+                expect(xml_helpers.equalNodes(one, uno)).toBe(true); 
+                expect(xml_helpers.equalNodes(one, two)).toBe(false);       
+            });
+        }); 
+    });
+    describe('pruneXML', function() {
+        var config_xml;
+
+        beforeEach(function() {
+            config_xml = xml_helpers.parseElementtreeSync(path.join(__dirname, '..', 'projects', 'android_two', 'res', 'xml', 'config.xml'));
+        });
+
+        it('should remove any children that match the specified selector', function() {
+            var children = config_xml.findall('plugins/plugin');
+            xml_helpers.pruneXML(config_xml, children, 'plugins');
+            expect(config_xml.find('plugins').getchildren().length).toEqual(0);
+        });
+        it('should do nothing if the children cannot be found', function() {
+            var children = [title];
+            xml_helpers.pruneXML(config_xml, children, 'plugins');
+            expect(config_xml.find('plugins').getchildren().length).toEqual(17);
+        });
+        it('should be able to handle absolute selectors', function() {
+            var children = config_xml.findall('plugins/plugin');
+            xml_helpers.pruneXML(config_xml, children, '/cordova/plugins');
+            expect(config_xml.find('plugins').getchildren().length).toEqual(0);
+        });
+        it('should be able to handle absolute selectors with wildcards', function() {
+            var children = config_xml.findall('plugins/plugin');
+            xml_helpers.pruneXML(config_xml, children, '/*/plugins');
+            expect(config_xml.find('plugins').getchildren().length).toEqual(0);
+        });
     });
 
-    it('should return true for identical tags', function(){
-        expect(xml_helpers.equalNodes(usesNetworkOne, usesNetworkTwo)).toBe(true);
-    });   
-    
-    it('should return false for different attributes', function(){
-        expect(xml_helpers.equalNodes(usesNetworkOne, usesReceive)).toBe(false);
-    });  
-    
-    it('should distinguish between text', function(){
-        expect(xml_helpers.equalNodes(helloTagOne, goodbyeTag)).toBe(false);
-    });  
-    
-    it('should ignore whitespace in text', function(){
-        expect(xml_helpers.equalNodes(helloTagOne, helloTagTwo)).toBe(true);
-    });    
-    
-    describe('should compare children', function(){
-        it('by child quantity', function(){
-            var one = et.XML('<i><b>o</b></i>'),
-                two = et.XML('<i><b>o</b><u></u></i>');
-    
-            expect(xml_helpers.equalNodes(one, two)).toBe(false);        
+    describe('graftXML', function() {
+        var config_xml, plugin_xml;
+
+        beforeEach(function() {
+            config_xml = xml_helpers.parseElementtreeSync(path.join(__dirname, '..', 'projects', 'android_two', 'res', 'xml', 'config.xml'));
+            plugin_xml = xml_helpers.parseElementtreeSync(path.join(__dirname, '..', 'plugins', 'ChildBrowser', 'plugin.xml'));
         });
-        
-        it('by child equality', function(){
-            var one = et.XML('<i><b>o</b></i>'),
-                two = et.XML('<i><u></u></i>'),
-                uno = et.XML('<i>\n<b>o</b>\n</i>');
-    
-            expect(xml_helpers.equalNodes(one, uno)).toBe(true); 
-            expect(xml_helpers.equalNodes(one, two)).toBe(false);       
+
+        it('should add children to the specified selector', function() {
+            var children = plugin_xml.find('config-file').getchildren();
+            xml_helpers.graftXML(config_xml, children, 'plugins');
+            expect(config_xml.find('plugins').getchildren().length).toEqual(19);
         });
-    }); 
+        it('should be able to handle absolute selectors', function() {
+            var children = plugin_xml.find('config-file').getchildren();
+            xml_helpers.graftXML(config_xml, children, '/cordova');
+            expect(config_xml.findall('access').length).toEqual(3);
+        });
+        it('should be able to handle absolute selectors with wildcards', function() {
+            var children = plugin_xml.find('config-file').getchildren();
+            xml_helpers.graftXML(config_xml, children, '/*');
+            expect(config_xml.findall('access').length).toEqual(3);
+        });
+    });
 });

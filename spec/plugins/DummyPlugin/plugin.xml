@@ -28,8 +28,10 @@
     <asset src="www/dummyplugin.js" target="dummyplugin.js" />
     <asset src="www/dummyplugin" target="dummyplugin" />
 
-	<access origin="build.phonegap.com" />
-	<access origin="s3.amazonaws.com" />
+    <config-file target="config.xml" parent="/*">
+        <access origin="build.phonegap.com" />
+        <access origin="s3.amazonaws.com" />
+    </config-file>
 	
     <!-- android -->
     <platform name="android">

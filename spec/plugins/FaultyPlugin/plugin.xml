@@ -28,8 +28,11 @@
 	<access origin="build.phonegap.com" />
 	<access origin="s3.amazonaws.com" />
     <!-- file doesn't exist -->
-    <asset src="www/main.js" target="faultyplugin/main.js" />
-    <asset src="www/index.js" target="faultyplugin/index.js" />
+
+    <config-file target="config.xml" parent="/widget">
+        <asset src="www/main.js" target="faultyplugin/main.js" />
+        <asset src="www/index.js" target="faultyplugin/index.js" />
+    </config-file>
 	
     <!-- android -->
     <platform name="android">

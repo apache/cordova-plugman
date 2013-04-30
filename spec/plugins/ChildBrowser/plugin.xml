@@ -32,8 +32,10 @@
         <clobbers target="childbrowser" />
     </js-module>
 
-    <access origin="build.phonegap.com" />
-    <access origin="s3.amazonaws.com" />
+    <config-file target="config.xml" parent="/*">
+        <access origin="build.phonegap.com" />
+        <access origin="s3.amazonaws.com" />
+    </config-file>
 
     <!-- android -->
     <platform name="android">

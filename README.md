@@ -18,7 +18,7 @@ This document defines tool usage and the plugin format specification.
 ## Usage
 
     plugman --fetch --plugin <directory|git-url|name> [--plugins_dir <directory>]
-    plugman --install --platform <ios|android|bb10> --project <directory> --plugin <name|url> [--plugins_dir <directory>]
+    plugman --install --platform <ios|android|bb10> --project <directory> --plugin <name|url> [--plugins_dir <directory>] [--variable <name>=<value> [--variable <name>=<value> ...]]
     plugman --uninstall --platform <ios|android|bb10> --project <directory> --plugin <name> [--plugins_dir <directory>]
     plugman --list [--plugins_dir <directory>]
     plugman --prepare --platform <ios|android|bb10> --project <directory> [--plugins_dir <directory>]
@@ -29,9 +29,12 @@ This document defines tool usage and the plugin format specification.
 * `--list`: Lists all `--fetch`'ed plugins
 * `--prepare`: Based on all installed plugins, will set up properly injecting plugin JavaScript code and setting up permissions properly. Implicitly called after `--install` and `--uninstall` commands. See below for more details.
 
-`--plugins_dir` defaults to `<project>/cordova/plugins`, but can be any directory containing a subdirectory for each fetched plugin
+Other parameters: 
 
-Note that `--fetch` deals with the local cache of the plugin's files and doesn't care about platforms, while `--install` and `--uninstall` require specifying the target platform and the location of the project, and actually do installation of plugin code and assets.
+* `--plugins_dir` defaults to `<project>/cordova/plugins`, but can be any directory containing a subdirectory for each fetched plugin.
+* `--variable` allows to specify certain variables at install time, necessary for certain plugins requiring API keys or other custom, user-defined parameters.
+
+Note that `--fetch` deals with the local cache of the plugin's files (in the `--plugins_dir` location) and doesn't care about platforms, while `--install` and `--uninstall` require specifying the target platform and the location of the project, and actually do installation of plugin code and assets.
 
 
 ### Supported Platforms

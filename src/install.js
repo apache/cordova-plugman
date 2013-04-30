@@ -86,8 +86,7 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
         // Either this plugin doesn't support this platform, or it's a JS-only plugin.
         // Either way, return now.
         // should call prepare probably!
-        require('./../plugman').prepare(project_dir, platform, plugins_dir);
-        if (callback) callback();
+        finalizeInstall(project_dir, plugins_dir, platform, plugin_basename, filtered_variables, callback);
         return;
     }
 
@@ -127,17 +126,22 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
             }
         } else {
             // WIN!
-            // queue up the plugin so prepare knows what to do.
-            config_changes.add_installed_plugin_to_prepare_queue(plugins_dir, path.basename(plugin_dir), platform, filtered_variables);
-            // call prepare after a successful install
-            require('./../plugman').prepare(project_dir, platform, plugins_dir);
-
             // Log out plugin INFO element contents in case additional install steps are necessary
             var info = platformTag.findall('./info');
             if(info.length) {
                 console.log(info[0].text);
             }
-            if (callback) callback();
+
+            finalizeInstall(project_dir, plugins_dir, platform, plugin_basename, filtered_variables, callback);
         }
     });
+}
+
+function finalizeInstall(project_dir, plugins_dir, platform, plugin_name, variables, callback) {
+    // queue up the plugin so prepare knows what to do.
+    config_changes.add_installed_plugin_to_prepare_queue(plugins_dir, plugin_name, platform, variables);
+    // call prepare after a successful install
+    require('./../plugman').prepare(project_dir, platform, plugins_dir);
+
+    if (callback) callback();
 }

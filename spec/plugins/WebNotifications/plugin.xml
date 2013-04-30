@@ -27,12 +27,14 @@
 
     <asset src="www/webnotifications.js" target="webnotifications.js" />
 
-	<access origin="build.phonegap.com" />
-	<access origin="s3.amazonaws.com" />
+    <config-file target="config.xml" parent="/*">
+        <access origin="build.phonegap.com" />
+        <access origin="s3.amazonaws.com" />
+    </config-file>
 	
     <!-- ios -->
     <platform name="ios">
-        <config-file target="config.xml" parent="/widget/plugins">
+        <config-file target="config.xml" parent="/*/plugins">
             <plugin name="WebNotifications"
                 value="WebNotifications"/>
         </config-file>

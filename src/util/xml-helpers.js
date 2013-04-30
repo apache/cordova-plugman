@@ -73,27 +73,8 @@ module.exports = {
 
     // adds node to doc at selector
     graftXML: function(doc, nodes, selector) {
-        var ROOT = /^\/([^\/]*)/
-          , ABSOLUTE = /^\/([^\/]*)\/(.*)/
-          , parent, tagName, subSelector;
-
-        // handle absolute selector (which elementtree doesn't like)
-        if (ROOT.test(selector)) {
-            tagName = selector.match(ROOT)[1];
-            if (tagName === doc._root.tag) {
-                parent = doc._root;
-
-                // could be an absolute path, but not selecting the root
-                if (ABSOLUTE.test(selector)) {
-                    subSelector = selector.match(ABSOLUTE)[2];
-                    parent = parent.find(subSelector)
-                }
-            } else {
-                return false;
-            }
-        } else {
-            parent = doc.find(selector)
-        }
+        var parent = resolveParent(doc, selector);
+        if (!parent) return false;
 
         nodes.forEach(function (node) {
             // check if child is unique first
@@ -107,27 +88,9 @@ module.exports = {
 
     // removes node from doc at selector
     pruneXML: function(doc, nodes, selector) {
-        var ROOT = /^\/([^\/]*)/
-          , ABSOLUTE = /^\/([^\/]*)\/(.*)/
-          , parent, tagName, subSelector;
+        var parent = resolveParent(doc, selector);
+        if (!parent) return false;
 
-        // handle absolute selector (which elementtree doesn't like)
-        if (ROOT.test(selector)) {
-            tagName = selector.match(ROOT)[1];
-            if (tagName === doc._root.tag) {
-                parent = doc._root;
-
-                // could be an absolute path, but not selecting the root
-                if (ABSOLUTE.test(selector)) {
-                    subSelector = selector.match(ABSOLUTE)[2];
-                    parent = parent.find(subSelector)
-                }
-            } else {
-                return false;
-            }
-        } else {
-            parent = doc.find(selector)
-        }
         nodes.forEach(function (node) {
             var matchingKid = null;
             if ((matchingKid = findChild(node, parent)) != null) {
@@ -174,3 +137,28 @@ function uniqueChild(node, parent) {
     }
 }
 
+var ROOT = /^\/([^\/]*)/,
+    ABSOLUTE = /^\/([^\/]*)\/(.*)/;
+function resolveParent(doc, selector) {
+    var parent, tagName, subSelector;
+
+    // handle absolute selector (which elementtree doesn't like)
+    if (ROOT.test(selector)) {
+        tagName = selector.match(ROOT)[1];
+        // test for wildcard "any-tag" root selector
+        if (tagName == '*' || tagName === doc._root.tag) {
+            parent = doc._root;
+
+            // could be an absolute path, but not selecting the root
+            if (ABSOLUTE.test(selector)) {
+                subSelector = selector.match(ABSOLUTE)[2];
+                parent = parent.find(subSelector)
+            }
+        } else {
+            return false;
+        }
+    } else {
+        parent = doc.find(selector)
+    }
+    return parent;
+}
