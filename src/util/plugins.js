@@ -19,7 +19,7 @@
 */
 
 var http = require('http'),
-    osenv = require('osenv'),
+    os = require('os'),
     path = require('path'),
     fs = require('fs'),
     util = require('util'),
@@ -80,15 +80,8 @@ module.exports = {
             if (callback) callback(err);
             else throw err;
         }
-        // use osenv to get a temp directory in a portable way
-        var lastSlash = plugin_git_url.lastIndexOf('/');
-        var basename = plugin_git_url.substring(lastSlash+1);
-        var dotGitIndex = basename.lastIndexOf('.git');
-        if (dotGitIndex >= 0) {
-            basename = basename.substring(0, dotGitIndex);
-        }
 
-        var plugin_dir = path.join(plugins_dir, basename);
+        var plugin_dir = path.join(plugins_dir, path.basename(plugin_git_url).replace(path.extname(plugin_git_url), ''));
 
         // trash it if it already exists (something went wrong before probably)
         // TODO: is this the correct behaviour?
@@ -105,20 +98,50 @@ module.exports = {
                 if (callback) callback(null, plugin_dir);
             }
         });
+    },
+    // FIXME: this won't work on Windows OBVIOUSLY! Use node-zip to support?
+    handleZipArchive:function(source, plugins_dir, callback) {
+        
+        if(!shell.which('unzip')) {
+            var err = new Error('unzip command line is not installed');
+            if (callback) callback(err);
+            else throw err;
+        }
+        var basename = path.basename(source);
+        
+        var unzip = function(src, dst, callback) {
+            var plugin_dir = path.join(plugins_dir, basename.replace(path.extname(source), ''));
+            var util = require('util');
+            shell.exec(util.format('unzip %s -d %s', src, dst), {silent: true, async:true}, function(code, output) {
+                if (code != 0) {
+                    var err = new Error('failed to extract the plugin zip archive '+ src+' Reason: '+output);
+                    if (callback) callback(err);
+                    else throw err;
+                } else {
+                    if (callback) callback(null, plugin_dir);
+                }
+            });
+        };
+        
+        if(source.indexOf('http://') == 0) {
+            var target = os.tmpdir() + basename;
+            var file = fs.createWriteStream(target);
+            var request = http.get(source, function(res) {
+                if(res.statusCode != 200) {
+                    var err = new Error('failed to fetch the plugin zip archive from '+ source);
+                    if (callback) callback(err);
+                    else throw err;
+                } else {
+                    res.pipe(file);
+                    res.on('end', function() {
+                        unzip(target, plugins_dir);
+                    });
+                }
+            });
+
+        } else {
+            unzip(source, plugins_dir);
+        }
     }
-    // TODO add method for archives and other formats
-    // extractArchive:function(plugin_dir) {
-    // }
-
-    // TODO add method to publish plugin from cli 
-    // publishPlugin:function(plugin_dir) {
-    // }
-
-    // TODO add method to unpublish plugin from cli 
-    // unpublishPlugin:function(plugin_dir) {
-    // }
 };
-
-
-
 
