@@ -90,7 +90,7 @@ This structure is suggested, but not required.
 
 ## plugin.xml Manifest Format
 
-Last edited April 29 2013.
+Last edited April 30 2013.
 
 The `plugin.xml` file is an XML document in the plugins namespace -
 `http://apache.org/cordova/ns/plugins/1.0`. It contains a top-level `plugin`
@@ -300,18 +300,31 @@ As with assets, if a `source-file`'s `target` would overwrite an existing file, 
 Identifies an XML-based configuration file to be modified, where in that
 document the modification should take place, and what should be modified.
 
+Two file types that have been tested for modification with this element are `xml` and `plist` files. 
+
 The `config-file` element only allows for appending
 new children into an XML document. The children are XML literals that are the
 to be inserted in the target document.
 
-Example:
+Example for XML:
 
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
-        <activity android:name="com.foo.Foo"
-                  android:label="@string/app_name">
-                  <intent-filter>
-                  </intent-filter>
+        <activity android:name="com.foo.Foo" android:label="@string/app_name">
+            <intent-filter>
+            </intent-filter>
         </activity>
+    </config-file>
+
+Example for plist:
+
+
+    <config-file target="*-Info.plist" parent="CFBundleURLTypes">
+        <array>
+            <dict>
+                <key>PackageName</key>
+                <string>$PACKAGE_NAME</string>
+            </dict>
+        </array>
     </config-file>
 
 #### target
@@ -319,39 +332,40 @@ Example:
 The file to be modified, and the path relative to the root of the Cordova
 project.
 
-On iOS, the location of configuration files relative to the project directory root is not known. Therefore, for iOS configuration files, the `target` does not need to be qualified with subdirectories relative to a cordova-ios project root. Specifying a target of `config.xml` will resolve to `cordova-ios-project/MyAppName/config.xml`, for example.
+The target can include a wildcard (`*`) element. In this case, plugman will recursively search through the project directory structure and use the first match.
 
-If this file does not exist, the tool should stop/reverse the installation process, warn the user, and exit with a non-zero code.
+On iOS, the location of configuration files relative to the project directory root is not known. Specifying a target of `config.xml` will resolve to `cordova-ios-project/MyAppName/config.xml`.
+
+If the specified file does not exist, the tool will ignore the configuration change and continue installation.
 
 #### parent
 
-An absolute XPath selector pointing to the parent of the elements to be added to
-the config file.
+An XPath selector pointing to the parent of the elements to be added to the config file. If absolute selectors are used, you can use a wildcard (`*`) to specify the root element, e.g. `/*/plugins`.
+
+For plist files, the parent is used to determine under what parent key should the specified XML be inserted.
 
 If the selector does not resolve to a child of the specified document, the tool should stop/reverse the installation process, warn the user, and exit with a non-zero code.
 
 ### &lt;plugins-plist&gt;
 
-This is OUTDATED as it only applies to cordova-ios 2.2.0 and below. Use &lt;config-file&gt; tag (same as Android) for newer versions of Cordova.
+This is OUTDATED as it only applies to cordova-ios 2.2.0 and below. Use &lt;config-file&gt; tag for newer versions of Cordova.
 
 Example:
 
     <config-file target="config.xml" parent="/cordova/plugins">
-         <plugin name="ChildBrowser"
-             value="ChildBrowserCommand"/>
+         <plugin name="ChildBrowser" value="ChildBrowserCommand"/>
     </config-file>
 
 Specifies a key and value to append to the correct `AppInfo.plist` file in an
 iOS Cordova project. Example:
 
-    <plugins-plist key="Foo"
-                   string="CDVFoo" />
+    <plugins-plist key="Foo" string="CDVFoo" />
 
 
 ### &lt;resource-file&gt; and &lt;header-file&gt;
 
 Like source files, but specifically for platforms that distinguish between
-source files, headers, and resources (iOS)
+source files, headers, and resources (iOS).
 
 Examples:
 
@@ -460,10 +474,6 @@ Certain variable names should be reserved - these are listed below.
 The reverse-domain style unique identifier for the package - corresponding to
 the `CFBundleIdentifier` on iOS or the `package` attribute of the top-level
 `manifest` element in an `AndroidManifest.xml` file.
-
-## Project Directory Structure
-
-TODO: show how the foo plugin example from above will have its files placed in a cordova project after running plugman
 
 ## Contributors
 
