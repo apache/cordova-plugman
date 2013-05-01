@@ -52,8 +52,35 @@ function runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variab
         frameworks = platformTag.findall('./framework');
     assets = assets.concat(plugin_et.findall('./asset'));
     
-    txs = txs.concat(sourceFiles, headerFiles, resourceFiles, frameworks, assets);
-
+    // asset uninstallation
+    var uninstalledAssets = [];
+    var common = require('./platforms/common');
+    try {
+        for(var i = 0, j = assets.length ; i < j ; i++) {
+            common.removeFile(handler.www_dir(project_dir), assets[i].attrib['target']);
+            uninstalledAssets.push(assets[i]);
+        }
+        common.removeFileF(path.resolve(handler.www_dir(project_dir), 'plugins', plugin_id));
+    } catch(err) {
+        var issue = 'asset uninstallation failed\n'+err.stack+'\n';
+        try {
+            // adding assets back
+            for(var i = 0, j = uninstalledAssets.length ; i < j ; i++) {
+               var src = uninstalledAssets[i].attrib['src'],
+                   target = uninstalledAssets[i].attrib['target'];
+               common.copyFile(plugin_dir, src, handler.www_dir(project_dir), target);
+            }
+            issue += 'but successfully reverted\n';
+        } catch(err2) {
+            issue += 'and reversion failed :(\n' + err2.stack;
+        }
+        var error = new Error(issue);
+        if (callback) callback(error);
+        else throw error;
+    }
+    
+    txs = txs.concat(sourceFiles, headerFiles, resourceFiles, frameworks);
+    
     // pass platform-specific transactions into uninstall
     handler.uninstall(txs, plugin_id, project_dir, plugin_dir, function(err) {
         if (err) {

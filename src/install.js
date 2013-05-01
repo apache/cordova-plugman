@@ -101,10 +101,37 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
 
     assets = assets.concat(plugin_et.findall('./asset'));
 
-    txs = txs.concat(sourceFiles, headerFiles, resourceFiles, frameworks, assets);
+    // asset installation
+    var installedAssets = [];
+    var common = require('./platforms/common');
+    try {
+        for(var i = 0, j = assets.length ; i < j ; i++) {
+            var src = assets[i].attrib['src'],
+                target = assets[i].attrib['target'];
+            common.copyFile(plugin_dir, src, handler.www_dir(project_dir), target);
+            installedAssets.push(assets[i]);
+        }
+    } catch(err) {
+        var issue = 'asset installation failed\n'+err.stack+'\n';
+        try {
+            // removing assets and reverting install
+            for(var i = 0, j = installedAssets.length ; i < j ; i++) {
+               common.removeFile(handler.www_dir(project_dir), installedAssets[i].target);
+            }
+            common.removeFileF(path.resolve(handler.www_dir(project_dir), 'plugins', plugin_id));
+            issue += 'but successfully reverted\n';
+        } catch(err2) {
+            issue += 'and reversion failed :(\n' + err2.stack;
+        }
+        var error = new Error(issue);
+        if (callback) callback(error);
+        else throw error;
+    }
 
+    txs = txs.concat(sourceFiles, headerFiles, resourceFiles, frameworks);
     // pass platform-specific transactions into install
     handler.install(txs, plugin_id, project_dir, plugin_dir, filtered_variables, function(err) {
+        
         if (err) {
             // FAIL
             if (err. transactions) {
@@ -125,6 +152,7 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
                 else throw err;
             }
         } else {
+
             // WIN!
             // Log out plugin INFO element contents in case additional install steps are necessary
             var info = platformTag.findall('./info');

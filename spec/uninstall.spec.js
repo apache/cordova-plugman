@@ -44,7 +44,7 @@ describe('uninstall', function() {
             uninstall('android', temp, 'DummyPlugin', plugins_dir, {});
             var transactions = android_uninstaller.mostRecentCall.args[0];
 
-            expect(transactions.length).toEqual(3);
+            expect(transactions.length).toEqual(1);
             expect(transactions[0].tag).toBe('source-file');
         });
         it('should call the config-changes module\'s add_uninstalled_plugin_to_prepare_queue method', function() {
