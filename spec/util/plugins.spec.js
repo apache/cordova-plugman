@@ -27,28 +27,6 @@ var http   = require('http'),
 
 describe('plugins', function(){
     describe('server', function(){
-        it('should receive the correct request when searching for a plugin', function(){
-            var mySpy = spyOn(http, 'get').andCallThrough();
-            // this clears the timeout in plugins.js
-            var spyTimeout = spyOn(global, 'setTimeout');
-            
-            plugins.getPluginInfo('ChildBrowser', function() {});
-            
-            expect(mySpy).toHaveBeenCalled();
-            expect(mySpy.argsForCall[0][0]).toBe('http://plugins.cordova.io/cordova_plugins/_design/cordova_plugins/_view/by_name?key="ChildBrowser"');
-        });
-
-        it('should receive the correct request when searching for a list of plugins', function(){
-            var mySpy = spyOn(http, 'get').andCallThrough();
-            // this clears the timeout in plugins.js
-            var spyTimeout = spyOn(global, 'setTimeout');
-            
-            plugins.listAllPlugins(function(){});
-            
-            expect(mySpy).toHaveBeenCalled();
-            expect(mySpy.argsForCall[0][0]).toBe('http://plugins.cordova.io/cordova_plugins/_design/cordova_plugins/_view/by_name');
-        });
-        
         it('should be able to receive the correct git clone arguments', function(){
             var mySpy = spyOn(plugins, 'clonePluginGitRepo');
             var plugin_git_url = 'https://github.com/imhotep/ChildBrowser'

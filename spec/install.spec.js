@@ -30,6 +30,7 @@ describe('install', function() {
         shell.rm('-rf', temp);
     });
 
+
     describe('success', function() {
         var android_installer;
         beforeEach(function() {
@@ -64,6 +65,9 @@ describe('install', function() {
     });
 
     describe('failure', function() {
+        describe('should revert web assets if an install error occurs', function() {
+            
+        });
         it('should throw if platform is unrecognized', function() {
             expect(function() {
                 install('atari', temp, 'SomePlugin', plugins_dir, {});
