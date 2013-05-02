@@ -90,7 +90,7 @@ This structure is suggested, but not required.
 
 ## plugin.xml Manifest Format
 
-Last edited April 30 2013.
+Last edited May 2 2013.
 
 The `plugin.xml` file is an XML document in the plugins namespace -
 `http://apache.org/cordova/ns/plugins/1.0`. It contains a top-level `plugin`
@@ -178,9 +178,7 @@ Cordova app's `www` directory. A couple of samples:
     <!-- a directory, also to be copied in the root directory -->
     <asset src="www/foo" target="foo" />
 
-All assets tags require both a `src` attribute and a `target` attribute.
-
-Web-only plugins would contains mainly &lt;asset&gt; elements.
+All assets tags require both a `src` attribute and a `target` attribute. Web-only plugins would contains mainly &lt;asset&gt; elements. &lt;asset&gt; elements can also be nested under &lt;platform&gt; elements, to specify platform-specific web assets (see below).
 
 #### src (required)
 
@@ -230,6 +228,8 @@ Details for the `<js-module>` tag:
     * An empty `<js-module>` will still be loaded and can be `cordova.require`d in other modules.
 
 If `src` does not resolve to a file that can be found, plugman will stop/reverse the installation, notify the user of the problem and exit with a non-zero code.
+
+&lt;js-module&gt; elements can also be nested under &lt;platform&gt;, to declare platform-specific JavaScript module bindings.
 
 
 ### &lt;platform&gt;
