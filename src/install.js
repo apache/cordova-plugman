@@ -122,6 +122,7 @@ function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plu
         var sourceFiles = platformTag.findall('./source-file'),
             headerFiles = platformTag.findall('./header-file'),
             resourceFiles = platformTag.findall('./resource-file'),
+            libFiles = platformTag.findall('./lib-file'),
             frameworks = platformTag.findall('./framework');
         assets = assets.concat(platformTag.findall('./asset'));
 
@@ -140,6 +141,10 @@ function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plu
 
         frameworks && frameworks.forEach(function(framework) {
             actions.push(actions.createAction(handler["framework"].install, [framework, plugin_dir, project_dir], handler["framework"].uninstall, [framework, project_dir]));
+        });
+
+        libFiles && libFiles.forEach(function(lib) {
+            actions.push(actions.createAction(handler["lib-file"].install, [lib, plugin_dir, project_dir], handler["lib-file"].uninstall, [lib, project_dir]));
         });
     }
 

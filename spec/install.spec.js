@@ -2,7 +2,7 @@ var install = require('../src/install'),
     common = require('../src/platforms/common'),
     actions = require('../src/util/action-stack'),
     //ios     = require('../src/platforms/ios'),
-    //blackberry = require('../src/platforms/blackberry'),
+    //blackberry10 = require('../src/platforms/blackberry10'),
     config_changes = require('../src/util/config-changes'),
     plugman = require('../plugman'),
     fs      = require('fs'),
@@ -21,7 +21,7 @@ var install = require('../src/install'),
     variableplugin = path.join(__dirname, 'plugins', 'VariablePlugin'),
     faultyplugin = path.join(__dirname, 'plugins', 'FaultyPlugin'),
     android_one_project = path.join(__dirname, 'projects', 'android_one', '*');
-    //blackberry_project = path.join(__dirname, 'projects', 'blackberry', '*');
+    //blackberry10_project = path.join(__dirname, 'projects', 'blackberry10', '*');
     //ios_project = path.join(__dirname, 'projects', 'ios-config-xml', '*');
     plugins_dir = path.join(temp, 'cordova', 'plugins');
 
