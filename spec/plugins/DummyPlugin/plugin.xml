@@ -59,15 +59,13 @@
                 target-dir="src/com/phonegap/plugins/dummyplugin" />
     </platform>
 
-    <!-- blackberry -->
-    <platform name="blackberry">
+    <!-- blackberry10 -->
+    <platform name="blackberry10">
         <config-file target="www/config.xml" parent="/widget">
             <feature id="dummyPlugin" required="true" version="1.0.0.0"/>
         </config-file>
 
-        <source-file src="src/blackberry/client.js" target-dir="ext-qnx/cordova.echo" />
-        <source-file src="src/blackberry/index.js" target-dir="ext-qnx/cordova.echo" />
-        <source-file src="src/blackberry/manifest.json" target-dir="ext-qnx/cordova.echo" />
+        <source-file src="src/blackberry10/index.js"/>
         <js-module src="www/dummyplugin.js" name="Dummy">
             <clobbers target="dummy" />
         </js-module>

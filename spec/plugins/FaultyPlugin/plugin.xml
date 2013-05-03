@@ -33,7 +33,7 @@
         <asset src="www/main.js" target="faultyplugin/main.js" />
         <asset src="www/index.js" target="faultyplugin/index.js" />
     </config-file>
-	
+
     <!-- android -->
     <platform name="android">
         <config-file target="AndroidManifest.xml" parent="/manifest/application">
@@ -78,14 +78,14 @@
         <resource-file src="src/ios/IDontExist.bundle" />
         <framework src="src/ios/Nopers.lib" />
     </platform>
-    <platform name="blackberry">
+    <platform name="blackberry10">
         <config-file target="config.xml" parent="/widget">
             <feature id="cordova.echo" required="true" version="1.0.0.0"/>
         </config-file>
 
-        <source-file src="src/blackberry/client.js" target-dir="ext-qnx/cordova.echo" />
+        <source-file src="src/blackberry10/index.js" target-dir="ext-qnx/cordova.echo" />
         <!-- these dont exist -->
-        <source-file src="src/blackberry/device/echoJnext.so" target-dir="ext-qnx/cordova.echo/device" />
-        <source-file src="src/blackberry/simulator/echoJnext.so" target-dir="ext-qnx/cordova.echo/simulator" />
+        <lib-file src="src/blackberry10/device/echoJnext.so" target-dir="ext-qnx/cordova.echo/device" />
+        <lib-file src="src/blackberry10/simulator/echoJnext.so" target-dir="ext-qnx/cordova.echo/simulator" />
     </platform>
 </plugin>

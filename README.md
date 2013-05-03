@@ -47,6 +47,7 @@ Note that `--fetch` deals with the local cache of the plugin's files (in the `--
 
 - Google has a [https://github.com/MobileChromeApps/chrome-cordova/plugins](bunch of plugins) which are maintained actively by a contributor to plugman
 - Adobe maintains plugins for its Build cloud service, which are open sourced and [available on GitHub](https://github.com/phonegap-build)
+- BlackBerry has a [https://github.com/blackberry/cordova-blackberry-plugins](bunch of plugins) offering deep platform integration
 
 ## Development
 
@@ -201,7 +202,7 @@ present, and then copy the file `new-foo.js` as `foo.js` into that directory.
 
 If a file exists at the target location, plugman will stop/reverse the installation process and notify the user of the conflict, and exit with a non-zero code.
 
-### `&lt;js-module&gt;` element 
+### &lt;js-module&gt; element
 
 A typical plugin includes one or more JavaScript files. Rather than have the user of your plugin add `<script>` tags for your JavaScript to their HTML file(s) manually, you should use `<js-module>` tags for your Javascript files.
 
@@ -372,6 +373,26 @@ Examples:
     <resource-file src="CDVFoo.bundle" />
     <resource-file src="CDVFooViewController.xib" />
     <header-file src="CDVFoo.h" />
+
+### &lt;lib-file&gt;
+
+Like source, resource and header files but specifically for platforms that use user generated libraries (BB10).
+
+Examples:
+
+    <lib-file src="src/BlackBerry10/native/device/libfoo.so" arch="device" />
+    <lib-file src="src/BlackBerry10/native/simulator/libfoo.so" arch="simulator" />
+
+
+#### src (required)
+
+Where the file is located, relative to the `plugin.xml` file.
+
+If `src` does not resolve to a file that can be found, plugman will stop/reverse the installation, notify the user of the problem and exit with a non-zero code.
+
+#### arch
+
+The architecture that the so file has been built for
 
 ### &lt;framework&gt;
 

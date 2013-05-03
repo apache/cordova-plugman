@@ -96,6 +96,7 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
     var sourceFiles = platformTag.findall('./source-file'),
         headerFiles = platformTag.findall('./header-file'),
         resourceFiles = platformTag.findall('./resource-file'),
+        libFiles = platformTag.findall('./lib-file'),
         assets = platformTag.findall('./asset'),
         frameworks = platformTag.findall('./framework');
 
@@ -128,7 +129,7 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
         if (callback) callback(error);
         else throw error;
     }
-    txs = txs.concat(sourceFiles, headerFiles, resourceFiles, frameworks);
+    txs = txs.concat(sourceFiles, headerFiles, resourceFiles, libFiles, frameworks);
     // pass platform-specific transactions into install
     handler.install(txs, plugin_id, project_dir, plugin_dir, filtered_variables, function(err) {
         if (err) {
