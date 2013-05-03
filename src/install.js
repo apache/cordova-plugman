@@ -134,6 +134,7 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
         
         if (err) {
             // FAIL
+            // TODO revert assets at this point too
             if (err. transactions) {
                 handler.uninstall(err.transactions.executed, plugin_id, project_dir, plugin_dir, function(superr) {
                     var issue = '';

@@ -85,6 +85,7 @@ function runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variab
     handler.uninstall(txs, plugin_id, project_dir, plugin_dir, function(err) {
         if (err) {
             // FAIL
+            // TODO revert assets here too
             if (err. transactions) {
                 handler.install(err.transactions.executed, plugin_id, project_dir, plugin_dir, cli_variables, function(superr) {
                     var issue = '';
