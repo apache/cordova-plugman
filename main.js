@@ -31,10 +31,8 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry', 'wp7', 'wp8' ]
             , 'plugin' : [String, path, url]
             , 'install' : Boolean
             , 'uninstall' : Boolean
-            , 'fetch' : Boolean
             , 'v' : Boolean
             , 'debug' : Boolean
-            , 'prepare' : Boolean
             , 'plugins': path
             , 'link': Boolean
             , 'variable' : Array
@@ -60,19 +58,6 @@ process.on('uncaughtException', function(error){
 if (cli_opts.v) {
     console.log(package.name + ' version ' + package.version);
 }
-else if (cli_opts.list) {
-    plugins.listAllPlugins(function(plugins) {
-        for(var i = 0, j = plugins.length ; i < j ; i++) {
-            console.log(plugins[i].value.name, '-', plugins[i].value.description);
-        }
-    });
-}
-else if (cli_opts.prepare && cli_opts.project) {
-    plugman.prepare(cli_opts.project, cli_opts.platform, plugins_dir);
-}
-else if (cli_opts.fetch) {
-    plugman.fetch(cli_opts.plugin, plugins_dir, cli_opts.link);
-}
 else if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
     printUsage();
 }
@@ -94,11 +79,7 @@ else {
 function printUsage() {
     platforms = known_opts.platform.join('|');
     console.log('Usage\n---------');
-    console.log('Fetch a plugin:\n\t' + package.name + ' --fetch --plugin <directory|git-url|name> [--plugins_dir <directory>]\n');
     console.log('Install a plugin (will call fetch if cannot be found):\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --plugin <name> [--plugins_dir <directory>] [--variable <name>=<value>]\n');
     console.log('Uninstall a plugin:\n\t' + package.name + ' --uninstall --platform <'+ platforms +'> --project <directory> --plugin <name> [--plugins_dir <directory>]\n');
-    console.log('Prepare project:\n\t' + package.name + ' --prepare --platform <ios|android|bb10> --project <directory> [--plugins_dir <directory>]');
     console.log('\n\t--plugins_dir defaults to <project>/cordova/plugins, but can be any directory containing a subdirectory for each plugin');
 }
-
-
