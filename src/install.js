@@ -116,7 +116,7 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
         try {
             // removing assets and reverting install
             for(var i = 0, j = installedAssets.length ; i < j ; i++) {
-               common.removeFile(handler.www_dir(project_dir), installedAssets[i].target);
+               common.removeFile(handler.www_dir(project_dir), installedAssets[i].attrib.target);
             }
             common.removeFileF(path.resolve(handler.www_dir(project_dir), 'plugins', plugin_id));
             issue += 'but successfully reverted\n';
@@ -127,22 +127,28 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
         if (callback) callback(error);
         else throw error;
     }
-
     txs = txs.concat(sourceFiles, headerFiles, resourceFiles, frameworks);
     // pass platform-specific transactions into install
     handler.install(txs, plugin_id, project_dir, plugin_dir, filtered_variables, function(err) {
-        
         if (err) {
             // FAIL
-            // TODO revert assets at this point too
-            if (err. transactions) {
+            var issue = '';
+            try {
+                for(var i = 0, j = installedAssets.length ; i < j ; i++) {
+                   common.removeFile(handler.www_dir(project_dir), installedAssets[i].attrib.target);
+                }
+                common.removeFileF(path.resolve(handler.www_dir(project_dir), 'plugins', plugin_id));
+            } catch(err2) {
+                issue += 'Could not revert assets' + err2.stack + '\n';
+            }
+            if (err.transactions) {
                 handler.uninstall(err.transactions.executed, plugin_id, project_dir, plugin_dir, function(superr) {
-                    var issue = '';
+
                     if (superr) {
                         // Even reversion failed. super fail.
-                        issue = 'Install failed, then reversion of installation failed. Sorry :(. Instalation issue: ' + err.stack + ', reversion issue: ' + superr.stack;
+                        issue += 'Install failed, then reversion of installation failed. Sorry :(. Instalation issue: ' + err.stack + ', reversion issue: ' + superr.stack;
                     } else {
-                        issue = 'Install failed, plugin reversion successful so you should be good to go. Installation issue: ' + err.stack;
+                        issue += 'Install failed, plugin reversion successful so you should be good to go. Installation issue: ' + err.stack;
                     }
                     var error = new Error(issue);
                     if (callback) callback(error);

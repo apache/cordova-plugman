@@ -1,7 +1,8 @@
 var install = require('../src/install'),
     android = require('../src/platforms/android'),
-    ios     = require('../src/platforms/ios'),
-    blackberry = require('../src/platforms/blackberry'),
+    common = require('../src/platforms/common'),
+    //ios     = require('../src/platforms/ios'),
+    //blackberry = require('../src/platforms/blackberry'),
     config_changes = require('../src/util/config-changes'),
     plugman = require('../plugman'),
     fs      = require('fs'),
@@ -14,8 +15,8 @@ var install = require('../src/install'),
     variableplugin = path.join(__dirname, 'plugins', 'VariablePlugin'),
     faultyplugin = path.join(__dirname, 'plugins', 'FaultyPlugin'),
     android_one_project = path.join(__dirname, 'projects', 'android_one', '*');
-    blackberry_project = path.join(__dirname, 'projects', 'blackberry', '*');
-    ios_project = path.join(__dirname, 'projects', 'ios-config-xml', '*');
+    //blackberry_project = path.join(__dirname, 'projects', 'blackberry', '*');
+    //ios_project = path.join(__dirname, 'projects', 'ios-config-xml', '*');
     plugins_dir = path.join(temp, 'cordova', 'plugins');
 
 describe('install', function() {
@@ -36,6 +37,40 @@ describe('install', function() {
         beforeEach(function() {
             shell.cp('-rf', dummyplugin, plugins_dir);
             android_installer = spyOn(android, 'install');
+        });
+        it('should properly install assets', function() {
+            var s = spyOn(common, 'copyFile').andCallThrough();
+            install('android', temp, 'DummyPlugin', plugins_dir, {});
+            // making sure the right methods were called
+            expect(s).toHaveBeenCalled();
+            expect(s.calls.length).toEqual(2);
+
+            expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin.js'))).toBe(true);
+            expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin'))).toBe(true);
+            expect(fs.statSync(path.join(temp, 'assets', 'www', 'dummyplugin.js')).isFile()).toBe(true);
+            expect(fs.statSync(path.join(temp, 'assets', 'www', 'dummyplugin')).isDirectory()).toBe(true);
+        });
+        it('should revert all assets on asset install error', function() {
+            var sCopyFile = spyOn(common, 'copyFile').andCallThrough();
+            var sRemoveFile = spyOn(common, 'removeFile').andCallThrough();
+            var sRemoveFileF = spyOn(common, 'removeFileF').andCallThrough();
+            
+            // messing the plugin
+            shell.rm('-rf', path.join(plugins_dir, 'dummyplugin', 'www', 'dummyplugin')); 
+            expect(function() {
+                install('android', temp, 'DummyPlugin', plugins_dir, {});
+            }).toThrow();
+            // making sure the right methods were called
+            expect(sCopyFile).toHaveBeenCalled();
+            expect(sCopyFile.calls.length).toEqual(2);
+
+            expect(sRemoveFile).toHaveBeenCalled();
+            expect(sRemoveFile.calls.length).toEqual(1);
+            expect(sRemoveFileF).toHaveBeenCalled();
+            expect(sRemoveFileF.calls.length).toEqual(1);
+           
+            expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin.js'))).toBe(false);
+            expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin'))).toBe(false);
         });
         it('should call prepare after a successful install', function() {
             var s = spyOn(plugman, 'prepare');
@@ -65,9 +100,6 @@ describe('install', function() {
     });
 
     describe('failure', function() {
-        describe('should revert web assets if an install error occurs', function() {
-            
-        });
         it('should throw if platform is unrecognized', function() {
             expect(function() {
                 install('atari', temp, 'SomePlugin', plugins_dir, {});
@@ -96,6 +128,22 @@ describe('install', function() {
             expect(function() {
                 install('android', temp, 'DummyPlugin', plugins_dir, {});
             }).toThrow();
+        });
+        it('should revert web assets if an install error occurs', function() {
+            var sRemoveFile = spyOn(common, 'removeFile').andCallThrough();
+            var sRemoveFileF = spyOn(common, 'removeFileF').andCallThrough();
+            shell.cp('-rf', dummyplugin, plugins_dir);
+            shell.rm(path.join(plugins_dir, 'DummyPlugin', 'src', 'android', 'DummyPlugin.java')); 
+            
+            install('android', temp, 'DummyPlugin', plugins_dir, {}, function() {});
+            
+            expect(sRemoveFile).toHaveBeenCalled();
+            expect(sRemoveFile.calls.length).toEqual(2);
+            expect(sRemoveFileF).toHaveBeenCalled();
+            expect(sRemoveFileF.calls.length).toEqual(1);
+           
+            expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin.js'))).toBe(false);
+            expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin'))).toBe(false);
         });
     });
 });
