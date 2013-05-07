@@ -1,7 +1,6 @@
 var path = require('path'),
     fs   = require('fs'),
     et   = require('elementtree'),
-    platform_modules = require('./platforms'),
     config_changes = require('./util/config-changes');
 
 module.exports = function uninstallPlugin(platform, project_dir, name, plugins_dir, cli_variables, callback) {
@@ -42,6 +41,7 @@ function runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variab
         return;
     }
 
+    var platform_modules = require('./platforms');
     // parse plugin.xml into transactions
     var handler = platform_modules[platform];
     var txs = [];
@@ -85,15 +85,23 @@ function runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variab
     handler.uninstall(txs, plugin_id, project_dir, plugin_dir, function(err) {
         if (err) {
             // FAIL
-            // TODO revert assets here too
+            var issue = '';
+            try {
+                for(var i = 0, j = uninstalledAssets.length ; i < j ; i++) {
+                    var src = uninstalledAssets[i].attrib['src'],
+                           target = uninstalledAssets[i].attrib['target'];
+                    common.copyFile(plugin_dir, src, handler.www_dir(project_dir), target);
+                }
+            } catch(err2) {
+                issue += 'Could not revert assets' + err2.stack + '\n';
+            }
             if (err. transactions) {
                 handler.install(err.transactions.executed, plugin_id, project_dir, plugin_dir, cli_variables, function(superr) {
-                    var issue = '';
                     if (superr) {
                         // Even reversion failed. super fail.
-                        issue = 'Uninstall failed, then reversion of uninstallation failed. Sorry :(. Uninstalation issue: ' + err.stack + ', reversion issue: ' + superr.stack;
+                        issue += 'Uninstall failed, then reversion of uninstallation failed. Sorry :(. Uninstalation issue: ' + err.stack + ', reversion issue: ' + superr.stack;
                     } else {
-                        issue = 'Uninstall failed, plugin reversion successful so you should be good to go. Uninstallation issue: ' + err.stack;
+                        issue += 'Uninstall failed, plugin reversion successful so you should be good to go. Uninstallation issue: ' + err.stack;
                     }
                     var error = new Error(issue);
                     if (callback) callback(error);
