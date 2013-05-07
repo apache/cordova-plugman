@@ -47,8 +47,10 @@ describe('install', function() {
 
             expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin.js'))).toBe(true);
             expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin'))).toBe(true);
+            expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin', 'image.jpg'))).toBe(true);
             expect(fs.statSync(path.join(temp, 'assets', 'www', 'dummyplugin.js')).isFile()).toBe(true);
             expect(fs.statSync(path.join(temp, 'assets', 'www', 'dummyplugin')).isDirectory()).toBe(true);
+            expect(fs.statSync(path.join(temp, 'assets', 'www', 'dummyplugin', 'image.jpg')).isFile()).toBe(true);
         });
         it('should revert all assets on asset install error', function() {
             var sCopyFile = spyOn(common, 'copyFile').andCallThrough();
@@ -100,6 +102,14 @@ describe('install', function() {
     });
 
     describe('failure', function() {
+        it('should throw if asset target already exists', function() {
+            shell.cp('-rf', dummyplugin, plugins_dir);
+            var target = path.join(temp, 'assets', 'www', 'dummyplugin.js');
+            fs.writeFileSync(target, 'some bs', 'utf-8');
+            expect(function() {
+                install('android', temp, 'DummyPlugin', plugins_dir, {});
+            }).toThrow();
+        });
         it('should throw if platform is unrecognized', function() {
             expect(function() {
                 install('atari', temp, 'SomePlugin', plugins_dir, {});

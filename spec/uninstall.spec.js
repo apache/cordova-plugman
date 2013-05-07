@@ -1,5 +1,6 @@
 var uninstall = require('../src/uninstall'),
     install = require('../src/install'),
+    common = require('../src/platforms/common'),
     android = require('../src/platforms/android'),
     ios     = require('../src/platforms/ios'),
     blackberry = require('../src/platforms/blackberry'),
@@ -12,12 +13,10 @@ var uninstall = require('../src/uninstall'),
     path    = require('path'),
     shell   = require('shelljs'),
     temp    = path.join(os.tmpdir(), 'plugman'),
-    childbrowser = path.join(__dirname, 'plugins', 'ChildBrowser'),
     dummyplugin = path.join(__dirname, 'plugins', 'DummyPlugin'),
-    variableplugin = path.join(__dirname, 'plugins', 'VariablePlugin'),
     faultyplugin = path.join(__dirname, 'plugins', 'FaultyPlugin'),
+    childbrowserplugin = path.join(__dirname, 'plugins', 'ChildBrowser'),
     android_one_project = path.join(__dirname, 'projects', 'android_one', '*'),
-    blackberry_project = path.join(__dirname, 'projects', 'blackberry', '*'),
     ios_project = path.join(__dirname, 'projects', 'ios-config-xml', '*'),
     plugins_dir = path.join(temp, 'cordova', 'plugins');
 
@@ -39,6 +38,38 @@ describe('uninstall', function() {
         beforeEach(function() {
             install('android', temp, 'DummyPlugin', plugins_dir, {});
             android_uninstaller = spyOn(android, 'uninstall');
+        });
+        it('should properly uninstall assets', function() {
+            var s = spyOn(common, 'removeFile').andCallThrough();
+            var s2 = spyOn(common, 'removeFileF').andCallThrough();
+            // making sure the right methods were called
+            uninstall('android', temp, 'DummyPlugin', plugins_dir, {});
+            expect(s).toHaveBeenCalled();
+            expect(s.calls.length).toEqual(2);
+            
+            expect(s2).toHaveBeenCalled();
+            expect(s2.calls.length).toEqual(1);
+
+            expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin.js'))).toBe(false);
+            expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin'))).toBe(false);
+        });
+        it('should properly revert all assets on asset uninstall error', function() {
+            var sRemoveFile = spyOn(common, 'removeFile').andCallThrough();
+            var sCopyFile = spyOn(common, 'copyFile').andCallThrough();
+            // making sure the right methods were called
+            
+            shell.rm('-rf', path.join(temp, 'assets', 'www', 'dummyplugin'));
+            
+            expect(function() {
+                uninstall('android', temp, 'DummyPlugin', plugins_dir, {});
+            }).toThrow();
+
+            expect(sRemoveFile).toHaveBeenCalled();
+            expect(sRemoveFile.calls.length).toEqual(2);
+            expect(sCopyFile).toHaveBeenCalled();
+            expect(sCopyFile.calls.length).toEqual(1);
+            
+            expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin.js'))).toBe(true);
         });
         it('should generate and pass uninstall transaction log to appropriate platform handler\'s uninstall', function() {
             uninstall('android', temp, 'DummyPlugin', plugins_dir, {});
@@ -66,18 +97,37 @@ describe('uninstall', function() {
                 uninstall('android', temp, 'SomePlugin', plugins_dir, {});
             }).toThrow('Plugin "SomePlugin" not found. Already uninstalled?');
         });
-        it('should handle a failed uninstall by passing completed transactions into appropriate handler\'s install method', function() {
-            shell.cp('-rf', faultyplugin, plugins_dir);
-            install('android', temp, 'DummyPlugin', plugins_dir, {});
+       // it('should handle a failed uninstall by passing completed transactions into appropriate handler\'s install method', function() {
+       //     shell.rm('-rf', path.join(temp, '*'));
+       //     shell.mkdir('-p', plugins_dir);
+       //     
+       //     shell.cp('-rf', ios_project, temp);
+       //     shell.cp('-rf', childbrowserplugin, plugins_dir);
+       //     install('ios', temp, 'ChildBrowser', plugins_dir, {});
 
-            // make uninstall fail by removing a js asset
-            shell.rm(path.join(temp, 'assets', 'www', 'dummyplugin.js'));
-            var s = spyOn(android, 'install');
-            uninstall('android', temp, 'DummyPlugin', plugins_dir, {});
-            var executed_txs = s.mostRecentCall.args[0];
-            expect(executed_txs.length).toEqual(1);
-            // It only ended up "uninstalling" one source file, so install reversion should pass in that source file to re-install
-            expect(executed_txs[0].tag).toEqual('source-file');
-        }); 
+       //     // make uninstall fail by removing a js asset
+       //     shell.rm(path.join(temp, 'SampleApp', 'Plugins', 'ChildBrowserCommand.m'));
+       //     var s = spyOn(ios, 'install');
+       //     uninstall('ios', temp, 'ChildBrowser', plugins_dir, {});
+       //     var executed_txs = s.mostRecentCall.args[0];
+       //     expect(executed_txs.length).toEqual(1);
+       //     // It only ended up "uninstalling" one source file, so install reversion should pass in that source file to re-install
+       //     expect(executed_txs[0].tag).toEqual('source-file');
+       // });
+        it('should revert assets when uninstall fails', function() {
+            install('android', temp, 'DummyPlugin', plugins_dir, {});
+            
+            var s = spyOn(common, 'copyFile').andCallThrough();
+            
+            shell.rm('-rf', path.join(temp, 'src', 'com', 'phonegap', 'plugins', 'dummyplugin'));
+            expect(function() {
+                uninstall('android', temp, 'DummyPlugin', plugins_dir, {});
+            }).toThrow();
+            expect(s).toHaveBeenCalled();
+            expect(s.calls.length).toEqual(2);
+            
+            expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin.js'))).toBe(true);
+            expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin'))).toBe(true);
+        });
     });
 });
