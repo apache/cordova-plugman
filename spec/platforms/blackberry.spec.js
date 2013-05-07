@@ -108,26 +108,5 @@ describe('blackberry project handler', function() {
                 });
             });
         });
-        describe('of <asset> elements', function() {
-            it('should remove www\'s plugins/<plugin-id> directory', function(done) {
-                var as = copyArray(assets);
-                install('blackberry', temp, 'DummyPlugin', plugins_dir, {}, function() {
-                    var s = spyOn(shell, 'rm');
-                    blackberry.uninstall(as, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
-                    expect(s).toHaveBeenCalledWith('-Rf', path.join(temp, 'www', 'plugins', dummy_id));
-                    done();
-                });
-            });
-            it('should remove stuff specified by the element', function(done) {
-                var as = copyArray(assets);
-                install('blackberry', temp, 'DummyPlugin', plugins_dir, {}, function() {
-                    var s = spyOn(shell, 'rm');
-                    blackberry.uninstall(as, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
-                    expect(s).toHaveBeenCalledWith('-Rf', path.join(temp, 'www', 'dummyplugin.js'));
-                    expect(s).toHaveBeenCalledWith('-Rf', path.join(temp, 'www', 'dummyplugin'));
-                    done();
-                });
-            });
-        });
     });
 });

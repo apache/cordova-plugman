@@ -71,16 +71,6 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                         common.deleteJava(project_dir, destFile);
                     }
                     break;
-                case 'asset':
-                    var src = mod.attrib['src'];
-                    var target = mod.attrib['target'];
-                    if (action == 'install') {
-                        common.copyFile(plugin_dir, src, module.exports.www_dir(project_dir), target);
-                    } else {
-                        common.removeFile(module.exports.www_dir(project_dir), target);
-                        common.removeFileF(path.resolve(module.exports.www_dir(project_dir), 'plugins', plugin_id));
-                    }
-                    break;
                 default:
                     throw new Error('Unrecognized plugin.xml element/action in android installer: ' + mod.tag);
                     break;

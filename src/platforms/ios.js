@@ -117,16 +117,6 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
                         }
                     }
                     break;
-                case 'asset':
-                    var src = mod.attrib['src'];
-                    var target = mod.attrib['target'];
-                    if (action == 'install') {
-                        common.copyFile(plugin_dir, src, module.exports.www_dir(project_dir), target);
-                    } else {
-                        common.removeFile(module.exports.www_dir(project_dir), target);
-                        common.removeFile(path.join(module.exports.www_dir(project_dir), 'plugins'), plugin_id);
-                    }
-                    break;
                 case 'header-file':
                     var src = mod.attrib['src'];
                     var srcFile = path.resolve(plugin_dir, src);
