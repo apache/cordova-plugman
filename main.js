@@ -36,6 +36,7 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry', 'wp7', 'wp8' ]
             , 'plugins': path
             , 'link': Boolean
             , 'variable' : Array
+            , 'www': path
             }, shortHands = { 'var' : 'variable' };
 
 var cli_opts = nopt(known_opts);
@@ -62,7 +63,7 @@ else if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
     printUsage();
 }
 else if (cli_opts.uninstall) {
-    plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir);
+    plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, cli_opts.www);
 }
 else {
     var cli_variables = {}
@@ -73,13 +74,13 @@ else {
             if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
         });
     }
-    plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, cli_variables);
+    plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, cli_variables, cli_opts.www);
 }
 
 function printUsage() {
     platforms = known_opts.platform.join('|');
     console.log('Usage\n---------');
-    console.log('Install a plugin (will call fetch if cannot be found):\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --plugin <name> [--plugins_dir <directory>] [--variable <name>=<value>]\n');
-    console.log('Uninstall a plugin:\n\t' + package.name + ' --uninstall --platform <'+ platforms +'> --project <directory> --plugin <name> [--plugins_dir <directory>]\n');
+    console.log('Install a plugin (will call fetch if cannot be found):\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --plugin <name> [--www <directory>] [--plugins_dir <directory>] [--variable <name>=<value>]\n');
+    console.log('Uninstall a plugin:\n\t' + package.name + ' --uninstall --platform <'+ platforms +'> --project <directory> --plugin <name> [--www <directory>] [--plugins_dir <directory>]\n');
     console.log('\n\t--plugins_dir defaults to <project>/cordova/plugins, but can be any directory containing a subdirectory for each plugin');
 }

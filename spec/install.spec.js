@@ -74,6 +74,45 @@ describe('install', function() {
             expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin.js'))).toBe(false);
             expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin'))).toBe(false);
         });
+
+        it('should properly install assets into a custom www dir', function() {
+            var s = spyOn(common, 'copyFile').andCallThrough();
+            install('android', temp, 'DummyPlugin', plugins_dir, {}, path.join(temp, 'staging'));
+            // making sure the right methods were called
+            expect(s).toHaveBeenCalled();
+            expect(s.calls.length).toEqual(2);
+
+            expect(fs.existsSync(path.join(temp, 'staging', 'dummyplugin.js'))).toBe(true);
+            expect(fs.existsSync(path.join(temp, 'staging', 'dummyplugin'))).toBe(true);
+            expect(fs.existsSync(path.join(temp, 'staging', 'dummyplugin', 'image.jpg'))).toBe(true);
+            expect(fs.statSync(path.join(temp, 'staging', 'dummyplugin.js')).isFile()).toBe(true);
+            expect(fs.statSync(path.join(temp, 'staging', 'dummyplugin')).isDirectory()).toBe(true);
+            expect(fs.statSync(path.join(temp, 'staging', 'dummyplugin', 'image.jpg')).isFile()).toBe(true);
+        });
+
+        it('should revert all assets on asset install error with a custom www dir', function() {
+            var sCopyFile = spyOn(common, 'copyFile').andCallThrough();
+            var sRemoveFile = spyOn(common, 'removeFile').andCallThrough();
+            var sRemoveFileF = spyOn(common, 'removeFileF').andCallThrough();
+            
+            // messing the plugin
+            shell.rm('-rf', path.join(plugins_dir, 'dummyplugin', 'www', 'dummyplugin')); 
+            expect(function() {
+                install('android', temp, 'DummyPlugin', plugins_dir, {}, path.join(temp, 'staging'));
+            }).toThrow();
+            // making sure the right methods were called
+            expect(sCopyFile).toHaveBeenCalled();
+            expect(sCopyFile.calls.length).toEqual(2);
+
+            expect(sRemoveFile).toHaveBeenCalled();
+            expect(sRemoveFile.calls.length).toEqual(1);
+            expect(sRemoveFileF).toHaveBeenCalled();
+            expect(sRemoveFileF.calls.length).toEqual(1);
+           
+            expect(fs.existsSync(path.join(temp, 'staging', 'dummyplugin.js'))).toBe(false);
+            expect(fs.existsSync(path.join(temp, 'staging', 'dummyplugin'))).toBe(false);
+        });
+
         it('should call prepare after a successful install', function() {
             var s = spyOn(plugman, 'prepare');
             install('android', temp, 'DummyPlugin', plugins_dir, {});
@@ -145,7 +184,7 @@ describe('install', function() {
             shell.cp('-rf', dummyplugin, plugins_dir);
             shell.rm(path.join(plugins_dir, 'DummyPlugin', 'src', 'android', 'DummyPlugin.java')); 
             
-            install('android', temp, 'DummyPlugin', plugins_dir, {}, function() {});
+            install('android', temp, 'DummyPlugin', plugins_dir, {}, undefined, function() {});
             
             expect(sRemoveFile).toHaveBeenCalled();
             expect(sRemoveFile.calls.length).toEqual(2);

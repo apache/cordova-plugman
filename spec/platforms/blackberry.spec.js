@@ -98,7 +98,7 @@ describe('blackberry project handler', function() {
         describe('of <source-file> elements', function() {
             it('should remove stuff by calling common.deleteJava', function(done) {
                 var s = spyOn(common, 'deleteJava');
-                install('blackberry', temp, 'DummyPlugin', plugins_dir, {}, function() {
+                install('blackberry', temp, 'DummyPlugin', plugins_dir, {}, undefined, function() {
                     var source = copyArray(valid_source);
                     blackberry.uninstall(source, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
                     expect(s).toHaveBeenCalledWith(temp, 'ext-qnx/cordova.echo/client.js');

@@ -5,10 +5,10 @@ var path = require('path'),
     platform_modules = require('./platforms');
 
 // TODO: is name necessary as a param ehre?
-module.exports = function installPlugin(platform, project_dir, name, plugins_dir, cli_variables, callback) {
+module.exports = function installPlugin(platform, project_dir, name, plugins_dir, cli_variables, www_dir, callback) {
     if (!platform_modules[platform]) {
         var err = new Error(platform + " not supported.");
-        if (callback) { 
+        if (callback) {
             callback(err);
             return;
         }
@@ -25,15 +25,15 @@ module.exports = function installPlugin(platform, project_dir, name, plugins_dir
                 callback(err);
             } else {
                 // update ref to plugin_dir after successful fetch, via fetch callback
-                runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, callback);
+                runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, callback);
             }
         });
     } else {
-        runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, callback);
+        runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, callback);
     }
 };
 
-function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, callback) {
+function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, callback) {
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , xml_text     = fs.readFileSync(xml_path, 'utf-8')
       , plugin_et    = new et.ElementTree(et.XML(xml_text))
@@ -104,11 +104,12 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
     // asset installation
     var installedAssets = [];
     var common = require('./platforms/common');
+    www_dir = www_dir || handler.www_dir(project_dir);
     try {
         for(var i = 0, j = assets.length ; i < j ; i++) {
             var src = assets[i].attrib['src'],
                 target = assets[i].attrib['target'];
-            common.copyFile(plugin_dir, src, handler.www_dir(project_dir), target);
+            common.copyFile(plugin_dir, src, www_dir, target);
             installedAssets.push(assets[i]);
         }
     } catch(err) {
@@ -116,9 +117,9 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
         try {
             // removing assets and reverting install
             for(var i = 0, j = installedAssets.length ; i < j ; i++) {
-               common.removeFile(handler.www_dir(project_dir), installedAssets[i].attrib.target);
+               common.removeFile(www_dir, installedAssets[i].attrib.target);
             }
-            common.removeFileF(path.resolve(handler.www_dir(project_dir), 'plugins', plugin_id));
+            common.removeFileF(path.resolve(www_dir, 'plugins', plugin_id));
             issue += 'but successfully reverted\n';
         } catch(err2) {
             issue += 'and reversion failed :(\n' + err2.stack;
@@ -135,9 +136,9 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
             var issue = '';
             try {
                 for(var i = 0, j = installedAssets.length ; i < j ; i++) {
-                   common.removeFile(handler.www_dir(project_dir), installedAssets[i].attrib.target);
+                   common.removeFile(www_dir, installedAssets[i].attrib.target);
                 }
-                common.removeFileF(path.resolve(handler.www_dir(project_dir), 'plugins', plugin_id));
+                common.removeFileF(path.resolve(www_dir, 'plugins', plugin_id));
             } catch(err2) {
                 issue += 'Could not revert assets' + err2.stack + '\n';
             }

@@ -109,7 +109,7 @@ describe('android project handler', function() {
         describe('of <source-file> elements', function() {
             it('should remove stuff by calling common.deleteJava', function(done) {
                 var s = spyOn(common, 'deleteJava');
-                install('android', temp, 'DummyPlugin', plugins_dir, {}, function() {
+                install('android', temp, 'DummyPlugin', plugins_dir, {}, undefined, function() {
                     var source = copyArray(valid_source);
                     android.uninstall(source, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
                     expect(s).toHaveBeenCalledWith(temp, 'src/com/phonegap/plugins/dummyplugin/DummyPlugin.java');
