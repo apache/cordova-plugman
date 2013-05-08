@@ -3,7 +3,7 @@ var path = require('path'),
     et   = require('elementtree'),
     config_changes = require('./util/config-changes');
 
-module.exports = function uninstallPlugin(platform, project_dir, name, plugins_dir, cli_variables, callback) {
+module.exports = function uninstallPlugin(platform, project_dir, name, plugins_dir, cli_variables, www_dir, callback) {
     if (!platform_modules[platform]) {
         var err = new Error(platform + " not supported.");
         if (callback) callback(err);
@@ -21,10 +21,10 @@ module.exports = function uninstallPlugin(platform, project_dir, name, plugins_d
         return;
     }
 
-    runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, callback);
+    runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, callback);
 };
 
-function runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, callback) {
+function runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, callback) {
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , xml_text     = fs.readFileSync(xml_path, 'utf-8')
       , plugin_et    = new et.ElementTree(et.XML(xml_text))
@@ -51,16 +51,17 @@ function runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variab
         assets = platformTag.findall('./asset'),
         frameworks = platformTag.findall('./framework');
     assets = assets.concat(plugin_et.findall('./asset'));
-    
+    www_dir = www_dir || handler.www_dir(project_dir);
+
     // asset uninstallation
     var uninstalledAssets = [];
     var common = require('./platforms/common');
     try {
         for(var i = 0, j = assets.length ; i < j ; i++) {
-            common.removeFile(handler.www_dir(project_dir), assets[i].attrib['target']);
+            common.removeFile(www_dir, assets[i].attrib['target']);
             uninstalledAssets.push(assets[i]);
         }
-        common.removeFileF(path.resolve(handler.www_dir(project_dir), 'plugins', plugin_id));
+        common.removeFileF(path.resolve(www_dir, 'plugins', plugin_id));
     } catch(err) {
         var issue = 'asset uninstallation failed\n'+err.stack+'\n';
         try {
@@ -68,7 +69,7 @@ function runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variab
             for(var i = 0, j = uninstalledAssets.length ; i < j ; i++) {
                var src = uninstalledAssets[i].attrib['src'],
                    target = uninstalledAssets[i].attrib['target'];
-               common.copyFile(plugin_dir, src, handler.www_dir(project_dir), target);
+               common.copyFile(plugin_dir, src, www_dir, target);
             }
             issue += 'but successfully reverted\n';
         } catch(err2) {
@@ -90,7 +91,7 @@ function runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variab
                 for(var i = 0, j = uninstalledAssets.length ; i < j ; i++) {
                     var src = uninstalledAssets[i].attrib['src'],
                            target = uninstalledAssets[i].attrib['target'];
-                    common.copyFile(plugin_dir, src, handler.www_dir(project_dir), target);
+                    common.copyFile(plugin_dir, src, www_dir, target);
                 }
             } catch(err2) {
                 issue += 'Could not revert assets' + err2.stack + '\n';
