@@ -8,7 +8,7 @@ var fetch   = require('../src/fetch'),
     plugins = require('../src/util/plugins');
 
 describe('fetch', function() {
-    var copied_plugin_path = path.join(temp,'ChildBrowser');
+    var copied_plugin_path = path.join(temp, 'com.phonegap.plugins.childbrowser');
 
     beforeEach(function() {
         shell.mkdir('-p', temp);

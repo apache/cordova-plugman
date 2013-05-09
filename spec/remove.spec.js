@@ -8,7 +8,7 @@ var remove  = require('../src/remove'),
     test_plugin = path.join(__dirname, 'plugins', 'ChildBrowser');
 
 describe('remove', function() {
-    var copied_plugin_path = path.join(temp,'ChildBrowser');
+    var copied_plugin_path = path.join(temp,'com.phonegap.plugins.childbrowser');
 
     beforeEach(function() {
         shell.mkdir('-p', temp);
@@ -19,12 +19,12 @@ describe('remove', function() {
 
     it('should remove symbolically-linked plugins', function() {
         fetch(test_plugin, temp, true);
-        remove('ChildBrowser', temp);
+        remove('com.phonegap.plugins.childbrowser', temp);
         expect(fs.readdirSync(temp).length).toEqual(0);
     });
     it('should remove non-linked plugins', function() {
         fetch(test_plugin, temp, false);
-        remove('ChildBrowser', temp);
+        remove('com.phonegap.plugins.childbrowser', temp);
         expect(fs.readdirSync(temp).length).toEqual(0);
     });
 });

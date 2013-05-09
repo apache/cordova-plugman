@@ -1,6 +1,7 @@
 var shell   = require('shelljs'),
     fs      = require('fs'),
     plugins = require('./util/plugins'),
+    xml_helpers = require('./util/xml-helpers'),
     path    = require('path');
 
 module.exports = function fetchPlugin(plugin_dir, plugins_dir, link, callback) {
@@ -18,13 +19,17 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, link, callback) {
         }
     } else {
         // Copy from the local filesystem.
-        var dest = path.join(plugins_dir, path.basename(plugin_dir));
+        // First, read the plugin.xml and grab the ID.
+        var xml = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'));
+        var plugin_id = xml.getroot().attrib.id;
+
+        var dest = path.join(plugins_dir, plugin_id);
 
         shell.rm('-rf', dest);
         if (link) {
             fs.symlinkSync(path.resolve(plugin_dir), dest, 'dir');
         } else {
-            shell.cp('-R', plugin_dir, plugins_dir); // Yes, not dest.
+            shell.cp('-R', path.join(plugin_dir, '*'), dest);
         }
 
         if (callback) callback(null, dest);

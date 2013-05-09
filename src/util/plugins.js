@@ -23,7 +23,9 @@ var http = require('http'),
     path = require('path'),
     fs = require('fs'),
     util = require('util'),
-    shell = require('shelljs');
+    shell = require('shelljs'),
+    xml_helpers = require('./xml-helpers'),
+    tmp_dir = path.join(path.sep, 'tmp', 'plugman-tmp');
 
 module.exports = {
     searchAndReplace:require('./search-and-replace'),
@@ -35,20 +37,23 @@ module.exports = {
             else throw err;
         }
 
-        var plugin_dir = path.join(plugins_dir, path.basename(plugin_git_url).replace(path.extname(plugin_git_url), ''));
+        shell.rm('-rf', tmp_dir);
 
-        // trash it if it already exists (something went wrong before probably)
-        // TODO: is this the correct behaviour?
-        if(fs.existsSync(plugin_dir)) {
-            shell.rm('-rf', plugin_dir);
-        }
-
-        shell.exec('git clone ' + plugin_git_url + ' ' + plugin_dir, {silent: true, async:true}, function(code, output) {
+        var cmd = util.format('git clone "%s" "%s"', plugin_git_url, tmp_dir);
+        shell.exec(cmd, {silent: true, async:true}, function(code, output) {
             if (code > 0) {
                 var err = new Error('failed to get the plugin via git from URL '+ plugin_git_url);
                 if (callback) callback(err)
                 else throw err;
             } else {
+                // Read the plugin.xml file and extract the plugin's ID.
+                var xml_file = path.join(tmp_dir, 'plugin.xml');
+                var xml = xml_helpers.parseElementtreeSync(xml_file);
+                var plugin_id = xml.getroot().attrib.id;
+
+                var plugin_dir = path.join(plugins_dir, plugin_id);
+                shell.cp('-R', path.join(tmp_dir, '*'), plugin_dir);
+
                 if (callback) callback(null, plugin_dir);
             }
         });
