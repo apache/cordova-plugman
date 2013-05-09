@@ -20,7 +20,7 @@ module.exports = function installPlugin(platform, project_dir, name, plugins_dir
     // Check that the plugin has already been fetched.
     if (!fs.existsSync(plugin_dir)) {
         // if plugin doesnt exist, use fetch to get it.
-        require('../plugman').fetch(name, plugins_dir, false, function(err, plugin_dir) {
+        require('../plugman').fetch(name, plugins_dir, false, '.', function(err, plugin_dir) {
             if (err) {
                 callback(err);
             } else {

@@ -25,12 +25,12 @@ var http = require('http'),
     util = require('util'),
     shell = require('shelljs'),
     xml_helpers = require('./xml-helpers'),
-    tmp_dir = path.join(path.sep, 'tmp', 'plugman-tmp');
+    tmp_dir = path.join(os.tmpdir(), 'plugman-tmp');
 
 module.exports = {
     searchAndReplace:require('./search-and-replace'),
     // Fetches plugin information from remote server
-    clonePluginGitRepo:function(plugin_git_url, plugins_dir, callback) {
+    clonePluginGitRepo:function(plugin_git_url, plugins_dir, subdir, callback) {
         if(!shell.which('git')) {
             var err = new Error('git command line is not installed');
             if (callback) callback(err);
@@ -47,6 +47,7 @@ module.exports = {
                 else throw err;
             } else {
                 // Read the plugin.xml file and extract the plugin's ID.
+                tmp_dir = path.join(tmp_dir, subdir);
                 var xml_file = path.join(tmp_dir, 'plugin.xml');
                 var xml = xml_helpers.parseElementtreeSync(xml_file);
                 var plugin_id = xml.getroot().attrib.id;

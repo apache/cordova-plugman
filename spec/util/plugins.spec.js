@@ -32,10 +32,10 @@ describe('plugins', function(){
             var plugin_git_url = 'https://github.com/imhotep/ChildBrowser'
             var myFunction = function(){};
             
-            plugins.clonePluginGitRepo(plugin_git_url, temp, myFunction);
+            plugins.clonePluginGitRepo(plugin_git_url, temp, '.', myFunction);
             
              expect(mySpy).toHaveBeenCalled();
-             expect(mySpy).toHaveBeenCalledWith(plugin_git_url, temp, myFunction);
+             expect(mySpy).toHaveBeenCalledWith(plugin_git_url, temp, '.', myFunction);
         });
     });
 });
