@@ -1,5 +1,6 @@
 var install = require('../install'),
     fetch   = require('../fetch'),
+    path    = require('path'),
     fs      = require('fs'),
     xml_helpers = require('./xml-helpers');
 

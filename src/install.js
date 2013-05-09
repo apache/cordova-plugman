@@ -1,7 +1,8 @@
 var path = require('path'),
     fs   = require('fs'),
     et   = require('elementtree'),
-    config_changes = require('./util/config-changes');
+    config_changes = require('./util/config-changes'),
+    dependencies = require('./util/dependencies'),
     platform_modules = require('./platforms');
 
 // TODO: is name necessary as a param ehre?

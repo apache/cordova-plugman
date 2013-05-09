@@ -1,7 +1,8 @@
 var path = require('path'),
     fs   = require('fs'),
     et   = require('elementtree'),
-    config_changes = require('./util/config-changes');
+    config_changes = require('./util/config-changes'),
+    platform_modules = require('./platforms');
 
 module.exports = function uninstallPlugin(platform, project_dir, name, plugins_dir, cli_variables, www_dir, callback) {
     if (!platform_modules[platform]) {
