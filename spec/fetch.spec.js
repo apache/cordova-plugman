@@ -37,6 +37,13 @@ describe('fetch', function() {
             fetch("https://github.com/bobeast/GAPlugin.git", temp, false);
             expect(s).toHaveBeenCalled();
         });
+        it('should call clonePluginGitRepo with subdir if applicable', function() {
+            var s = spyOn(plugins, 'clonePluginGitRepo');
+            var url = "https://github.com/bobeast/GAPlugin.git";
+            var dir = 'fakeSubDir';
+            fetch(url, temp, false, dir);
+            expect(s).toHaveBeenCalledWith(url, temp, dir, undefined);
+        });
         it('should throw if used with url and `link` param', function() {
             expect(function() {
                 fetch("https://github.com/bobeast/GAPlugin.git", temp, true);

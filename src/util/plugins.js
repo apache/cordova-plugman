@@ -42,12 +42,13 @@ module.exports = {
         var cmd = util.format('git clone "%s" "%s"', plugin_git_url, tmp_dir);
         shell.exec(cmd, {silent: true, async:true}, function(code, output) {
             if (code > 0) {
-                var err = new Error('failed to get the plugin via git from URL '+ plugin_git_url);
+                var err = new Error('failed to get the plugin via git from URL '+ plugin_git_url + ', output: ' + output);
                 if (callback) callback(err)
                 else throw err;
             } else {
                 // Read the plugin.xml file and extract the plugin's ID.
                 tmp_dir = path.join(tmp_dir, subdir);
+                // TODO: what if plugin.xml does not exist?
                 var xml_file = path.join(tmp_dir, 'plugin.xml');
                 var xml = xml_helpers.parseElementtreeSync(xml_file);
                 var plugin_id = xml.getroot().attrib.id;
@@ -58,6 +59,6 @@ module.exports = {
                 if (callback) callback(null, plugin_dir);
             }
         });
-    },
+    }
 };
 
