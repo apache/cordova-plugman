@@ -232,6 +232,19 @@ If `src` does not resolve to a file that can be found, plugman will stop/reverse
 &lt;js-module&gt; elements can also be nested under &lt;platform&gt;, to declare platform-specific JavaScript module bindings.
 
 
+### &lt;dependency&gt;
+
+Dependency tags let you specify plugins on which this plugin depends. In the future there will be plugin repositories to fetch plugins from. In the short term, plugins are directly pointed to by URLs in `<dependency>` tags. These tags have the following format:
+
+    <dependency id="com.plugin.id" src="https://github.com/myuser/someplugin" commit="428931ada3891801" subdir="some/path/here" />
+
+* `id`: gives the ID of the plugin. This should be globally unique, and in reverse-domain style. Neither of these restrictions is currently enforced, but they may be in the future and plugins should still follow them.
+* `src`: A URL for the plugin. This should point to a git repository, since plugman will try to `git clone` it.
+* `commit`: This is any git ref. It can be a branch or tag name (eg. `master`, `0.3.1`), a commit hash (eg. `975ddb228af811dd8bb37ed1dfd092a3d05295f9`), anything understood by `git checkout`.
+* `subdir`: Specifies that the plugin we're interested in exists as a subdirectory of the git repository. This is helpful because it allows one to keep several related plugins in a sigle git repository, and specify the plugins in it individually.
+
+In the future, version constraints will be introduced, and a plugin repository will exist to support fetching by name instead of explicit URLs.
+
 ### &lt;platform&gt;
 
 Platform tags identify platforms that have associated native code and/or require configuration file modifications. Tools using
