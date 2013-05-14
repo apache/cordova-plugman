@@ -32,7 +32,8 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, link, subdir, cal
         if (link) {
             fs.symlinkSync(plugin_dir, dest, 'dir');
         } else {
-            shell.cp('-R', plugin_dir, dest);
+            shell.mkdir('-p', dest);
+            shell.cp('-R', path.join(plugin_dir, '*') , dest);
         }
 
         if (callback) callback(null, dest);
