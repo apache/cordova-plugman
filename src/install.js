@@ -1,12 +1,12 @@
 var path = require('path'),
     fs   = require('fs'),
     et   = require('elementtree'),
+    n    = require('ncallbacks'),
     config_changes = require('./util/config-changes'),
-    dependencies = require('./util/dependencies'),
+    action_stack = require('./util/action-stack'),
     platform_modules = require('./platforms');
 
-// TODO: is name necessary as a param ehre?
-module.exports = function installPlugin(platform, project_dir, name, plugins_dir, cli_variables, www_dir, callback) {
+module.exports = function installPlugin(platform, project_dir, id, plugins_dir, subdir, cli_variables, www_dir, callback) {
     if (!platform_modules[platform]) {
         var err = new Error(platform + " not supported.");
         if (callback) {
@@ -16,12 +16,12 @@ module.exports = function installPlugin(platform, project_dir, name, plugins_dir
         else throw err;
     }
 
-    var plugin_dir = path.join(plugins_dir, name);
+    var plugin_dir = path.join(plugins_dir, id);
 
     // Check that the plugin has already been fetched.
     if (!fs.existsSync(plugin_dir)) {
         // if plugin doesnt exist, use fetch to get it.
-        require('../plugman').fetch(name, plugins_dir, false, '.', function(err, plugin_dir) {
+        require('../plugman').fetch(id, plugins_dir, false, subdir, function(err, plugin_dir) {
             if (err) {
                 callback(err);
             } else {
@@ -41,6 +41,21 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
       , filtered_variables = {};
     var name         = plugin_et.findall('name').text;
     var plugin_id    = plugin_et._root.attrib['id'];
+
+    // check if platform has plugin installed already.
+    var platform_config = config_changes.get_platform_json(plugins_dir, platform);
+    var plugin_basename = path.basename(plugin_dir);
+    var is_fully_installed = false;
+    Object.keys(platform_config.installed_plugins).forEach(function(installed_plugin_id) {
+        if (installed_plugin_id == plugin_id) {
+            is_fully_installed = true;
+        }
+    });
+    if (is_fully_installed) {
+        console.log('Plugin "' + plugin_id + '" already installed. Carry on.');
+        if (callback) callback();
+        return;
+    }
     
     // checking preferences, if certain variables are not provided, we should throw.
     prefs = plugin_et.findall('./preference') || [];
@@ -60,115 +75,79 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
         return;
     }
 
-    // check if platform has plugin fully installed or queued already.
-    var platform_config = config_changes.get_platform_json(plugins_dir, platform);
-    var plugin_basename = path.basename(plugin_dir);
-    if (platform_config.prepare_queue.installed.indexOf(plugin_basename) > -1) {
-        var err = new Error('plugin "' + plugin_basename + '" is already installed (but needs to be prepared)');
-        if (callback) callback(err);
-        else throw err;
-        return;
-    }
-    var is_fully_installed = false;
-    Object.keys(platform_config.installed_plugins).forEach(function(installed_plugin_id) {
-        if (installed_plugin_id == plugin_id) {
-            is_fully_installed = true;
-        }
-    });
-    if (is_fully_installed) {
-        var err = new Error('plugin "' + plugin_basename + '" (id: '+plugin_id+') is already installed');
-        if (callback) callback(err);
-        else throw err;
-        return;
-    }
-
-    // We need to install this plugin, so install its dependencies first.
-    dependencies.installAll(platform, project_dir, path.basename(plugin_dir), plugins_dir, cli_variables, www_dir, callback);
-
-    // TODO: if plugin does not have platform tag but has platform-agnostic config changes, should we queue it up?
-    var platformTag = plugin_et.find('./platform[@name="'+platform+'"]');
-    if (!platformTag) {
-        // Either this plugin doesn't support this platform, or it's a JS-only plugin.
-        // Either way, return now.
-        // should call prepare probably!
-        finalizeInstall(project_dir, plugins_dir, platform, plugin_basename, filtered_variables, callback);
-        return;
-    }
-
-    // parse plugin.xml into transactions
-    var handler = platform_modules[platform];
-    var txs = [];
-    var sourceFiles = platformTag.findall('./source-file'),
-        headerFiles = platformTag.findall('./header-file'),
-        resourceFiles = platformTag.findall('./resource-file'),
-        assets = platformTag.findall('./asset'),
-        frameworks = platformTag.findall('./framework');
-
-    assets = assets.concat(plugin_et.findall('./asset'));
-
-    // asset installation
-    var installedAssets = [];
-    var common = require('./platforms/common');
-    www_dir = www_dir || handler.www_dir(project_dir);
-    try {
-        for(var i = 0, j = assets.length ; i < j ; i++) {
-            var src = assets[i].attrib['src'],
-                target = assets[i].attrib['target'];
-            common.copyFile(plugin_dir, src, www_dir, target);
-            installedAssets.push(assets[i]);
-        }
-    } catch(err) {
-        var issue = 'asset installation failed\n'+err.stack+'\n';
-        try {
-            // removing assets and reverting install
-            for(var i = 0, j = installedAssets.length ; i < j ; i++) {
-               common.removeFile(www_dir, installedAssets[i].attrib.target);
+    // Check for dependencies, (co)recurse to install each one
+    var dependencies = plugin_et.findall('dependency');
+    if (dependencies && dependencies.length) {
+        var end = n(dependencies.length, function() {
+            handleInstall(plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, callback);
+        });
+        dependencies.forEach(function(dep) {
+            var dep_plugin_id = dep.attrib.id;
+            var dep_subdir = dep.attrib.subdir;
+            var dep_url = dep.attrib.url;
+            if (dep_subdir) {
+                dep_subdir = path.join.apply(null, dep_subdir.split('/'));
             }
-            common.removeFileF(path.resolve(www_dir, 'plugins', plugin_id));
-            issue += 'but successfully reverted\n';
-        } catch(err2) {
-            issue += 'and reversion failed :(\n' + err2.stack;
-        }
-        var error = new Error(issue);
-        if (callback) callback(error);
-        else throw error;
-    }
-    txs = txs.concat(sourceFiles, headerFiles, resourceFiles, frameworks);
-    // pass platform-specific transactions into install
-    handler.install(txs, plugin_id, project_dir, plugin_dir, filtered_variables, function(err) {
-        if (err) {
-            // FAIL
-            var issue = '';
-            try {
-                for(var i = 0, j = installedAssets.length ; i < j ; i++) {
-                   common.removeFile(www_dir, installedAssets[i].attrib.target);
-                }
-                common.removeFileF(path.resolve(www_dir, 'plugins', plugin_id));
-            } catch(err2) {
-                issue += 'Could not revert assets' + err2.stack + '\n';
-            }
-            if (err.transactions) {
-                handler.uninstall(err.transactions.executed, plugin_id, project_dir, plugin_dir, function(superr) {
 
-                    if (superr) {
-                        // Even reversion failed. super fail.
-                        issue += 'Install failed, then reversion of installation failed. Sorry :(. Instalation issue: ' + err.stack + ', reversion issue: ' + superr.stack;
-                    } else {
-                        issue += 'Install failed, plugin reversion successful so you should be good to go. Installation issue: ' + err.stack;
-                    }
-                    var error = new Error(issue);
-                    if (callback) callback(error);
-                    else throw error;
-                });
+            if (fs.existsSync(path.join(plugins_dir, dep_plugin_id))) {
+                console.log('Dependent plugin ' + dep.attrib.id + ' already fetched, using that version.');
+                module.exports(platform, project_dir, dep_plugin_id, plugins_dir, dep_subdir, filtered_variables, www_dir, end);
             } else {
-                if (callback) callback(err);
-                else throw err;
+                console.log('Dependent plugin ' + dep.attrib.id + ' not fetched, retrieving then installing.');
+                module.exports(platform, project_dir, dep_url, plugins_dir, dep_subdir, filtered_variables, www_dir, end);
             }
-        } else {
+        });
+    } else {
+        handleInstall(plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, callback);
+    }
+}
 
+function handleInstall(plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, callback) {
+    var handler = platform_modules[platform];
+    www_dir = www_dir || handler.www_dir(project_dir);
+
+    var platformTag = plugin_et.find('./platform[@name="'+platform+'"]');
+    var assets = plugin_et.findall('asset');
+    if (platformTag) {
+        var sourceFiles = platformTag.findall('./source-file'),
+            headerFiles = platformTag.findall('./header-file'),
+            resourceFiles = platformTag.findall('./resource-file'),
+            frameworks = platformTag.findall('./framework');
+        assets = assets.concat(platformTag.findall('./asset'));
+
+        // queue up native stuff
+        sourceFiles && sourceFiles.forEach(function(source) {
+            action_stack.push(action_stack.createAction(handler["source-file"].install, [source, plugin_dir, project_dir], handler["source-file"].uninstall, [source, project_dir]));
+        });
+
+        headerFiles && headerFiles.forEach(function(header) {
+            action_stack.push(action_stack.createAction(handler["header-file"].install, [header, plugin_dir, project_dir], handler["header-file"].uninstall, [header, project_dir]));
+        });
+
+        resourceFiles && resourceFiles.forEach(function(resource) {
+            action_stack.push(action_stack.createAction(handler["resource-file"].install, [resource, plugin_dir, project_dir], handler["resource-file"].uninstall, [resource, project_dir]));
+        });
+
+        frameworks && frameworks.forEach(function(framework) {
+            action_stack.push(action_stack.createAction(handler["framework"].install, [framework, plugin_dir, project_dir], handler["framework"].uninstall, [framework, project_dir]));
+        });
+    }
+
+    // queue up asset installation
+    var common = require('./platforms/common');
+    assets && assets.forEach(function(asset) {
+        action_stack.push(action_stack.createAction(common.asset.install, [asset, plugin_dir, www_dir], common.asset.uninstall, [asset, www_dir, plugin_id]));
+    });
+
+    // run through the action stack
+    action_stack.process(function(err) {
+        if (err) {
+            console.error(err.message, err.stack);
+            console.error('Plugin installation failed :(');
+        } else {
             // WIN!
             // Log out plugin INFO element contents in case additional install steps are necessary
-            var info = platformTag.findall('./info');
+            var info = (platformTag ? platformTag.findall('./info') : '');
             if(info.length) {
                 console.log(info[0].text);
             }

@@ -19,19 +19,10 @@
 
 var fs = require('fs')  // use existsSync in 0.6.x
    , path = require('path')
-   , shell = require('shelljs')
    , common = require('./common')
-   , getConfigChanges = require(path.join(__dirname, '..', 'util', 'config-changes'))
-   , plugins_module = require(path.join(__dirname, '..', 'util', 'plugins'))
    , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'));
 
 module.exports = {
-    install:function(transactions, plugin_id, project_dir, plugin_dir, variables, callback) {
-        handlePlugin('install', plugin_id, transactions, project_dir, plugin_dir, variables, callback);
-    },
-    uninstall:function(transactions, plugin_id, project_dir, plugin_dir, callback) {
-        handlePlugin('uninstall', plugin_id, transactions, project_dir, plugin_dir, null, callback);
-    },
     www_dir:function(project_dir) {
         return path.join(project_dir, 'assets', 'www');
     },
@@ -42,51 +33,15 @@ module.exports = {
         var mDoc = xml_helpers.parseElementtreeSync(path.join(project_dir, 'AndroidManifest.xml'));
 
         return mDoc._root.attrib['package'];
+    },
+    "source-file":{
+        install:function(source_el, plugin_dir, project_dir) {
+            var dest = path.join(source_el.attrib['target-dir'], path.basename(source_el.attrib['src']));
+            common.copyFile(plugin_dir, source_el.attrib['src'], project_dir, dest);
+        },
+        uninstall:function(source_el, project_dir) {
+            var dest = path.join(source_el.attrib['target-dir'], path.basename(source_el.attrib['src']));
+            common.deleteJava(project_dir, dest);
+        }
     }
 };
-
-function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables, callback) {
-    variables = variables || {};
-
-    // TODO: adding access tags?
-    // TODO: move this to prepare?
-    /*
-    var root = et.Element("config-file");
-    root.attrib['parent'] = '.';
-    plugin_et.findall('./access').forEach(function (tag) { 
-        root.append(tag);
-    });
-    */
-    var completed = [];
-    while(txs.length) {
-        var mod = txs.shift();
-        try {
-            switch(mod.tag.toLowerCase()) {
-                case 'source-file':
-                    var destFile = path.join(mod.attrib['target-dir'], path.basename(mod.attrib['src']));
-
-                    if (action == 'install') {
-                        common.copyFile(plugin_dir, mod.attrib['src'], project_dir, destFile);
-                    } else {
-                        common.deleteJava(project_dir, destFile);
-                    }
-                    break;
-                default:
-                    throw new Error('Unrecognized plugin.xml element/action in android installer: ' + mod.tag);
-                    break;
-            }
-        } catch(e) {
-            // propagate error up and provide completed tx log
-            e.transactions = {
-                executed:completed,
-                incomplete:txs.unshift(mod)
-            };
-            if (callback) callback(e);
-            else throw e;
-            return;
-        }
-        completed.push(mod);
-    }
-
-    if (callback) callback();
-}

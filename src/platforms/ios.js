@@ -20,44 +20,130 @@
 var path = require('path')
   , fs = require('../util/fs')  // use existsSync in 0.6.x
   , glob = require('glob')
-  , et = require('elementtree')
   , xcode = require('xcode')
   , plist = require('plist')
-  , bplist = require('bplist-parser')
-  , shell = require('shelljs')
-  , common = require('./common')
-  , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'))
-  , searchAndReplace = require(path.join(__dirname, '..', 'util', 'search-and-replace'))
-  , getConfigChanges = require(path.join(__dirname, '..', 'util', 'config-changes'));
+  , shell = require('shelljs');
 
 module.exports = {
-    install:function(transactions, plugin_id, project_dir, plugin_dir, variables, callback) {
-        handlePlugin('install', plugin_id, transactions, project_dir, plugin_dir, variables, callback);
-    },
-    uninstall:function(transactions, plugin_id, project_dir, plugin_dir, callback) {
-        handlePlugin('uninstall', plugin_id, transactions, project_dir, plugin_dir, null, callback);
-    },
     www_dir:function(project_dir) {
         return path.join(project_dir, 'www');
     },
     package_name:function(project_dir) {
         var plist_file = glob.sync(path.join(project_dir, '**', '*-Info.plist'))[0];
         return plist.parseFileSync(plist_file).CFBundleIdentifier;
+    },
+    "source-file":{
+        install:function(source_el, plugin_dir, project_dir) {
+            var project = getIOSProjectFiles(project_dir);
+            var src = source_el.attrib['src'];
+            var srcFile = path.resolve(plugin_dir, src);
+            var targetDir = path.resolve(project.plugins_dir, getRelativeDir(source_el));
+            var destFile = path.resolve(targetDir, path.basename(src));
+
+            if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <source-file>');
+            if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
+            project.xcode.addSourceFile(path.join('Plugins', path.relative(project.plugins_dir, destFile)));
+            shell.mkdir('-p', targetDir);
+            shell.cp(srcFile, destFile);
+            // write out xcodeproj file
+            fs.writeFileSync(project.pbx, project.xcode.writeSync());
+        },
+        uninstall:function(source_el, project_dir) {
+            var project = getIOSProjectFiles(project_dir);
+            var src = source_el.attrib['src'];
+            var targetDir = path.resolve(project.plugins_dir, getRelativeDir(source_el));
+            var destFile = path.resolve(targetDir, path.basename(src));
+
+            project.xcode.removeSourceFile(path.join('Plugins', path.relative(project.plugins_dir, destFile)));
+            shell.rm('-rf', destFile);
+            
+            if(fs.existsSync(targetDir) && fs.readdirSync(targetDir).length>0){
+                shell.rm('-rf', targetDir); 
+            }
+            // write out xcodeproj file
+            fs.writeFileSync(project.pbx, project.xcode.writeSync());
+        }
+    },
+    "header-file":{
+        install:function(header_el, plugin_dir, project_dir) {
+            var project = getIOSProjectFiles(project_dir);
+            var src = header_el.attrib['src'];
+            var srcFile = path.resolve(plugin_dir, src);
+            var targetDir = path.resolve(project.plugins_dir, getRelativeDir(header_el));
+            var destFile = path.resolve(targetDir, path.basename(src));
+            if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <header-file>');
+            if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
+            project.xcode.addHeaderFile(path.join('Plugins', path.relative(project.plugins_dir, destFile)));
+            shell.mkdir('-p', targetDir);
+            shell.cp(srcFile, destFile);
+            // write out xcodeproj file
+            fs.writeFileSync(project.pbx, project.xcode.writeSync());
+        },
+        uninstall:function(header_el, project_dir) {
+            var project = getIOSProjectFiles(project_dir);
+            var src = header_el.attrib['src'];
+            var srcFile = path.resolve(plugin_dir, src);
+            var targetDir = path.resolve(project.plugins_dir, getRelativeDir(header_el));
+            var destFile = path.resolve(targetDir, path.basename(src));
+            project.xcode.removeHeaderFile(path.join('Plugins', path.relative(project.plugins_dir, destFile)));
+            shell.rm('-rf', destFile);
+            if(fs.existsSync(targetDir) && fs.readdirSync(targetDir).length>0){
+                shell.rm('-rf', targetDir); 
+            }
+            // write out xcodeproj file
+            fs.writeFileSync(project.pbx, project.xcode.writeSync());
+        }
+    },
+    "resource-file":{
+        install:function(resource_el, plugin_dir, project_dir) {
+            var project = getIOSProjectFiles(project_dir);
+            var src = resource_el.attrib['src'],
+                srcFile = path.resolve(plugin_dir, src),
+                destFile = path.resolve(project.resources_dir, path.basename(src));
+            if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <resource-file>');
+            if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
+            project.xcode.addResourceFile(path.join('Resources', path.basename(src)));
+            shell.cp('-R', srcFile, resourcesDir);
+            // write out xcodeproj file
+            fs.writeFileSync(project.pbx, project.xcode.writeSync());
+        },
+        uninstall:function(resource_el, project_dir) {
+            var project = getIOSProjectFiles(project_dir);
+            var src = resource_el.attrib['src'],
+                destFile = path.resolve(project.resources_dir, path.basename(src));
+            project.xcode.removeResourceFile(path.join('Resources', path.basename(src)));
+            shell.rm('-rf', destFile);
+            // write out xcodeproj file
+            fs.writeFileSync(project.pbx, project.xcode.writeSync());
+        }
+    },
+    "framework":{
+        install:function(framework_el, plugin_dir, project_dir) {
+            var project = getIOSProjectFiles(project_dir);
+            var src = framework_el.attrib['src'],
+                weak = framework_el.attrib['weak'];
+            var opt = { weak: (weak == undefined || weak == null || weak != 'true' ? false : true ) };
+            project.xcode.addFramework(src, opt);
+            // write out xcodeproj file
+            fs.writeFileSync(project.pbx, project.xcode.writeSync());
+        },
+        uninstall:function(framework_el, project_dir) {
+            var project = getIOSProjectFiles(project_dir);
+            var src = framework_el.attrib['src'];
+            project.xcode.removeFramework(src);
+            // write out xcodeproj file
+            fs.writeFileSync(project.pbx, project.xcode.writeSync());
+        }
     }
 };
  
-function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables, callback) {
-    variables = variables || {};
-
+function getIOSProjectFiles(project_dir) {
     // grab and parse pbxproj
     // we don't want CordovaLib's xcode project
     var project_files = glob.sync(path.join(project_dir, '*.xcodeproj', 'project.pbxproj'));
     
     if (project_files.length === 0) {
-        var err = new Error("does not appear to be an xcode project (no xcode project file)");
-        if (callback) callback(err);
-        else throw err;
-        return;
+        throw new Error("does not appear to be an xcode project (no xcode project file)");
     }
     var pbxPath = project_files[0];
     var xcodeproj = xcode.project(pbxPath);
@@ -74,10 +160,7 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
     });
 
     if (config_files.length === 0) {
-        var err = new Error("could not find PhoneGap/Cordova plist file, or config.xml file.");
-        if (callback) callback(err);
-        else throw err;
-        return;
+        throw new Error("could not find PhoneGap/Cordova plist file, or config.xml file.");
     }
 
     var config_file = config_files[0];
@@ -92,95 +175,12 @@ function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables
     // for certain config changes, we need to know if plugins-plist elements are present
     var plistEle = txs.filter(function(t) { return t.tag.toLowerCase() == 'plugins-plist'; })[0];
 
-    var completed = [];
-    while(txs.length) {
-        var mod = txs.shift();
-        try {
-            switch(mod.tag.toLowerCase()) {
-                case 'source-file':
-                    var src = mod.attrib['src'];
-                    var srcFile = path.resolve(plugin_dir, src);
-                    var targetDir = path.resolve(pluginsDir, getRelativeDir(mod));
-                    var destFile = path.resolve(targetDir, path.basename(src));
-                    if (action == 'install') {
-                        if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <source-file>');
-                        if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
-                        xcodeproj.addSourceFile(path.join('Plugins', path.relative(pluginsDir, destFile)));
-                        shell.mkdir('-p', targetDir);
-                        shell.cp(srcFile, destFile);
-                    } else {
-                        xcodeproj.removeSourceFile(path.join('Plugins', path.relative(pluginsDir, destFile)));
-                        shell.rm('-rf', destFile);
-                        
-                        if(fs.existsSync(targetDir) && fs.readdirSync(targetDir).length>0){
-                            shell.rm('-rf', targetDir); 
-                        }
-                    }
-                    break;
-                case 'header-file':
-                    var src = mod.attrib['src'];
-                    var srcFile = path.resolve(plugin_dir, src);
-                    var targetDir = path.resolve(pluginsDir, getRelativeDir(mod));
-                    var destFile = path.resolve(targetDir, path.basename(src));
-                    if (action == 'install') {     
-                        if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <header-file>');
-                        if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
-                        xcodeproj.addHeaderFile(path.join('Plugins', path.relative(pluginsDir, destFile)));
-                        shell.mkdir('-p', targetDir);
-                        shell.cp(srcFile, destFile);
-                    } else {
-                        // TODO: doesnt preserve-dirs affect what the originally-added path to xcodeproj (see above) affect how we should call remove too?
-                        xcodeproj.removeHeaderFile(path.join('Plugins', path.relative(pluginsDir, destFile)));
-                        shell.rm('-rf', destFile);
-                        // TODO: again.. is this right? same as source-file
-                        shell.rm('-rf', targetDir);
-                    }
-                    break;
-                case 'resource-file':
-                    var src = mod.attrib['src'],
-                        srcFile = path.resolve(plugin_dir, src),
-                        destFile = path.resolve(resourcesDir, path.basename(src));
-
-                    if (action == 'install') {
-                        if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <resource-file>');
-                        if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
-                        xcodeproj.addResourceFile(path.join('Resources', path.basename(src)));
-                        shell.cp('-R', srcFile, resourcesDir);
-                    } else {
-                        xcodeproj.removeResourceFile(path.join('Resources', path.basename(src)));
-                        shell.rm('-rf', destFile);
-                    }
-                    break;
-                case 'framework':
-                    var src = mod.attrib['src'],
-                        weak = mod.attrib['weak'];
-                    if (action == 'install') {
-                        var opt = { weak: (weak == undefined || weak == null || weak != 'true' ? false : true ) };
-                        xcodeproj.addFramework(src, opt);
-                    } else {
-                        xcodeproj.removeFramework(src);
-                    }
-                    break;
-                default:
-                    throw new Error('Unrecognized plugin.xml element/action in ios installer: ' + mod.tag);
-                    break;
-            }
-        } catch(e) {
-            // propagate error up and provide completed tx log
-            e.transactions = {
-                executed:completed,
-                incomplete:txs.unshift(mod)
-            };
-            if (callback) callback(e);
-            else throw e;
-            return;
-        }
-        completed.push(mod);
-    }
-    // write out xcodeproj file
-    fs.writeFileSync(pbxPath, xcodeproj.writeSync());
-
-    if (callback) callback();
+    return {
+        plugins_dir:pluginsDir,
+        resources_dir:resourcesDir,
+        xcode:xcodeproj,
+        pbx:pbxPath
+    };
 }
 
 function getRelativeDir(file) {
@@ -190,13 +190,4 @@ function getRelativeDir(file) {
     } else {
         return '';
     }
-}
-
-// determine if a plist file is binary
-function isBinaryPlist(filename) {
-    // I wish there was a synchronous way to read only the first 6 bytes of a
-    // file. This is wasteful :/ 
-    var buf = '' + fs.readFileSync(filename, 'utf8');
-    // binary plists start with a magic header, "bplist"
-    return buf.substring(0, 6) === 'bplist';
 }

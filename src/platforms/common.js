@@ -55,5 +55,18 @@ module.exports = {
                 break;
             }
         }   
+    },
+    // handle <asset> elements
+    asset:{
+        install:function(asset_el, plugin_dir, www_dir) {
+            var src = asset_el.attrib.src;
+            var target = asset_el.attrib.target;
+            module.exports.copyFile(plugin_dir, src, www_dir, target);
+        },
+        uninstall:function(asset_el, www_dir, plugin_id) {
+            var target = asset_el.attrib.target;
+            module.exports.removeFile(www_dir, target);
+            module.exports.removeFileF(path.resolve(www_dir, 'plugins', plugin_id));
+        }
     }
 };

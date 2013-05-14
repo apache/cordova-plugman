@@ -53,6 +53,8 @@ module.exports = {
                 var xml = xml_helpers.parseElementtreeSync(xml_file);
                 var plugin_id = xml.getroot().attrib.id;
 
+                // TODO: what if a plugin dependended on different subdirectories of the same plugin? this would fail.
+                // should probably copy over entire plugin git repo contents into plugins_dir and handle subdir seperately during install.
                 var plugin_dir = path.join(plugins_dir, plugin_id);
                 shell.cp('-R', path.join(tmp_dir, '*'), plugin_dir);
 

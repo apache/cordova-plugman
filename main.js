@@ -74,7 +74,7 @@ else {
             if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
         });
     }
-    plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, cli_variables, cli_opts.www);
+    plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, '.', cli_variables, cli_opts.www);
 }
 
 function printUsage() {

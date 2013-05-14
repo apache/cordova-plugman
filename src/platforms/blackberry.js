@@ -19,59 +19,26 @@
 
 var fs = require('fs')  // use existsSync in 0.6.x
    , path = require('path')
-   , shell = require('shelljs')
-   , et = require('elementtree')
-   , getConfigChanges = require('../util/config-changes')
    , common = require('./common')
    , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'));
 
 module.exports = {
-    install:function(transactions, plugin_id, project_dir, plugin_dir, variables, callback) {
-        handlePlugin('install', plugin_id, transactions, project_dir, plugin_dir, variables, callback);
-    },
-    uninstall:function(transactions, plugin_id, project_dir, plugin_dir, callback) {
-        handlePlugin('uninstall', plugin_id, transactions, project_dir, plugin_dir, null, callback);
-    },
     www_dir:function(project_dir) {
         return path.join(project_dir, 'www');
     },
     package_name:function(project_dir) {
         var config_path = path.join(module.exports.www_dir(project_dir), 'config.xml');
-        var widget_doc = new et.ElementTree(et.XML(fs.readFileSync(config_path, 'utf-8')));
+        var widget_doc = xml_helpers.parseElementtreeSync(config_path);
         return widget_doc._root.attrib['id'];
+    },
+    "source-file":{
+        install:function(source_el, plugin_dir, project_dir) {
+            var dest = path.join(source_el.attrib['target-dir'], path.basename(source_el.attrib['src']));
+            common.copyFile(plugin_dir, source_el.attrib['src'], project_dir, dest);
+        },
+        uninstall:function(source_el, project_dir) {
+            var dest = path.join(source_el.attrib['target-dir'], path.basename(source_el.attrib['src']));
+            common.deleteJava(project_dir, dest);
+        }
     }
 };
-
-function handlePlugin(action, plugin_id, txs, project_dir, plugin_dir, variables, callback) {
-    var completed = [];
-    while(txs.length) {
-        var mod = txs.shift();
-        try {
-            switch(mod.tag.toLowerCase()) {
-                case 'source-file':
-                    var destFile = path.join(mod.attrib['target-dir'], path.basename(mod.attrib['src']));
-
-                    if (action == 'install') {
-                        common.copyFile(plugin_dir, mod.attrib['src'], project_dir, destFile);
-                    } else {
-                        common.deleteJava(project_dir, destFile);
-                    }
-                    break;
-                default:
-                    throw new Error('Unrecognized plugin.xml element/action in blackberry installer: ' + mod.tag);
-                    break;
-            }
-        } catch(e) {
-            // propagate error up and provide completed tx log
-            e.transactions = {
-                executed:completed,
-                incomplete:txs.unshift(mod)
-            };
-            if (callback) callback(e);
-            else throw e;
-            return;
-        }
-        completed.push(mod);
-    }
-    if (callback) callback();
-}
