@@ -30,7 +30,7 @@ var http = require('http'),
 module.exports = {
     searchAndReplace:require('./search-and-replace'),
     // Fetches plugin information from remote server
-    clonePluginGitRepo:function(plugin_git_url, plugins_dir, subdir, callback) {
+    clonePluginGitRepo:function(plugin_git_url, plugins_dir, subdir, git_ref, callback) {
         if(!shell.which('git')) {
             var err = new Error('git command line is not installed');
             if (callback) callback(err);
@@ -46,6 +46,16 @@ module.exports = {
                 if (callback) callback(err)
                 else throw err;
             } else {
+                // Check out the specified revision, if provided.
+                if (git_ref) {
+                    var result = shell.exec(util.format('git checkout "%s"', git_ref), { silent: true });
+                    if (result.code > 0) {
+                        var err = new Error('failed to checkout git ref "' + git_ref + '"');
+                        if (callback) callback(err);
+                        else throw err;
+                    }
+                }
+
                 // Read the plugin.xml file and extract the plugin's ID.
                 tmp_dir = path.join(tmp_dir, subdir);
                 // TODO: what if plugin.xml does not exist?

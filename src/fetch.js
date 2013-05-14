@@ -4,7 +4,7 @@ var shell   = require('shelljs'),
     xml_helpers = require('./util/xml-helpers'),
     path    = require('path');
 
-module.exports = function fetchPlugin(plugin_dir, plugins_dir, link, subdir, callback) {
+module.exports = function fetchPlugin(plugin_dir, plugins_dir, link, subdir, git_ref, callback) {
     // Ensure the containing directory exists.
     shell.mkdir('-p', plugins_dir);
 
@@ -17,7 +17,7 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, link, subdir, cal
             if (callback) callback(err);
             else throw err;
         } else {
-            plugins.clonePluginGitRepo(plugin_dir, plugins_dir, subdir, callback);
+            plugins.clonePluginGitRepo(plugin_dir, plugins_dir, subdir, git_ref, callback);
         }
     } else {
         // Copy from the local filesystem.
