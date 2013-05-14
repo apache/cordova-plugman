@@ -141,7 +141,7 @@ function handleInstall(plugin_id, plugin_et, platform, project_dir, plugins_dir,
     });
 
     // run through the action stack
-    action_stack.process(function(err) {
+    action_stack.process(platform, project_dir, function(err) {
         if (err) {
             console.error(err.message, err.stack);
             console.error('Plugin installation failed :(');

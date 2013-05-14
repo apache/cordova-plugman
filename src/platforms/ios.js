@@ -33,8 +33,7 @@ module.exports = {
         return plist.parseFileSync(plist_file).CFBundleIdentifier;
     },
     "source-file":{
-        install:function(source_el, plugin_dir, project_dir) {
-            var project = getIOSProjectFiles(project_dir);
+        install:function(source_el, plugin_dir, project_dir, project) {
             var src = source_el.attrib['src'];
             var srcFile = path.resolve(plugin_dir, src);
             var targetDir = path.resolve(project.plugins_dir, getRelativeDir(source_el));
@@ -45,11 +44,8 @@ module.exports = {
             project.xcode.addSourceFile(path.join('Plugins', path.relative(project.plugins_dir, destFile)));
             shell.mkdir('-p', targetDir);
             shell.cp(srcFile, destFile);
-            // write out xcodeproj file
-            fs.writeFileSync(project.pbx, project.xcode.writeSync());
         },
-        uninstall:function(source_el, project_dir) {
-            var project = getIOSProjectFiles(project_dir);
+        uninstall:function(source_el, project_dir, project) {
             var src = source_el.attrib['src'];
             var targetDir = path.resolve(project.plugins_dir, getRelativeDir(source_el));
             var destFile = path.resolve(targetDir, path.basename(src));
@@ -60,13 +56,10 @@ module.exports = {
             if(fs.existsSync(targetDir) && fs.readdirSync(targetDir).length>0){
                 shell.rm('-rf', targetDir); 
             }
-            // write out xcodeproj file
-            fs.writeFileSync(project.pbx, project.xcode.writeSync());
         }
     },
     "header-file":{
-        install:function(header_el, plugin_dir, project_dir) {
-            var project = getIOSProjectFiles(project_dir);
+        install:function(header_el, plugin_dir, project_dir, project) {
             var src = header_el.attrib['src'];
             var srcFile = path.resolve(plugin_dir, src);
             var targetDir = path.resolve(project.plugins_dir, getRelativeDir(header_el));
@@ -76,11 +69,8 @@ module.exports = {
             project.xcode.addHeaderFile(path.join('Plugins', path.relative(project.plugins_dir, destFile)));
             shell.mkdir('-p', targetDir);
             shell.cp(srcFile, destFile);
-            // write out xcodeproj file
-            fs.writeFileSync(project.pbx, project.xcode.writeSync());
         },
-        uninstall:function(header_el, project_dir) {
-            var project = getIOSProjectFiles(project_dir);
+        uninstall:function(header_el, project_dir, project) {
             var src = header_el.attrib['src'];
             var srcFile = path.resolve(plugin_dir, src);
             var targetDir = path.resolve(project.plugins_dir, getRelativeDir(header_el));
@@ -90,98 +80,77 @@ module.exports = {
             if(fs.existsSync(targetDir) && fs.readdirSync(targetDir).length>0){
                 shell.rm('-rf', targetDir); 
             }
-            // write out xcodeproj file
-            fs.writeFileSync(project.pbx, project.xcode.writeSync());
         }
     },
     "resource-file":{
-        install:function(resource_el, plugin_dir, project_dir) {
-            var project = getIOSProjectFiles(project_dir);
+        install:function(resource_el, plugin_dir, project_dir, project) {
             var src = resource_el.attrib['src'],
                 srcFile = path.resolve(plugin_dir, src),
                 destFile = path.resolve(project.resources_dir, path.basename(src));
             if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <resource-file>');
             if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
             project.xcode.addResourceFile(path.join('Resources', path.basename(src)));
-            shell.cp('-R', srcFile, resourcesDir);
-            // write out xcodeproj file
-            fs.writeFileSync(project.pbx, project.xcode.writeSync());
+            shell.cp('-R', srcFile, project.resources_dir);
         },
-        uninstall:function(resource_el, project_dir) {
-            var project = getIOSProjectFiles(project_dir);
+        uninstall:function(resource_el, project_dir, project) {
             var src = resource_el.attrib['src'],
                 destFile = path.resolve(project.resources_dir, path.basename(src));
             project.xcode.removeResourceFile(path.join('Resources', path.basename(src)));
             shell.rm('-rf', destFile);
-            // write out xcodeproj file
-            fs.writeFileSync(project.pbx, project.xcode.writeSync());
         }
     },
     "framework":{
-        install:function(framework_el, plugin_dir, project_dir) {
-            var project = getIOSProjectFiles(project_dir);
+        install:function(framework_el, plugin_dir, project_dir, project) {
             var src = framework_el.attrib['src'],
                 weak = framework_el.attrib['weak'];
             var opt = { weak: (weak == undefined || weak == null || weak != 'true' ? false : true ) };
             project.xcode.addFramework(src, opt);
-            // write out xcodeproj file
-            fs.writeFileSync(project.pbx, project.xcode.writeSync());
         },
-        uninstall:function(framework_el, project_dir) {
-            var project = getIOSProjectFiles(project_dir);
+        uninstall:function(framework_el, project_dir, project) {
             var src = framework_el.attrib['src'];
             project.xcode.removeFramework(src);
-            // write out xcodeproj file
-            fs.writeFileSync(project.pbx, project.xcode.writeSync());
         }
+    },
+    parseIOSProjectFiles:function(project_dir) {
+        // grab and parse pbxproj
+        // we don't want CordovaLib's xcode project
+        var project_files = glob.sync(path.join(project_dir, '*.xcodeproj', 'project.pbxproj'));
+        
+        if (project_files.length === 0) {
+            throw new Error("does not appear to be an xcode project (no xcode project file)");
+        }
+        var pbxPath = project_files[0];
+        var xcodeproj = xcode.project(pbxPath);
+        xcodeproj.parseSync();
+
+        // grab and parse plist file or config.xml
+        var config_files = (glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist')).length == 0 ? 
+                            glob.sync(path.join(project_dir, '**', 'config.xml')) :
+                            glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist'))
+                           );
+
+        config_files = config_files.filter(function (val) {
+            return !(/^build\//.test(val));
+        });
+
+        if (config_files.length === 0) {
+            throw new Error("could not find PhoneGap/Cordova plist file, or config.xml file.");
+        }
+
+        var config_file = config_files[0];
+        var config_filename = path.basename(config_file);
+        var xcode_dir = path.dirname(config_file);
+        var pluginsDir = path.resolve(xcode_dir, 'Plugins');
+        var resourcesDir = path.resolve(xcode_dir, 'Resources');
+
+        return {
+            plugins_dir:pluginsDir,
+            resources_dir:resourcesDir,
+            xcode:xcodeproj,
+            pbx:pbxPath
+        };
     }
 };
- 
-function getIOSProjectFiles(project_dir) {
-    // grab and parse pbxproj
-    // we don't want CordovaLib's xcode project
-    var project_files = glob.sync(path.join(project_dir, '*.xcodeproj', 'project.pbxproj'));
-    
-    if (project_files.length === 0) {
-        throw new Error("does not appear to be an xcode project (no xcode project file)");
-    }
-    var pbxPath = project_files[0];
-    var xcodeproj = xcode.project(pbxPath);
-    xcodeproj.parseSync();
-
-    // grab and parse plist file or config.xml
-    var config_files = (glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist')).length == 0 ? 
-                        glob.sync(path.join(project_dir, '**', 'config.xml')) :
-                        glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist'))
-                       );
-
-    config_files = config_files.filter(function (val) {
-        return !(/^build\//.test(val));
-    });
-
-    if (config_files.length === 0) {
-        throw new Error("could not find PhoneGap/Cordova plist file, or config.xml file.");
-    }
-
-    var config_file = config_files[0];
-    var config_filename = path.basename(config_file);
-    var xcode_dir = path.dirname(config_file);
-    var pluginsDir = path.resolve(xcode_dir, 'Plugins');
-    var resourcesDir = path.resolve(xcode_dir, 'Resources');
-    // get project plist for package name
-    var project_plists = glob.sync(xcode_dir + '/*-Info.plist');
-    var projectPListPath = project_plists[0];
-
-    // for certain config changes, we need to know if plugins-plist elements are present
-    var plistEle = txs.filter(function(t) { return t.tag.toLowerCase() == 'plugins-plist'; })[0];
-
-    return {
-        plugins_dir:pluginsDir,
-        resources_dir:resourcesDir,
-        xcode:xcodeproj,
-        pbx:pbxPath
-    };
-}
 
 function getRelativeDir(file) {
     var targetDir = file.attrib['target-dir'];

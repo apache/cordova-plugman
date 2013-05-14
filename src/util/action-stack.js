@@ -1,3 +1,6 @@
+var ios = require('../platforms/ios'),
+    fs = require('fs');
+
 var stack = [];
 var completed = [];
 
@@ -17,11 +20,16 @@ module.exports = {
     push:function(tx) {
         stack.push(tx);
     },
-    process:function(callback) {
+    process:function(platform, project_dir, callback) {
+        if (platform == 'ios') {
+            // parse xcode project file once
+            var project_files = ios.parseIOSProjectFiles(project_dir);
+        }
         while(stack.length) {
             var action = stack.shift();
             var handler = action.handler.run;
             var action_params = action.handler.params;
+            if (platform == 'ios') action_params.push(project_files);
             try {
                 handler.apply(null, action_params);
             } catch(e) {
@@ -32,6 +40,7 @@ module.exports = {
                     var undo = completed.shift();
                     var revert = undo.reverter.run;
                     var revert_params = undo.reverter.params;
+                    if (platform == 'ios') revert_params.push(project_files);
                     try {
                         revert.apply(null, revert_params);
                     } catch(err) {
@@ -44,6 +53,10 @@ module.exports = {
                 return;
             }
             completed.push(action);
+        }
+        if (platform == 'ios') {
+            // write out xcodeproj file
+            fs.writeFileSync(project_files.pbx, project_files.xcode.writeSync());
         }
         if (callback) callback();
     }
