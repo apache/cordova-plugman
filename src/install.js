@@ -146,8 +146,8 @@ function handleInstall(plugin_id, plugin_et, platform, project_dir, plugins_dir,
     // run through the action stack
     action_stack.process(platform, project_dir, function(err) {
         if (err) {
-            console.error(err.message, err.stack);
-            console.error('Plugin installation failed :(');
+            if (callback) callback(err);
+            else throw err;
         } else {
             // WIN!
             // Log out plugin INFO element contents in case additional install steps are necessary
@@ -161,6 +161,7 @@ function handleInstall(plugin_id, plugin_et, platform, project_dir, plugins_dir,
             // call prepare after a successful install
             require('./../plugman').prepare(project_dir, platform, plugins_dir);
 
+            console.log(plugin_id + ' installed.');
             if (callback) callback();
         }
     });

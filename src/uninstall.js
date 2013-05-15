@@ -1,8 +1,10 @@
 var path = require('path'),
     fs   = require('fs'),
     et   = require('elementtree'),
+    shell= require('shelljs'),
     config_changes = require('./util/config-changes'),
     action_stack = require('./util/action-stack'),
+    n = require('ncallbacks'),
     dependencies = require('./util/dependencies'),
     underscore = require('underscore'),
     platform_modules = require('./platforms');
@@ -44,26 +46,27 @@ function runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variab
         if (tlp != plugin_id) {
             var ds = graph.getChain(tlp);
             if (is_top_level && ds.indexOf(plugin_id) > -1) {
-                // Another top-level plugin depends on this one
-                // Cannot uninstall then.
-                console.log('Another top-level plugin (' + tlp + ') relies on plugin ' + plugin_id + ', therefore, aborting uninstallation.');
-                if (callback) callback();
+                var err = new Error('Another top-level plugin (' + tlp + ') relies on plugin ' + plugin_id + ', therefore aborting uninstallation.');
+                if (callback) callback(err);
+                else throw err;
                 return;
             }
             diff_arr.push(ds);
         }
     });
 
-    if (dependents.length) {
-        // this plugin has dependencies
-        diff_arr.unshift(dependents);
-        // do a set difference to determine which dependencies are not required by other existing plugins
-        var danglers = underscore.difference.apply(null, diff_arr);
-        danglers && danglers.forEach(function(dangle) {
-            // TODO: fire off an uninstall for each danglin' dep
+    // if this plugin has dependencies, do a set difference to determine which dependencies are not required by other existing plugins
+    diff_arr.unshift(dependents);
+    var danglers = underscore.difference.apply(null, diff_arr);
+    if (dependents.length && danglers && danglers.length) {
+        var end = n(danglers.length, function() {
+            handleUninstall(platform, plugin_id, plugin_et, project_dir, www_dir, plugins_dir, plugin_dir, is_top_level, callback);
+        });
+        danglers.forEach(function(dangler) {
+            module.exports(platform, project_dir, dangler, plugins_dir, cli_variables, www_dir, false /* TODO: should this "is_top_level" param be false for dependents? */, end);
         });
     } else {
-        // this plugin is bare, uninstall it!
+        // this plugin can get axed by itself, gogo!
         handleUninstall(platform, plugin_id, plugin_et, project_dir, www_dir, plugins_dir, plugin_dir, is_top_level, callback);
     }
 }
@@ -109,14 +112,17 @@ function handleUninstall(platform, plugin_id, plugin_et, project_dir, www_dir, p
     // run through the action stack
     action_stack.process(platform, project_dir, function(err) {
         if (err) {
-            console.error(err.message, err.stack);
-            console.error('Plugin uninstallation failed :(');
+            if (callback) callback(err);
+            else throw err;
         } else {
             // WIN!
             // queue up the plugin so prepare can remove the config changes
             config_changes.add_uninstalled_plugin_to_prepare_queue(plugins_dir, path.basename(plugin_dir), platform, is_top_level);
             // call prepare after a successful uninstall
             require('./../plugman').prepare(project_dir, platform, plugins_dir);
+            // axe the directory
+            shell.rm('-rf', plugin_dir);
+            console.log(plugin_id + ' uninstalled.');
             if (callback) callback();
         }
     });
