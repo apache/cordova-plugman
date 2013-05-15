@@ -6,7 +6,7 @@ var path = require('path'),
     action_stack = require('./util/action-stack'),
     platform_modules = require('./platforms');
 
-module.exports = function installPlugin(platform, project_dir, id, plugins_dir, subdir, cli_variables, www_dir, is_top_level, callback) {
+module.exports = function installPlugin(platform, project_dir, id, plugins_dir, subdir, cli_variables, www_dir, callback) {
     if (!platform_modules[platform]) {
         var err = new Error(platform + " not supported.");
         if (callback) callback(err);
@@ -14,6 +14,12 @@ module.exports = function installPlugin(platform, project_dir, id, plugins_dir, 
         return;
     }
 
+    var current_stack = new action_stack();
+
+    possiblyFetch(current_stack, platform, project_dir, id, plugins_dir, subdir, cli_variables, www_dir, true, callback);
+};
+
+function possiblyFetch(actions, platform, project_dir, id, plugins_dir, subdir, cli_variables, www_dir, is_top_level, callback) {
     var plugin_dir = path.join(plugins_dir, id);
 
     // Check that the plugin has already been fetched.
@@ -25,15 +31,15 @@ module.exports = function installPlugin(platform, project_dir, id, plugins_dir, 
                 callback(err);
             } else {
                 // update ref to plugin_dir after successful fetch, via fetch callback
-                runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, is_top_level, callback);
+                runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, is_top_level, callback);
             }
         });
     } else {
-        runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, is_top_level, callback);
+        runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, is_top_level, callback);
     }
-};
+}
 
-function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, is_top_level, callback) {
+function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, is_top_level, callback) {
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , xml_text     = fs.readFileSync(xml_path, 'utf-8')
       , plugin_et    = new et.ElementTree(et.XML(xml_text))
@@ -83,7 +89,7 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
     var dependencies = plugin_et.findall('dependency');
     if (dependencies && dependencies.length) {
         var end = n(dependencies.length, function() {
-            handleInstall(plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, is_top_level, callback);
+            handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, is_top_level, callback);
         });
         dependencies.forEach(function(dep) {
             var dep_plugin_id = dep.attrib.id;
@@ -92,21 +98,21 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
             if (dep_subdir) {
                 dep_subdir = path.join.apply(null, dep_subdir.split('/'));
             }
-
-            if (fs.existsSync(path.join(plugins_dir, dep_plugin_id))) {
-                console.log('Dependent plugin ' + dep.attrib.id + ' already fetched, using that version.');
-                module.exports(platform, project_dir, dep_plugin_id, plugins_dir, dep_subdir, filtered_variables, www_dir, false, end);
+            var dep_plugin_dir = path.join(plugins_dir, dep_plugin_id);
+            if (fs.existsSync(dep_plugin_dir)) {
+                console.log('Dependent plugin ' + dep_plugin_id + ' already fetched, using that version.');
+                runInstall(actions, platform, project_dir, dep_plugin_dir, plugins_dir, filtered_variables, www_dir, false, end);
             } else {
-                console.log('Dependent plugin ' + dep.attrib.id + ' not fetched, retrieving then installing.');
-                module.exports(platform, project_dir, dep_url, plugins_dir, dep_subdir, filtered_variables, www_dir, false, end);
+                console.log('Dependent plugin ' + dep_plugin_id + ' not fetched, retrieving then installing.');
+                possiblyFetch(actions, platform, project_dir, dep_url, plugins_dir, dep_subdir, filtered_variables, www_dir, false, end);
             }
         });
     } else {
-        handleInstall(plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, is_top_level, callback);
+        handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, is_top_level, callback);
     }
 }
 
-function handleInstall(plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, is_top_level, callback) {
+function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, is_top_level, callback) {
     var handler = platform_modules[platform];
     www_dir = www_dir || handler.www_dir(project_dir);
 
@@ -121,30 +127,30 @@ function handleInstall(plugin_id, plugin_et, platform, project_dir, plugins_dir,
 
         // queue up native stuff
         sourceFiles && sourceFiles.forEach(function(source) {
-            action_stack.push(action_stack.createAction(handler["source-file"].install, [source, plugin_dir, project_dir], handler["source-file"].uninstall, [source, project_dir]));
+            actions.push(actions.createAction(handler["source-file"].install, [source, plugin_dir, project_dir], handler["source-file"].uninstall, [source, project_dir]));
         });
 
         headerFiles && headerFiles.forEach(function(header) {
-            action_stack.push(action_stack.createAction(handler["header-file"].install, [header, plugin_dir, project_dir], handler["header-file"].uninstall, [header, project_dir]));
+            actions.push(actions.createAction(handler["header-file"].install, [header, plugin_dir, project_dir], handler["header-file"].uninstall, [header, project_dir]));
         });
 
         resourceFiles && resourceFiles.forEach(function(resource) {
-            action_stack.push(action_stack.createAction(handler["resource-file"].install, [resource, plugin_dir, project_dir], handler["resource-file"].uninstall, [resource, project_dir]));
+            actions.push(actions.createAction(handler["resource-file"].install, [resource, plugin_dir, project_dir], handler["resource-file"].uninstall, [resource, project_dir]));
         });
 
         frameworks && frameworks.forEach(function(framework) {
-            action_stack.push(action_stack.createAction(handler["framework"].install, [framework, plugin_dir, project_dir], handler["framework"].uninstall, [framework, project_dir]));
+            actions.push(actions.createAction(handler["framework"].install, [framework, plugin_dir, project_dir], handler["framework"].uninstall, [framework, project_dir]));
         });
     }
 
     // queue up asset installation
     var common = require('./platforms/common');
     assets && assets.forEach(function(asset) {
-        action_stack.push(action_stack.createAction(common.asset.install, [asset, plugin_dir, www_dir], common.asset.uninstall, [asset, www_dir, plugin_id]));
+        actions.push(actions.createAction(common.asset.install, [asset, plugin_dir, www_dir], common.asset.uninstall, [asset, www_dir, plugin_id]));
     });
 
     // run through the action stack
-    action_stack.process(platform, project_dir, function(err) {
+    actions.process(platform, project_dir, function(err) {
         if (err) {
             if (callback) callback(err);
             else throw err;

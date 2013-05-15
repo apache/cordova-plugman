@@ -63,7 +63,7 @@ else if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
     printUsage();
 }
 else if (cli_opts.uninstall) {
-    plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, {}, cli_opts.www, true /* is top level? */);
+    plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, {}, cli_opts.www);
 }
 else {
     var cli_variables = {}
@@ -74,7 +74,7 @@ else {
             if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
         });
     }
-    plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, '.', cli_variables, cli_opts.www, true /* is top level? */);
+    plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, '.', cli_variables, cli_opts.www);
 }
 
 function printUsage() {

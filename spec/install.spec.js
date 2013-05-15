@@ -1,6 +1,6 @@
 var install = require('../src/install'),
-    android = require('../src/platforms/android'),
     common = require('../src/platforms/common'),
+    actions = require('../src/util/action-stack'),
     //ios     = require('../src/platforms/ios'),
     //blackberry = require('../src/platforms/blackberry'),
     config_changes = require('../src/util/config-changes'),
@@ -11,7 +11,13 @@ var install = require('../src/install'),
     shell   = require('shelljs'),
     temp    = path.join(os.tmpdir(), 'plugman'),
     childbrowser = path.join(__dirname, 'plugins', 'ChildBrowser'),
+    dep_a = path.join(__dirname, 'plugins', 'dependencies', 'A'),
+    dep_b = path.join(__dirname, 'plugins', 'dependencies', 'B'),
+    dep_c = path.join(__dirname, 'plugins', 'dependencies', 'C'),
+    dep_d = path.join(__dirname, 'plugins', 'dependencies', 'D'),
+    dep_e = path.join(__dirname, 'plugins', 'dependencies', 'E'),
     dummyplugin = path.join(__dirname, 'plugins', 'DummyPlugin'),
+    dummy_id = 'com.phonegap.plugins.dummyplugin',
     variableplugin = path.join(__dirname, 'plugins', 'VariablePlugin'),
     faultyplugin = path.join(__dirname, 'plugins', 'FaultyPlugin'),
     android_one_project = path.join(__dirname, 'projects', 'android_one', '*');
@@ -24,26 +30,19 @@ describe('install', function() {
 
     beforeEach(function() {
         shell.mkdir('-p', temp);
-        shell.mkdir('-p', plugins_dir);
         shell.cp('-rf', android_one_project, temp);
     });
     afterEach(function() {
         shell.rm('-rf', temp);
     });
 
-
     describe('success', function() {
-        var android_installer;
-        beforeEach(function() {
-            shell.cp('-rf', dummyplugin, plugins_dir);
-            android_installer = spyOn(android, 'install');
-        });
         it('should properly install assets', function() {
             var s = spyOn(common, 'copyFile').andCallThrough();
-            install('android', temp, 'DummyPlugin', plugins_dir, {});
+            install('android', temp, dummyplugin, plugins_dir, '.', {});
             // making sure the right methods were called
             expect(s).toHaveBeenCalled();
-            expect(s.calls.length).toEqual(2);
+            expect(s.calls.length).toEqual(3);
 
             expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin.js'))).toBe(true);
             expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin'))).toBe(true);
@@ -57,14 +56,16 @@ describe('install', function() {
             var sRemoveFile = spyOn(common, 'removeFile').andCallThrough();
             var sRemoveFileF = spyOn(common, 'removeFileF').andCallThrough();
             
-            // messing the plugin
-            shell.rm('-rf', path.join(plugins_dir, 'dummyplugin', 'www', 'dummyplugin')); 
+            // messing with the plugin
+            shell.mkdir('-p', plugins_dir);
+            shell.cp('-rf', dummyplugin, plugins_dir);
+            shell.rm('-rf', path.join(plugins_dir, 'DummyPlugin', 'www', 'dummyplugin')); 
             expect(function() {
-                install('android', temp, 'DummyPlugin', plugins_dir, {});
+                install('android', temp, 'DummyPlugin', plugins_dir, '.', {});
             }).toThrow();
             // making sure the right methods were called
             expect(sCopyFile).toHaveBeenCalled();
-            expect(sCopyFile.calls.length).toEqual(2);
+            expect(sCopyFile.calls.length).toEqual(3);
 
             expect(sRemoveFile).toHaveBeenCalled();
             expect(sRemoveFile.calls.length).toEqual(1);
@@ -77,10 +78,10 @@ describe('install', function() {
 
         it('should properly install assets into a custom www dir', function() {
             var s = spyOn(common, 'copyFile').andCallThrough();
-            install('android', temp, 'DummyPlugin', plugins_dir, {}, path.join(temp, 'staging'));
+            install('android', temp, dummyplugin, plugins_dir, '.', {}, path.join(temp, 'staging'));
             // making sure the right methods were called
             expect(s).toHaveBeenCalled();
-            expect(s.calls.length).toEqual(2);
+            expect(s.calls.length).toEqual(3);
 
             expect(fs.existsSync(path.join(temp, 'staging', 'dummyplugin.js'))).toBe(true);
             expect(fs.existsSync(path.join(temp, 'staging', 'dummyplugin'))).toBe(true);
@@ -96,13 +97,15 @@ describe('install', function() {
             var sRemoveFileF = spyOn(common, 'removeFileF').andCallThrough();
             
             // messing the plugin
+            shell.mkdir('-p', plugins_dir);
+            shell.cp('-rf', dummyplugin, plugins_dir);
             shell.rm('-rf', path.join(plugins_dir, 'dummyplugin', 'www', 'dummyplugin')); 
             expect(function() {
-                install('android', temp, 'DummyPlugin', plugins_dir, {}, path.join(temp, 'staging'));
+                install('android', temp, 'DummyPlugin', plugins_dir, '.', {}, path.join(temp, 'staging'));
             }).toThrow();
             // making sure the right methods were called
             expect(sCopyFile).toHaveBeenCalled();
-            expect(sCopyFile.calls.length).toEqual(2);
+            expect(sCopyFile.calls.length).toEqual(3);
 
             expect(sRemoveFile).toHaveBeenCalled();
             expect(sRemoveFile.calls.length).toEqual(1);
@@ -115,38 +118,56 @@ describe('install', function() {
 
         it('should call prepare after a successful install', function() {
             var s = spyOn(plugman, 'prepare');
-            install('android', temp, 'DummyPlugin', plugins_dir, {});
-            android_installer.mostRecentCall.args[5](); // fake the installer calling back successfully
+            install('android', temp, dummyplugin, plugins_dir, '.', {});
             expect(s).toHaveBeenCalled();
         });
 
         it('should call fetch if provided plugin cannot be resolved locally', function() {
             var s = spyOn(plugman, 'fetch');
-            install('android', temp, 'CLEANYOURSHORTS', plugins_dir, {});
+            install('android', temp, 'CLEANYOURSHORTS', plugins_dir, '.', {});
             expect(s).toHaveBeenCalled();
         });
-        it('should generate an array of transactions required to run an installation and pass into appropriate platform handler\'s install method', function() {
-            install('android', temp, 'DummyPlugin', plugins_dir, {});
-            var transactions = android_installer.mostRecentCall.args[0];
-
-            expect(transactions.length).toEqual(1);
-            expect(transactions[0].tag).toBe('source-file');
-        });
         it('should call the config-changes module\'s add_installed_plugin_to_prepare_queue method', function() {
-            install('android', temp, 'DummyPlugin', plugins_dir, {});
             var spy = spyOn(config_changes, 'add_installed_plugin_to_prepare_queue');
-            android_installer.mostRecentCall.args[5](null); // fake out handler install callback
-            expect(spy).toHaveBeenCalledWith(plugins_dir, 'DummyPlugin', 'android', {});
+            install('android', temp, dummyplugin, plugins_dir, '.', {});
+            expect(spy).toHaveBeenCalledWith(plugins_dir, dummy_id, 'android', {}, true);
+        });
+        it('should notify if plugin is already installed into project', function() {
+            expect(function() {
+                install('android', temp, dummyplugin, plugins_dir,'.',  {});
+            }).not.toThrow();
+            var spy = spyOn(console, 'log');
+            install('android', temp, dummyplugin, plugins_dir, '.', {});
+            expect(spy).toHaveBeenCalledWith('Plugin "com.phonegap.plugins.dummyplugin" already installed, \'sall good.');
+        });
+
+        describe('with dependencies', function() {
+            it('should process all dependent plugins', function() {
+                var spy = spyOn(actions.prototype, 'process').andCallThrough();
+                shell.mkdir('-p', plugins_dir);
+                shell.cp('-rf', dep_a, plugins_dir);
+                shell.cp('-rf', dep_d, plugins_dir);
+                shell.cp('-rf', dep_c, plugins_dir);
+                install('android', temp, 'A', plugins_dir, '.', {});
+                expect(spy.calls.length).toEqual(3);
+            });
+            it('should fetch any dependent plugins if missing', function() {
+                var spy = spyOn(plugman, 'fetch');
+                shell.mkdir('-p', plugins_dir);
+                shell.cp('-rf', dep_a, plugins_dir);
+                shell.cp('-rf', dep_c, plugins_dir);
+                install('android', temp, 'A', plugins_dir, '.', {});
+                expect(spy).toHaveBeenCalled();
+            });
         });
     });
 
     describe('failure', function() {
         it('should throw if asset target already exists', function() {
-            shell.cp('-rf', dummyplugin, plugins_dir);
             var target = path.join(temp, 'assets', 'www', 'dummyplugin.js');
             fs.writeFileSync(target, 'some bs', 'utf-8');
             expect(function() {
-                install('android', temp, 'DummyPlugin', plugins_dir, {});
+                install('android', temp, dummyplugin, plugins_dir, '.', {});
             }).toThrow();
         });
         it('should throw if platform is unrecognized', function() {
@@ -155,44 +176,28 @@ describe('install', function() {
             }).toThrow('atari not supported.');
         });
         it('should throw if variables are missing', function() {
-            shell.cp('-rf', variableplugin, plugins_dir);
             expect(function() {
-                install('android', temp, 'VariablePlugin', plugins_dir, {});
+                install('android', temp, variableplugin, plugins_dir, '.', {});
             }).toThrow('Variable(s) missing: API_KEY');
         });
-        it('should handle a failed install by passing completed transactions into appropriate handler\'s uninstall method', function() {
-            shell.cp('-rf', faultyplugin, plugins_dir);
-            var s = spyOn(android, 'uninstall');
-            install('android', temp, 'FaultyPlugin', plugins_dir, {});
-
-            var executed_txs = s.mostRecentCall.args[0];
-            expect(executed_txs.length).toEqual(0);
-        }); 
-        it('should throw if plugin is already installed into project', function() {
-            // TODO: plugins and their version can be recognized using the platform.json file
-            shell.cp('-rf', dummyplugin, plugins_dir);
-            expect(function() {
-                install('android', temp, 'DummyPlugin', plugins_dir, {});
-            }).not.toThrow();
-            expect(function() {
-                install('android', temp, 'DummyPlugin', plugins_dir, {});
-            }).toThrow();
-        });
-        it('should revert web assets if an install error occurs', function() {
-            var sRemoveFile = spyOn(common, 'removeFile').andCallThrough();
-            var sRemoveFileF = spyOn(common, 'removeFileF').andCallThrough();
+        it('should throw if a file required for installation cannot be found', function() {
+            shell.mkdir('-p', plugins_dir);
             shell.cp('-rf', dummyplugin, plugins_dir);
             shell.rm(path.join(plugins_dir, 'DummyPlugin', 'src', 'android', 'DummyPlugin.java')); 
             
-            install('android', temp, 'DummyPlugin', plugins_dir, {}, undefined, function() {});
+            expect(function() {
+                install('android', temp, 'DummyPlugin', plugins_dir, '.', {});
+            }).toThrow();
+        });
+        it('should pass error into specified callback if a file required for installation cannot be found', function(done) {
+            shell.mkdir('-p', plugins_dir);
+            shell.cp('-rf', dummyplugin, plugins_dir);
+            shell.rm(path.join(plugins_dir, 'DummyPlugin', 'src', 'android', 'DummyPlugin.java')); 
             
-            expect(sRemoveFile).toHaveBeenCalled();
-            expect(sRemoveFile.calls.length).toEqual(2);
-            expect(sRemoveFileF).toHaveBeenCalled();
-            expect(sRemoveFileF.calls.length).toEqual(1);
-           
-            expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin.js'))).toBe(false);
-            expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin'))).toBe(false);
+            install('android', temp, 'DummyPlugin', plugins_dir, '.', {}, null, function(err) {
+                expect(err).toBeDefined();
+                done();
+            });
         });
     });
 });

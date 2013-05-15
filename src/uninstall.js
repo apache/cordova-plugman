@@ -9,7 +9,7 @@ var path = require('path'),
     underscore = require('underscore'),
     platform_modules = require('./platforms');
 
-module.exports = function uninstallPlugin(platform, project_dir, id, plugins_dir, cli_variables, www_dir, is_top_level, callback) {
+module.exports = function uninstallPlugin(platform, project_dir, id, plugins_dir, cli_variables, www_dir, callback) {
     if (!platform_modules[platform]) {
         var err = new Error(platform + " not supported.");
         if (callback) callback(err);
@@ -20,16 +20,18 @@ module.exports = function uninstallPlugin(platform, project_dir, id, plugins_dir
     var plugin_dir = path.join(plugins_dir, id);
 
     if (!fs.existsSync(plugin_dir)) {
-        var err = new Error('Plugin "' + name + '" not found. Already uninstalled?');
+        var err = new Error('Plugin "' + id + '" not found. Already uninstalled?');
         if (callback) callback(err);
         else throw err;
         return;
     }
 
-    runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, is_top_level, callback);
+    var current_stack = new action_stack();
+
+    runUninstall(current_stack, platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, true, callback);
 };
 
-function runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, is_top_level, callback) {
+function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, is_top_level, callback) {
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , xml_text     = fs.readFileSync(xml_path, 'utf-8')
       , plugin_et    = new et.ElementTree(et.XML(xml_text))
@@ -60,18 +62,19 @@ function runUninstall(platform, project_dir, plugin_dir, plugins_dir, cli_variab
     var danglers = underscore.difference.apply(null, diff_arr);
     if (dependents.length && danglers && danglers.length) {
         var end = n(danglers.length, function() {
-            handleUninstall(platform, plugin_id, plugin_et, project_dir, www_dir, plugins_dir, plugin_dir, is_top_level, callback);
+            handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, www_dir, plugins_dir, plugin_dir, is_top_level, callback);
         });
         danglers.forEach(function(dangler) {
-            module.exports(platform, project_dir, dangler, plugins_dir, cli_variables, www_dir, false /* TODO: should this "is_top_level" param be false for dependents? */, end);
+            var dependent_path = path.join(plugins_dir, dangler);
+            runUninstall(actions, platform, project_dir, dependent_path, plugins_dir, cli_variables, www_dir, false /* TODO: should this "is_top_level" param be false for dependents? */, end);
         });
     } else {
         // this plugin can get axed by itself, gogo!
-        handleUninstall(platform, plugin_id, plugin_et, project_dir, www_dir, plugins_dir, plugin_dir, is_top_level, callback);
+        handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, www_dir, plugins_dir, plugin_dir, is_top_level, callback);
     }
 }
 
-function handleUninstall(platform, plugin_id, plugin_et, project_dir, www_dir, plugins_dir, plugin_dir, is_top_level, callback) {
+function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, www_dir, plugins_dir, plugin_dir, is_top_level, callback) {
     var platform_modules = require('./platforms');
     var handler = platform_modules[platform];
     var platformTag = plugin_et.find('./platform[@name="'+platform+'"]');
@@ -87,30 +90,30 @@ function handleUninstall(platform, plugin_id, plugin_et, project_dir, www_dir, p
 
         // queue up native stuff
         sourceFiles && sourceFiles.forEach(function(source) {
-            action_stack.push(action_stack.createAction(handler["source-file"].uninstall, [source, project_dir], handler["source-file"].install, [source, plugin_dir, project_dir]));
+            actions.push(actions.createAction(handler["source-file"].uninstall, [source, project_dir], handler["source-file"].install, [source, plugin_dir, project_dir]));
         });
 
         headerFiles && headerFiles.forEach(function(header) {
-            action_stack.push(action_stack.createAction(handler["header-file"].uninstall, [header, project_dir], handler["header-file"].install, [header, plugin_dir, project_dir]));
+            actions.push(actions.createAction(handler["header-file"].uninstall, [header, project_dir], handler["header-file"].install, [header, plugin_dir, project_dir]));
         });
 
         resourceFiles && resourceFiles.forEach(function(resource) {
-            action_stack.push(action_stack.createAction(handler["resource-file"].uninstall, [resource, project_dir], handler["resource-file"].install, [resource, plugin_dir, project_dir]));
+            actions.push(actions.createAction(handler["resource-file"].uninstall, [resource, project_dir], handler["resource-file"].install, [resource, plugin_dir, project_dir]));
         });
 
         frameworks && frameworks.forEach(function(framework) {
-            action_stack.push(action_stack.createAction(handler["framework"].uninstall, [framework, project_dir], handler["framework"].install, [framework, plugin_dir, project_dir]));
+            actions.push(actions.createAction(handler["framework"].uninstall, [framework, project_dir], handler["framework"].install, [framework, plugin_dir, project_dir]));
         });
     }
 
     // queue up asset installation
     var common = require('./platforms/common');
     assets && assets.forEach(function(asset) {
-        action_stack.push(action_stack.createAction(common.asset.uninstall, [asset, www_dir, plugin_id], common.asset.install, [asset, plugin_dir, www_dir]));
+        actions.push(actions.createAction(common.asset.uninstall, [asset, www_dir, plugin_id], common.asset.install, [asset, plugin_dir, www_dir]));
     });
 
     // run through the action stack
-    action_stack.process(platform, project_dir, function(err) {
+    actions.process(platform, project_dir, function(err) {
         if (err) {
             if (callback) callback(err);
             else throw err;

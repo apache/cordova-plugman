@@ -1,10 +1,12 @@
 var ios = require('../platforms/ios'),
     fs = require('fs');
 
-var stack = [];
-var completed = [];
+function ActionStack() {
+    this.stack = [];
+    this.completed = [];
+}
 
-module.exports = {
+ActionStack.prototype = {
     createAction:function(handler, action_params, reverter, revert_params) {
         return {
             handler:{
@@ -18,26 +20,26 @@ module.exports = {
         };
     },
     push:function(tx) {
-        stack.push(tx);
+        this.stack.push(tx);
     },
     process:function(platform, project_dir, callback) {
         if (platform == 'ios') {
             // parse xcode project file once
             var project_files = ios.parseIOSProjectFiles(project_dir);
         }
-        while(stack.length) {
-            var action = stack.shift();
+        while(this.stack.length) {
+            var action = this.stack.shift();
             var handler = action.handler.run;
             var action_params = action.handler.params;
             if (platform == 'ios') action_params.push(project_files);
             try {
                 handler.apply(null, action_params);
             } catch(e) {
-                var incomplete = stack.unshift(action);
+                var incomplete = this.stack.unshift(action);
                 var issue = 'Uh oh!\n';
                 // revert completed tasks
-                while(completed.length) {
-                    var undo = completed.shift();
+                while(this.completed.length) {
+                    var undo = this.completed.shift();
                     var revert = undo.reverter.run;
                     var revert_params = undo.reverter.params;
                     if (platform == 'ios') revert_params.push(project_files);
@@ -52,7 +54,7 @@ module.exports = {
                 else throw e;
                 return;
             }
-            completed.push(action);
+            this.completed.push(action);
         }
         if (platform == 'ios') {
             // write out xcodeproj file
@@ -61,3 +63,5 @@ module.exports = {
         if (callback) callback();
     }
 };
+
+module.exports = ActionStack;
