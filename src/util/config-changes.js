@@ -23,12 +23,11 @@ var fs   = require('fs'),
     plist = require('plist'),
     bplist = require('bplist-parser'),
     et   = require('elementtree'),
-    platforms = require('./../platforms'),
     xml_helpers = require('./../util/xml-helpers'),
     plist_helpers = require('./../util/plist-helpers');
 
 function checkPlatform(platform) {
-    if (!(platform in platforms)) throw new Error('platform "' + platform + '" not recognized.');
+    if (!(platform in require('./../platforms'))) throw new Error('platform "' + platform + '" not recognized.');
 }
 
 module.exports = {
@@ -74,7 +73,7 @@ module.exports = {
         checkPlatform(platform);
 
         vars = vars || {};
-        var platform_handler = platforms[platform];
+        var platform_handler = require('./../platforms')[platform];
         // Add PACKAGE_NAME variable into vars
         if (!vars['PACKAGE_NAME']) {
             vars['PACKAGE_NAME'] = platform_handler.package_name(project_dir);
