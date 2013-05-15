@@ -13,6 +13,7 @@ var ios = require('../../src/platforms/ios'),
     plugins_dir = path.join(temp, 'cordova', 'plugins'),
     ios_config_xml_project = path.join(__dirname, '..', 'projects', 'ios-config-xml', '*'),
     ios_plist_project = path.join(__dirname, '..', 'projects', 'ios-plist', '*'),
+    ios_project = path.join(ios_config_xml_project, '..'),
     xml_helpers = require('../../src/util/xml-helpers'),
     variableplugin = path.join(__dirname, '..', 'plugins', 'VariablePlugin'),
     faultyplugin = path.join(__dirname, '..', 'plugins', 'FaultyPlugin'),
@@ -61,6 +62,11 @@ platformTag = plugin_et.find('./platform[@name="ios"]');
 var plist_id = plugin_et._root.attrib['id'];
 var plist_only_els = platformTag.findall('./plugins-plist');
 
+shell.mkdir('-p', temp);
+shell.cp('-rf', ios_config_xml_project, temp);
+var proj_files = ios.parseIOSProjectFiles(temp);
+shell.rm('-rf', temp);
+
 function copyArray(arr) {
     return Array.prototype.slice.call(arr, 0);
 }
@@ -74,20 +80,22 @@ describe('ios project handler', function() {
         shell.rm('-rf', temp);
     });
 
-    it('should have an install function', function() {
-        expect(typeof ios.install).toEqual('function');
-    });
-    it('should have an uninstall function', function() {
-        expect(typeof ios.uninstall).toEqual('function');
-    });
-    it('should return cordova-ios project www location using www_dir', function() {
-        expect(ios.www_dir('/')).toEqual('/www');
+    describe('www_dir method', function() {
+        it('should return cordova-ios project www location using www_dir', function() {
+            expect(ios.www_dir('/')).toEqual('/www');
+        });
     });
 
-    describe('installation', function() {
+    describe('package_name method', function() {
+        it('should return the CFBundleIdentifier from the project\'s Info.plist file', function() {
+            expect(ios.package_name(ios_project)).toEqual('com.example.friendstring');
+        });
+    });
+
+    describe('parseIOSProjectFiles method', function() {
         it('should throw if project is not an xcode project', function() {
             expect(function() {
-                ios.install([], 'someid', temp, plugins_dir, {});
+                ios.parseIOSProjectFiles(temp);
             }).toThrow('does not appear to be an xcode project (no xcode project file)');
         });
         it('should throw if project does not contain an appropriate PhoneGap/Cordova.plist file or config.xml file', function() {
@@ -95,10 +103,12 @@ describe('ios project handler', function() {
             shell.rm(path.join(temp, 'SampleApp', 'config.xml'));
 
             expect(function() {
-                ios.install([], 'someid', temp, plugins_dir, {});
+                ios.parseIOSProjectFiles(temp);
             }).toThrow('could not find PhoneGap/Cordova plist file, or config.xml file.');
         });
+    });
 
+    describe('installation', function() {
         describe('of <source-file> elements', function() {
             beforeEach(function() {
                 shell.cp('-rf', ios_config_xml_project, temp);
@@ -107,7 +117,7 @@ describe('ios project handler', function() {
             it('should throw if source-file src cannot be found', function() {
                 var source = copyArray(invalid_source);
                 expect(function() {
-                    ios.install(source, faulty_id, temp, faultyplugin, {});
+                    ios['source-file'].install(source[1], faultyplugin, temp, proj_files);
                 }).toThrow('cannot find "' + path.resolve(faultyplugin, 'src/ios/FaultyPluginCommand.m') + '" ios <source-file>');
             });
             it('should throw if source-file target already exists', function() {
@@ -116,51 +126,31 @@ describe('ios project handler', function() {
                 shell.mkdir('-p', path.dirname(target));
                 fs.writeFileSync(target, 'some bs', 'utf-8');
                 expect(function() {
-                    ios.install(source, dummy_id, temp, dummyplugin, {});
+                    ios['source-file'].install(source[0], dummyplugin, temp, proj_files);
                 }).toThrow('target destination "' + target + '" already exists');
             });
             it('should call into xcodeproj\'s addSourceFile appropriately when element has no target-dir', function() {
                 var source = copyArray(valid_source).filter(function(s) { return s.attrib['target-dir'] == undefined});
-                var spy = jasmine.createSpy();
-                spyOn(xcode, 'project').andReturn({
-                    parseSync:function(){},
-                    writeSync:function(){},
-                    addSourceFile:spy
-                });
-                ios.install(source, dummy_id, temp, dummyplugin, {});
+                var spy = spyOn(proj_files.xcode, 'addSourceFile');
+                ios['source-file'].install(source[0], dummyplugin, temp, proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join('Plugins', 'DummyPluginCommand.m'));
             });
             it('should call into xcodeproj\'s addSourceFile appropriately when element has a target-dir', function() {
                 var source = copyArray(valid_source).filter(function(s) { return s.attrib['target-dir'] != undefined});
-                var spy = jasmine.createSpy();
-                spyOn(xcode, 'project').andReturn({
-                    parseSync:function(){},
-                    writeSync:function(){},
-                    addSourceFile:spy
-                });
-                ios.install(source, dummy_id, temp, dummyplugin, {});
+                var spy = spyOn(proj_files.xcode, 'addSourceFile');
+                ios['source-file'].install(source[0], dummyplugin, temp, proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join('Plugins', 'targetDir', 'TargetDirTest.m'));
             });
             it('should cp the file to the right target location when element has no target-dir', function() {
                 var source = copyArray(valid_source).filter(function(s) { return s.attrib['target-dir'] == undefined});
-                spyOn(xcode, 'project').andReturn({
-                    parseSync:function(){},
-                    writeSync:function(){},
-                    addSourceFile:function() {}
-                });
                 var spy = spyOn(shell, 'cp');
-                ios.install(source, dummy_id, temp, dummyplugin, {});
+                ios['source-file'].install(source[0], dummyplugin, temp, proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join(dummyplugin, 'src', 'ios', 'DummyPluginCommand.m'), path.join(temp, 'SampleApp', 'Plugins', 'DummyPluginCommand.m'));
             });
             it('should cp the file to the right target location when element has a target-dir', function() {
                 var source = copyArray(valid_source).filter(function(s) { return s.attrib['target-dir'] != undefined});
-                spyOn(xcode, 'project').andReturn({
-                    parseSync:function(){},
-                    writeSync:function(){},
-                    addSourceFile:function() {}
-                });
                 var spy = spyOn(shell, 'cp');
-                ios.install(source, dummy_id, temp, dummyplugin, {});
+                ios['source-file'].install(source[0], dummyplugin, temp, proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join(dummyplugin, 'src', 'ios', 'TargetDirTest.m'), path.join(temp, 'SampleApp', 'Plugins', 'targetDir', 'TargetDirTest.m'));
             });
         });
@@ -173,7 +163,7 @@ describe('ios project handler', function() {
             it('should throw if header-file src cannot be found', function() {
                 var headers = copyArray(invalid_headers);
                 expect(function() {
-                    ios.install(headers, faulty_id, temp, faultyplugin, {});
+                    ios['header-file'].install(headers[1], faultyplugin, temp, proj_files);
                 }).toThrow('cannot find "' + path.resolve(faultyplugin, 'src/ios/FaultyPluginCommand.h') + '" ios <header-file>');
             });
             it('should throw if header-file target already exists', function() {
@@ -182,51 +172,31 @@ describe('ios project handler', function() {
                 shell.mkdir('-p', path.dirname(target));
                 fs.writeFileSync(target, 'some bs', 'utf-8');
                 expect(function() {
-                    ios.install(headers, dummy_id, temp, dummyplugin, {});
+                    ios['header-file'].install(headers[0], dummyplugin, temp, proj_files);
                 }).toThrow('target destination "' + target + '" already exists');
             });
             it('should call into xcodeproj\'s addHeaderFile appropriately when element has no target-dir', function() {
                 var headers = copyArray(valid_headers).filter(function(s) { return s.attrib['target-dir'] == undefined});
-                var spy = jasmine.createSpy();
-                spyOn(xcode, 'project').andReturn({
-                    parseSync:function(){},
-                    writeSync:function(){},
-                    addHeaderFile:spy
-                });
-                ios.install(headers, dummy_id, temp, dummyplugin, {});
+                var spy = spyOn(proj_files.xcode, 'addHeaderFile');
+                ios['header-file'].install(headers[0], dummyplugin, temp, proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join('Plugins', 'DummyPluginCommand.h'));
             });
             it('should call into xcodeproj\'s addHeaderFile appropriately when element a target-dir', function() {
                 var headers = copyArray(valid_headers).filter(function(s) { return s.attrib['target-dir'] != undefined});
-                var spy = jasmine.createSpy();
-                spyOn(xcode, 'project').andReturn({
-                    parseSync:function(){},
-                    writeSync:function(){},
-                    addHeaderFile:spy
-                });
-                ios.install(headers, dummy_id, temp, dummyplugin, {});
+                var spy = spyOn(proj_files.xcode, 'addHeaderFile');
+                ios['header-file'].install(headers[0], dummyplugin, temp, proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join('Plugins', 'targetDir', 'TargetDirTest.h'));
             });
             it('should cp the file to the right target location when element has no target-dir', function() {
                 var headers = copyArray(valid_headers).filter(function(s) { return s.attrib['target-dir'] == undefined});
-                spyOn(xcode, 'project').andReturn({
-                    parseSync:function(){},
-                    writeSync:function(){},
-                    addHeaderFile:function() {}
-                });
                 var spy = spyOn(shell, 'cp');
-                ios.install(headers, dummy_id, temp, dummyplugin, {});
+                ios['header-file'].install(headers[0], dummyplugin, temp, proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join(dummyplugin, 'src', 'ios', 'DummyPluginCommand.h'), path.join(temp, 'SampleApp', 'Plugins', 'DummyPluginCommand.h'));
             });
             it('should cp the file to the right target location when element has a target-dir', function() {
                 var headers = copyArray(valid_headers).filter(function(s) { return s.attrib['target-dir'] != undefined});
-                spyOn(xcode, 'project').andReturn({
-                    parseSync:function(){},
-                    writeSync:function(){},
-                    addHeaderFile:function() {}
-                });
                 var spy = spyOn(shell, 'cp');
-                ios.install(headers, dummy_id, temp, dummyplugin, {});
+                ios['header-file'].install(headers[0], dummyplugin, temp, proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join(dummyplugin, 'src', 'ios', 'TargetDirTest.h'), path.join(temp, 'SampleApp', 'Plugins', 'targetDir', 'TargetDirTest.h'));
             });
         });
@@ -238,7 +208,7 @@ describe('ios project handler', function() {
             it('should throw if resource-file src cannot be found', function() {
                 var resources = copyArray(invalid_resources);
                 expect(function() {
-                    ios.install(resources, faulty_id, temp, faultyplugin, {});
+                    ios['resource-file'].install(resources[0], faultyplugin, temp, proj_files);
                 }).toThrow('cannot find "' + path.resolve(faultyplugin, 'src/ios/IDontExist.bundle') + '" ios <resource-file>');
             });
             it('should throw if resource-file target already exists', function() {
@@ -247,29 +217,19 @@ describe('ios project handler', function() {
                 shell.mkdir('-p', path.dirname(target));
                 fs.writeFileSync(target, 'some bs', 'utf-8');
                 expect(function() {
-                    ios.install(resources, dummy_id, temp, dummyplugin, {});
+                    ios['resource-file'].install(resources[0], dummyplugin, temp, proj_files);
                 }).toThrow('target destination "' + target + '" already exists');
             });
             it('should call into xcodeproj\'s addResourceFile', function() {
                 var resources = copyArray(valid_resources);
-                var spy = jasmine.createSpy();
-                spyOn(xcode, 'project').andReturn({
-                    parseSync:function(){},
-                    writeSync:function(){},
-                    addResourceFile:spy
-                });
-                ios.install(resources, dummy_id, temp, dummyplugin, {});
+                var spy = spyOn(proj_files.xcode, 'addResourceFile');
+                ios['resource-file'].install(resources[0], dummyplugin, temp, proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join('Resources', 'DummyPlugin.bundle'));
             });
             it('should cp the file to the right target location', function() {
                 var resources = copyArray(valid_resources);
-                spyOn(xcode, 'project').andReturn({
-                    parseSync:function(){},
-                    writeSync:function(){},
-                    addResourceFile:function() {}
-                });
                 var spy = spyOn(shell, 'cp');
-                ios.install(resources, dummy_id, temp, dummyplugin, {});
+                ios['resource-file'].install(resources[0], dummyplugin, temp, proj_files);
                 expect(spy).toHaveBeenCalledWith('-R', path.join(dummyplugin, 'src', 'ios', 'DummyPlugin.bundle'), path.join(temp, 'SampleApp', 'Resources'));
             });
         });
@@ -280,55 +240,26 @@ describe('ios project handler', function() {
             });
             it('should call into xcodeproj\'s addFramework with weak false by default' ,function() {
                 var frameworks = copyArray(valid_frameworks).filter(function(f) { return f.attrib.weak == undefined; });
-                var spy = jasmine.createSpy();
-                spyOn(xcode, 'project').andReturn({
-                    parseSync:function(){},
-                    writeSync:function(){},
-                    addFramework:spy
-                });
-                ios.install(frameworks, dummy_id, temp, dummyplugin, {});
+                var spy = spyOn(proj_files.xcode, 'addFramework');
+                ios.framework.install(frameworks[0], dummyplugin, temp, proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join('src', 'ios', 'libsqlite3.dylib'), {weak:false});
             });
             it('should pass in whether the framework is weak or not to xcodeproj.addFramework', function() {
                 var frameworks = copyArray(valid_frameworks).filter(function(f) { return f.attrib.weak != undefined; });;
-                var spy = jasmine.createSpy();
-                spyOn(xcode, 'project').andReturn({
-                    parseSync:function(){},
-                    writeSync:function(){},
-                    addFramework:spy
-                });
-                ios.install(frameworks, dummy_id, temp, dummyplugin, {});
+                var spy = spyOn(proj_files.xcode, 'addFramework');
+                ios.framework.install(frameworks[0], dummyplugin, temp, proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join('src', 'ios', 'libsqlite3.dylib'), {weak:true});
             });
         });
     });
 
     describe('uninstallation', function() {
-        it('should throw if project is not an xcode project', function() {
-            expect(function() {
-                ios.uninstall([], 'someid', temp, plugins_dir);
-            }).toThrow('does not appear to be an xcode project (no xcode project file)');
-        });
-        it('should throw if project does not contain an appropriate PhoneGap/Cordova.plist file or config.xml file', function() {
-            shell.cp('-rf', ios_config_xml_project, temp);
-            shell.rm(path.join(temp, 'SampleApp', 'config.xml'));
-            expect(function() {
-                ios.uninstall([], 'someid', temp, plugins_dir);
-            }).toThrow('could not find PhoneGap/Cordova plist file, or config.xml file.');
-        });
-
         describe('of <source-file> elements', function() {
             it('should call into xcodeproj\'s removeSourceFile appropriately when element has no target-dir', function(){
                 var source = copyArray(valid_source).filter(function(s) { return s.attrib['target-dir'] == undefined});
                 shell.cp('-rf', ios_config_xml_project, temp);
-                var spy = jasmine.createSpy();
-                spyOn(xcode, 'project').andReturn({
-                    parseSync:function(){},
-                    writeSync:function(){},
-                    removeSourceFile:spy
-                });
-                
-                ios.uninstall(source, dummy_id, temp, dummyplugin);
+                var spy = spyOn(proj_files.xcode, 'removeSourceFile');
+                ios['source-file'].uninstall(source[0], temp, proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join('Plugins', 'DummyPluginCommand.m'));
             });
             it('should call into xcodeproj\'s removeSourceFile appropriately when element a target-dir', function(){
@@ -336,7 +267,7 @@ describe('ios project handler', function() {
                 shell.cp('-rf', ios_config_xml_project, temp);
                 
                 var spy = spyOn(shell, 'rm');
-                ios.uninstall(source, dummy_id, temp, dummyplugin);
+                ios['source-file'].uninstall(source[0], temp, proj_files);
                 expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'SampleApp', 'Plugins', 'targetDir', 'TargetDirTest.m'));
             });
             it('should rm the file from the right target location when element has no target-dir', function(){
@@ -344,7 +275,7 @@ describe('ios project handler', function() {
                 shell.cp('-rf', ios_config_xml_project, temp);
             
                 var spy = spyOn(shell, 'rm');
-                ios.uninstall(source, dummy_id, temp, dummyplugin);
+                ios['source-file'].uninstall(source[0], temp, proj_files);
                 expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'SampleApp', 'Plugins', 'DummyPluginCommand.m'));
             });
             it('should rm the file from the right target location when element has a target-dir', function(){
@@ -352,7 +283,7 @@ describe('ios project handler', function() {
                 shell.cp('-rf', ios_config_xml_project, temp);                
                 var spy = spyOn(shell, 'rm');
                 
-                ios.uninstall(source, dummy_id, temp, dummyplugin);
+                ios['source-file'].uninstall(source[0], temp, proj_files);
                 expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'SampleApp', 'Plugins', 'targetDir', 'TargetDirTest.m'));
             });
         });
@@ -363,33 +294,24 @@ describe('ios project handler', function() {
             });
             it('should call into xcodeproj\'s removeHeaderFile appropriately when element has no target-dir', function(){
                 var headers = copyArray(valid_headers).filter(function(s) { return s.attrib['target-dir'] == undefined});
-                var spy = jasmine.createSpy();
-                spyOn(xcode, 'project').andReturn({
-                    parseSync:function(){},
-                    writeSync:function(){},
-                    removeHeaderFile:spy
-                });
+                var spy = spyOn(proj_files.xcode, 'removeHeaderFile');
 
-                ios.uninstall(headers, dummy_id, temp, dummyplugin);
+                ios['header-file'].uninstall(headers[0], temp, proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join('Plugins', 'DummyPluginCommand.h'));
             });
             it('should call into xcodeproj\'s removeHeaderFile appropriately when element a target-dir', function(){
                 var headers = copyArray(valid_headers).filter(function(s) { return s.attrib['target-dir'] != undefined});
-                var spy = jasmine.createSpy();
-                spyOn(xcode, 'project').andReturn({
-                    parseSync:function(){},
-                    writeSync:function(){},
-                    removeHeaderFile:spy
-                });
 
-                ios.uninstall(headers, dummy_id, temp, dummyplugin);
+                var spy = spyOn(proj_files.xcode, 'removeHeaderFile');
+
+                ios['header-file'].uninstall(headers[0], temp, proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join('Plugins', 'targetDir', 'TargetDirTest.h'));
             });
             it('should rm the file from the right target location', function(){
                 var headers = copyArray(valid_headers).filter(function(s) { return s.attrib['target-dir'] != undefined});
                 var spy = spyOn(shell, 'rm');
 
-                ios.uninstall(headers, dummy_id, temp, dummyplugin);
+                ios['header-file'].uninstall(headers[0], temp, proj_files);
                 expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'SampleApp', 'Plugins', 'targetDir', 'TargetDirTest.h'));
             });
         });
@@ -400,21 +322,16 @@ describe('ios project handler', function() {
             });
             it('should call into xcodeproj\'s removeResourceFile', function(){
                 var resources = copyArray(valid_resources);
-                var spy = jasmine.createSpy();
-                spyOn(xcode, 'project').andReturn({
-                    parseSync:function(){},
-                    writeSync:function(){},
-                    removeResourceFile:spy
-                });
+                var spy = spyOn(proj_files.xcode, 'removeResourceFile');
 
-                ios.uninstall(resources, dummy_id, temp, dummyplugin);
+                ios['resource-file'].uninstall(resources[0], temp, proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join('Resources', 'DummyPlugin.bundle'));
             });
             it('should rm the file from the right target location', function(){
                 var resources = copyArray(valid_resources);
                 var spy = spyOn(shell, 'rm');
 
-                ios.uninstall(resources, dummy_id, temp, dummyplugin);
+                ios['resource-file'].uninstall(resources[0], temp, proj_files);
                 expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'SampleApp', 'Resources', 'DummyPlugin.bundle'));
             });
         });
@@ -425,14 +342,9 @@ describe('ios project handler', function() {
             });
             it('should call into xcodeproj\'s removeFramework' ,function() {
                 var frameworks = copyArray(valid_frameworks).filter(function(f) { return f.attrib.weak == undefined; });
-                var spy = jasmine.createSpy();
-                spyOn(xcode, 'project').andReturn({
-                    parseSync:function(){},
-                    writeSync:function(){},
-                    removeFramework:spy
-                });
+                var spy = spyOn(proj_files.xcode, 'removeFramework');
                 
-                ios.uninstall(frameworks, dummy_id, temp, dummyplugin);
+                ios.framework.uninstall(frameworks[0], temp, proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join('src', 'ios', 'libsqlite3.dylib'));
             });
         });

@@ -295,7 +295,7 @@ describe('config-changes module', function() {
             it('should move successfully installed plugins from queue to installed plugins section, and include/retain vars if applicable', function() {
                 shell.cp('-rf', android_two_project, temp);
                 shell.cp('-rf', varplugin, plugins_dir);
-                configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'VariablePlugin', 'android', {"API_KEY":"hi"});
+                configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'VariablePlugin', 'android', {"API_KEY":"hi"}, true);
 
                 configChanges.process(plugins_dir, temp, 'android');
 
