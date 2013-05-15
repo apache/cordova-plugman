@@ -34,7 +34,7 @@ module.exports = {
                 handler.apply(null, action_params);
             } catch(e) {
                 var incomplete = stack.unshift(action);
-                var issue = 'Install failed!\n';
+                var issue = 'Uh oh!\n';
                 // revert completed tasks
                 while(completed.length) {
                     var undo = completed.shift();

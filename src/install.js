@@ -6,14 +6,12 @@ var path = require('path'),
     action_stack = require('./util/action-stack'),
     platform_modules = require('./platforms');
 
-module.exports = function installPlugin(platform, project_dir, id, plugins_dir, subdir, cli_variables, www_dir, callback) {
+module.exports = function installPlugin(platform, project_dir, id, plugins_dir, subdir, cli_variables, www_dir, is_top_level, callback) {
     if (!platform_modules[platform]) {
         var err = new Error(platform + " not supported.");
-        if (callback) {
-            callback(err);
-            return;
-        }
+        if (callback) callback(err);
         else throw err;
+        return;
     }
 
     var plugin_dir = path.join(plugins_dir, id);
@@ -27,15 +25,15 @@ module.exports = function installPlugin(platform, project_dir, id, plugins_dir, 
                 callback(err);
             } else {
                 // update ref to plugin_dir after successful fetch, via fetch callback
-                runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, callback);
+                runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, is_top_level, callback);
             }
         });
     } else {
-        runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, callback);
+        runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, is_top_level, callback);
     }
 };
 
-function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, callback) {
+function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, is_top_level, callback) {
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , xml_text     = fs.readFileSync(xml_path, 'utf-8')
       , plugin_et    = new et.ElementTree(et.XML(xml_text))
@@ -46,14 +44,19 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
     // check if platform has plugin installed already.
     var platform_config = config_changes.get_platform_json(plugins_dir, platform);
     var plugin_basename = path.basename(plugin_dir);
-    var is_fully_installed = false;
+    var is_installed = false;
     Object.keys(platform_config.installed_plugins).forEach(function(installed_plugin_id) {
         if (installed_plugin_id == plugin_id) {
-            is_fully_installed = true;
+            is_installed = true;
         }
     });
-    if (is_fully_installed) {
-        console.log('Plugin "' + plugin_id + '" already installed. Carry on.');
+    Object.keys(platform_config.dependent_plugins).forEach(function(installed_plugin_id) {
+        if (installed_plugin_id == plugin_id) {
+            is_installed = true;
+        }
+    });
+    if (is_installed) {
+        console.log('Plugin "' + plugin_id + '" already installed, \'sall good.');
         if (callback) callback();
         return;
     }
@@ -80,7 +83,7 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
     var dependencies = plugin_et.findall('dependency');
     if (dependencies && dependencies.length) {
         var end = n(dependencies.length, function() {
-            handleInstall(plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, callback);
+            handleInstall(plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, is_top_level, callback);
         });
         dependencies.forEach(function(dep) {
             var dep_plugin_id = dep.attrib.id;
@@ -92,18 +95,18 @@ function runInstall(platform, project_dir, plugin_dir, plugins_dir, cli_variable
 
             if (fs.existsSync(path.join(plugins_dir, dep_plugin_id))) {
                 console.log('Dependent plugin ' + dep.attrib.id + ' already fetched, using that version.');
-                module.exports(platform, project_dir, dep_plugin_id, plugins_dir, dep_subdir, filtered_variables, www_dir, end);
+                module.exports(platform, project_dir, dep_plugin_id, plugins_dir, dep_subdir, filtered_variables, www_dir, false, end);
             } else {
                 console.log('Dependent plugin ' + dep.attrib.id + ' not fetched, retrieving then installing.');
-                module.exports(platform, project_dir, dep_url, plugins_dir, dep_subdir, filtered_variables, www_dir, end);
+                module.exports(platform, project_dir, dep_url, plugins_dir, dep_subdir, filtered_variables, www_dir, false, end);
             }
         });
     } else {
-        handleInstall(plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, callback);
+        handleInstall(plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, is_top_level, callback);
     }
 }
 
-function handleInstall(plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, callback) {
+function handleInstall(plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, is_top_level, callback) {
     var handler = platform_modules[platform];
     www_dir = www_dir || handler.www_dir(project_dir);
 
@@ -153,16 +156,12 @@ function handleInstall(plugin_id, plugin_et, platform, project_dir, plugins_dir,
                 console.log(info[0].text);
             }
 
-            finalizeInstall(project_dir, plugins_dir, platform, plugin_basename, filtered_variables, callback);
+            // queue up the plugin so prepare knows what to do.
+            config_changes.add_installed_plugin_to_prepare_queue(plugins_dir, plugin_basename, platform, filtered_variables, is_top_level);
+            // call prepare after a successful install
+            require('./../plugman').prepare(project_dir, platform, plugins_dir);
+
+            if (callback) callback();
         }
     });
-}
-
-function finalizeInstall(project_dir, plugins_dir, platform, plugin_name, variables, callback) {
-    // queue up the plugin so prepare knows what to do.
-    config_changes.add_installed_plugin_to_prepare_queue(plugins_dir, plugin_name, platform, variables);
-    // call prepare after a successful install
-    require('./../plugman').prepare(project_dir, platform, plugins_dir);
-
-    if (callback) callback();
 }

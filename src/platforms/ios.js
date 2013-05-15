@@ -72,7 +72,6 @@ module.exports = {
         },
         uninstall:function(header_el, project_dir, project) {
             var src = header_el.attrib['src'];
-            var srcFile = path.resolve(plugin_dir, src);
             var targetDir = path.resolve(project.plugins_dir, getRelativeDir(header_el));
             var destFile = path.resolve(targetDir, path.basename(src));
             project.xcode.removeHeaderFile(path.join('Plugins', path.relative(project.plugins_dir, destFile)));

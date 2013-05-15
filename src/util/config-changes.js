@@ -32,19 +32,19 @@ function checkPlatform(platform) {
 }
 
 module.exports = {
-    add_installed_plugin_to_prepare_queue:function(plugins_dir, plugin, platform, vars) {
+    add_installed_plugin_to_prepare_queue:function(plugins_dir, plugin, platform, vars, is_top_level) {
         checkPlatform(platform);
 
         var config = module.exports.get_platform_json(plugins_dir, platform);
-        config.prepare_queue.installed.push({'plugin':plugin, 'vars':vars});
+        config.prepare_queue.installed.push({'plugin':plugin, 'vars':vars, 'topLevel':is_top_level});
         module.exports.save_platform_json(config, plugins_dir, platform);
     },
-    add_uninstalled_plugin_to_prepare_queue:function(plugins_dir, plugin, platform) {
+    add_uninstalled_plugin_to_prepare_queue:function(plugins_dir, plugin, platform, is_top_level) {
         checkPlatform(platform);
 
         var plugin_xml = new et.ElementTree(et.XML(fs.readFileSync(path.join(plugins_dir, plugin, 'plugin.xml'), 'utf-8')));
         var config = module.exports.get_platform_json(plugins_dir, platform);
-        config.prepare_queue.uninstalled.push({'plugin':plugin, 'id':plugin_xml._root.attrib['id']});
+        config.prepare_queue.uninstalled.push({'plugin':plugin, 'id':plugin_xml._root.attrib['id'], 'topLevel':is_top_level});
         module.exports.save_platform_json(config, plugins_dir, platform);
     },
     get_platform_json:function(plugins_dir, platform) {
@@ -57,7 +57,8 @@ module.exports = {
             var config = {
                 prepare_queue:{installed:[], uninstalled:[]},
                 config_munge:{},
-                installed_plugins:{}
+                installed_plugins:{},
+                dependent_plugins:{}
             };
             fs.writeFileSync(filepath, JSON.stringify(config), 'utf-8');
             return config;
@@ -139,7 +140,7 @@ module.exports = {
         platform_config.prepare_queue.uninstalled.forEach(function(u) {
             var plugin_dir = path.join(plugins_dir, u.plugin);
             var plugin_id = u.id;
-            var plugin_vars = platform_config.installed_plugins[plugin_id];
+            var plugin_vars = (u.topLevel ? platform_config.installed_plugins[plugin_id] : platform_config.dependent_plugins[plugin_id]);
 
             // get config munge, aka how did this plugin change various config files
             var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, platform, project_dir, plugin_vars);
@@ -210,7 +211,11 @@ module.exports = {
             platform_config.config_munge = global_munge;
 
             // Remove from installed_plugins
-            delete platform_config.installed_plugins[plugin_id]
+            if (u.topLevel) {
+                delete platform_config.installed_plugins[plugin_id]
+            } else {
+                delete platform_config.dependent_plugins[plugin_id]
+            }
         });
 
         // Empty out uninstalled queue.
@@ -292,8 +297,12 @@ module.exports = {
             });
             platform_config.config_munge = global_munge;
 
-            // Move to installed_plugins
-            platform_config.installed_plugins[plugin_id] = plugin_vars || {};
+            // Move to installed_plugins if it is a top-level plugin
+            if (u.topLevel) {
+                platform_config.installed_plugins[plugin_id] = plugin_vars || {};
+            } else {
+                platform_config.dependent_plugins[plugin_id] = plugin_vars || {};
+            }
         });
 
         // Empty out installed queue.
