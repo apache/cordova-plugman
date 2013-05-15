@@ -37,14 +37,15 @@ function copyArray(arr) {
 }
 
 describe('blackberry project handler', function() {
-    it('should have an install function', function() {
-        expect(typeof blackberry.install).toEqual('function');
+    describe('www_dir method', function() {
+        it('should return cordova-blackberry project www location using www_dir', function() {
+            expect(blackberry.www_dir('/')).toEqual('/www');
+        });
     });
-    it('should have an uninstall function', function() {
-        expect(typeof blackberry.uninstall).toEqual('function');
-    });
-    it('should return cordova-blackberry project www location using www_dir', function() {
-        expect(blackberry.www_dir('/')).toEqual('/www');
+    describe('package_name method', function() {
+        it('should return the blackberry project package name based on what is in config.xml', function() {
+            expect(blackberry.package_name(path.join(blackberry_project, '..'))).toEqual('cordovaExample');
+        });
     });
 
     describe('installation', function() {
@@ -59,7 +60,9 @@ describe('blackberry project handler', function() {
             it('should copy stuff from one location to another by calling common.copyFile', function() {
                 var source = copyArray(valid_source);
                 var s = spyOn(common, 'copyFile');
-                blackberry.install(source, dummy_id, temp, dummyplugin, {});
+                source.forEach(function(src) {
+                    blackberry['source-file'].install(src, dummyplugin, temp);
+                });
                 expect(s).toHaveBeenCalledWith(dummyplugin, 'src/blackberry/client.js', temp, 'ext-qnx/cordova.echo/client.js');
                 expect(s).toHaveBeenCalledWith(dummyplugin, 'src/blackberry/index.js', temp, 'ext-qnx/cordova.echo/index.js');
                 expect(s).toHaveBeenCalledWith(dummyplugin, 'src/blackberry/manifest.json', temp, 'ext-qnx/cordova.echo/manifest.json');
@@ -67,7 +70,7 @@ describe('blackberry project handler', function() {
             it('should throw if source file cannot be found', function() {
                 var source = copyArray(invalid_source);
                 expect(function() {
-                    blackberry.install(source, faulty_id, temp, faultyplugin, {});
+                    blackberry['source-file'].install(source[1], faultyplugin, temp);
                 }).toThrow('"' + path.resolve(faultyplugin, 'src/blackberry/device/echoJnext.so') + '" not found!');
             });
             it('should throw if target file already exists', function() {
@@ -79,7 +82,7 @@ describe('blackberry project handler', function() {
 
                 var source = copyArray(valid_source);
                 expect(function() {
-                    blackberry.install(source, dummy_id, temp, dummyplugin, {});
+                    blackberry['source-file'].install(source[0], dummyplugin, temp);
                 }).toThrow('"' + target + '" already exists!');
             });
         });
@@ -98,9 +101,11 @@ describe('blackberry project handler', function() {
         describe('of <source-file> elements', function() {
             it('should remove stuff by calling common.deleteJava', function(done) {
                 var s = spyOn(common, 'deleteJava');
-                install('blackberry', temp, 'DummyPlugin', plugins_dir, {}, undefined, function() {
+                install('blackberry', temp, 'DummyPlugin', plugins_dir, '.', {}, undefined, function() {
                     var source = copyArray(valid_source);
-                    blackberry.uninstall(source, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
+                    source.forEach(function(src) {
+                        blackberry['source-file'].uninstall(src, temp);
+                    });
                     expect(s).toHaveBeenCalledWith(temp, 'ext-qnx/cordova.echo/client.js');
                     expect(s).toHaveBeenCalledWith(temp, 'ext-qnx/cordova.echo/index.js');
                     expect(s).toHaveBeenCalledWith(temp, 'ext-qnx/cordova.echo/manifest.json');
