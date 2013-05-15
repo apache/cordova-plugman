@@ -21,7 +21,6 @@
 module.exports = {
     install:  require('./src/install'),
     uninstall:require('./src/uninstall'),
-    remove:   require('./src/remove'),
     fetch:    require('./src/fetch'),
     prepare:  require('./src/prepare')
 };

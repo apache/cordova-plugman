@@ -47,14 +47,15 @@ function copyArray(arr) {
 }
 
 describe('android project handler', function() {
-    it('should have an install function', function() {
-        expect(typeof android.install).toEqual('function');
+    describe('www_dir method', function() {
+        it('should return cordova-android project www location using www_dir', function() {
+            expect(android.www_dir('/')).toEqual('/assets/www');
+        });
     });
-    it('should have an uninstall function', function() {
-        expect(typeof android.uninstall).toEqual('function');
-    });
-    it('should return cordova-android project www location using www_dir', function() {
-        expect(android.www_dir('/')).toEqual('/assets/www');
+    describe('package_name method', function() {
+        it('should return an android project\'s proper package name', function() {
+            expect(android.package_name(path.join(android_one_project, '..'))).toEqual('com.alunny.childapp');
+        });
     });
 
     describe('installation', function() {
@@ -72,13 +73,13 @@ describe('android project handler', function() {
             it('should copy stuff from one location to another by calling common.copyFile', function() {
                 var source = copyArray(valid_source);
                 var s = spyOn(common, 'copyFile');
-                android.install(source, dummy_id, temp, dummyplugin, {});
+                android['source-file'].install(source[0], dummyplugin, temp); 
                 expect(s).toHaveBeenCalledWith(dummyplugin, 'src/android/DummyPlugin.java', temp, 'src/com/phonegap/plugins/dummyplugin/DummyPlugin.java');
             });
             it('should throw if source file cannot be found', function() {
                 var source = copyArray(invalid_source);
                 expect(function() {
-                    android.install(source, faulty_id, temp, faultyplugin, {});
+                    android['source-file'].install(source[0], faultyplugin, temp); 
                 }).toThrow('"' + path.resolve(faultyplugin, 'src/android/NotHere.java') + '" not found!');
             });
             it('should throw if target file already exists', function() {
@@ -90,7 +91,7 @@ describe('android project handler', function() {
 
                 var source = copyArray(valid_source);
                 expect(function() {
-                    android.install(source, dummy_id, temp, dummyplugin, {});
+                    android['source-file'].install(source[0], dummyplugin, temp); 
                 }).toThrow('"' + target + '" already exists!');
             });
         });
@@ -101,7 +102,6 @@ describe('android project handler', function() {
             shell.mkdir('-p', temp);
             shell.mkdir('-p', plugins_dir);
             shell.cp('-rf', android_two_project, temp);
-            shell.cp('-rf', dummyplugin, plugins_dir);
         });
         afterEach(function() {
             shell.rm('-rf', temp);
@@ -109,9 +109,9 @@ describe('android project handler', function() {
         describe('of <source-file> elements', function() {
             it('should remove stuff by calling common.deleteJava', function(done) {
                 var s = spyOn(common, 'deleteJava');
-                install('android', temp, 'DummyPlugin', plugins_dir, {}, undefined, function() {
+                install('android', temp, dummyplugin, plugins_dir, '.', {}, undefined, function() {
                     var source = copyArray(valid_source);
-                    android.uninstall(source, dummy_id, temp, path.join(plugins_dir, 'DummyPlugin'));
+                    android['source-file'].uninstall(source[0], temp);
                     expect(s).toHaveBeenCalledWith(temp, 'src/com/phonegap/plugins/dummyplugin/DummyPlugin.java');
                     done();
                 });
