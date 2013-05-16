@@ -1,8 +1,7 @@
 var dep_graph = require('dep-graph'),
     path = require('path'),
     config_changes = require('./config-changes'),
-    xml_helpers = require('./xml-helpers'),
-    underscore= require('underscore');
+    xml_helpers = require('./xml-helpers');
 
 module.exports = {
     generate_dependency_info:function(plugins_dir, platform) {
