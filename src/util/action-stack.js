@@ -24,7 +24,7 @@ ActionStack.prototype = {
     },
     process:function(platform, project_dir, callback) {
         if (platform == 'ios') {
-            // parse xcode project file once
+            // parse xcode project files once
             var project_files = ios.parseIOSProjectFiles(project_dir);
         }
         while(this.stack.length) {
