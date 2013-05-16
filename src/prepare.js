@@ -92,7 +92,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     
                 // Prepare the object for cordova_plugins.json.
                 var obj = {
-                    file: path.join('/plugins', plugin_id, module.attrib.src),
+                    file: path.join('plugins', plugin_id, module.attrib.src),
                     id: moduleName
                 };
     

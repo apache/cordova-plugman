@@ -33,7 +33,7 @@ module.exports = {
         return plist.parseFileSync(plist_file).CFBundleIdentifier;
     },
     "source-file":{
-        install:function(source_el, plugin_dir, project_dir, project) {
+        install:function(source_el, plugin_dir, project_dir, plugin_id, project) {
             var src = source_el.attrib['src'];
             var srcFile = path.resolve(plugin_dir, src);
             var targetDir = path.resolve(project.plugins_dir, getRelativeDir(source_el));
@@ -45,7 +45,7 @@ module.exports = {
             shell.mkdir('-p', targetDir);
             shell.cp(srcFile, destFile);
         },
-        uninstall:function(source_el, project_dir, project) {
+        uninstall:function(source_el, project_dir, plugin_id, project) {
             var src = source_el.attrib['src'];
             var targetDir = path.resolve(project.plugins_dir, getRelativeDir(source_el));
             var destFile = path.resolve(targetDir, path.basename(src));
