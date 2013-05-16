@@ -128,7 +128,7 @@ function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plu
 
         // queue up native stuff
         sourceFiles && sourceFiles.forEach(function(source) {
-            actions.push(actions.createAction(handler["source-file"].install, [source, plugin_dir, project_dir], handler["source-file"].uninstall, [source, project_dir]));
+            actions.push(actions.createAction(handler["source-file"].install, [source, plugin_dir, project_dir, plugin_id], handler["source-file"].uninstall, [source, project_dir, plugin_id]));
         });
 
         headerFiles && headerFiles.forEach(function(header) {

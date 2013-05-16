@@ -34,9 +34,7 @@ module.exports = {
         return widget_doc._root.attrib['id'];
     },
     "source-file":{
-        install:function(source_el, plugin_dir, project_dir) {
-            // TODO: possibly move below into action-stack.process so we dont parse the xml file per source-file element in plugin.xml
-            var plugin_id = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'))._root.attrib['id'];
+        install:function(source_el, plugin_dir, project_dir, plugin_id) {
             var src = source_el.attrib['src'];
             var target = source_el.attrib['target-dir'] || plugin_id;
             TARGETS.forEach(function(arch) {
@@ -44,8 +42,7 @@ module.exports = {
                 common.copyFile(plugin_dir, src, project_dir, dest);
             });
         },
-        uninstall:function(source_el, project_dir) {
-            var plugin_id = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'))._root.attrib['id'];
+        uninstall:function(source_el, project_dir, plugin_id) {
             var src = source_el.attrib['src'];
             var target = source_el.attrib['target-dir'] || plugin_id;
             TARGETS.forEach(function(arch) {
