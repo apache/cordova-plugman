@@ -17,31 +17,27 @@ This document defines tool usage and the plugin format specification.
 
 ## Usage
 
-    plugman --fetch --plugin <directory|git-url|name> [--plugins_dir <directory>]
-    plugman --install --platform <ios|android|bb10> --project <directory> --plugin <name|url> [--plugins_dir <directory>] [--variable <name>=<value> [--variable <name>=<value> ...]]
-    plugman --uninstall --platform <ios|android|bb10> --project <directory> --plugin <name> [--plugins_dir <directory>]
-    plugman --list [--plugins_dir <directory>]
-    plugman --prepare --platform <ios|android|bb10> --project <directory> [--plugins_dir <directory>]
+    plugman --install --platform <ios|android|blackberry10|wp7|wp8> --project <directory> --plugin <name|url|path> [--plugins_dir <directory>] [--www <directory>] [--variable <name>=<value> [--variable <name>=<value> ...]]
+    plugman --uninstall --platform <ios|android|blackberr10|wp7|wp8> --project <directory> --plugin <name> [--www <directory>] [--plugins_dir <directory>]
 
-* `--fetch`: Retrieves and stores a plugin
-* `--install`: Installs a plugin into a cordova project. if `<name|url>` does not exist under the `plugins_dir`, will call `fetch` to retrieve it first.
+* `--install`: Installs a plugin into a cordova project. You must specify a platform and cordova project location for that platform. You also must specify a plugin, with the different `--plugin` parameter forms being:
+  * `name`: The directory name where the plugin contents exist. This must be an existing directory under the `--plugins_dir` path (see below for more info).
+  * `url`: A URL starting with https:// or git://, pointing to a valid git repository that is clonable and contains a `plugin.xml` file. The contents of this repository would be copied into the `--plugins_dir`.
+  * `path`: A path to a directory containing a valid plugin which includes a `plugin.xml` file. This path's contents will be copied into the `--plugins_dir`.
 * `--uninstall`: Uninstalls an already-`--install`'ed plugin from a cordova project
-* `--list`: Lists all `--fetch`'ed plugins
-* `--prepare`: Based on all installed plugins, will set up properly injecting plugin JavaScript code and setting up permissions properly. Implicitly called after `--install` and `--uninstall` commands. See below for more details.
 
 Other parameters: 
 
 * `--plugins_dir` defaults to `<project>/cordova/plugins`, but can be any directory containing a subdirectory for each fetched plugin.
+* `--www` defaults to the project's `www` folder location, but can be any directory that is to be used as cordova project application web assets.
 * `--variable` allows to specify certain variables at install time, necessary for certain plugins requiring API keys or other custom, user-defined parameters.
-
-Note that `--fetch` deals with the local cache of the plugin's files (in the `--plugins_dir` location) and doesn't care about platforms, while `--install` and `--uninstall` require specifying the target platform and the location of the project, and actually do installation of plugin code and assets.
 
 
 ### Supported Platforms
 
 * iOS
 * Android
-* BB10
+* BlackBerry 10
 
 ### Example Plugins
 
@@ -91,7 +87,7 @@ This structure is suggested, but not required.
 
 ## plugin.xml Manifest Format
 
-Last edited May 2 2013.
+Last edited May 16 2013.
 
 The `plugin.xml` file is an XML document in the plugins namespace -
 `http://apache.org/cordova/ns/plugins/1.0`. It contains a top-level `plugin`
@@ -214,7 +210,7 @@ In contrast, `<js-module>` tags are much more sophisticated. They look like this
         <clobbers target="chrome.socket" />
     </js-module>
 
-With the above example, a call to `plugman --prepare` will copy socket.js to `www/plugins/my.plugin.id/socket.js`. Further, it will add an entry for this plugin to `www/cordova_plugins.json`. At load time, code in `cordova.js` will use an XHR to read this file, inject a `<script>` tag for each Javascript file, and add a mapping to clobber or merge as appropriate (see below).
+With the above example, after installing a plugin, this tool will copy socket.js to `www/plugins/my.plugin.id/socket.js`. Further, it will add an entry for this plugin to `www/cordova_plugins.json`. At load time, code in `cordova.js` will use an XHR to read this file, inject a `<script>` tag for each Javascript file, and add a mapping to clobber or merge as appropriate (see below).
 
 DO NOT wrap the file with `cordova.define`; this will be added automatically. Your module will be wrapped in a closure, and will have `module`, `exports` and `require` in scope, as normal for AMD modules.
 
@@ -405,7 +401,7 @@ If `src` does not resolve to a file that can be found, plugman will stop/reverse
 
 #### arch
 
-The architecture that the so file has been built for
+The architecture that the `.so` file has been built for. Valid values are `device` and `simulator`.
 
 ### &lt;framework&gt;
 
@@ -419,40 +415,6 @@ Examples:
 plugman identifies the framework through the `src` attribute and attempts to add the framework to the Cordova project, in the correct fashion for a given platform.
 
 The optional `weak` attribute is a boolean denoting whether the framework should be weakly-linked. Default is `false`.
-
-### &lt;dependencies&gt; and &lt;dependency&gt;
-
-Identifies dependency of the plugin on another plugin.
-
-Example:
-
-    <dependencies>
-        <dependency name="com.facebook.plugin" url="http://plugins.cordova.io" />
-        <dependency name="com.adobe.omniture" url="http://plugins.phonegap.com" version="1.0.0" />
-    </dependencies>
-
-Dependencies denote other plugins that must be installed in order for the current plugin to work properly.
-
-Two different versions of the same plugin cannot be installed into the same application. If the user attempts to do so, the tooling should error out appropriately and exit with a non-zero code.
-
-Dependent plugins should be fetched first and stored in the user's specified plugins directory (or the default enforced by the tool if none is specified). These plugins are then installed into the user's cordova project, one by one, in a recursive fashion.
-If installation of any dependent plugin is not successful, the tool should not proceed with installation of the parent plugin and reverse all changes made to the cordova project by the installation.
-
-#### name
-
-A reverse-style domain identifier, as specified by a plugin in the top-level `plugin` element's `id` attribute.
-
-#### url
-
-URL pointing to a valid cordova plugin "universe."
-
-The tooling should retrieve plugin contents based on a combination of this URL and the `name` attribute, i.e. `url` + '/' + `name`.
-
-If the retrieval URL does not resolve or does not contain a valid plugin.xml file, the tool should error out and exit with a non-zero code.
-
-#### version
-
-Optionally you can specify a version requirement for the plugin dependency. Identical syntax for the `&lt;engine&gt;` element's `version` attribute above should be employed. 
 
 ### &lt;info&gt;
 
