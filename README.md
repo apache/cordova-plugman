@@ -38,6 +38,7 @@ Other parameters:
 * iOS
 * Android
 * BlackBerry 10
+* Windows Phone 7
 
 ### Example Plugins
 
