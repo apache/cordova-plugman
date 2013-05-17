@@ -17,17 +17,6 @@
  *
 */
 
-/*
-node plugman --platform wp7 --project '/c//users/jesse/documents/visual studio 2012/Projects/TestPlugin7/' --plugin '.\test\plugins\ChildBrowser\'
-
-TODO:  ( Apr. 16, 2013 - jm )
-- Update WMAppManifest.xml with any new required capabilities 
-- add references for any new libraries required by plugin
-
-
-
-*/
-
 var fs = require('fs'),
     path = require('path'),
     glob = require('glob'),
@@ -46,31 +35,6 @@ var unix_projPath,  //  for use with glob
     sourceFiles,    //  ./source-file inside platform
     hosts,          //  ./access inside root
     projectChanges; //  <config-file target=".csproj" parent=".">, inside platform
-
-
-
-function copyFileSync(srcPath, destPath) {
-
-  var stats = fs.statSync(srcPath);
-  if(stats.isDirectory()) {
-     shell.mkdir('-p', destPath);
-     // without the added slash at the end, we will get an extra folder inside destination
-     shell.cp('-r', srcPath + "/" , destPath);
-  }
-  else if(fs.existsSync(srcPath)) {
-    shell.cp(srcPath, destPath);
-  }
-  else {
-    console.log("File does not exist :: " + srcPath);
-    return;
-  }
-
-  var msg = shell.error();
-  if(msg) {
-    console.log("msg" + msg);
-    throw { name: "ShellError", message: msg};
-  }
-}    
 
 function initPaths(project_dir, plugin_dir, plugin_et, variables) {
 
@@ -218,19 +182,23 @@ function uninstall(project_dir, plugin_dir, plugin_et, variables) {
   });
 }
 
-exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, variables) {
-    console.log("action = " + action);
-    switch(action) {
-        case 'install' :
-            initPaths(project_dir, plugin_dir, plugin_et, variables);
-            install(project_dir, plugin_dir, plugin_et, variables);
-            break;
-        case 'uninstall' :
-            initPaths(project_dir, plugin_dir, plugin_et, variables);
-            uninstall(project_dir, plugin_dir, plugin_et, variables);
-            break;
-        default :
-          throw 'error unknown action';
-          break;
+module.exports = {
+    www_dir:function(project_dir) {
+        return path.join(project_dir, 'www');
+    },
+    package_name:function(project_dir) {
+        return xml_helpers.parseElementtreeSync(path.join(project_dir, 'Properties', 'WMAppManifest.xml')).find('App').attrib.ProductID;
+    },
+    "source-file":{
+        install:function(source_el, plugin_dir, project_dir, plugin_id) {
+            var dest = path.join(source_el.attrib['target-dir'], path.basename(source_el.attrib['src']));
+            common.copyFile(plugin_dir, source_el.attrib['src'], project_dir, dest);
+        },
+        uninstall:function(source_el, project_dir, plugin_id) {
+            var dest = path.join(source_el.attrib['target-dir'], path.basename(source_el.attrib['src']));
+            common.removeFile(project_dir, dest);
+        }
+    },
+    "lib-file":{
     }
-}
+};
