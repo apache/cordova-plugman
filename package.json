@@ -22,7 +22,8 @@
     "osenv": "0.0.x",
     "ncallbacks":"1.1.0",
     "underscore":"1.4.4",
-    "dep-graph":"1.1.0"
+    "dep-graph":"1.1.0",
+    "semver": "1.x.x"
   },
   "devDependencies": {
     "jasmine-node": "1.7.0"
