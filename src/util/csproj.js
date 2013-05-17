@@ -13,7 +13,7 @@ csproj.prototype = {
         fs.writeFileSync(this.location, this.xml.write({indent:4}), 'utf-8');
     },
     addSourceFile:function(relative_path) {
-        relative_path = relative_path.join('/').join('\\');
+        relative_path = relative_path.split('/').join('\\');
         var item = new et.Element('ItemGroup');
         var compile = new et.Element('Compile');
         compile.attrib.Include = relative_path;
@@ -21,7 +21,7 @@ csproj.prototype = {
         this.xml.getroot().append(item);
     },
     removeSourceFile:function(relative_path) {
-        relative_path = relative_path.join('/').join('\\');
+        relative_path = relative_path.split('/').join('\\');
         var groups = this.xml.findall('ItemGroup');
         for (var i = 0, l = groups.length; i < l; i++) {
             var group = groups[i];
