@@ -107,7 +107,7 @@ module.exports = {
         if (project_files.length === 0) {
             throw new Error('does not appear to be a Windows Phone project (no .csproj file)');
         }
-        return new csproj(path.join(project_files[0]));
+        return new csproj(path.join(project_dir, project_files[0]));
     },
     "source-file":{
         install:function(source_el, plugin_dir, project_dir, plugin_id, project_file) {
