@@ -285,6 +285,7 @@ into a project. A couple of examples:
                     target-dir="src/com/alunny/foo" />
     <!-- ios -->
     <source-file src="src/ios/CDVFoo.m" />
+    <source-file src="src/ios/someLib.a" framework="true" />
 
 
 #### src (required)
@@ -304,6 +305,10 @@ the package `com.alunny.foo` has be located under the directory
 plugin authors should omit this attribute.
 
 As with assets, if a `source-file`'s `target` would overwrite an existing file, plugman will stop/reverse the installation, notify the user and exit with a non-zero code.
+
+#### framework
+
+Only used for iOS. If set to `true`, will also add the specified file as a framework to the project.
 
 ### &lt;config-file&gt;
 

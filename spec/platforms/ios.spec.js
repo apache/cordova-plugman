@@ -153,6 +153,13 @@ describe('ios project handler', function() {
                 ios['source-file'].install(source[0], dummyplugin, temp, dummy_id, proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join(dummyplugin, 'src', 'ios', 'TargetDirTest.m'), path.join(temp, 'SampleApp', 'Plugins', dummy_id, 'targetDir', 'TargetDirTest.m'));
             });
+            it('should call into xcodeproj\'s addFramework appropriately when element has framework=true set', function() {
+                var source = copyArray(valid_source).filter(function(s) { return s.attrib['framework'] == "true"});
+                spyOn(proj_files.xcode, 'addSourceFile');
+                var spy = spyOn(proj_files.xcode, 'addFramework');
+                ios['source-file'].install(source[0], dummyplugin, temp, dummy_id, proj_files);
+                expect(spy).toHaveBeenCalledWith(path.join('Plugins', dummy_id, 'SourceWithFramework.m'), {weak:false});
+            });
         });
 
         describe('of <header-file> elements', function() {
@@ -265,10 +272,9 @@ describe('ios project handler', function() {
             it('should call into xcodeproj\'s removeSourceFile appropriately when element a target-dir', function(){
                 var source = copyArray(valid_source).filter(function(s) { return s.attrib['target-dir'] != undefined});
                 shell.cp('-rf', ios_config_xml_project, temp);
-                
-                var spy = spyOn(shell, 'rm');
+                var spy = spyOn(proj_files.xcode, 'removeSourceFile');
                 ios['source-file'].uninstall(source[0], temp, dummy_id, proj_files);
-                expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'SampleApp', 'Plugins', dummy_id, 'targetDir', 'TargetDirTest.m'));
+                expect(spy).toHaveBeenCalledWith(path.join('Plugins', dummy_id, 'targetDir', 'TargetDirTest.m'));
             });
             it('should rm the file from the right target location when element has no target-dir', function(){
                 var source = copyArray(valid_source).filter(function(s) { return s.attrib['target-dir'] == undefined});
@@ -285,6 +291,14 @@ describe('ios project handler', function() {
                 
                 ios['source-file'].uninstall(source[0], temp, dummy_id, proj_files);
                 expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'SampleApp', 'Plugins', dummy_id, 'targetDir', 'TargetDirTest.m'));
+            });
+            it('should call into xcodeproj\'s removeFramework appropriately when element framework=true set', function(){
+                var source = copyArray(valid_source).filter(function(s) { return s.attrib['framework'] == "true"});
+                shell.cp('-rf', ios_config_xml_project, temp);
+                var spy = spyOn(proj_files.xcode, 'removeFramework');
+                
+                ios['source-file'].uninstall(source[0], temp, dummy_id, proj_files);
+                expect(spy).toHaveBeenCalledWith(path.join('Plugins', dummy_id, 'SourceWithFramework.m'));
             });
         });
 

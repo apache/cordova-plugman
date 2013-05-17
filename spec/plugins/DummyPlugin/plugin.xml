@@ -89,6 +89,8 @@
         <header-file src="src/ios/DummyPluginCommand.h" />
         <source-file src="src/ios/DummyPluginCommand.m"/>
 
+        <source-file src="src/ios/SourceWithFramework.m" framework="true" />
+
         <header-file src="src/ios/TargetDirTest.h" target-dir="targetDir" />
         <source-file src="src/ios/TargetDirTest.m" target-dir="targetDir" />
 
