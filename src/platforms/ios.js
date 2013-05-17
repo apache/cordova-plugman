@@ -36,7 +36,7 @@ module.exports = {
         install:function(source_el, plugin_dir, project_dir, plugin_id, project) {
             var src = source_el.attrib['src'];
             var srcFile = path.resolve(plugin_dir, src);
-            var targetDir = path.resolve(project.plugins_dir, getRelativeDir(source_el));
+            var targetDir = path.resolve(project.plugins_dir, plugin_id, getRelativeDir(source_el));
             var destFile = path.resolve(targetDir, path.basename(src));
 
             if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <source-file>');
@@ -47,7 +47,7 @@ module.exports = {
         },
         uninstall:function(source_el, project_dir, plugin_id, project) {
             var src = source_el.attrib['src'];
-            var targetDir = path.resolve(project.plugins_dir, getRelativeDir(source_el));
+            var targetDir = path.resolve(project.plugins_dir, plugin_id, getRelativeDir(source_el));
             var destFile = path.resolve(targetDir, path.basename(src));
 
             project.xcode.removeSourceFile(path.join('Plugins', path.relative(project.plugins_dir, destFile)));
@@ -59,10 +59,10 @@ module.exports = {
         }
     },
     "header-file":{
-        install:function(header_el, plugin_dir, project_dir, project) {
+        install:function(header_el, plugin_dir, project_dir, plugin_id, project) {
             var src = header_el.attrib['src'];
             var srcFile = path.resolve(plugin_dir, src);
-            var targetDir = path.resolve(project.plugins_dir, getRelativeDir(header_el));
+            var targetDir = path.resolve(project.plugins_dir, plugin_id, getRelativeDir(header_el));
             var destFile = path.resolve(targetDir, path.basename(src));
             if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <header-file>');
             if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
@@ -70,9 +70,9 @@ module.exports = {
             shell.mkdir('-p', targetDir);
             shell.cp(srcFile, destFile);
         },
-        uninstall:function(header_el, project_dir, project) {
+        uninstall:function(header_el, project_dir, plugin_id, project) {
             var src = header_el.attrib['src'];
-            var targetDir = path.resolve(project.plugins_dir, getRelativeDir(header_el));
+            var targetDir = path.resolve(project.plugins_dir, plugin_id, getRelativeDir(header_el));
             var destFile = path.resolve(targetDir, path.basename(src));
             project.xcode.removeHeaderFile(path.join('Plugins', path.relative(project.plugins_dir, destFile)));
             shell.rm('-rf', destFile);

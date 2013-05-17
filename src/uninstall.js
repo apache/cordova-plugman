@@ -94,7 +94,7 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
         });
 
         headerFiles && headerFiles.forEach(function(header) {
-            actions.push(actions.createAction(handler["header-file"].uninstall, [header, project_dir], handler["header-file"].install, [header, plugin_dir, project_dir]));
+            actions.push(actions.createAction(handler["header-file"].uninstall, [header, project_dir, plugin_id], handler["header-file"].install, [header, plugin_dir, project_dir, plugin_id]));
         });
 
         resourceFiles && resourceFiles.forEach(function(resource) {

@@ -35,11 +35,11 @@ module.exports = {
         return mDoc._root.attrib['package'];
     },
     "source-file":{
-        install:function(source_el, plugin_dir, project_dir) {
+        install:function(source_el, plugin_dir, project_dir, plugin_id) {
             var dest = path.join(source_el.attrib['target-dir'], path.basename(source_el.attrib['src']));
             common.copyFile(plugin_dir, source_el.attrib['src'], project_dir, dest);
         },
-        uninstall:function(source_el, project_dir) {
+        uninstall:function(source_el, project_dir, plugin_id) {
             var dest = path.join(source_el.attrib['target-dir'], path.basename(source_el.attrib['src']));
             common.deleteJava(project_dir, dest);
         }
