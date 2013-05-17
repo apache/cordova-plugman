@@ -18,7 +18,7 @@
 
 -->
 
-<plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
+<plugin xmlns="http://cordova.apache.org/ns/plugins/1.0"
     id="com.phonegap.plugins.oldskewl"
     version="0.0.1">
 
