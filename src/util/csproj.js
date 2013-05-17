@@ -1,4 +1,4 @@
-var xml_helpers = require('./xml_helpers'),
+var xml_helpers = require('./xml-helpers'),
     et = require('elementtree'),
     fs = require('fs');
 
