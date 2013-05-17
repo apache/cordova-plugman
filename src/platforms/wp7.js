@@ -101,7 +101,7 @@ module.exports = {
         return xml_helpers.parseElementtreeSync(path.join(project_dir, 'Properties', 'WMAppManifest.xml')).find('App').attrib.ProductID;
     },
     parseWP7ProjectFile:function(project_dir) {
-        var project_files = glob.sync(path.join(project_dir, '*.csproj'));
+        var project_files = glob.sync(project_dir.split('\\').join('/') + '/*.csproj');
         if (project_files.length === 0) {
             throw new Error('does not appear to be a Windows Phone project (no .csproj file)');
         }
