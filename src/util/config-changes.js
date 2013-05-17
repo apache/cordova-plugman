@@ -41,7 +41,7 @@ module.exports = {
     add_uninstalled_plugin_to_prepare_queue:function(plugins_dir, plugin, platform, is_top_level) {
         checkPlatform(platform);
 
-        var plugin_xml = new et.ElementTree(et.XML(fs.readFileSync(path.join(plugins_dir, plugin, 'plugin.xml'), 'utf-8')));
+        var plugin_xml = xml_helpers.parseElementtreeSync(path.join(plugins_dir, plugin, 'plugin.xml'));
         var config = module.exports.get_platform_json(plugins_dir, platform);
         config.prepare_queue.uninstalled.push({'plugin':plugin, 'id':plugin_xml._root.attrib['id'], 'topLevel':is_top_level});
         module.exports.save_platform_json(config, plugins_dir, platform);
@@ -80,7 +80,7 @@ module.exports = {
         }
 
         var munge = {};
-        var plugin_xml = new et.ElementTree(et.XML(fs.readFileSync(path.join(plugin_dir, 'plugin.xml'), 'utf-8')));
+        var plugin_xml = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'));
 
         var platformTag = plugin_xml.find('platform[@name="' + platform + '"]');
         var changes = [];
@@ -180,7 +180,7 @@ module.exports = {
                                         if (fs.existsSync(filepath)) {
                                             if (path.extname(filepath) == '.xml') {
                                                 var xml_to_prune = [et.XML(xml_child)];
-                                                var doc = new et.ElementTree(et.XML(fs.readFileSync(filepath, 'utf-8')));
+                                                var doc = xml_helpers.parseElementtreeSync(filepath);
                                                 if (xml_helpers.pruneXML(doc, xml_to_prune, selector)) {
                                                     // were good, write out the file!
                                                     fs.writeFileSync(filepath, doc.write({indent: 4}), 'utf-8');
@@ -224,7 +224,7 @@ module.exports = {
         platform_config.prepare_queue.installed.forEach(function(u) {
             var plugin_dir = path.join(plugins_dir, u.plugin);
             var plugin_vars = u.vars;
-            var plugin_id = (new et.ElementTree(et.XML(fs.readFileSync(path.join(plugin_dir, 'plugin.xml'), 'utf-8'))))._root.attrib['id'];
+            var plugin_id = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'), 'utf-8')._root.attrib['id'];
 
             // get config munge, aka how should this plugin change various config files
             var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, platform, project_dir, plugin_vars);
@@ -270,7 +270,7 @@ module.exports = {
                                     // look at ext and do proper config change based on file type
                                     if (path.extname(filepath) == '.xml') {
                                         var xml_to_graft = [et.XML(xml_child)];
-                                        var doc = new et.ElementTree(et.XML(fs.readFileSync(filepath, 'utf-8')));
+                                        var doc = xml_helpers.parseElementtreeSync(filepath);
                                         if (xml_helpers.graftXML(doc, xml_to_graft, selector)) {
                                             // were good, write out the file!
                                             fs.writeFileSync(filepath, doc.write({indent: 4}), 'utf-8');
