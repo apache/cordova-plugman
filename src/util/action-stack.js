@@ -1,4 +1,5 @@
 var ios = require('../platforms/ios'),
+    wp7 = require('../platforms/wp7'),
     fs = require('fs');
 
 function ActionStack() {
@@ -23,15 +24,19 @@ ActionStack.prototype = {
         this.stack.push(tx);
     },
     process:function(platform, project_dir, callback) {
+        var project_files;
+        // parse platform-specific project files once
         if (platform == 'ios') {
-            // parse xcode project files once
-            var project_files = ios.parseIOSProjectFiles(project_dir);
+            project_files = ios.parseIOSProjectFiles(project_dir);
         }
+        if (platform == 'wp7') {
+            project_files = wp7.parseWP7ProjectFile(project_dir);
+        } 
         while(this.stack.length) {
             var action = this.stack.shift();
             var handler = action.handler.run;
             var action_params = action.handler.params;
-            if (platform == 'ios') action_params.push(project_files);
+            if (platform == 'ios' || platform == 'wp7') action_params.push(project_files);
             try {
                 handler.apply(null, action_params);
             } catch(e) {
@@ -42,7 +47,7 @@ ActionStack.prototype = {
                     var undo = this.completed.shift();
                     var revert = undo.reverter.run;
                     var revert_params = undo.reverter.params;
-                    if (platform == 'ios') revert_params.push(project_files);
+                    if (platform == 'ios' || platform == 'wp7') revert_params.push(project_files);
                     try {
                         revert.apply(null, revert_params);
                     } catch(err) {
@@ -59,6 +64,9 @@ ActionStack.prototype = {
         if (platform == 'ios') {
             // write out xcodeproj file
             fs.writeFileSync(project_files.pbx, project_files.xcode.writeSync());
+        }
+        if (platform == 'wp7') {
+            project_files.write();
         }
         if (callback) callback();
     }
