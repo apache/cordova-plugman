@@ -25,7 +25,7 @@ This document defines tool usage.
 * BlackBerry 10
 * Windows Phone 7
 
-## Usage
+## Command Line Usage
 
     plugman --install --platform <ios|android|blackberry10|wp7|wp8> --project <directory> --plugin <name|url|path> [--plugins_dir <directory>] [--www <directory>] [--variable <name>=<value> [--variable <name>=<value> ...]]
     plugman --uninstall --platform <ios|android|blackberr10|wp7|wp8> --project <directory> --plugin <name> [--www <directory>] [--plugins_dir <directory>]
@@ -41,6 +41,16 @@ Other parameters:
 * `--plugins_dir` defaults to `<project>/cordova/plugins`, but can be any directory containing a subdirectory for each fetched plugin.
 * `--www` defaults to the project's `www` folder location, but can be any directory that is to be used as cordova project application web assets.
 * `--variable` allows to specify certain variables at install time, necessary for certain plugins requiring API keys or other custom, user-defined parameters. Please see the [plugin specification](plugin_spec.md) for more information.
+
+## Node Module Usage
+
+    > require('plugman')
+    { install: [Function: installPlugin],
+      uninstall: [Function: uninstallPlugin],
+      fetch: [Function: fetchPlugin],
+      prepare: [Function: handlePrepare] }
+
+### `install` method
 
 
 ## Example Plugins
