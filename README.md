@@ -1,12 +1,12 @@
 # plugman
 
-A command line tool to distribute and package plugins for use with Apache Cordova, nee PhoneGap.
+A command line tool to install and uninstall plugins for use with [Apache Cordova](http://cordova.io) projects.
 
 This document defines tool usage.
 
 ## Plugin Specification
 
---&gt; [plugin.md](plugin.md) &lt;--
+--&gt; [plugin_spec.md](plugin_spec.md) &lt;--
 
 ## Quickstart
 
@@ -17,6 +17,13 @@ This document defines tool usage.
 * Facilitate programmatic installation and manipulation of plugins
 * Detail the dependencies and components of individual plugins
 * Allow code reuse between different target platforms
+
+## Supported Platforms
+
+* iOS
+* Android
+* BlackBerry 10
+* Windows Phone 7
 
 ## Usage
 
@@ -35,12 +42,6 @@ Other parameters:
 * `--www` defaults to the project's `www` folder location, but can be any directory that is to be used as cordova project application web assets.
 * `--variable` allows to specify certain variables at install time, necessary for certain plugins requiring API keys or other custom, user-defined parameters. Please see the [plugin specification](plugin_spec.md) for more information.
 
-## Supported Platforms
-
-* iOS
-* Android
-* BlackBerry 10
-* Windows Phone 7
 
 ## Example Plugins
 

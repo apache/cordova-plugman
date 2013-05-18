@@ -158,7 +158,7 @@ describe('ios project handler', function() {
                 spyOn(proj_files.xcode, 'addSourceFile');
                 var spy = spyOn(proj_files.xcode, 'addFramework');
                 ios['source-file'].install(source[0], dummyplugin, temp, dummy_id, proj_files);
-                expect(spy).toHaveBeenCalledWith(path.join('Plugins', dummy_id, 'SourceWithFramework.m'), {weak:false});
+                expect(spy).toHaveBeenCalledWith(path.join('SampleApp', 'Plugins', dummy_id, 'SourceWithFramework.m'), {weak:false});
             });
         });
 
@@ -298,7 +298,7 @@ describe('ios project handler', function() {
                 var spy = spyOn(proj_files.xcode, 'removeFramework');
                 
                 ios['source-file'].uninstall(source[0], temp, dummy_id, proj_files);
-                expect(spy).toHaveBeenCalledWith(path.join('Plugins', dummy_id, 'SourceWithFramework.m'));
+                expect(spy).toHaveBeenCalledWith(path.join('SampleApp', 'Plugins', dummy_id, 'SourceWithFramework.m'));
             });
         });
 

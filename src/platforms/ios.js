@@ -47,7 +47,8 @@ module.exports = {
             if (is_framework) {
                 var weak = source_el.attrib['weak'];
                 var opt = { weak: (weak == undefined || weak == null || weak != 'true' ? false : true ) };
-                project.xcode.addFramework(project_ref, opt);
+                var project_relative = path.join(path.basename(project.xcode_path), project_ref);
+                project.xcode.addFramework(project_relative, opt);
             }
             shell.mkdir('-p', targetDir);
             shell.cp(srcFile, destFile);
@@ -61,7 +62,8 @@ module.exports = {
             var project_ref = path.join('Plugins', path.relative(project.plugins_dir, destFile));
             project.xcode.removeSourceFile(project_ref);
             if (is_framework) {
-                project.xcode.removeFramework(project_ref);
+                var project_relative = path.join(path.basename(project.xcode_path), project_ref);
+                project.xcode.removeFramework(project_relative);
             }
             shell.rm('-rf', destFile);
             
@@ -158,6 +160,7 @@ module.exports = {
             plugins_dir:pluginsDir,
             resources_dir:resourcesDir,
             xcode:xcodeproj,
+            xcode_path:xcode_dir,
             pbx:pbxPath
         };
     }
