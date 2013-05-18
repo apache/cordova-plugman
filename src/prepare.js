@@ -120,6 +120,9 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     });
 
     // Write out moduleObjects as JSON to cordova_plugins.json
-    fs.writeFileSync(path.join(wwwDir, 'cordova_plugins.json'), JSON.stringify(moduleObjects), 'utf-8');
+    var final_contents = "cordova.define('cordova/plugin_list', function(require, exports, module) {\n";
+    final_contents += 'module.exports = ' + JSON.stringify(moduleObjects) + '\n';
+    final_contents += '});';
+    fs.writeFileSync(path.join(wwwDir, 'cordova_plugins.js'), final_contents, 'utf-8');
 
 };
