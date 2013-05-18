@@ -42,12 +42,13 @@ module.exports = {
 
             if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <source-file>');
             if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
-            var project_ref = path.join('Plugins', path.relative(project.plugins_dir, destFile));
-            project.xcode.addSourceFile(project_ref);
+            var relative_within_project = path.relative(project.plugins_dir, destFile);
+            var relative_on_filesystem = path.join('Plugins', relative_within_project);
+            project.xcode.addSourceFile(relative_on_filesystem);
             if (is_framework) {
                 var weak = source_el.attrib['weak'];
                 var opt = { weak: (weak == undefined || weak == null || weak != 'true' ? false : true ) };
-                project.xcode.addFramework(project_ref, opt);
+                project.xcode.addFramework(relative_within_project, opt);
             }
             shell.mkdir('-p', targetDir);
             shell.cp(srcFile, destFile);
@@ -58,10 +59,11 @@ module.exports = {
             var destFile = path.resolve(targetDir, path.basename(src));
             var is_framework = source_el.attrib['framework'] && (source_el.attrib['framework'] == 'true' || source_el.attrib['framework'] == true);
 
-            var project_ref = path.join('Plugins', path.relative(project.plugins_dir, destFile));
-            project.xcode.removeSourceFile(project_ref);
+            var relative_within_project = path.relative(project.plugins_dir, destFile);
+            var relative_on_filesystem = path.join('Plugins', relative_within_project);
+            project.xcode.removeSourceFile(relative_on_filesystem);
             if (is_framework) {
-                project.xcode.removeFramework(project_ref);
+                project.xcode.removeFramework(relative_within_project);
             }
             shell.rm('-rf', destFile);
             
