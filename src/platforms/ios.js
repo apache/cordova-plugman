@@ -49,6 +49,7 @@ module.exports = {
                 var opt = { weak: (weak == undefined || weak == null || weak != 'true' ? false : true ) };
                 var project_relative = path.join(path.basename(project.xcode_path), project_ref);
                 project.xcode.addFramework(project_relative, opt);
+                project.xcode.addToLibrarySearchPaths({path:project_ref});
             }
             shell.mkdir('-p', targetDir);
             shell.cp(srcFile, destFile);
@@ -64,6 +65,7 @@ module.exports = {
             if (is_framework) {
                 var project_relative = path.join(path.basename(project.xcode_path), project_ref);
                 project.xcode.removeFramework(project_relative);
+                project.xcode.removeFromLibrarySearchPaths({path:project_ref});
             }
             shell.rm('-rf', destFile);
             

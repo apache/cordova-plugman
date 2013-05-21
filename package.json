@@ -2,7 +2,7 @@
   "author": "Andrew Lunny <alunny@gmail.com>",
   "name": "plugman",
   "description": "install/uninstall Cordova plugins",
-  "version": "0.7.6",
+  "version": "0.7.7",
   "repository": {
     "type": "git",
     "url": "git://git-wip-us.apache.org/repos/asf/cordova-plugman.git"
@@ -15,7 +15,7 @@
     "nopt": "1.0.x",
     "glob": "3.2.x",
     "elementtree": "0.1.x",
-    "xcode": "0.6.x",
+    "xcode": "git+https://github.com/filmaj/node-xcode.git",
     "plist": "0.4.x",
     "bplist-parser": "0.0.x",
     "shelljs": "0.1.x",
