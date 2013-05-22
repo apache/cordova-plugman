@@ -77,7 +77,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, cli
         if(engine.attrib["name"].toLowerCase() === "cordova"){
             var engineVersion = engine.attrib["version"];
             var versionPath = path.join(project_dir, 'cordova', 'version');
-
+            
             // need to rethink this so I don't have to chmod anything
             fs.chmodSync(versionPath, '755');
             

@@ -210,7 +210,5 @@ describe('install', function() {
                 done();
             });
         });
-        if('should throw if cordova version isn\'t high enough', function(){
-        });
     });
 });
