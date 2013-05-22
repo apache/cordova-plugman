@@ -119,6 +119,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, cli
 }
 
 function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, is_top_level, callback) {
+    console.log('Installing plugin ' + plugin_id + '...');
     var handler = platform_modules[platform];
     www_dir = www_dir || handler.www_dir(project_dir);
 

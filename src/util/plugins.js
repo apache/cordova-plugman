@@ -46,11 +46,13 @@ module.exports = {
                 if (callback) callback(err)
                 else throw err;
             } else {
+                console.log('Plugin "' + plugin_git_url + '" fetched.');
                 // Check out the specified revision, if provided.
                 if (git_ref) {
-                    var result = shell.exec(util.format('git checkout "%s"', git_ref), { silent: true });
+                    var cmd = util.format('cd "%s" && git checkout "%s"', tmp_dir, git_ref);
+                    var result = shell.exec(cmd, { silent: true, async:false });
                     if (result.code > 0) {
-                        var err = new Error('failed to checkout git ref "' + git_ref + '" for plugin at git url "' + plugin_git_url + '"');
+                        var err = new Error('failed to checkout git ref "' + git_ref + '" for plugin at git url "' + plugin_git_url + '", output: ' + result.output);
                         if (callback) callback(err);
                         else throw err;
                     }
