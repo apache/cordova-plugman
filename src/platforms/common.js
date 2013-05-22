@@ -13,12 +13,14 @@ module.exports = {
     // helper for resolving target paths from plugin.xml into a cordova project
     // throws File Exists
     resolveTargetPath:function(project_dir, relative_path) {
+        console.log('resolveTargetPath', project_dir, relative_path);
         var full_path = path.resolve(project_dir, relative_path);
         if (fs.existsSync(full_path)) throw new Error('"' + full_path + '" already exists!');
         else return full_path;
     },
     // Many times we simply need to copy shit over, knowing if a source path doesnt exist or if a target path already exists
     copyFile:function(plugin_dir, src, project_dir, dest) {
+        console.log('copyFile', plugin_dir, src, project_dir, dest);
         src = module.exports.resolveSrcPath(plugin_dir, src);
         dest = module.exports.resolveTargetPath(project_dir, dest);
         shell.mkdir('-p', path.dirname(dest));
@@ -61,10 +63,23 @@ module.exports = {
         install:function(asset_el, plugin_dir, www_dir) {
             var src = asset_el.attrib.src;
             var target = asset_el.attrib.target;
+
+            if (!src) {
+                throw new Error('<asset> tag without required "src" attribute');
+            }
+            if (!target) {
+                throw new Error('<asset> tag without required "target" attribute');
+            }
+
             module.exports.copyFile(plugin_dir, src, www_dir, target);
         },
         uninstall:function(asset_el, www_dir, plugin_id) {
-            var target = asset_el.attrib.target;
+            var target = asset_el.attrib.target || asset_el.attrib.src;
+
+            if (!target) {
+                throw new Error('<asset> tag without required "target" attribute');
+            }
+
             module.exports.removeFile(www_dir, target);
             module.exports.removeFileF(path.resolve(www_dir, 'plugins', plugin_id));
         }

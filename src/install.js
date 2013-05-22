@@ -7,6 +7,7 @@ var path = require('path'),
     platform_modules = require('./platforms');
 
 module.exports = function installPlugin(platform, project_dir, id, plugins_dir, subdir, cli_variables, www_dir, callback) {
+    console.log('===========\n\nwww_dir = ' + www_dir + '\n\n==================');
     if (!platform_modules[platform]) {
         var err = new Error(platform + " not supported.");
         if (callback) callback(err);
@@ -16,17 +17,20 @@ module.exports = function installPlugin(platform, project_dir, id, plugins_dir, 
 
     var current_stack = new action_stack();
 
-    possiblyFetch(current_stack, platform, project_dir, id, plugins_dir, subdir, cli_variables, www_dir, true, callback);
+    possiblyFetch(current_stack, platform, project_dir, id, plugins_dir, subdir, cli_variables, www_dir, undefined /* git_ref */, true, callback);
 };
 
-function possiblyFetch(actions, platform, project_dir, id, plugins_dir, subdir, cli_variables, www_dir, is_top_level, callback) {
+function possiblyFetch(actions, platform, project_dir, id, plugins_dir, subdir, cli_variables, www_dir, git_ref, is_top_level, callback) {
+    console.log('f1');
+    console.log(plugins_dir, id);
     var plugin_dir = path.join(plugins_dir, id);
+    console.log('f2');
 
     // Check that the plugin has already been fetched.
     if (!fs.existsSync(plugin_dir)) {
         // if plugin doesnt exist, use fetch to get it.
         // TODO: Actual value for git_ref.
-        require('../plugman').fetch(id, plugins_dir, false, '.', undefined /* git_ref */, function(err, plugin_dir) {
+        require('../plugman').fetch(id, plugins_dir, false, '.', git_ref, function(err, plugin_dir) {
             if (err) {
                 callback(err);
             } else {
@@ -95,6 +99,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, cli
             var dep_plugin_id = dep.attrib.id;
             var dep_subdir = dep.attrib.subdir;
             var dep_url = dep.attrib.url;
+            var dep_git_ref = dep.attrib.commit;
             if (dep_subdir) {
                 dep_subdir = path.join.apply(null, dep_subdir.split('/'));
             }
@@ -104,7 +109,11 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, cli
                 runInstall(actions, platform, project_dir, dep_plugin_dir, plugins_dir, filtered_variables, www_dir, false, end);
             } else {
                 console.log('Dependent plugin ' + dep_plugin_id + ' not fetched, retrieving then installing.');
-                possiblyFetch(actions, platform, project_dir, dep_url, plugins_dir, dep_subdir, filtered_variables, www_dir, false, end);
+                try {
+                    possiblyFetch(actions, platform, project_dir, dep_url, plugins_dir, dep_subdir, filtered_variables, www_dir, dep_git_ref, false, end);
+                } catch (e) {
+                    console.log(e);
+                }
             }
         });
     } else {

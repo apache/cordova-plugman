@@ -37,6 +37,7 @@ module.exports = {
             else throw err;
         }
 
+        console.log('clonePluginGitRepo', plugin_git_url, plugins_dir, subdir, git_ref);
         shell.rm('-rf', tmp_dir);
 
         var cmd = util.format('git clone "%s" "%s"', plugin_git_url, tmp_dir);

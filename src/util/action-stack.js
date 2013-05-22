@@ -54,6 +54,7 @@ ActionStack.prototype = {
                         issue += 'A reversion action failed: ' + err.message + '\n';
                     }
                 }
+                console.log(e.stack);
                 e.message = issue + e.message;
                 if (callback) callback(e);
                 else throw e;
