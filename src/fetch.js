@@ -26,15 +26,11 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, link, subdir, git
 
         // Copy from the local filesystem.
         // First, read the plugin.xml and grab the ID.
-        console.log('top', plugin_dir);
         plugin_dir = path.join(plugin_dir, subdir);
-        console.log('2');
         var xml = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'));
-        console.log('3');
         var plugin_id = xml.getroot().attrib.id;
 
         var dest = path.join(plugins_dir, plugin_id);
-        console.log('4');
 
         shell.rm('-rf', dest);
         if (link) {
@@ -42,7 +38,6 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, link, subdir, git
         } else {
             shell.mkdir('-p', dest);
             shell.cp('-R', path.join(plugin_dir, '*') , dest);
-            console.log('5');
         }
 
         if (callback) callback(null, dest);

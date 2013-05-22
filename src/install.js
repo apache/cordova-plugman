@@ -7,7 +7,6 @@ var path = require('path'),
     platform_modules = require('./platforms');
 
 module.exports = function installPlugin(platform, project_dir, id, plugins_dir, subdir, cli_variables, www_dir, callback) {
-    console.log('===========\n\nwww_dir = ' + www_dir + '\n\n==================');
     if (!platform_modules[platform]) {
         var err = new Error(platform + " not supported.");
         if (callback) callback(err);
@@ -21,10 +20,7 @@ module.exports = function installPlugin(platform, project_dir, id, plugins_dir, 
 };
 
 function possiblyFetch(actions, platform, project_dir, id, plugins_dir, subdir, cli_variables, www_dir, git_ref, is_top_level, callback) {
-    console.log('f1');
-    console.log(plugins_dir, id);
     var plugin_dir = path.join(plugins_dir, id);
-    console.log('f2');
 
     // Check that the plugin has already been fetched.
     if (!fs.existsSync(plugin_dir)) {
@@ -109,11 +105,12 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, cli
                 runInstall(actions, platform, project_dir, dep_plugin_dir, plugins_dir, filtered_variables, www_dir, false, end);
             } else {
                 console.log('Dependent plugin ' + dep_plugin_id + ' not fetched, retrieving then installing.');
-                try {
-                    possiblyFetch(actions, platform, project_dir, dep_url, plugins_dir, dep_subdir, filtered_variables, www_dir, dep_git_ref, false, end);
-                } catch (e) {
-                    console.log(e);
-                }
+                possiblyFetch(actions, platform, project_dir, dep_url, plugins_dir, dep_subdir, filtered_variables, www_dir, dep_git_ref, false, function(err) {
+                    if (err) {
+                        if (callback) callback(err);
+                        else throw err;
+                    } else end();
+                });
             }
         });
     } else {

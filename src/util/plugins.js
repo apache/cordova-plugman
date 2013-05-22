@@ -37,7 +37,6 @@ module.exports = {
             else throw err;
         }
 
-        console.log('clonePluginGitRepo', plugin_git_url, plugins_dir, subdir, git_ref);
         shell.rm('-rf', tmp_dir);
 
         var cmd = util.format('git clone "%s" "%s"', plugin_git_url, tmp_dir);
@@ -51,7 +50,7 @@ module.exports = {
                 if (git_ref) {
                     var result = shell.exec(util.format('git checkout "%s"', git_ref), { silent: true });
                     if (result.code > 0) {
-                        var err = new Error('failed to checkout git ref "' + git_ref + '"');
+                        var err = new Error('failed to checkout git ref "' + git_ref + '" for plugin at git url "' + plugin_git_url + '"');
                         if (callback) callback(err);
                         else throw err;
                     }
