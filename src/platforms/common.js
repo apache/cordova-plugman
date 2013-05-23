@@ -13,14 +13,12 @@ module.exports = {
     // helper for resolving target paths from plugin.xml into a cordova project
     // throws File Exists
     resolveTargetPath:function(project_dir, relative_path) {
-        console.log('resolveTargetPath', project_dir, relative_path);
         var full_path = path.resolve(project_dir, relative_path);
         if (fs.existsSync(full_path)) throw new Error('"' + full_path + '" already exists!');
         else return full_path;
     },
     // Many times we simply need to copy shit over, knowing if a source path doesnt exist or if a target path already exists
     copyFile:function(plugin_dir, src, project_dir, dest) {
-        console.log('copyFile', plugin_dir, src, project_dir, dest);
         src = module.exports.resolveSrcPath(plugin_dir, src);
         dest = module.exports.resolveTargetPath(project_dir, dest);
         shell.mkdir('-p', path.dirname(dest));
