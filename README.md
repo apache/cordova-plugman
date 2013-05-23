@@ -106,9 +106,9 @@ Finalizes plugin installation by making configuration file changes and setting u
 
 ## Example Plugins
 
-- Google has a [https://github.com/MobileChromeApps/chrome-cordova/plugins](bunch of plugins) which are maintained actively by a contributor to plugman
+- Google has a [bunch of plugins](https://github.com/MobileChromeApps/chrome-cordova/tree/master/plugins) which are maintained actively by a contributor to plugman
 - Adobe maintains plugins for its Build cloud service, which are open sourced and [available on GitHub](https://github.com/phonegap-build)
-- BlackBerry has a [https://github.com/blackberry/cordova-blackberry-plugins](bunch of plugins) offering deep platform integration
+- BlackBerry has a [bunch of plugins](https://github.com/blackberry/cordova-blackberry/tree/master/blackberry10/plugins) offering deep platform integration
 
 ## Development
 
