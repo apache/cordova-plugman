@@ -27,14 +27,14 @@ This document defines tool usage.
 
 ## Command Line Usage
 
-    plugman --install --platform <ios|android|blackberry10|wp7|wp8> --project <directory> --plugin <name|url|path> [--plugins_dir <directory>] [--www <directory>] [--variable <name>=<value> [--variable <name>=<value> ...]]
-    plugman --uninstall --platform <ios|android|blackberr10|wp7|wp8> --project <directory> --plugin <name> [--www <directory>] [--plugins_dir <directory>]
+    plugman --platform <ios|android|blackberry10|wp7|wp8> --project <directory> --plugin <name|url|path> [--plugins_dir <directory>] [--www <directory>] [--variable <name>=<value> [--variable <name>=<value> ...]]
+    plugman --uninstall --platform <ios|android|blackberr10|wp7|wp8> --project <directory> --plugin <id> [--www <directory>] [--plugins_dir <directory>]
 
-* `--install`: Installs a plugin into a cordova project. You must specify a platform and cordova project location for that platform. You also must specify a plugin, with the different `--plugin` parameter forms being:
+* Using minimum parameters, installs a plugin into a cordova project. You must specify a platform and cordova project location for that platform. You also must specify a plugin, with the different `--plugin` parameter forms being:
   * `name`: The directory name where the plugin contents exist. This must be an existing directory under the `--plugins_dir` path (see below for more info).
   * `url`: A URL starting with https:// or git://, pointing to a valid git repository that is clonable and contains a `plugin.xml` file. The contents of this repository would be copied into the `--plugins_dir`.
   * `path`: A path to a directory containing a valid plugin which includes a `plugin.xml` file. This path's contents will be copied into the `--plugins_dir`.
-* `--uninstall`: Uninstalls an already-`--install`'ed plugin from a cordova project
+* `--uninstall`: Uninstalls an already-`--install`'ed plugin from a cordova project. Specify the plugin ID.
 
 Other parameters: 
 

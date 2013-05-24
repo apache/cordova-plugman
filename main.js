@@ -81,7 +81,7 @@ function printUsage() {
     platforms = known_opts.platform.join('|');
     console.log('Usage\n---------');
     console.log('Install a plugin (will fetch if cannot be found):\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --plugin <name|path|url> [--www <directory>] [--plugins_dir <directory>] [--variable <name>=<value>]\n');
-    console.log('Uninstall a plugin:\n\t' + package.name + ' --uninstall --platform <'+ platforms +'> --project <directory> --plugin <name> [--www <directory>] [--plugins_dir <directory>]\n');
+    console.log('Uninstall a plugin:\n\t' + package.name + ' --uninstall --platform <'+ platforms +'> --project <directory> --plugin <id> [--www <directory>] [--plugins_dir <directory>]\n');
     console.log('\n\t--plugins_dir defaults to <project>/cordova/plugins, but can be any directory containing a subdirectory for each plugin');
     console.log('\n\t--www defaults to the project\'s www folder, but can be any directory where web assets should be installed into');
 }
