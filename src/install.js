@@ -9,7 +9,8 @@ var path = require('path'),
     config_changes = require('./util/config-changes'),
     platform_modules = require('./platforms');
 
-module.exports = function installPlugin(platform, project_dir, id, plugins_dir, subdir, cli_variables, www_dir, callback) {
+// possible options: subdir, cli_variables, www_dir
+module.exports = function installPlugin(platform, project_dir, id, plugins_dir, options, callback) {
     if (!platform_modules[platform]) {
         var err = new Error(platform + " not supported.");
         if (callback) callback(err);
@@ -19,30 +20,33 @@ module.exports = function installPlugin(platform, project_dir, id, plugins_dir, 
 
     var current_stack = new action_stack();
 
-    possiblyFetch(current_stack, platform, project_dir, id, plugins_dir, subdir, cli_variables, www_dir, undefined /* git_ref */, true, callback);
+    options.is_top_level = true;
+    possiblyFetch(current_stack, platform, project_dir, id, plugins_dir, options, callback);
 };
 
-function possiblyFetch(actions, platform, project_dir, id, plugins_dir, subdir, cli_variables, www_dir, git_ref, is_top_level, callback) {
+// possible options: subdir, cli_variables, www_dir, git_ref, is_top_level
+function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options, callback) {
     var plugin_dir = path.join(plugins_dir, id);
 
     // Check that the plugin has already been fetched.
     if (!fs.existsSync(plugin_dir)) {
         // if plugin doesnt exist, use fetch to get it.
         // TODO: Actual value for git_ref.
-        require('../plugman').fetch(id, plugins_dir, false, '.', git_ref, function(err, plugin_dir) {
+        require('../plugman').fetch(id, plugins_dir, false, '.', options.git_ref, function(err, plugin_dir) {
             if (err) {
                 callback(err);
             } else {
                 // update ref to plugin_dir after successful fetch, via fetch callback
-                runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, is_top_level, callback);
+                runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, options, callback);
             }
         });
     } else {
-        runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, is_top_level, callback);
+        runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, options, callback);
     }
 }
 
-function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, is_top_level, callback) {
+// possible options: cli_variables, www_dir, is_top_level
+function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, options, callback) {
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , xml_text     = fs.readFileSync(xml_path, 'utf-8')
       , plugin_et    = new et.ElementTree(et.XML(xml_text))
@@ -109,10 +113,11 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, cli
     var missing_vars = [];
     prefs.forEach(function (pref) {
         var key = pref.attrib["name"].toUpperCase();
-        if (cli_variables[key] == undefined)
+        options.cli_variables = options.cli_variables || {};
+        if (options.cli_variables[key] == undefined)
             missing_vars.push(key)
         else
-            filtered_variables[key] = cli_variables[key]
+            filtered_variables[key] = options.cli_variables[key]
     });
     if (missing_vars.length > 0) {
         var err = new Error('Variable(s) missing: ' + missing_vars.join(", "));
@@ -125,7 +130,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, cli
     var dependencies = plugin_et.findall('dependency');
     if (dependencies && dependencies.length) {
         var end = n(dependencies.length, function() {
-            handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, is_top_level, callback);
+            handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, options.www_dir, options.is_top_level, callback);
         });
         dependencies.forEach(function(dep) {
             var dep_plugin_id = dep.attrib.id;
@@ -138,10 +143,22 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, cli
             var dep_plugin_dir = path.join(plugins_dir, dep_plugin_id);
             if (fs.existsSync(dep_plugin_dir)) {
                 console.log('Dependent plugin ' + dep_plugin_id + ' already fetched, using that version.');
-                runInstall(actions, platform, project_dir, dep_plugin_dir, plugins_dir, filtered_variables, www_dir, false, end);
+                var opts = {
+                    cli_variables: filtered_variables,
+                    www_dir: options.www_dir,
+                    is_top_level: false
+                };
+                runInstall(actions, platform, project_dir, dep_plugin_dir, plugins_dir, opts, end);
             } else {
                 console.log('Dependent plugin ' + dep_plugin_id + ' not fetched, retrieving then installing.');
-                possiblyFetch(actions, platform, project_dir, dep_url, plugins_dir, dep_subdir, filtered_variables, www_dir, dep_git_ref, false, function(err) {
+                var opts = {
+                    cli_variables: filtered_variables,
+                    www_dir: options.www_dir,
+                    is_top_level: false,
+                    git_ref: dep_git_ref
+                };
+
+                possiblyFetch(actions, platform, project_dir, dep_url, plugins_dir, opts, function(err) {
                     if (err) {
                         if (callback) callback(err);
                         else throw err;
@@ -150,7 +167,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, cli
             }
         });
     } else {
-        handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, is_top_level, callback);
+        handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, options.www_dir, options.is_top_level, callback);
     }
 }
 

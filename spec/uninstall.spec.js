@@ -41,7 +41,7 @@ describe('uninstall', function() {
 
     describe('success', function() {
         beforeEach(function() {
-            install('android', temp, dummyplugin, plugins_dir, '.', {});
+            install('android', temp, dummyplugin, plugins_dir, {});
         });
         it('should properly uninstall assets', function() {
             var s = spyOn(common, 'removeFile').andCallThrough();
@@ -87,7 +87,7 @@ describe('uninstall', function() {
                 shell.cp('-rf', dep_a, plugins_dir);
                 shell.cp('-rf', dep_d, plugins_dir);
                 shell.cp('-rf', dep_c, plugins_dir);
-                install('android', temp, 'A', plugins_dir, '.', {});
+                install('android', temp, 'A', plugins_dir, {});
                 var spy = spyOn(actions.prototype, 'process').andCallThrough();
                 uninstall('android', temp, 'A', plugins_dir, {});
                 expect(spy.calls.length).toEqual(3);
@@ -99,8 +99,8 @@ describe('uninstall', function() {
                 shell.cp('-rf', dep_d, plugins_dir);
                 shell.cp('-rf', dep_c, plugins_dir);
                 shell.cp('-rf', dep_e, plugins_dir);
-                install('android', temp, 'A', plugins_dir, '.', {});
-                install('android', temp, 'B', plugins_dir, '.', {});
+                install('android', temp, 'A', plugins_dir, {});
+                install('android', temp, 'B', plugins_dir, {});
                 var spy = spyOn(actions.prototype, 'process').andCallThrough();
                 uninstall('android', temp, 'A', plugins_dir, {});
                 expect(spy.calls.length).toEqual(2);
