@@ -9,7 +9,8 @@ var path = require('path'),
     underscore = require('underscore'),
     platform_modules = require('./platforms');
 
-module.exports = function uninstallPlugin(platform, project_dir, id, plugins_dir, cli_variables, www_dir, callback) {
+// possible options: cli_variables, www_dir
+module.exports = function uninstallPlugin(platform, project_dir, id, plugins_dir, options, callback) {
     if (!platform_modules[platform]) {
         var err = new Error(platform + " not supported.");
         if (callback) callback(err);
@@ -28,15 +29,18 @@ module.exports = function uninstallPlugin(platform, project_dir, id, plugins_dir
 
     var current_stack = new action_stack();
 
-    runUninstall(current_stack, platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, true, callback);
+    options.is_top_level = true;
+    runUninstall(current_stack, platform, project_dir, plugin_dir, plugins_dir, options, callback);
 };
 
-function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, cli_variables, www_dir, is_top_level, callback) {
+// possible options: cli_variables, www_dir, is_top_level
+function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, options, callback) {
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , xml_text     = fs.readFileSync(xml_path, 'utf-8')
       , plugin_et    = new et.ElementTree(et.XML(xml_text))
     var name         = plugin_et.findall('name').text;
     var plugin_id    = plugin_et._root.attrib['id'];
+    options = options || {};
 
     var dependency_info = dependencies.generate_dependency_info(plugins_dir, platform);
     var graph = dependency_info.graph;
@@ -47,7 +51,7 @@ function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, c
     tlps.forEach(function(tlp) {
         if (tlp != plugin_id) {
             var ds = graph.getChain(tlp);
-            if (is_top_level && ds.indexOf(plugin_id) > -1) {
+            if (options.is_top_level && ds.indexOf(plugin_id) > -1) {
                 var err = new Error('Another top-level plugin (' + tlp + ') relies on plugin ' + plugin_id + ', therefore aborting uninstallation.');
                 if (callback) callback(err);
                 else throw err;
@@ -62,15 +66,20 @@ function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, c
     var danglers = underscore.difference.apply(null, diff_arr);
     if (dependents.length && danglers && danglers.length) {
         var end = n(danglers.length, function() {
-            handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, www_dir, plugins_dir, plugin_dir, is_top_level, callback);
+            handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, options.www_dir, plugins_dir, plugin_dir, options.is_top_level, callback);
         });
         danglers.forEach(function(dangler) {
             var dependent_path = path.join(plugins_dir, dangler);
-            runUninstall(actions, platform, project_dir, dependent_path, plugins_dir, cli_variables, www_dir, false /* TODO: should this "is_top_level" param be false for dependents? */, end);
+            var opts = {
+                www_dir: options.www_dir,
+                cli_variables: options.cli_variables,
+                is_top_level: false /* TODO: should this "is_top_level" param be false for dependents? */
+            };
+            runUninstall(actions, platform, project_dir, dependent_path, plugins_dir, opts, end);
         });
     } else {
         // this plugin can get axed by itself, gogo!
-        handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, www_dir, plugins_dir, plugin_dir, is_top_level, callback);
+        handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, options.www_dir, plugins_dir, plugin_dir, options.is_top_level, callback);
     }
 }
 

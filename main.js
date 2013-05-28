@@ -63,7 +63,7 @@ else if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
     printUsage();
 }
 else if (cli_opts.uninstall) {
-    plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, {}, cli_opts.www);
+    plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, { www_dir: cli_opts.www });
 }
 else {
     var cli_variables = {}
