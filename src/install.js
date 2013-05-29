@@ -87,9 +87,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
             
             var versionScript = shell.exec(versionPath, {silent: true});
             if(versionScript.code>0){
-                var err = new Error('File missing: ' + versionPath);
-                if (callback) callback(err);
-                else throw err;           
+                console.log('Warning: cordova version not detected. installing anyway.');      
             }else{
                 // clean only versionScript.output since semver.clean strips out 
                 // the gt and lt operators
