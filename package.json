@@ -30,7 +30,7 @@
   },
   "bin" : { "plugman" : "./main.js" },
   "scripts": {
-    "test": "node node_modules/jasmine-node/bin/jasmine-node --color spec"
+    "test": "jasmine-node --color spec"
   },
   "contributors":[
     {
