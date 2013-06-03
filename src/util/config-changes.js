@@ -131,9 +131,10 @@ module.exports = {
         });
         return munge;
     },
-    remove_plugin_changes:function(platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_decrement) {
+
+    remove_plugin_changes:function(platform, project_dir, plugins_dir, plugin_name, plugin_id, is_top_level, should_decrement) {
         var platform_config = module.exports.get_platform_json(plugins_dir, platform);
-        var plugin_dir = path.join(plugins_dir, plugin_id);
+        var plugin_dir = path.join(plugins_dir, plugin_name);
         var plugin_vars = (is_top_level ? platform_config.installed_plugins[plugin_id] : platform_config.dependent_plugins[plugin_id]);
 
         // get config munge, aka how did this plugin change various config files
@@ -268,7 +269,6 @@ module.exports = {
                                 if (path.extname(filepath) == '.xml') {
                                     var xml_to_graft = [et.XML(xml_child)];
                                     var doc = xml_helpers.parseElementtreeSync(filepath);
-                                    console.log(filepath, selector, xml_child);
                                     if (xml_helpers.graftXML(doc, xml_to_graft, selector)) {
                                         // were good, write out the file!
                                         fs.writeFileSync(filepath, doc.write({indent: 4}), 'utf-8');
@@ -313,7 +313,7 @@ module.exports = {
 
         // Uninstallation first
         platform_config.prepare_queue.uninstalled.forEach(function(u) {
-            module.exports.remove_plugin_changes(platform, project_dir, plugins_dir, u.plugin, u.vars, u.topLevel, true);
+            module.exports.remove_plugin_changes(platform, project_dir, plugins_dir, u.plugin, u.id, u.topLevel, true);
         });
 
         // Now handle installation
