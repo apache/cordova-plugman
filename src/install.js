@@ -31,7 +31,6 @@ function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options,
     // Check that the plugin has already been fetched.
     if (!fs.existsSync(plugin_dir)) {
         // if plugin doesnt exist, use fetch to get it.
-        // TODO: Actual value for git_ref.
         require('../plugman').fetch(id, plugins_dir, { link: false, subdir: '.', git_ref: options.git_ref }, function(err, plugin_dir) {
             if (err) {
                 callback(err);
@@ -140,6 +139,48 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
             if (dep_subdir) {
                 dep_subdir = path.join.apply(null, dep_subdir.split('/'));
             }
+
+            // Handle relative dependency paths by expanding and resolving them.
+            // The easy case of relative paths is to have a URL of '.' and a different subdir.
+            // TODO: Implement the hard case of different repo URLs, rather than the special case of
+            // same-repo-different-subdir.
+            if (dep_url == '.') {
+                // Look up the parent plugin's fetch metadata and determine the correct URL.
+                var fetchdata = require('./util/metadata').get_fetch_metadata(plugin_dir);
+                
+                if (!fetchdata || !(fetchdata.source && fetchdata.source.type)) {
+                    var err = new Error('No fetch metadata found for ' + plugin_id + '. Cannot install relative dependencies.');
+                    if (callback) callback(err);
+                    throw err;
+                    return;
+                }
+
+                // Now there are two cases here: local directory, and git URL.
+                if (fetchdata.source.type === 'local') {
+                    dep_url = fetchdata.source.path;
+
+                    var old_pwd = shell.pwd();
+                    shell.cd(dep_url);
+                    var result = shell.exec('git rev-parse --show-toplevel', { silent:true, async:false});
+                    if (result.code === 128) {
+                        var err = new Error('Error: Plugin ' + plugin_id + ' is not in git repository. All plugins must be in a git repository.');
+                        if (callback) callback(err);
+                        else throw err;
+                        return;
+                    } else if(result.code > 0) {
+                        var err = new Error('Error trying to locate git repository for plugin.');
+                        if (callback) callback(err);
+                        else throw err;
+                        return;
+                    }
+
+                    var dep_url = path.join(result.output.trim(), dep_subdir);
+                    shell.cd(old_pwd);
+                } else if (fetchdata.source.type === 'git') {
+                    dep_url = fetchdata.source.url;
+                }
+            }
+
             var dep_plugin_dir = path.join(plugins_dir, dep_plugin_id);
             if (fs.existsSync(dep_plugin_dir)) {
                 console.log('Dependent plugin ' + dep_plugin_id + ' already fetched, using that version.');
@@ -155,6 +196,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
                     cli_variables: filtered_variables,
                     www_dir: options.www_dir,
                     is_top_level: false,
+                    subdir: dep_subdir,
                     git_ref: dep_git_ref
                 };
 
