@@ -131,117 +131,23 @@ module.exports = {
         });
         return munge;
     },
-    process:function(plugins_dir, project_dir, platform) {
-        checkPlatform(platform);
-
+    remove_plugin_changes:function(platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_decrement) {
         var platform_config = module.exports.get_platform_json(plugins_dir, platform);
-        // Uninstallation first
-        platform_config.prepare_queue.uninstalled.forEach(function(u) {
-            var plugin_dir = path.join(plugins_dir, u.plugin);
-            var plugin_id = u.id;
-            var plugin_vars = (u.topLevel ? platform_config.installed_plugins[plugin_id] : platform_config.dependent_plugins[plugin_id]);
+        var plugin_dir = path.join(plugins_dir, plugin_id);
+        var plugin_vars = (is_top_level ? platform_config.installed_plugins[plugin_id] : platform_config.dependent_plugins[plugin_id]);
 
-            // get config munge, aka how did this plugin change various config files
-            var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, platform, project_dir, plugin_vars);
-            // global munge looks at all plugins' changes to config files
-            var global_munge = platform_config.config_munge;
-            
-            // Traverse config munge and decrement global munge
-            Object.keys(config_munge).forEach(function(file) {
-                if (file == 'plugins-plist' && platform == 'ios') {
-                    if (global_munge[file]) {
-                        Object.keys(config_munge[file]).forEach(function(key) {
-                            if (global_munge[file][key]) {
-                                // prune from old plist if exists
-                                var plistfile = glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist'));
-                                if (plistfile.length > 0) {
-                                    plistfile = plistfile[0];
-                                    // determine if this is a binary or ascii plist and choose the parser
-                                    // this is temporary until binary support is added to node-plist
-                                    var pl = (isBinaryPlist(plistfile) ? bplist : plist);
-                                    var plistObj = pl.parseFileSync(plistfile);
-                                    delete plistObj.Plugins[key];
-                                    fs.writeFileSync(plistfile, plist.build(plistObj));
-                                }
-                                delete global_munge[file][key];
-                            }
-                        });
-                    }
-                } else if (global_munge[file]) {
-                    Object.keys(config_munge[file]).forEach(function(selector) {
-                        if (global_munge[file][selector]) {
-                            Object.keys(config_munge[file][selector]).forEach(function(xml_child) {
-                                if (global_munge[file][selector][xml_child]) {
-                                    global_munge[file][selector][xml_child] -= 1;
-                                    if (global_munge[file][selector][xml_child] === 0) {
-                                        // this xml child is no longer necessary, prune it
-                                        // config.xml referenced in ios config changes refer to the project's config.xml, which we need to glob for.
-                                        var filepath = resolveConfigFilePath(project_dir, platform, file);
-                                        if (fs.existsSync(filepath)) {
-                                            if (path.extname(filepath) == '.xml') {
-                                                var xml_to_prune = [et.XML(xml_child)];
-                                                var doc = xml_helpers.parseElementtreeSync(filepath);
-                                                if (xml_helpers.pruneXML(doc, xml_to_prune, selector)) {
-                                                    // were good, write out the file!
-                                                    fs.writeFileSync(filepath, doc.write({indent: 4}), 'utf-8');
-                                                } else {
-                                                    // uh oh
-                                                    throw new Error('pruning xml at selector "' + selector + '" from "' + filepath + '" during config uninstall went bad :(');
-                                                }
-                                            } else {
-                                                // plist file
-                                                var pl = (isBinaryPlist(filepath) ? bplist : plist);
-                                                var plistObj = pl.parseFileSync(filepath);
-                                                if (plist_helpers.prunePLIST(plistObj, xml_child, selector)) {
-                                                    fs.writeFileSync(filepath, plist.build(plistObj));
-                                                } else {
-                                                    throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
-                                                }
-                                            }
-                                        }
-                                        delete global_munge[file][selector][xml_child];
-                                    }
-                                }
-                            });
-                        }
-                    });
-                }
-            });
-            platform_config.config_munge = global_munge;
-
-            // Remove from installed_plugins
-            if (u.topLevel) {
-                delete platform_config.installed_plugins[plugin_id]
-            } else {
-                delete platform_config.dependent_plugins[plugin_id]
-            }
-        });
-
-        // Empty out uninstalled queue.
-        platform_config.prepare_queue.uninstalled = [];
-
-        // Now handle instalation
-        platform_config.prepare_queue.installed.forEach(function(u) {
-            var plugin_dir = path.join(plugins_dir, u.plugin);
-            var plugin_vars = u.vars;
-            var plugin_id = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'), 'utf-8')._root.attrib['id'];
-
-            // get config munge, aka how should this plugin change various config files
-            var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, platform, project_dir, plugin_vars);
-            // global munge looks at all plugins' changes to config files
-            var global_munge = platform_config.config_munge;
-            
-            // Traverse config munge and decrement global munge
-            Object.keys(config_munge).forEach(function(file) {
-                if (!global_munge[file]) {
-                    global_munge[file] = {};
-                }
-                Object.keys(config_munge[file]).forEach(function(selector) {
-                    if (file == 'plugins-plist' && platform == 'ios') {
-                        var key = selector;
-                        if (!global_munge[file][key]) {
-                            // this key does not exist, so add it to plist
-                            global_munge[file][key] = config_munge[file][key];
+        // get config munge, aka how did this plugin change various config files
+        var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, platform, project_dir, plugin_vars);
+        // global munge looks at all plugins' changes to config files
+        var global_munge = platform_config.config_munge;
+        
+        // Traverse config munge and decrement global munge
+        Object.keys(config_munge).forEach(function(file) {
+            if (file == 'plugins-plist' && platform == 'ios') {
+                if (global_munge[file]) {
+                    Object.keys(config_munge[file]).forEach(function(key) {
+                        if (global_munge[file][key]) {
+                            // prune from old plist if exists
                             var plistfile = glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist'));
                             if (plistfile.length > 0) {
                                 plistfile = plistfile[0];
@@ -249,64 +155,178 @@ module.exports = {
                                 // this is temporary until binary support is added to node-plist
                                 var pl = (isBinaryPlist(plistfile) ? bplist : plist);
                                 var plistObj = pl.parseFileSync(plistfile);
-                                plistObj.Plugins[key] = config_munge[file][key];
+                                delete plistObj.Plugins[key];
                                 fs.writeFileSync(plistfile, plist.build(plistObj));
                             }
+                            delete global_munge[file][key];
                         }
-                    } else {
-                        if (!global_munge[file][selector]) {
-                            global_munge[file][selector] = {};
-                        }
+                    });
+                }
+            } else if (global_munge[file]) {
+                Object.keys(config_munge[file]).forEach(function(selector) {
+                    if (global_munge[file][selector]) {
                         Object.keys(config_munge[file][selector]).forEach(function(xml_child) {
-                            if (!global_munge[file][selector][xml_child]) {
-                                global_munge[file][selector][xml_child] = 0;
-                            }
-                            global_munge[file][selector][xml_child] += 1;
-                            if (global_munge[file][selector][xml_child] == 1) {
-                                // this xml child is new, graft it (only if config file exists)
-                                // config file may be in a place not exactly specified in the target
-                                var filepath = resolveConfigFilePath(project_dir, platform, file);
-                                if (fs.existsSync(filepath)) {
-                                    // look at ext and do proper config change based on file type
-                                    if (path.extname(filepath) == '.xml') {
-                                        var xml_to_graft = [et.XML(xml_child)];
-                                        var doc = xml_helpers.parseElementtreeSync(filepath);
-                                        if (xml_helpers.graftXML(doc, xml_to_graft, selector)) {
-                                            // were good, write out the file!
-                                            fs.writeFileSync(filepath, doc.write({indent: 4}), 'utf-8');
+                            if (global_munge[file][selector][xml_child]) {
+                                if (should_decrement) {
+                                    global_munge[file][selector][xml_child] -= 1;
+                                }
+                                if (global_munge[file][selector][xml_child] === 0) {
+                                    // this xml child is no longer necessary, prune it
+                                    // config.xml referenced in ios config changes refer to the project's config.xml, which we need to glob for.
+                                    var filepath = resolveConfigFilePath(project_dir, platform, file);
+                                    if (fs.existsSync(filepath)) {
+                                        if (path.extname(filepath) == '.xml') {
+                                            var xml_to_prune = [et.XML(xml_child)];
+                                            var doc = xml_helpers.parseElementtreeSync(filepath);
+                                            if (xml_helpers.pruneXML(doc, xml_to_prune, selector)) {
+                                                // were good, write out the file!
+                                                fs.writeFileSync(filepath, doc.write({indent: 4}), 'utf-8');
+                                            } else {
+                                                // uh oh
+                                                throw new Error('pruning xml at selector "' + selector + '" from "' + filepath + '" during config uninstall went bad :(');
+                                            }
                                         } else {
-                                            // uh oh
-                                            throw new Error('grafting xml at selector "' + selector + '" from "' + filepath + '" during config install went bad :(');
-                                        }
-                                    } else {
-                                        // plist file
-                                        var pl = (isBinaryPlist(filepath) ? bplist : plist);
-                                        var plistObj = pl.parseFileSync(filepath);
-                                        if (plist_helpers.graftPLIST(plistObj, xml_child, selector)) {
-                                            fs.writeFileSync(filepath, plist.build(plistObj));
-                                        } else {
-                                            throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
+                                            // plist file
+                                            var pl = (isBinaryPlist(filepath) ? bplist : plist);
+                                            var plistObj = pl.parseFileSync(filepath);
+                                            if (plist_helpers.prunePLIST(plistObj, xml_child, selector)) {
+                                                fs.writeFileSync(filepath, plist.build(plistObj));
+                                            } else {
+                                                throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
+                                            }
                                         }
                                     }
+                                    delete global_munge[file][selector][xml_child];
                                 }
                             }
                         });
                     }
                 });
-            });
-            platform_config.config_munge = global_munge;
-
-            // Move to installed_plugins if it is a top-level plugin
-            if (u.topLevel) {
-                platform_config.installed_plugins[plugin_id] = plugin_vars || {};
-            } else {
-                platform_config.dependent_plugins[plugin_id] = plugin_vars || {};
             }
         });
+        platform_config.config_munge = global_munge;
 
+        // Remove from installed_plugins
+        if (is_top_level) {
+            delete platform_config.installed_plugins[plugin_id]
+        } else {
+            delete platform_config.dependent_plugins[plugin_id]
+        }
+
+        // save
+        module.exports.save_platform_json(platform_config, plugins_dir, platform);
+    },
+    add_plugin_changes:function(platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment) {
+        var platform_config = module.exports.get_platform_json(plugins_dir, platform);
+        var plugin_dir = path.join(plugins_dir, plugin_id);
+        plugin_id = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'), 'utf-8')._root.attrib['id'];
+
+        // get config munge, aka how should this plugin change various config files
+        var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, platform, project_dir, plugin_vars);
+        // global munge looks at all plugins' changes to config files
+        var global_munge = platform_config.config_munge;
+        
+        // Traverse config munge and decrement global munge
+        Object.keys(config_munge).forEach(function(file) {
+            if (!global_munge[file]) {
+                global_munge[file] = {};
+            }
+            Object.keys(config_munge[file]).forEach(function(selector) {
+                if (file == 'plugins-plist' && platform == 'ios') {
+                    var key = selector;
+                    if (!global_munge[file][key]) {
+                        // this key does not exist, so add it to plist
+                        global_munge[file][key] = config_munge[file][key];
+                        var plistfile = glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist'));
+                        if (plistfile.length > 0) {
+                            plistfile = plistfile[0];
+                            // determine if this is a binary or ascii plist and choose the parser
+                            // this is temporary until binary support is added to node-plist
+                            var pl = (isBinaryPlist(plistfile) ? bplist : plist);
+                            var plistObj = pl.parseFileSync(plistfile);
+                            plistObj.Plugins[key] = config_munge[file][key];
+                            fs.writeFileSync(plistfile, plist.build(plistObj));
+                        }
+                    }
+                } else {
+                    if (!global_munge[file][selector]) {
+                        global_munge[file][selector] = {};
+                    }
+                    Object.keys(config_munge[file][selector]).forEach(function(xml_child) {
+                        if (!global_munge[file][selector][xml_child]) {
+                            global_munge[file][selector][xml_child] = 0;
+                        }
+                        if (should_increment) {
+                            global_munge[file][selector][xml_child] += 1;
+                        }
+                        if (global_munge[file][selector][xml_child] == 1) {
+                            // this xml child is new, graft it (only if config file exists)
+                            // config file may be in a place not exactly specified in the target
+                            var filepath = resolveConfigFilePath(project_dir, platform, file);
+                            if (fs.existsSync(filepath)) {
+                                // look at ext and do proper config change based on file type
+                                if (path.extname(filepath) == '.xml') {
+                                    var xml_to_graft = [et.XML(xml_child)];
+                                    var doc = xml_helpers.parseElementtreeSync(filepath);
+                                    console.log(filepath, selector, xml_child);
+                                    if (xml_helpers.graftXML(doc, xml_to_graft, selector)) {
+                                        // were good, write out the file!
+                                        fs.writeFileSync(filepath, doc.write({indent: 4}), 'utf-8');
+                                    } else {
+                                        // uh oh
+                                        throw new Error('grafting xml at selector "' + selector + '" from "' + filepath + '" during config install went bad :(');
+                                    }
+                                } else {
+                                    // plist file
+                                    var pl = (isBinaryPlist(filepath) ? bplist : plist);
+                                    var plistObj = pl.parseFileSync(filepath);
+                                    if (plist_helpers.graftPLIST(plistObj, xml_child, selector)) {
+                                        fs.writeFileSync(filepath, plist.build(plistObj));
+                                    } else {
+                                        throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
+                                    }
+                                }
+                            } else {
+                                // ignore if file doesnt exist
+                            }
+                        }
+                    });
+                }
+            });
+        });
+        platform_config.config_munge = global_munge;
+
+        // Move to installed_plugins if it is a top-level plugin
+        if (is_top_level) {
+            platform_config.installed_plugins[plugin_id] = plugin_vars || {};
+        } else {
+            platform_config.dependent_plugins[plugin_id] = plugin_vars || {};
+        }
+
+        // save
+        module.exports.save_platform_json(platform_config, plugins_dir, platform);
+    },
+    process:function(plugins_dir, project_dir, platform) {
+        checkPlatform(platform);
+
+        var platform_config = module.exports.get_platform_json(plugins_dir, platform);
+
+        // Uninstallation first
+        platform_config.prepare_queue.uninstalled.forEach(function(u) {
+            module.exports.remove_plugin_changes(platform, project_dir, plugins_dir, u.plugin, u.vars, u.topLevel, true);
+        });
+
+        // Now handle installation
+        platform_config.prepare_queue.installed.forEach(function(u) {
+            module.exports.add_plugin_changes(platform, project_dir, plugins_dir, u.plugin, u.vars, u.topLevel, true);
+        });
+        
+        platform_config = module.exports.get_platform_json(plugins_dir, platform);
+
+        // Empty out uninstalled queue.
+        platform_config.prepare_queue.uninstalled = [];
         // Empty out installed queue.
         platform_config.prepare_queue.installed = [];
-
         // save
         module.exports.save_platform_json(platform_config, plugins_dir, platform);
     }
@@ -331,8 +351,12 @@ function resolveConfigFilePath(project_dir, platform, file) {
     } else {
         // special-case config.xml target that is just "config.xml". this should be resolved to the real location of the file.
         if (file == 'config.xml') {
-            var matches = glob.sync(path.join(project_dir, '**', 'config.xml'));
-            if (matches.length) filepath = matches[0];
+            if (platform == 'android') {
+                filepath = path.join(project_dir, 'res', 'xml', 'config.xml');
+            } else {
+                var matches = glob.sync(path.join(project_dir, '**', 'config.xml'));
+                if (matches.length) filepath = matches[0];
+            }
         }
     }
     return filepath;
