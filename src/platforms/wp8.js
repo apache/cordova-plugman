@@ -1,5 +1,4 @@
 /*
-/*
  *
  * Copyright 2013 Jesse MacFadyen
  *
@@ -18,26 +17,13 @@
  *
 */
 
-/*
-node plugman --platform wp8 --project '/c//users/jesse/documents/visual studio 2012/Projects/TestPlugin7/' --plugin '.\test\plugins\ChildBrowser\'
-
-TODO:  ( Apr. 16, 2013 - jm )
-- Update WMAppManifest.xml with any new required capabilities 
-- add references for any new libraries required by plugin
-
-
-
-*/
-
-var fs = require('fs'),
+var common = require('./common'),
     path = require('path'),
     glob = require('glob'),
-    shell = require('shelljs'),
-    et = require('elementtree'),
-    xml_helpers = require('../util/xml-helpers'),
-    getConfigChanges = require('../util/config-changes'),
-    assetsDir = 'www'; // relative path to project's web assets
+    csproj = require('../util/csproj');
+    xml_helpers = require('../util/xml-helpers');
 
+/*
 var unix_projPath,  //  for use with glob
     projectFilename,//  first csproj returned by glob unix_projPath
     projPath,       //  full path to the project file, including file name
@@ -47,31 +33,6 @@ var unix_projPath,  //  for use with glob
     sourceFiles,    //  ./source-file inside platform
     hosts,          //  ./access inside root
     projectChanges; //  <config-file target=".csproj" parent=".">, inside platform
-
-
-
-function copyFileSync(srcPath, destPath) {
-
-  var stats = fs.statSync(srcPath);
-  if(stats.isDirectory()) {
-     shell.mkdir('-p', destPath);
-     // without the added slash at the end, we will get an extra folder inside destination
-     shell.cp('-r', srcPath + "/" , destPath);
-  }
-  else if(fs.existsSync(srcPath)) {
-    shell.cp(srcPath, destPath);
-  }
-  else {
-    console.log("File does not exist :: " + srcPath);
-    return;
-  }
-
-  var msg = shell.error();
-  if(msg) {
-    console.log("msg" + msg);
-    throw { name: "ShellError", message: msg};
-  }
-}    
 
 function initPaths(project_dir, plugin_dir, plugin_et, variables) {
 
@@ -85,27 +46,6 @@ function initPaths(project_dir, plugin_dir, plugin_et, variables) {
     projectChanges = platformTag.findall('./config-file[@target=".csproj"]');
     hosts = plugin_et.findall('./access');
 }
-
-function install(project_dir, plugin_dir, plugin_et, variables) {
-
-  // move asset files
-  assets && assets.forEach(function (asset) {
-      var srcPath = path.resolve(plugin_dir, asset.attrib['src']);
-      var targetPath = path.resolve(project_dir, assetsDir,  asset.attrib['target']);
-      copyFileSync(srcPath, targetPath);
-  });
-
-  // move source files
-  sourceFiles && sourceFiles.forEach(function (sourceFile) {
-      var srcFilePath = path.resolve(plugin_dir,  sourceFile.attrib['src']);
-      var destDir = path.resolve(project_dir, sourceFile.attrib['target-dir']);
-      var destFilePath = path.resolve(destDir, path.basename(sourceFile.attrib['src']));
-      copyFileSync(srcFilePath, destFilePath);
-  });
-
-  updateConfigXml("install", configFilePath, plugin_et);
-
-  et.register_namespace("csproj", "http://schemas.microsoft.com/developer/msbuild/2003");
   projectChanges && projectChanges.forEach(function (configNode) {
 
     var docStr = fs.readFileSync(projPath,"utf8");
@@ -127,71 +67,6 @@ function install(project_dir, plugin_dir, plugin_et, variables) {
     // save it, and get out
     fs.writeFileSync(projPath, newDocStr);
   });
-}
-
-function updateConfigXml(action, config_path, plugin_et) {
-
-    var hosts = plugin_et.findall('./access');
-    var platformTag = plugin_et.find('./platform[@name="wp8"]');
-    var configChanges = getConfigChanges(platformTag);   
-    var base_config_path = path.basename(config_path);
-        // add whitelist hosts
-    var root = et.Element("config-file");
-        root.attrib['parent'] = '.';
-      
-    hosts && hosts.forEach( function (tag) {
-      root.append(tag);
-    });
-
-    if (root.len()) {
-      var changeList = configChanges[path.basename(config_path)];
-      // if changeList then add to it, otherwise create it.
-      if(changeList) {
-        changeList.push(root);
-      }
-      else {
-        configChanges[path.basename(config_path)] = [root]
-      }
-    }  
-
-    if (configChanges[path.basename(config_path)]) {
-
-          // edit configuration files
-      var xmlDoc = xml_helpers.parseElementtreeSync(config_path)
-      configChanges[base_config_path].forEach( function (configNode) {
-            var selector = configNode.attrib["parent"],
-                children = configNode.findall('*');
-            if( action == 'install') {
-                if (!xml_helpers.graftXML(xmlDoc, children, selector)) {
-                    throw new Error('failed to add children to ' + selector + ' in ' + config_path);
-                }
-            } else {
-                if (!xml_helpers.pruneXML(xmlDoc, children, selector)) {
-                    throw new Error('failed to remove children from ' + selector + ' in ' + config_path);
-                }
-            }
-      });
-    }
-
-    fs.writeFileSync(config_path, xmlDoc.write({indent: 4}));
-}
-
-function uninstall(project_dir, plugin_dir, plugin_et, variables) {
-
-   assets && assets.forEach(function (asset) {
-      var targetPath = path.resolve(project_dir, assetsDir,  asset.attrib['target']);
-      shell.rm('-rf', targetPath);
-   });
-
-   sourceFiles && sourceFiles.forEach(function (sourceFile) {
-      var destDir = path.resolve(project_dir, sourceFile.attrib['target-dir']);
-      var destFilePath = path.resolve(destDir, path.basename(sourceFile.attrib['src']));
-      shell.rm('-rf', destFilePath);
-   });
-
-   updateConfigXml("uninstall", configFilePath, plugin_et);
-
-   et.register_namespace("csproj", "http://schemas.microsoft.com/developer/msbuild/2003");
 
    projectChanges && projectChanges.forEach(function (configNode) {
 
@@ -217,21 +92,35 @@ function uninstall(project_dir, plugin_dir, plugin_et, variables) {
       fs.writeFileSync(projPath, docStr);
     }
   });
-}
-
-exports.handlePlugin = function (action, project_dir, plugin_dir, plugin_et, variables) {
-    console.log("action = " + action);
-    switch(action) {
-        case 'install' :
-            initPaths(project_dir, plugin_dir, plugin_et, variables);
-            install(project_dir, plugin_dir, plugin_et, variables);
-            break;
-        case 'uninstall' :
-            initPaths(project_dir, plugin_dir, plugin_et, variables);
-            uninstall(project_dir, plugin_dir, plugin_et, variables);
-            break;
-        default :
-          throw 'error unknown action';
-          break;
+*/
+module.exports = {
+    www_dir:function(project_dir) {
+        return path.join(project_dir, 'www');
+    },
+    package_name:function(project_dir) {
+        return xml_helpers.parseElementtreeSync(path.join(project_dir, 'Properties', 'WMAppManifest.xml')).find('App').attrib.ProductID;
+    },
+    parseWP8ProjectFile:function(project_dir) {
+        var project_files = glob.sync('*.csproj', {
+            cwd:project_dir
+        });
+        if (project_files.length === 0) {
+            throw new Error('does not appear to be a Windows Phone project (no .csproj file)');
+        }
+        return new csproj(path.join(project_dir, project_files[0]));
+    },
+    "source-file":{
+        install:function(source_el, plugin_dir, project_dir, plugin_id, project_file) {
+            var dest = path.join('Plugins', plugin_id, source_el.attrib['target-dir'] ? source_el.attrib['target-dir'] : '', path.basename(source_el.attrib['src']));
+            common.copyFile(plugin_dir, source_el.attrib['src'], project_dir, dest);
+            // add reference to this file to csproj.
+            project_file.addSourceFile(dest);
+        },
+        uninstall:function(source_el, project_dir, plugin_id, project_file) {
+            var dest = path.join('Plugins', plugin_id, source_el.attrib['target-dir'] ? source_el.attrib['target-dir'] : '', path.basename(source_el.attrib['src']));
+            common.removeFile(project_dir, dest);
+            // remove reference to this file from csproj.
+            project_file.removeSourceFile(dest);
+        }
     }
-}
+};
