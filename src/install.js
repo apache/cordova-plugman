@@ -88,7 +88,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
             if(engine.attrib["name"].toLowerCase() === "cordova"){
                 var engineVersion = engine.attrib["version"];
                 if(versionScript.code>0){
-                    var err = new Error('File missing: ' + versionPath);
+                    var err = new Error('Failed to identify Cordova version: ' + versionPath + '\n' + versionScript.output);
                     if (callback) callback(err);
                     else throw err;
                 }else{
