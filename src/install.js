@@ -94,7 +94,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
                 }else{
                     // clean only versionScript.output since semver.clean strips out 
                     // the gt and lt operators
-                    if(semver.satisfies(semver.clean(versionScript.output), engineVersion)){
+                    if(versionScript.output.trim() === 'dev' || semver.satisfies(semver.clean(versionScript.output), engineVersion)){
                         // engine ok!
                     
                     }else{
