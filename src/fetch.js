@@ -32,6 +32,7 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options, callback
             plugins.clonePluginGitRepo(plugin_dir, plugins_dir, options.subdir, options.git_ref, function(err, dir) {
                 if (!err) {
                     metadata.save_fetch_metadata(dir, data);
+                    if (callback) callback(null, dir);
                 }
             });
         }
