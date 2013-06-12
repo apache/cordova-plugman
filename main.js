@@ -24,6 +24,7 @@ var path = require('path')
     , package = require(path.join(__dirname, 'package'))
     , nopt = require('nopt')
     , plugins = require('./src/util/plugins')
+    , registry = require('plugman-registry')
     , plugman = require('./plugman');
 
 var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry10', 'wp7', 'wp8' ]
@@ -31,6 +32,10 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry10', 'wp7', 'wp8'
             , 'plugin' : [String, path, url]
             , 'install' : Boolean
             , 'uninstall' : Boolean
+            , 'adduser' : Boolean
+            , 'publish' : path
+            , 'unpublish' : path
+            , 'search' : String
             , 'v' : Boolean
             , 'debug' : Boolean
             , 'plugins': path
@@ -75,6 +80,18 @@ else if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
 }
 else if (cli_opts.uninstall) {
     plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, { www_dir: cli_opts.www });
+}
+else if (cli_opts.adduser) {
+  // TODO adduser
+}
+else if (cli_opts.publish) {
+  // TODO publish
+}
+else if (cli_opts.unpublish) {
+  // TODO unpublish
+}
+else if (cli_opts.search) {
+  // TODO search
 }
 else {
     var cli_variables = {}
