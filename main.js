@@ -33,8 +33,8 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry10', 'wp7', 'wp8'
             , 'install' : Boolean
             , 'uninstall' : Boolean
             , 'adduser' : Boolean
-            , 'publish' : path
-            , 'unpublish' : path
+            , 'publish' : Boolean 
+            , 'unpublish' : Boolean 
             , 'search' : String
             , 'v' : Boolean
             , 'debug' : Boolean
@@ -64,23 +64,42 @@ process.on('uncaughtException', function(error){
 if (cli_opts.v) {
     console.log(package.name + ' version ' + package.version);
 }
-else if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
+else if ((cli_opts.install || cli_opts.uninstall) && (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin)) {
     printUsage();
 }
 else if (cli_opts.uninstall) {
     plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, { www_dir: cli_opts.www });
 }
 else if (cli_opts.adduser) {
-  // TODO adduser
+  registry.use(null, function(err) {
+    registry.adduser(null, function(err) {
+      if(err) return console.log(err);
+      console.log('user added');
+    });
+  });
 }
 else if (cli_opts.publish) {
-  // TODO publish
+  registry.use(null, function(err) {
+    registry.publish([cli_opts.plugin], function(err, d) {
+      if(err) return console.log('Error publishing plugin'); 
+      console.log('plugin published');
+    });
+  });
 }
 else if (cli_opts.unpublish) {
-  // TODO unpublish
+  registry.use(null, function(err) {
+    registry.unpublish([cli_opts.plugin, '--force'], function(err, d) {
+      if(err) return console.log('Error unpublishing plugin'); 
+      console.log('plugin unpublished');
+    });
+  });
 }
 else if (cli_opts.search) {
-  // TODO search
+  registry.use(null, function(err) {
+    registry.search(cli_opts.search.split(','), function(err, d) {
+      if(err) return console.log(err); 
+    });
+  });
 }
 else {
     var cli_variables = {}
@@ -105,5 +124,9 @@ function printUsage() {
     console.log('Install a plugin (will fetch if cannot be found):\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --plugin <name|path|url> [--www <directory>] [--plugins_dir <directory>] [--variable <name>=<value>]\n');
     console.log('Uninstall a plugin:\n\t' + package.name + ' --uninstall --platform <'+ platforms +'> --project <directory> --plugin <id> [--www <directory>] [--plugins_dir <directory>]\n');
     console.log('\n\t--plugins_dir defaults to <project>/cordova/plugins, but can be any directory containing a subdirectory for each plugin');
-    console.log('\n\t--www defaults to the project\'s www folder, but can be any directory where web assets should be installed into');
+    console.log('\n\t--www defaults to the project\'s www folder, but can be any directory where web assets should be installed into\n');
+    console.log('Add a user account to the registry:\n\t' + package.name + ' --adduser\n');
+    console.log('Publish a plugin:\n\t' + package.name + ' --publish --plugin plugin_directory\n');
+    console.log('Unpublish a plugin:\n\t' + package.name + ' --unpublish --plugin plugin_name@version\n');
+    console.log('Search for plugins:\n\t' + package.name + ' --search keyword1,keyword2,...\n');
 }
