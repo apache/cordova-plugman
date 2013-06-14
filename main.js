@@ -33,8 +33,8 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry10', 'wp7', 'wp8'
             , 'install' : Boolean
             , 'uninstall' : Boolean
             , 'adduser' : Boolean
-            , 'publish' : path
-            , 'unpublish' : path
+            , 'publish' : Boolean 
+            , 'unpublish' : Boolean 
             , 'search' : String
             , 'v' : Boolean
             , 'debug' : Boolean
@@ -68,23 +68,42 @@ process.on('uncaughtException', function(error){
 if (cli_opts.v) {
     console.log(package.name + ' version ' + package.version);
 }
-else if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
+else if ((cli_opts.install || cli_opts.uninstall) && (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin)) {
     plugman.help();
 }
 else if (cli_opts.uninstall) {
     plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, { www_dir: cli_opts.www });
 }
 else if (cli_opts.adduser) {
-  // TODO adduser
+  registry.use(null, function(err) {
+    registry.adduser(null, function(err) {
+      if(err) return console.log(err);
+      console.log('user added');
+    });
+  });
 }
 else if (cli_opts.publish) {
-  // TODO publish
+  registry.use(null, function(err) {
+    registry.publish([cli_opts.plugin], function(err, d) {
+      if(err) return console.log('Error publishing plugin'); 
+      console.log('plugin published');
+    });
+  });
 }
 else if (cli_opts.unpublish) {
-  // TODO unpublish
+  registry.use(null, function(err) {
+    registry.unpublish([cli_opts.plugin, '--force'], function(err, d) {
+      if(err) return console.log('Error unpublishing plugin'); 
+      console.log('plugin unpublished');
+    });
+  });
 }
 else if (cli_opts.search) {
-  // TODO search
+  registry.use(null, function(err) {
+    registry.search(cli_opts.search.split(','), function(err, d) {
+      if(err) return console.log(err); 
+    });
+  });
 }
 else {
     var cli_variables = {}
