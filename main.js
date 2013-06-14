@@ -43,12 +43,9 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry10', 'wp7', 'wp8'
         , 'link': Boolean
         , 'variable' : Array
         , 'www': path
-}, shortHands = { 'var' : 'variable' };
-var short_hands = {
-    "v": ["--version"]
-        , "h": ["--help"]
-}
-var cli_opts = nopt(known_opts, short_hands);
+}, shortHands = { 'var' : 'variable', 'v': 'version', 'h': 'help' };
+
+var cli_opts = nopt(known_opts, shortHands);
 
 // Default the plugins_dir to './cordova/plugins'.
 var plugins_dir;
@@ -83,7 +80,7 @@ else if (cli_opts.help) {
     console.log(plugman.help());
 }
 else if ((cli_opts.install || cli_opts.uninstall || cli_opts.argv.original.length == 0) && (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin)) {
-    console.log(plugman.help());
+    plugman.help();
 }
 else if (cli_opts.uninstall) {
     plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, { www_dir: cli_opts.www });
@@ -116,5 +113,5 @@ subdir: '.',
     };
     plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, opts);
 } else {
-    console.log(plugman.help());
+    plugman.help();
 }
