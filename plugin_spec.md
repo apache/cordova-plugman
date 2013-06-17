@@ -72,11 +72,45 @@ If no `<engine>` tags are specified, plugman will attempt to install into the sp
 ## &lt;name&gt; element
 
 A human-readable name for the plugin. The text content of the element contains
-the name of the plugin. An example:
+the name of the plugin. Has to be lower case and cannot contain spaces or special characters. An example:
 
-    <name>Foo</name>
+    <name>foo</name>
 
 This element does not (yet) handle localization.
+
+## &lt;description&gt; element
+
+A human-readable description for the plugin. The text content of the element contains
+the description of the plugin. An example:
+
+    <description>foo plugin description</description>
+
+This element does not (yet) handle localization.
+
+## &lt;author&gt; element
+
+Plugin author name. The text content of the element contains
+the name of the plugin author. An example:
+
+    <author>foo plugin description</author>
+
+## &lt;keywords&gt; element
+
+Plugin keywords. The text content of the element contains comma separated keywords to describe the plugin. An example:
+
+    <keywords>foo,bar</keywords>
+
+## &lt;license&gt; element
+
+Plugin license. The text content of the element contains the plugin license. An example:
+
+    <keywords>foo,bar</keywords>
+
+## &lt;license&gt; element
+
+Plugin license. The text content of the element contains the plugin license. An example:
+
+    <license>Apache</license>
 
 ## &lt;asset&gt; element
 
