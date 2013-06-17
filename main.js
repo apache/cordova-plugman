@@ -16,36 +16,40 @@
  * specific language governing permissions and limitations
  * under the License.
  *
-*/
+ */
 
 // copyright (c) 2013 Andrew Lunny, Adobe Systems
 var path = require('path')
-    , url = require('url')
-    , package = require(path.join(__dirname, 'package'))
-    , nopt = require('nopt')
-    , plugins = require('./src/util/plugins')
-    , registry = require('plugman-registry')
-    , config = require('./config')
-    , plugman = require('./plugman');
+, url = require('url')
+, package = require(path.join(__dirname, 'package'))
+, nopt = require('nopt')
+, plugins = require('./src/util/plugins')
+, registry = require('plugman-registry')
+, config = require('./config')
+, plugman = require('./plugman');
 
 var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry10', 'wp7', 'wp8' ]
-            , 'project' : path
-            , 'plugin' : [String, path, url]
-            , 'install' : Boolean
-            , 'uninstall' : Boolean
-            , 'adduser' : Boolean
-            , 'publish' : Boolean 
-            , 'unpublish' : Boolean 
-            , 'search' : String
-            , 'v' : Boolean
-            , 'debug' : Boolean
-            , 'plugins': path
-            , 'link': Boolean
-            , 'variable' : Array
-            , 'www': path
-            }, shortHands = { 'var' : 'variable' };
-
-var cli_opts = nopt(known_opts);
+    , 'project' : path
+        , 'plugin' : [String, path, url]
+        , 'install' : Boolean
+        , 'uninstall' : Boolean
+        , 'adduser' : Boolean
+        , 'publish' : Boolean 
+        , 'unpublish' : Boolean 
+        , 'search' : String
+        , 'version' : Boolean
+        , 'help' : Boolean
+        , 'debug' : Boolean
+        , 'plugins': path
+        , 'link': Boolean
+        , 'variable' : Array
+        , 'www': path
+}, shortHands = { 'var' : 'variable' };
+var short_hands = {
+    "v": ["--version"]
+        , "h": ["--help"]
+}
+var cli_opts = nopt(known_opts, short_hands);
 
 // Default the plugins_dir to './cordova/plugins'.
 var plugins_dir;
@@ -58,13 +62,13 @@ if (cli_opts.plugins_dir || cli_opts.project) {
 }
 
 process.on('uncaughtException', function(error){
-    if (cli_opts.debug) {
+        if (cli_opts.debug) {
         console.error(error.stack);
-    } else {
+        } else {
         console.error(error.message);
-    }
-    process.exit(1);
-});
+        }
+        process.exit(1);
+        });
 
 // Set up appropriate logging based on events
 if (cli_opts.debug) {
@@ -73,8 +77,11 @@ if (cli_opts.debug) {
 plugman.on('warn', console.warn);
 plugman.on('error', console.error);
 
-if (cli_opts.v) {
+if (cli_opts.version) {
     console.log(package.name + ' version ' + package.version);
+} 
+else if (cli_opts.help) {
+    console.log(plugman.help());
 }
 else if ((cli_opts.install || cli_opts.uninstall || cli_opts.argv.original.length == 0) && (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin)) {
     console.log(plugman.help());
@@ -83,47 +90,47 @@ else if (cli_opts.uninstall) {
     plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, { www_dir: cli_opts.www });
 }
 else if (cli_opts.adduser) {
-  registry.use(config.registry, function(err) {
-    registry.adduser(null, function(err) {
-      if(err) return console.log(err);
-      console.log('user added');
-    });
-  });
+    registry.use(config.registry, function(err) {
+            registry.adduser(null, function(err) {
+                if(err) return console.log(err);
+                console.log('user added');
+                });
+            });
 }
 else if (cli_opts.publish) {
-  registry.use(config.registry, function(err) {
-    registry.publish([cli_opts.plugin], function(err, d) {
-      if(err) return console.log('Error publishing plugin'); 
-      console.log('plugin published');
-    });
-  });
+    registry.use(config.registry, function(err) {
+            registry.publish([cli_opts.plugin], function(err, d) {
+                if(err) return console.log('Error publishing plugin'); 
+                console.log('plugin published');
+                });
+            });
 }
 else if (cli_opts.unpublish) {
-  registry.use(config.registry, function(err) {
-    registry.unpublish([cli_opts.plugin, '--force'], function(err, d) {
-      if(err) return console.log('Error unpublishing plugin'); 
-      console.log('plugin unpublished');
-    });
-  });
+    registry.use(config.registry, function(err) {
+            registry.unpublish([cli_opts.plugin, '--force'], function(err, d) {
+                if(err) return console.log('Error unpublishing plugin'); 
+                console.log('plugin unpublished');
+                });
+            });
 }
 else if (cli_opts.search) {
-  registry.use(config.registry, function(err) {
-    registry.search(cli_opts.search.split(','), function(err, d) {
-      if(err) return console.log(err); 
-    });
-  });
+    registry.use(config.registry, function(err) {
+            registry.search(cli_opts.search.split(','), function(err, d) {
+                if(err) return console.log(err); 
+                });
+            });
 }
 else {
     var cli_variables = {}
     if (cli_opts.variable) {
         cli_opts.variable.forEach(function (variable) {
-            var tokens = variable.split('=');
-            var key = tokens.shift().toUpperCase();
-            if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
-        });
+                var tokens = variable.split('=');
+                var key = tokens.shift().toUpperCase();
+                if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
+                });
     }
     var opts = {
-        subdir: '.',
+subdir: '.',
         cli_variables: cli_variables,
         www_dir: cli_opts.www
     };
