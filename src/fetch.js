@@ -4,7 +4,8 @@ var shell   = require('shelljs'),
     plugins = require('./util/plugins'),
     xml_helpers = require('./util/xml-helpers'),
     metadata = require('./util/metadata'),
-    path    = require('path');
+    path    = require('path'),
+    registry    = require('plugman-registry');
 
 // possible options: link, subdir, git_ref
 module.exports = function fetchPlugin(plugin_dir, plugins_dir, options, callback) {
@@ -47,31 +48,45 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options, callback
         // Copy from the local filesystem.
         // First, read the plugin.xml and grab the ID.
         plugin_dir = path.join(uri.href, options.subdir);
-        var plugin_xml_path = path.join(plugin_dir, 'plugin.xml');
-        require('../plugman').emit('log', 'Fetch is reading plugin.xml from location "' + plugin_xml_path + '"...');
-        var xml = xml_helpers.parseElementtreeSync(plugin_xml_path);
-        var plugin_id = xml.getroot().attrib.id;
 
-        var dest = path.join(plugins_dir, plugin_id);
+        var movePlugin = function(plugin_dir, linkable) {
+            var plugin_xml_path = path.join(plugin_dir, 'plugin.xml');
+            require('../plugman').emit('log', 'Fetch is reading plugin.xml from location "' + plugin_xml_path + '"...');
+            var xml = xml_helpers.parseElementtreeSync(plugin_xml_path);
+            var plugin_id = xml.getroot().attrib.id;
 
-        shell.rm('-rf', dest);
-        if (options.link) {
-            require('../plugman').emit('log', 'Symlinking from location "' + plugin_dir + '" to location "' + dest + '"');
-            fs.symlinkSync(plugin_dir, dest, 'dir');
-        } else {
-            shell.mkdir('-p', dest);
-            require('../plugman').emit('log', 'Copying from location "' + plugin_dir + '" to location "' + dest + '"');
-            shell.cp('-R', path.join(plugin_dir, '*'), dest);
-        }
+            var dest = path.join(plugins_dir, plugin_id);
 
-        var data = {
-            source: {
-                type: 'local',
-                path: plugin_dir
+            shell.rm('-rf', dest);
+            if (options.link && linkable) {
+                require('../plugman').emit('log', 'Symlinking from location "' + plugin_dir + '" to location "' + dest + '"');
+                fs.symlinkSync(plugin_dir, dest, 'dir');
+            } else {
+                shell.mkdir('-p', dest);
+                require('../plugman').emit('log', 'Copying from location "' + plugin_dir + '" to location "' + dest + '"');
+                shell.cp('-R', path.join(plugin_dir, '*') , dest);
             }
-        };
-        metadata.save_fetch_metadata(dest, data);
 
-        if (callback) callback(null, dest);
+            var data = {
+source: {
+type: 'local',
+      path: plugin_dir
+        }
+            };
+            metadata.save_fetch_metadata(dest, data);
+
+            if (callback) callback(null, dest);
+        };
+
+        
+        if(!fs.existsSync(plugin_dir)) {
+          registry.use(null, function() {
+            registry.fetch(plugin_dir, function(err, plugin_dir) {
+              movePlugin(plugin_dir, false);
+            });
+          })
+        } else {
+          movePlugin(plugin_dir, true);
+        }
     }
 };
