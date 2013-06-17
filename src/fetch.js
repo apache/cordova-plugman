@@ -68,10 +68,10 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options, callback
             }
 
             var data = {
-source: {
-type: 'local',
-      path: plugin_dir
-        }
+                source: {
+                type: 'local',
+                      path: plugin_dir
+                }
             };
             metadata.save_fetch_metadata(dest, data);
 
