@@ -78,7 +78,7 @@ if (cli_opts.version) {
     console.log(package.name + ' version ' + package.version);
 } 
 else if (cli_opts.help) {
-    console.log(plugman.help());
+    plugman.help();
 }
 else if ((cli_opts.install || cli_opts.uninstall || cli_opts.argv.original.length == 0) && (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin)) {
     plugman.help();
