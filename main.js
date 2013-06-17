@@ -25,6 +25,7 @@ var path = require('path')
     , nopt = require('nopt')
     , plugins = require('./src/util/plugins')
     , registry = require('plugman-registry')
+    , config = require('./config')
     , plugman = require('./plugman');
 
 var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry10', 'wp7', 'wp8' ]
@@ -64,14 +65,14 @@ process.on('uncaughtException', function(error){
 if (cli_opts.v) {
     console.log(package.name + ' version ' + package.version);
 }
-else if ((cli_opts.install || cli_opts.uninstall) && (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin)) {
+else if ((cli_opts.install || cli_opts.uninstall || cli_opts.argv.original.length == 0) && (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin)) {
     printUsage();
 }
 else if (cli_opts.uninstall) {
     plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, { www_dir: cli_opts.www });
 }
 else if (cli_opts.adduser) {
-  registry.use(null, function(err) {
+  registry.use(config.registry, function(err) {
     registry.adduser(null, function(err) {
       if(err) return console.log(err);
       console.log('user added');
@@ -79,7 +80,7 @@ else if (cli_opts.adduser) {
   });
 }
 else if (cli_opts.publish) {
-  registry.use(null, function(err) {
+  registry.use(config.registry, function(err) {
     registry.publish([cli_opts.plugin], function(err, d) {
       if(err) return console.log('Error publishing plugin'); 
       console.log('plugin published');
@@ -87,7 +88,7 @@ else if (cli_opts.publish) {
   });
 }
 else if (cli_opts.unpublish) {
-  registry.use(null, function(err) {
+  registry.use(config.registry, function(err) {
     registry.unpublish([cli_opts.plugin, '--force'], function(err, d) {
       if(err) return console.log('Error unpublishing plugin'); 
       console.log('plugin unpublished');
@@ -95,7 +96,7 @@ else if (cli_opts.unpublish) {
   });
 }
 else if (cli_opts.search) {
-  registry.use(null, function(err) {
+  registry.use(config.registry, function(err) {
     registry.search(cli_opts.search.split(','), function(err, d) {
       if(err) return console.log(err); 
     });
@@ -120,10 +121,10 @@ else {
 
 function printUsage() {
     platforms = known_opts.platform.join('|');
-    console.log('Usage\n---------');
+    console.log('Usage\n-----');
     console.log('Install a plugin (will fetch if cannot be found):\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --plugin <name|path|url> [--www <directory>] [--plugins_dir <directory>] [--variable <name>=<value>]\n');
     console.log('Uninstall a plugin:\n\t' + package.name + ' --uninstall --platform <'+ platforms +'> --project <directory> --plugin <id> [--www <directory>] [--plugins_dir <directory>]\n');
-    console.log('\n\t--plugins_dir defaults to <project>/cordova/plugins, but can be any directory containing a subdirectory for each plugin');
+    console.log('\t--plugins_dir defaults to <project>/cordova/plugins, but can be any directory containing a subdirectory for each plugin');
     console.log('\n\t--www defaults to the project\'s www folder, but can be any directory where web assets should be installed into\n');
     console.log('Add a user account to the registry:\n\t' + package.name + ' --adduser\n');
     console.log('Publish a plugin:\n\t' + package.name + ' --publish --plugin plugin_directory\n');
