@@ -75,7 +75,7 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options, callback
         
         if(!fs.existsSync(plugin_dir)) {
           registry.use(null, function() {
-            registry.fetch(plugin_dir, function(err, plugin_dir) {
+            registry.fetch([plugin_dir], function(err, plugin_dir) {
               movePlugin(plugin_dir, false);
             });
           })
