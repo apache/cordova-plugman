@@ -37,15 +37,19 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry10', 'wp7', 'wp8'
             , 'publish' : Boolean 
             , 'unpublish' : Boolean 
             , 'search' : String
-            , 'v' : Boolean
+            , 'version' : Boolean
+            , 'help' : Boolean
             , 'debug' : Boolean
             , 'plugins': path
             , 'link': Boolean
             , 'variable' : Array
             , 'www': path
             }, shortHands = { 'var' : 'variable' };
-
-var cli_opts = nopt(known_opts);
+var short_hands = {
+    "v": ["--version"]
+  , "h": ["--help"]
+}
+var cli_opts = nopt(known_opts, short_hands);
 
 // Default the plugins_dir to './cordova/plugins'.
 var plugins_dir;
@@ -62,8 +66,11 @@ process.on('uncaughtException', function(error){
     process.exit(1);
 });
 
-if (cli_opts.v) {
+if (cli_opts.version) {
     console.log(package.name + ' version ' + package.version);
+} 
+else if (cli_opts.help) {
+  printUsage();
 }
 else if ((cli_opts.install || cli_opts.uninstall || cli_opts.argv.original.length == 0) && (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin)) {
     printUsage();
