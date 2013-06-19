@@ -120,7 +120,7 @@ else if (cli_opts.search) {
                 });
             });
 }
-else {
+else if(cli_opts.install) {
     var cli_variables = {}
     if (cli_opts.variable) {
         cli_opts.variable.forEach(function (variable) {
@@ -135,4 +135,6 @@ subdir: '.',
         www_dir: cli_opts.www
     };
     plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, opts);
+} else {
+    console.log(plugman.help());
 }
