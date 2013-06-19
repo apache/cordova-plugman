@@ -89,7 +89,7 @@ else if (cli_opts.adduser) {
 else if (cli_opts.publish) {
   registry.use(config.registry, function(err) {
     registry.publish([cli_opts.plugin], function(err, d) {
-      if(err) return console.log('Error publishing plugin'); 
+      if(err) return console.log('Error publishing plugin', err); 
       console.log('plugin published');
     });
   });
@@ -104,12 +104,15 @@ else if (cli_opts.unpublish) {
 }
 else if (cli_opts.search) {
   registry.use(config.registry, function(err) {
-    registry.search(cli_opts.search.split(','), function(err, d) {
+    registry.search(cli_opts.search.split(','), function(err, plugins) {
       if(err) return console.log(err); 
+      for(var plugin in plugins) {
+        console.log(plugins[plugin].name, '-', plugins[plugin].description || 'no description provided'); 
+      }
     });
   });
 }
-else {
+else if(cli_opts.install) {
     var cli_variables = {}
     if (cli_opts.variable) {
         cli_opts.variable.forEach(function (variable) {
@@ -124,12 +127,14 @@ else {
         www_dir: cli_opts.www
     };
     plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, opts);
+} else {
+  printUsage();
 }
 
 function printUsage() {
     platforms = known_opts.platform.join('|');
     console.log('Usage\n-----');
-    console.log('Install a plugin (will fetch if cannot be found):\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --plugin <name|path|url> [--www <directory>] [--plugins_dir <directory>] [--variable <name>=<value>]\n');
+    console.log('Install a plugin (will fetch if cannot be found):\n\t' + package.name + ' --install --platform <'+ platforms +'> --project <directory> --plugin <name|path|url> [--www <directory>] [--plugins_dir <directory>] [--variable <name>=<value>]\n');
     console.log('Uninstall a plugin:\n\t' + package.name + ' --uninstall --platform <'+ platforms +'> --project <directory> --plugin <id> [--www <directory>] [--plugins_dir <directory>]\n');
     console.log('\t--plugins_dir defaults to <project>/cordova/plugins, but can be any directory containing a subdirectory for each plugin');
     console.log('\n\t--www defaults to the project\'s www folder, but can be any directory where web assets should be installed into\n');
