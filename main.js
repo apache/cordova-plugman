@@ -93,7 +93,7 @@ else if (cli_opts.adduser) {
 else if (cli_opts.publish) {
   registry.use(config.registry, function(err) {
     registry.publish([cli_opts.plugin], function(err, d) {
-      if(err) return console.log('Error publishing plugin'); 
+      if(err) return console.log('Error publishing plugin', err); 
       console.log('plugin published');
     });
   });
@@ -108,12 +108,15 @@ else if (cli_opts.unpublish) {
 }
 else if (cli_opts.search) {
   registry.use(config.registry, function(err) {
-    registry.search(cli_opts.search.split(','), function(err, d) {
+    registry.search(cli_opts.search.split(','), function(err, plugins) {
       if(err) return console.log(err); 
+      for(var plugin in plugins) {
+        console.log(plugins[plugin].name, '-', plugins[plugin].description || 'no description provided'); 
+      }
     });
   });
 }
-else {
+else if(cli_opts.install) {
     var cli_variables = {}
     if (cli_opts.variable) {
         cli_opts.variable.forEach(function (variable) {
@@ -128,4 +131,6 @@ else {
         www_dir: cli_opts.www
     };
     plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, opts);
+} else {
+  printUsage();
 }
