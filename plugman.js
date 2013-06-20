@@ -19,6 +19,7 @@
 
 // copyright (c) 2013 Andrew Lunny, Adobe Systems
 module.exports = {
+    help:     require('./src/help'),
     install:  require('./src/install'),
     uninstall:require('./src/uninstall'),
     fetch:    require('./src/fetch'),

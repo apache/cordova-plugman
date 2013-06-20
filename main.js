@@ -52,7 +52,11 @@ if (cli_opts.plugins_dir || cli_opts.project) {
 }
 
 process.on('uncaughtException', function(error){
-    console.error(error.stack);
+    if (cli_opts.debug) {
+        console.error(error.stack);
+    } else {
+        console.error(error.message);
+    }
     process.exit(1);
 });
 
@@ -60,7 +64,7 @@ if (cli_opts.v) {
     console.log(package.name + ' version ' + package.version);
 }
 else if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
-    printUsage();
+    plugman.help();
 }
 else if (cli_opts.uninstall) {
     plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, { www_dir: cli_opts.www });
@@ -80,13 +84,4 @@ else {
         www_dir: cli_opts.www
     };
     plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, opts);
-}
-
-function printUsage() {
-    platforms = known_opts.platform.join('|');
-    console.log('Usage\n---------');
-    console.log('Install a plugin (will fetch if cannot be found):\n\t' + package.name + ' --platform <'+ platforms +'> --project <directory> --plugin <name|path|url> [--www <directory>] [--plugins_dir <directory>] [--variable <name>=<value>]\n');
-    console.log('Uninstall a plugin:\n\t' + package.name + ' --uninstall --platform <'+ platforms +'> --project <directory> --plugin <id> [--www <directory>] [--plugins_dir <directory>]\n');
-    console.log('\n\t--plugins_dir defaults to <project>/cordova/plugins, but can be any directory containing a subdirectory for each plugin');
-    console.log('\n\t--www defaults to the project\'s www folder, but can be any directory where web assets should be installed into');
 }
