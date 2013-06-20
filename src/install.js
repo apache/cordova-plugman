@@ -75,41 +75,33 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
     
     // checking engine 
     // will there be a case for multiple engine support?
-    
     var versionPath = path.join(project_dir, 'cordova', 'version');
     if (fs.existsSync(versionPath)) {
-        
         // need to rethink this so I don't have to chmod anything
         fs.chmodSync(versionPath, '755');
         var versionScript = shell.exec(versionPath, {silent: true});
-        
-        var engines = plugin_et.findall('engines/engine');
-        engines.forEach(function(engine){
-            if(engine.attrib["name"].toLowerCase() === "cordova"){
-                var engineVersion = engine.attrib["version"];
-                if(versionScript.code>0){
-                    var err = new Error('Failed to identify Cordova version: ' + versionPath + '\n' + versionScript.output);
-                    if (callback) callback(err);
-                    else throw err;
-                }else{
+        // Only check cordova version if the version script was successful.
+        if (versionScript.code === 0) {
+            var engines = plugin_et.findall('engines/engine');
+            engines.forEach(function(engine){
+                if(engine.attrib["name"].toLowerCase() === "cordova"){
+                    var engineVersion = engine.attrib["version"];
                     // clean only versionScript.output since semver.clean strips out 
                     // the gt and lt operators
-                    if(versionScript.output.trim() === 'dev' || semver.satisfies(semver.clean(versionScript.output), engineVersion)){
+                    var current_version = versionScript.output.trim();
+                    if(current_version === 'dev' || semver.satisfies(semver.clean(current_version), engineVersion)){
                         // engine ok!
-                    
-                    }else{
-                        var err = new Error('Plugin doesn\'t support Cordova version. Check plugin.xml');
-                    if (callback) callback(err);
+                    } else {
+                        var err = new Error('Plugin doesn\'t support this project\'s Cordova version. Project version: ' + current_version + ', failed version requirement: ' + engineVersion);
+                        if (callback) return callback(err);
                         else throw err; 
                     }
+                } else {
+                    // check for other engines? worklight phonegap etc
                 }
-            } else {
-                // check for other engines?
-            }
-        });
-    } 
-    else
-    {
+            });
+        }
+    } else {
         console.log('Warning: cordova version not detected. installing anyway.');
     }
 
