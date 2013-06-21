@@ -86,7 +86,7 @@ else if (cli_opts.adduser) {
     });
   });
 }
-else if (cli_opts.publish) {
+else if (cli_opts.publish && cli_opts.plugin) {
   registry.use(config.registry, function(err) {
     registry.publish([cli_opts.plugin], function(err, d) {
       if(err) return console.log('Error publishing plugin', err); 
@@ -94,9 +94,9 @@ else if (cli_opts.publish) {
     });
   });
 }
-else if (cli_opts.unpublish) {
+else if (cli_opts.unpublish && cli_opts.plugin) {
   registry.use(config.registry, function(err) {
-    registry.unpublish([cli_opts.plugin, '--force'], function(err, d) {
+    registry.unpublish([cli_opts.plugin], function(err, d) {
       if(err) return console.log('Error unpublishing plugin'); 
       console.log('plugin unpublished');
     });
