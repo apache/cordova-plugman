@@ -39,6 +39,19 @@ csproj.prototype = {
             compile.append(dep);
             item.append(compile);
         }
+        // check if it's a .dll that we should add as a reference.
+        else if (relative_path.indexOf('.dll', relative_path.length - 4) > -1) {
+            var compile = new et.Element('Reference');
+            // add dll name
+            var parts = relative_path.split('\\');
+            var dll_name = parts[parts.length - 1].substr(0, parts[parts.length - 1].length - 4);
+            compile.attrib.Include = dll_name;
+            // add hint path with full path
+            var hint_path = new et.Element('HintPath');
+            hint_path.text = relative_path;
+            compile.append(hint_path);
+            item.append(compile);
+        }
         // otherwise add it normally
         else {
             var compile = new et.Element('Compile');
@@ -59,6 +72,23 @@ csproj.prototype = {
                     // remove file reference
                     group.remove(0, file);
                     // remove ItemGroup if empty
+                    var new_group = group.findall('Compile').concat(group.findall('Page'));
+                    if(new_group.length < 1) {
+                        this.xml.getroot().remove(0, group);
+                    }
+                    return true;
+                }
+            }
+            // for removing .dll reference
+            var references = group.findall('Reference');
+            for (var j = 0, k = references.length; j < k; j++) {
+                var reference = references[j];
+                var parts = relative_path.split('\\');
+                var dll_name = parts[parts.length - 1].substr(0, parts[parts.length - 1].length - 4);
+                if(reference.attrib.Include == dll_name) {
+                    // remove file reference
+                    group.remove(0, reference);
+                     // remove ItemGroup if empty
                     var new_group = group.findall('Compile').concat(group.findall('Page'));
                     if(new_group.length < 1) {
                         this.xml.getroot().remove(0, group);
