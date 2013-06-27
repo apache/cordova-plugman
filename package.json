@@ -2,15 +2,20 @@
   "author": "Andrew Lunny <alunny@gmail.com>",
   "name": "plugman",
   "description": "install/uninstall Cordova plugins",
-  "version": "0.7.15",
+  "version": "0.8.0",
   "repository": {
     "type": "git",
     "url": "git://git-wip-us.apache.org/repos/asf/cordova-plugman.git"
+  },
+  "bugs": {
+    "url" : "https://issues.apache.org/jira/browse/CB",
+    "email" : "dev@cordova.apache.org"
   },
   "main": "plugman.js",
   "engines": {
     "node": ">=0.9.9"
   },
+  "engineStrict":true,
   "dependencies": {
     "nopt": "1.0.x",
     "glob": "3.2.x",
@@ -23,7 +28,7 @@
     "ncallbacks":"1.1.0",
     "underscore":"1.4.4",
     "dep-graph":"1.1.0",
-    "semver": "1.x.x"
+    "semver": "2.0.x"
   },
   "devDependencies": {
     "jasmine-node": "1.7.0"

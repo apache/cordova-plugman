@@ -23,6 +23,7 @@ describe('action-stack', function() {
             expect(third_spy).toHaveBeenCalledWith(third_args[0]);
         });
         it('should revert processed actions if an exception occurs', function() {
+            spyOn(console, 'log');
             var first_spy = jasmine.createSpy();
             var first_args = [1];
             var first_reverter = jasmine.createSpy();
