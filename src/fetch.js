@@ -1,5 +1,6 @@
 var shell   = require('shelljs'),
     fs      = require('fs'),
+    url     = require('url'),
     plugins = require('./util/plugins'),
     xml_helpers = require('./util/xml-helpers'),
     metadata = require('./util/metadata'),
@@ -14,10 +15,11 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options, callback
     options.subdir = options.subdir || '.';
 
     // clone from git repository
-    if(plugin_dir.indexOf('https://') == 0 || plugin_dir.indexOf('git://') == 0) {
+    var uri = url.parse(plugin_dir);
+    if (uri.protocol && uri.protocol != 'file:') {
         if (options.link) {
             var err = new Error('--link is not supported for git URLs');
-            if (callback) callback(err);
+            if (callback) return callback(err);
             else throw err;
         } else {
             var data = {
@@ -37,13 +39,10 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options, callback
             });
         }
     } else {
-        if (plugin_dir.lastIndexOf('file://', 0) === 0) {
-            plugin_dir = plugin_dir.substring('file://'.length);
-        }
 
         // Copy from the local filesystem.
         // First, read the plugin.xml and grab the ID.
-        plugin_dir = path.join(plugin_dir, options.subdir);
+        plugin_dir = path.join(uri.path, options.subdir);
         var xml = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'));
         var plugin_id = xml.getroot().attrib.id;
 

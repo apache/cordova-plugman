@@ -1,123 +1,72 @@
 var uninstall = require('../src/uninstall'),
-    install = require('../src/install'),
-    common = require('../src/platforms/common'),
     actions = require('../src/util/action-stack'),
-    android = require('../src/platforms/android'),
-    ios     = require('../src/platforms/ios'),
-    blackberry10 = require('../src/platforms/blackberry10'),
-    xml_helpers = require('../src/util/xml-helpers'),
     config_changes = require('../src/util/config-changes'),
+    xml_helpers = require('../src/util/xml-helpers'),
     plugman = require('../plugman'),
     fs      = require('fs'),
-    et      = require('elementtree'),
     os      = require('osenv'),
     path    = require('path'),
     shell   = require('shelljs'),
-    temp    = path.join(os.tmpdir(), 'plugman'),
-    dummyplugin = path.join(__dirname, 'plugins', 'DummyPlugin'),
+    semver  = require('semver'),
+    temp    = __dirname,
+    dummyplugin = 'DummyPlugin',
     dummy_id = 'com.phonegap.plugins.dummyplugin',
-    faultyplugin = path.join(__dirname, 'plugins', 'FaultyPlugin'),
-    childbrowserplugin = path.join(__dirname, 'plugins', 'ChildBrowser'),
-    dep_a = path.join(__dirname, 'plugins', 'dependencies', 'A'),
-    dep_b = path.join(__dirname, 'plugins', 'dependencies', 'B'),
-    dep_c = path.join(__dirname, 'plugins', 'dependencies', 'C'),
-    dep_d = path.join(__dirname, 'plugins', 'dependencies', 'D'),
-    dep_e = path.join(__dirname, 'plugins', 'dependencies', 'E'),
-    android_one_project = path.join(__dirname, 'projects', 'android_one', '*'),
-    ios_project = path.join(__dirname, 'projects', 'ios-config-xml', '*'),
-    plugins_dir = path.join(temp, 'cordova', 'plugins');
+    variableplugin = 'VariablePlugin',
+    engineplugin = 'EnginePlugin',
+    plugins_dir = path.join(temp, 'plugins');
 
 describe('uninstall', function() {
-    var copied_plugin_path = path.join(temp,'ChildBrowser');
-    var dummy_plugin_path = path.join(plugins_dir, dummy_id);
-
+    var exists, get_json, chmod, exec, proc, add_to_queue, prepare, actions_push, c_a, rm;
     beforeEach(function() {
-        shell.mkdir('-p', temp);
-        shell.cp('-rf', android_one_project, temp);
+        proc = spyOn(actions.prototype, 'process').andCallFake(function(platform, proj, cb) {
+            cb();
+        });
+        actions_push = spyOn(actions.prototype, 'push');
+        c_a = spyOn(actions.prototype, 'createAction');
+        prepare = spyOn(plugman, 'prepare');
+        exec = spyOn(shell, 'exec').andReturn({code:1});
+        chmod = spyOn(fs, 'chmodSync');
+        exists = spyOn(fs, 'existsSync').andReturn(true);
+        get_json = spyOn(config_changes, 'get_platform_json').andReturn({
+            installed_plugins:{},
+            dependent_plugins:{}
+        });
+        rm = spyOn(shell, 'rm');
+        add_to_queue = spyOn(config_changes, 'add_uninstalled_plugin_to_prepare_queue');
     });
-    afterEach(function() {
-        shell.rm('-rf', temp);
-    });
-
     describe('success', function() {
-        beforeEach(function() {
-            install('android', temp, dummyplugin, plugins_dir, {});
+        it('should call prepare after a successful uninstall', function() {
+            uninstall('android', temp, dummyplugin, plugins_dir, {});
+            expect(prepare).toHaveBeenCalled();
         });
-        it('should properly uninstall assets', function() {
-            var s = spyOn(common, 'removeFile').andCallThrough();
-            var s2 = spyOn(common, 'removeFileF').andCallThrough();
-            // making sure the right methods were called
-            uninstall('android', temp, dummy_id, plugins_dir, {});
-            expect(s).toHaveBeenCalled();
-            expect(s.calls.length).toEqual(2);
-            
-            expect(s2).toHaveBeenCalled();
-            expect(s2.calls.length).toEqual(2);
-
-            expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin.js'))).toBe(false);
-            expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin'))).toBe(false);
+        it('should call the config-changes module\'s add_uninstalled_plugin_to_prepare_queue method after processing an install', function() {
+            uninstall('android', temp, dummyplugin, plugins_dir, {});
+            expect(add_to_queue).toHaveBeenCalledWith(plugins_dir, 'DummyPlugin', 'android', true);
         });
-        it('should properly revert all assets on asset uninstall error', function() {
-            var sRemoveFile = spyOn(common, 'removeFile').andCallThrough();
-            var sCopyFile = spyOn(common, 'copyFile').andCallThrough();
-            // making sure the right methods were called
-            
-            shell.rm('-rf', path.join(temp, 'assets', 'www', 'dummyplugin'));
-            
-            expect(function() {
-                uninstall('android', temp, dummy_id, plugins_dir, {});
-            }).toThrow();
-
-            expect(sRemoveFile).toHaveBeenCalled();
-            expect(sRemoveFile.calls.length).toEqual(2);
-            expect(sCopyFile).toHaveBeenCalled();
-            expect(sCopyFile.calls.length).toEqual(2);
-            
-            expect(fs.existsSync(path.join(temp, 'assets', 'www', 'dummyplugin.js'))).toBe(true);
-        });
-        it('should call the config-changes module\'s add_uninstalled_plugin_to_prepare_queue method', function() {
-            var spy = spyOn(config_changes, 'add_uninstalled_plugin_to_prepare_queue');
-            uninstall('android', temp, dummy_id, plugins_dir, {});
-            expect(spy).toHaveBeenCalledWith(plugins_dir, dummy_id, 'android', true);
+        it('should queue up actions as appropriate for that plugin and call process on the action stack', function() {
+            uninstall('android', temp, dummyplugin, plugins_dir, {});
+            expect(actions_push.calls.length).toEqual(3);
+            expect(c_a).toHaveBeenCalledWith(jasmine.any(Function), [jasmine.any(Object), temp, dummy_id], jasmine.any(Function), [jasmine.any(Object), path.join(plugins_dir, dummyplugin), temp, dummy_id]);
+            expect(proc).toHaveBeenCalled();
         });
 
         describe('with dependencies', function() {
-            it('should uninstall any dependent plugins', function() {
-                shell.mkdir('-p', plugins_dir);
-                shell.cp('-rf', dep_a, plugins_dir);
-                shell.cp('-rf', dep_d, plugins_dir);
-                shell.cp('-rf', dep_c, plugins_dir);
-                install('android', temp, 'A', plugins_dir, {});
-                var spy = spyOn(actions.prototype, 'process').andCallThrough();
-                uninstall('android', temp, 'A', plugins_dir, {});
-                expect(spy.calls.length).toEqual(3);
-            });
-            it('should not uninstall any dependent plugins that are required by other top-level plugins', function() {
-                shell.mkdir('-p', plugins_dir);
-                shell.cp('-rf', dep_a, plugins_dir);
-                shell.cp('-rf', dep_b, plugins_dir);
-                shell.cp('-rf', dep_d, plugins_dir);
-                shell.cp('-rf', dep_c, plugins_dir);
-                shell.cp('-rf', dep_e, plugins_dir);
-                install('android', temp, 'A', plugins_dir, {});
-                install('android', temp, 'B', plugins_dir, {});
-                var spy = spyOn(actions.prototype, 'process').andCallThrough();
-                uninstall('android', temp, 'A', plugins_dir, {});
-                expect(spy.calls.length).toEqual(2);
-            });
+            it('should uninstall "dangling" dependencies');
+            it('should not uninstall any dependencies that are relied on by other plugins'); 
         });
     });
-
+    
     describe('failure', function() {
         it('should throw if platform is unrecognized', function() {
             expect(function() {
                 uninstall('atari', temp, 'SomePlugin', plugins_dir, {});
             }).toThrow('atari not supported.');
         });
-        it('should throw if the plugin was not found', function() {
+        it('should throw if plugin is missing', function() {
+            exists.andReturn(false);
             expect(function() {
-                uninstall('android', temp, 'SomePlugin', plugins_dir, {});
-            }).toThrow('Plugin "SomePlugin" not found. Already uninstalled?');
+                uninstall('android', temp, 'SomePluginThatDoesntExist', plugins_dir, {});
+            }).toThrow('Plugin "SomePluginThatDoesntExist" not found. Already uninstalled?');
         });
     });
 });

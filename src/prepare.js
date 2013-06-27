@@ -20,9 +20,9 @@
 var platform_modules = require('./platforms'),
     path            = require('path'),
     config_changes  = require('./util/config-changes'),
+    xml_helpers     = require('./util/xml-helpers'),
     fs              = require('fs'),
     shell           = require('shelljs'),
-    ls              = fs.readdirSync,
     util            = require('util'),
     exec            = require('child_process').exec,
     et              = require('elementtree');
@@ -35,7 +35,6 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     // Process:
     // - Do config munging by calling into config-changes module
     // - List all plugins in plugins_dir
-    // TODO: should look into platform json file to determine which plugins are properly installed into the project
     // - Load and parse their plugin.xml files.
     // - Skip those without support for this platform. (No <platform> tags means JS-only!)
     // - Build a list of all their js-modules, including platform-specific js-modules.
@@ -46,7 +45,10 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     config_changes.process(plugins_dir, project_dir, platform);
 
     var wwwDir = platform_modules[platform].www_dir(project_dir);
-    var plugins = ls(plugins_dir);
+    // TODO: perhaps this should look at platform json files to determine which plugins to prepare?
+    var plugins = fs.readdirSync(plugins_dir).filter(function(p) {
+        return p != '.svn' && p != 'CVS';
+    });
 
     // This array holds all the metadata for each module and ends up in cordova_plugins.json
     var moduleObjects = [];
@@ -54,7 +56,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     plugins && plugins.forEach(function(plugin) {
         var pluginDir = path.join(plugins_dir, plugin);
         if(fs.statSync(pluginDir).isDirectory()){
-            var xml = new et.ElementTree(et.XML(fs.readFileSync(path.join(pluginDir, 'plugin.xml'), 'utf-8')));
+            var xml = xml_helpers.parseElementtreeSync(path.join(pluginDir, 'plugin.xml'));
     
             var plugin_id = xml.getroot().attrib.id;
     

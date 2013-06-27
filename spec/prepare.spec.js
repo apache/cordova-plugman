@@ -5,65 +5,69 @@ var platforms = require('../src/platforms'),
     path    = require('path'),
     shell   = require('shelljs'),
     config_changes = require('../src/util/config-changes'),
-    temp    = path.join(os.tmpdir(), 'plugman'),
-    childbrowser = path.join(__dirname, 'plugins', 'ChildBrowser'),
-    dummyplugin = path.join(__dirname, 'plugins', 'DummyPlugin'),
-    androidplugin = path.join(__dirname, 'plugins', 'AndroidJS'),
-    android_one_project = path.join(__dirname, 'projects', 'android_one', '*');
-    plugins_dir = path.join(temp, 'cordova', 'plugins');
+    xml_helpers = require('../src/util/xml-helpers'),
+    temp    = __dirname,
+    childbrowser = 'ChildBrowser',
+    dummyplugin = 'DummyPlugin',
+    androidplugin = 'AndroidJS',
+    plugins_dir = path.join(temp, 'plugins');
+var json = path.join(temp, 'assets', 'www', 'cordova_plugins.json');
+var js = path.join(temp, 'assets', 'www', 'cordova_plugins.js');
 
 describe('prepare', function() {
+    var proc, readdir, write, stat, read, parseET, mkdir;
+    var root, findall, find;
     beforeEach(function() {
-        shell.mkdir('-p', temp);
-        shell.mkdir('-p', plugins_dir);
-        shell.cp('-rf', childbrowser, plugins_dir);
-        shell.cp('-rf', android_one_project, temp);
+        mkdir = spyOn(shell, 'mkdir');
+        proc = spyOn(config_changes, 'process');
+        readdir = spyOn(fs, 'readdirSync').andReturn([]);
+        write = spyOn(fs, 'writeFileSync');
+        stat = spyOn(fs, 'statSync').andReturn({isDirectory:function() { return true; }});
+        root = jasmine.createSpy('ElementTree getroot').andReturn({
+            attrib:{
+                id:'someid'
+            }
+        });
+        findall = jasmine.createSpy('ElementTree findall');
+        find = jasmine.createSpy('ElementTree find');
+        parseET = spyOn(xml_helpers, 'parseElementtreeSync').andReturn({
+            getroot:root,
+            findall:findall,
+            find:find
+        });
     });
-    afterEach(function() {
-        shell.rm('-rf', temp);
-    });
-
-    var www = path.join(temp, 'assets', 'www');
-    
     it('should create a cordova_plugins.json file', function() {
         prepare(temp, 'android', plugins_dir);
-        expect(fs.existsSync(path.join(www, 'cordova_plugins.json'))).toBe(true);
+        expect(write).toHaveBeenCalledWith(json, jasmine.any(String), 'utf-8');
     });
-    it('should create a plugins directory in an application\'s www directory', function() {
-        shell.cp('-rf', dummyplugin, plugins_dir);
+    it('should create a cordova_plugins.js file', function() {
         prepare(temp, 'android', plugins_dir);
-        expect(fs.existsSync(path.join(www, 'plugins'))).toBe(true);
+        expect(write).toHaveBeenCalledWith(js, jasmine.any(String), 'utf-8');
     });
-    it('should not add code to load platform js in a project for a different platform', function() {
-        shell.cp('-rf', dummyplugin, plugins_dir);
-        prepare(temp, 'android', plugins_dir);
-        var plugins = JSON.parse(fs.readFileSync(path.join(www, 'cordova_plugins.json'), 'utf-8'));
-        expect(plugins.length).toEqual(1);
-        expect(plugins[0].id).not.toMatch(/dummy/);
+    describe('handling of js-modules', function() {
+        var read, child_one;
+        var fake_plugins = ['plugin_one', 'plugin_two'];
+        beforeEach(function() {
+            child_one = jasmine.createSpy('getchildren').andReturn([]);
+            read = spyOn(fs, 'readFileSync').andReturn('JAVASCRIPT!');
+            readdir.andReturn(fake_plugins);
+            findall.andReturn([
+                {attrib:{src:'somedir', name:'NAME'}, getchildren:child_one},
+                {attrib:{src:'someotherdir', name:'NAME'}, getchildren:child_one}
+            ]);
+        });
+        it('should create a plugins directory in an application\'s www directory', function() {
+            prepare(temp, 'android', plugins_dir);
+            expect(mkdir).toHaveBeenCalledWith('-p',path.join(temp, 'assets', 'www', 'plugins'));
+        });
+        it('should write out one file per js module', function() {
+            prepare(temp, 'android', plugins_dir);
+            expect(write).toHaveBeenCalledWith(path.join(temp, 'assets', 'www', 'plugins', 'someid', 'somedir'), jasmine.any(String), 'utf-8');
+            expect(write).toHaveBeenCalledWith(path.join(temp, 'assets', 'www', 'plugins', 'someid', 'someotherdir'), jasmine.any(String), 'utf-8');
+        });
     });
-    it('should add code to load platform js if platform is applicable', function() {
-        shell.cp('-rf', androidplugin, plugins_dir);
-        prepare(temp, 'android', plugins_dir);
-        var plugins = JSON.parse(fs.readFileSync(path.join(www, 'cordova_plugins.json'), 'utf-8'));
-        expect(plugins.length).toEqual(2);
-        expect(plugins[0].id).toMatch(/android/);
-    });
-    it('should parse js modules for multiple plugins added to a single project', function() {
-        shell.cp('-rf', androidplugin, plugins_dir);
-        prepare(temp, 'android', plugins_dir);
-        var plugins = JSON.parse(fs.readFileSync(path.join(www, 'cordova_plugins.json'), 'utf-8'));
-        expect(plugins.length).toEqual(2);
-    });
-    it('should write out an empty cordova_plugins.json if no plugins are applicable', function() {
-        shell.rm('-rf', path.join(plugins_dir, '*'));
-        prepare(temp, 'android', plugins_dir);
-        var plugins = JSON.parse(fs.readFileSync(path.join(www, 'cordova_plugins.json'), 'utf-8'));
-        expect(plugins.length).toEqual(0);
-    });
-
     it('should call into config-changes\' process method to do config processing', function() {
-        var spy = spyOn(config_changes, 'process');
         prepare(temp, 'android', plugins_dir);
-        expect(spy).toHaveBeenCalledWith(plugins_dir, temp, 'android');
+        expect(proc).toHaveBeenCalledWith(plugins_dir, temp, 'android');
     });
 });

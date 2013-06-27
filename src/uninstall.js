@@ -3,6 +3,7 @@ var path = require('path'),
     et   = require('elementtree'),
     shell= require('shelljs'),
     config_changes = require('./util/config-changes'),
+    xml_helpers = require('./util/xml-helpers'),
     action_stack = require('./util/action-stack'),
     n = require('ncallbacks'),
     dependencies = require('./util/dependencies'),
@@ -36,8 +37,7 @@ module.exports = function uninstallPlugin(platform, project_dir, id, plugins_dir
 // possible options: cli_variables, www_dir, is_top_level
 function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, options, callback) {
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
-      , xml_text     = fs.readFileSync(xml_path, 'utf-8')
-      , plugin_et    = new et.ElementTree(et.XML(xml_text))
+      , plugin_et    = xml_helpers.parseElementtreeSync(xml_path);
     var name         = plugin_et.findall('name').text;
     var plugin_id    = plugin_et._root.attrib['id'];
     options = options || {};

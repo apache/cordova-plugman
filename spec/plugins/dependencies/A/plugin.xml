@@ -25,7 +25,7 @@
 
     <name>Plugin A</name>
 
-    <dependency id="C" />
+    <dependency id="C" url="C" />
     <dependency id="D" url="D" />
 
     <asset src="www/plugin-a.js" target="plugin-a.js" />

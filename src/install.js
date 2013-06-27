@@ -2,12 +2,33 @@ var path = require('path'),
     fs   = require('fs'),
     et   = require('elementtree'),
     n    = require('ncallbacks'),
-    config_changes = require('./util/config-changes'),
     action_stack = require('./util/action-stack'),
     shell = require('shelljs'),
     semver = require('semver'),
     config_changes = require('./util/config-changes'),
+    xml_helpers = require('./util/xml-helpers'),
     platform_modules = require('./platforms');
+
+/* INSTALL FLOW
+   ------------
+   There are four functions install "flows" through. Here is an attempt at
+   providing a high-level logic flow overview.
+   1. module.exports (installPlugin)
+     a) checks that the platform is supported
+     b) invokes possiblyFetch
+   2. possiblyFetch
+     a) checks that the plugin is fetched. if so, calls runInstall
+     b) if not, invokes plugman.fetch, and when done, calls runInstall
+   3. runInstall
+     a) checks if the plugin is already installed. if so, calls back (done).
+     b) if possible, will check the version of the project and make sure it is compatible with the plugin (checks <engine> tags)
+     c) makes sure that any variables required by the plugin are specified
+     d) if dependencies are listed in the plugin, it will recurse for each dependent plugin and call possiblyFetch (2) on each one. When each dependent plugin is successfully installed, it will then proceed to call handleInstall (4)
+   4. handleInstall
+     a) queues up actions into a queue (asset, source-file, headers, etc)
+     b) processes the queue
+     c) calls back (done)
+*/
 
 // possible options: subdir, cli_variables, www_dir
 module.exports = function installPlugin(platform, project_dir, id, plugins_dir, options, callback) {
@@ -47,11 +68,10 @@ function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options,
 // possible options: cli_variables, www_dir, is_top_level
 function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, options, callback) {
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
-      , xml_text     = fs.readFileSync(xml_path, 'utf-8')
-      , plugin_et    = new et.ElementTree(et.XML(xml_text))
+      , plugin_et    = xml_helpers.parseElementtreeSync(xml_path)
       , filtered_variables = {};
     var name         = plugin_et.findall('name').text;
-    var plugin_id    = plugin_et._root.attrib['id'];
+    var plugin_id    = plugin_et.getroot().attrib['id'];
 
     // check if platform has plugin installed already.
     var platform_config = config_changes.get_platform_json(plugins_dir, platform);
@@ -82,14 +102,14 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
         var versionScript = shell.exec(versionPath, {silent: true});
         // Only check cordova version if the version script was successful.
         if (versionScript.code === 0) {
+            var current_version = versionScript.output.trim();
             var engines = plugin_et.findall('engines/engine');
             engines.forEach(function(engine){
                 if(engine.attrib["name"].toLowerCase() === "cordova"){
                     var engineVersion = engine.attrib["version"];
                     // clean only versionScript.output since semver.clean strips out 
                     // the gt and lt operators
-                    var current_version = versionScript.output.trim();
-                    if(current_version === 'dev' || semver.satisfies(semver.clean(current_version), engineVersion)){
+                    if(current_version == 'dev' || semver.satisfies(current_version, engineVersion)){
                         // engine ok!
                     } else {
                         var err = new Error('Plugin doesn\'t support this project\'s Cordova version. Project version: ' + current_version + ', failed version requirement: ' + engineVersion);
