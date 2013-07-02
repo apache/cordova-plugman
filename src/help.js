@@ -3,5 +3,5 @@ var fs = require('fs'),
 var doc_txt = path.join(__dirname, '..', 'doc', 'help.txt');
 
 module.exports = function help() {
-    console.log(fs.readFileSync(doc_txt, 'utf-8'));
+    return fs.readFileSync(doc_txt, 'utf-8');
 };

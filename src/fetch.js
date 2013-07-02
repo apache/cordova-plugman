@@ -4,10 +4,12 @@ var shell   = require('shelljs'),
     plugins = require('./util/plugins'),
     xml_helpers = require('./util/xml-helpers'),
     metadata = require('./util/metadata'),
+    events  = require('./events'),
     path    = require('path');
 
 // possible options: link, subdir, git_ref
 module.exports = function fetchPlugin(plugin_dir, plugins_dir, options, callback) {
+    events.emit('log', 'Fetching plugin from location "' + plugin_dir + '"...');
     // Ensure the containing directory exists.
     shell.mkdir('-p', plugins_dir);
 
@@ -32,7 +34,10 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options, callback
             };
 
             plugins.clonePluginGitRepo(plugin_dir, plugins_dir, options.subdir, options.git_ref, function(err, dir) {
-                if (!err) {
+                if (err) {
+                    if (callback) callback(err);
+                    else throw err;
+                } else {
                     metadata.save_fetch_metadata(dir, data);
                     if (callback) callback(null, dir);
                 }
@@ -43,17 +48,21 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options, callback
         // Copy from the local filesystem.
         // First, read the plugin.xml and grab the ID.
         plugin_dir = path.join(uri.path, options.subdir);
-        var xml = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'));
+        var plugin_xml_path = path.join(plugin_dir, 'plugin.xml');
+        events.emit('log', 'Fetch is reading plugin.xml from location "' + plugin_xml_path + '"...');
+        var xml = xml_helpers.parseElementtreeSync(plugin_xml_path);
         var plugin_id = xml.getroot().attrib.id;
 
         var dest = path.join(plugins_dir, plugin_id);
 
         shell.rm('-rf', dest);
         if (options.link) {
+            events.emit('log', 'Symlinking from location "' + plugin_dir + '" to location "' + dest + '"');
             fs.symlinkSync(plugin_dir, dest, 'dir');
         } else {
             shell.mkdir('-p', dest);
-            shell.cp('-R', path.join(plugin_dir, '*') , dest);
+            events.emit('log', 'Copying from location "' + plugin_dir + '" to location "' + dest + '"');
+            shell.cp('-R', path.join(plugin_dir, '*'), dest);
         }
 
         var data = {

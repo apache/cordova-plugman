@@ -18,11 +18,17 @@
 */
 
 // copyright (c) 2013 Andrew Lunny, Adobe Systems
+
+var emitter = require('./src/events');
+
 module.exports = {
-    help:     require('./src/help'),
-    install:  require('./src/install'),
-    uninstall:require('./src/uninstall'),
-    fetch:    require('./src/fetch'),
-    prepare:  require('./src/prepare'),
-    config_changes:require('./src/util/config-changes')
+    help:           require('./src/help'),
+    install:        require('./src/install'),
+    uninstall:      require('./src/uninstall'),
+    fetch:          require('./src/fetch'),
+    prepare:        require('./src/prepare'),
+    config_changes: require('./src/util/config-changes'),
+    on:             emitter.addListener,
+    off:            emitter.removeListener,
+    removeAllListeners: emitter.removeAllListeners,
 };

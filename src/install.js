@@ -22,7 +22,7 @@ var path = require('path'),
    3. runInstall
      a) checks if the plugin is already installed. if so, calls back (done).
      b) if possible, will check the version of the project and make sure it is compatible with the plugin (checks <engine> tags)
-     c) makes sure that any variables required by the plugin are specified
+     c) makes sure that any variables required by the plugin are specified. if they are not specified, plugman will throw or callback with an error.
      d) if dependencies are listed in the plugin, it will recurse for each dependent plugin and call possiblyFetch (2) on each one. When each dependent plugin is successfully installed, it will then proceed to call handleInstall (4)
    4. handleInstall
      a) queues up actions into a queue (asset, source-file, headers, etc)
@@ -34,9 +34,8 @@ var path = require('path'),
 module.exports = function installPlugin(platform, project_dir, id, plugins_dir, options, callback) {
     if (!platform_modules[platform]) {
         var err = new Error(platform + " not supported.");
-        if (callback) callback(err);
+        if (callback) return callback(err);
         else throw err;
-        return;
     }
 
     var current_stack = new action_stack();

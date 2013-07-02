@@ -60,11 +60,15 @@ process.on('uncaughtException', function(error){
     process.exit(1);
 });
 
+if (cli_opts.debug) {
+    plugman.on('log', console.log);
+}
+
 if (cli_opts.v) {
     console.log(package.name + ' version ' + package.version);
 }
 else if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
-    plugman.help();
+    console.log(plugman.help());
 }
 else if (cli_opts.uninstall) {
     plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, { www_dir: cli_opts.www });
