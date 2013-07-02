@@ -1,5 +1,6 @@
 var ios = require('../platforms/ios'),
     wp7 = require('../platforms/wp7'),
+    wp8 = require('../platforms/wp8'),
     fs = require('fs');
 
 function ActionStack() {
@@ -31,12 +32,15 @@ ActionStack.prototype = {
         }
         if (platform == 'wp7') {
             project_files = wp7.parseWP7ProjectFile(project_dir);
+        }
+        if (platform == 'wp8') {
+            project_files = wp8.parseWP8ProjectFile(project_dir);
         } 
         while(this.stack.length) {
             var action = this.stack.shift();
             var handler = action.handler.run;
             var action_params = action.handler.params;
-            if (platform == 'ios' || platform == 'wp7') action_params.push(project_files);
+            if (platform == 'ios' || platform == 'wp7' || platform == 'wp8') action_params.push(project_files);
             try {
                 handler.apply(null, action_params);
             } catch(e) {
