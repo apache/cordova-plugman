@@ -203,6 +203,7 @@ into a project. A couple of examples:
     <!-- ios -->
     <source-file src="src/ios/CDVFoo.m" />
     <source-file src="src/ios/someLib.a" framework="true" />
+    <source-file src="src/ios/someLib.a" compiler-flags="-fno-objc-arc" />
 
 
 ### src (required)
@@ -226,6 +227,10 @@ As with assets, if a `source-file`'s `target` would overwrite an existing file, 
 ### framework
 
 Only used for iOS. If set to `true`, will also add the specified file as a framework to the project.
+
+### compiler-flags
+
+Only used for iOS. If set, will assign the specified compiler flags for the particular source file.
 
 ## &lt;config-file&gt;
 
