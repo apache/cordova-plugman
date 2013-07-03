@@ -57,7 +57,7 @@ ActionStack.prototype = {
                     var undo = this.completed.shift();
                     var revert = undo.reverter.run;
                     var revert_params = undo.reverter.params;
-                    if (platform == 'ios' || platform == 'wp7') revert_params.push(project_files);
+                    if (platform == 'ios' || platform == 'wp7' || platform == 'wp8') revert_params.push(project_files);
                     try {
                         revert.apply(null, revert_params);
                     } catch(err) {
@@ -77,8 +77,8 @@ ActionStack.prototype = {
             events.emit('log', 'Writing out iOS pbxproj file...');
             fs.writeFileSync(project_files.pbx, project_files.xcode.writeSync());
         }
-        if (platform == 'wp7') {
-            events.emit('log', 'Writing out WP7 project files...');
+        if (platform == 'wp7' || platform == 'wp8') {
+            events.emit('log', 'Writing out ' + platform + ' project files...');
             project_files.write();
         }
         if (callback) callback();
