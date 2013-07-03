@@ -17,7 +17,7 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options, callback
 
     // clone from git repository
     var uri = url.parse(plugin_dir);
-    if (uri.protocol && uri.protocol != 'file:') {
+    if ( uri.protocol && uri.protocol != 'file:' && !plugin_dir.match(/^\w+:\\/)) {
         if (options.link) {
             var err = new Error('--link is not supported for git URLs');
             if (callback) return callback(err);
@@ -46,7 +46,7 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options, callback
 
         // Copy from the local filesystem.
         // First, read the plugin.xml and grab the ID.
-        plugin_dir = path.join(uri.path, options.subdir);
+        plugin_dir = path.join(uri.href, options.subdir);
         var plugin_xml_path = path.join(plugin_dir, 'plugin.xml');
         require('../plugman').emit('log', 'Fetch is reading plugin.xml from location "' + plugin_xml_path + '"...');
         var xml = xml_helpers.parseElementtreeSync(plugin_xml_path);

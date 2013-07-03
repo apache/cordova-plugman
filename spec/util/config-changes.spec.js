@@ -290,7 +290,7 @@ describe('config-changes module', function() {
                 var spy = spyOn(fs, 'readFileSync').andCallThrough();
 
                 configChanges.process(plugins_dir, temp, 'ios');
-                expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'SampleApp-Info.plist'), 'utf8');
+                expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'SampleApp-Info.plist').replace(/\\/g, '/'), 'utf8');
             });
             it('should move successfully installed plugins from queue to installed plugins section, and include/retain vars if applicable', function() {
                 shell.cp('-rf', android_two_project, temp);
@@ -323,7 +323,7 @@ describe('config-changes module', function() {
 
                     var spy = spyOn(plist, 'parseFileSync').andReturn({Plugins:{}});
                     configChanges.process(plugins_dir, temp, 'ios');
-                    expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'PhoneGap.plist'));
+                    expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'PhoneGap.plist').replace(/\\/g, '/'));
                 });
             });
         });
@@ -417,7 +417,7 @@ describe('config-changes module', function() {
 
                 var spy = spyOn(plist, 'parseFileSync').andReturn({Plugins:{}});
                 configChanges.process(plugins_dir, temp, 'ios');
-                expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'PhoneGap.plist'));
+                expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'PhoneGap.plist').replace(/\\/g, '/'));
             });
             it('should save changes to global config munge after completing an uninstall', function() {
                 shell.cp('-rf', android_two_project, temp);

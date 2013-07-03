@@ -56,7 +56,7 @@ describe('plugins utility module', function(){
 
             expect(callback).toHaveBeenCalled();
             expect(callback.mostRecentCall.args[0]).toBe(null);
-            expect(callback.mostRecentCall.args[1]).toMatch(new RegExp('/' + fake_id + '$'));
+            expect(callback.mostRecentCall.args[1]).toMatch(new RegExp(path.sep + fake_id + '$'));
         });
         it('should take into account subdirectory argument when copying over final repository into plugins+plugin_id directory', function() {
             var plugin_git_url = 'https://github.com/imhotep/ChildBrowser'

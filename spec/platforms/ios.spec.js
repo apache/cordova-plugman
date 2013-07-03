@@ -82,7 +82,7 @@ describe('ios project handler', function() {
 
     describe('www_dir method', function() {
         it('should return cordova-ios project www location using www_dir', function() {
-            expect(ios.www_dir('/')).toEqual('/www');
+            expect(ios.www_dir(path.sep)).toEqual(path.sep + 'www');
         });
     });
 
@@ -249,13 +249,13 @@ describe('ios project handler', function() {
                 var frameworks = copyArray(valid_frameworks).filter(function(f) { return f.attrib.weak == undefined; });
                 var spy = spyOn(proj_files.xcode, 'addFramework');
                 ios.framework.install(frameworks[0], dummyplugin, temp, proj_files);
-                expect(spy).toHaveBeenCalledWith(path.join('src', 'ios', 'libsqlite3.dylib'), {weak:false});
+                expect(spy).toHaveBeenCalledWith(path.join('src', 'ios', 'libsqlite3.dylib').replace(/\\/g, '/'), {weak:false});
             });
             it('should pass in whether the framework is weak or not to xcodeproj.addFramework', function() {
                 var frameworks = copyArray(valid_frameworks).filter(function(f) { return f.attrib.weak != undefined; });;
                 var spy = spyOn(proj_files.xcode, 'addFramework');
                 ios.framework.install(frameworks[0], dummyplugin, temp, proj_files);
-                expect(spy).toHaveBeenCalledWith(path.join('src', 'ios', 'libsqlite3.dylib'), {weak:true});
+                expect(spy).toHaveBeenCalledWith(path.join('src', 'ios', 'libsqlite3.dylib').replace(/\\/g, '/'), {weak:true});
             });
         });
     });
@@ -359,7 +359,7 @@ describe('ios project handler', function() {
                 var spy = spyOn(proj_files.xcode, 'removeFramework');
                 
                 ios.framework.uninstall(frameworks[0], temp, proj_files);
-                expect(spy).toHaveBeenCalledWith(path.join('src', 'ios', 'libsqlite3.dylib'));
+                expect(spy).toHaveBeenCalledWith(path.join('src', 'ios', 'libsqlite3.dylib').replace(/\\/g, '/'));
             });
         });
     });

@@ -49,7 +49,7 @@ function copyArray(arr) {
 describe('android project handler', function() {
     describe('www_dir method', function() {
         it('should return cordova-android project www location using www_dir', function() {
-            expect(android.www_dir('/')).toEqual('/assets/www');
+            expect(android.www_dir(path.sep)).toEqual(path.sep + path.join('assets', 'www'));
         });
     });
     describe('package_name method', function() {
@@ -74,7 +74,7 @@ describe('android project handler', function() {
                 var source = copyArray(valid_source);
                 var s = spyOn(common, 'copyFile');
                 android['source-file'].install(source[0], dummyplugin, temp); 
-                expect(s).toHaveBeenCalledWith(dummyplugin, 'src/android/DummyPlugin.java', temp, 'src/com/phonegap/plugins/dummyplugin/DummyPlugin.java');
+                expect(s).toHaveBeenCalledWith(dummyplugin, 'src/android/DummyPlugin.java', temp, path.join('src', 'com', 'phonegap', 'plugins', 'dummyplugin', 'DummyPlugin.java'));
             });
             it('should throw if source file cannot be found', function() {
                 var source = copyArray(invalid_source);
@@ -112,7 +112,7 @@ describe('android project handler', function() {
                 install('android', temp, dummyplugin, plugins_dir, {}, function() {
                     var source = copyArray(valid_source);
                     android['source-file'].uninstall(source[0], temp);
-                    expect(s).toHaveBeenCalledWith(temp, 'src/com/phonegap/plugins/dummyplugin/DummyPlugin.java');
+                    expect(s).toHaveBeenCalledWith(temp, path.join('src', 'com', 'phonegap', 'plugins', 'dummyplugin', 'DummyPlugin.java'));
                     done();
                 });
             });
