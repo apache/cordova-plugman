@@ -18,7 +18,6 @@
 */
 
 var platform_modules = require('./platforms'),
-    events          = require('./events'),
     path            = require('path'),
     config_changes  = require('./util/config-changes'),
     xml_helpers     = require('./util/xml-helpers'),
@@ -43,7 +42,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     // - Write this object into www/cordova_plugins.json.
     // - Cordova.js contains code to load them at runtime from that file.
 
-    events.emit('log', 'Preparing ' + platform + ' project, starting with processing of config changes...');
+    require('../plugman').emit('log', 'Preparing ' + platform + ' project, starting with processing of config changes...');
     config_changes.process(plugins_dir, project_dir, platform);
 
     var wwwDir = platform_modules[platform].www_dir(project_dir);
@@ -54,7 +53,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
 
     // This array holds all the metadata for each module and ends up in cordova_plugins.json
     var moduleObjects = [];
-    events.emit('log', 'Iterating over installed plugins...');
+    require('../plugman').emit('log', 'Iterating over installed plugins...');
 
     plugins && plugins.forEach(function(plugin) {
         var pluginDir = path.join(plugins_dir, plugin);
@@ -124,7 +123,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
         }
     });
 
-    events.emit('log', 'Writing out cordova_plugins.json...');
+    require('../plugman').emit('log', 'Writing out cordova_plugins.json...');
     // Write out moduleObjects as JSON to cordova_plugins.json
     fs.writeFileSync(path.join(wwwDir, 'cordova_plugins.json'), JSON.stringify(moduleObjects), 'utf-8');
     // Write out moduleObjects as JSON wrapped in a cordova module to cordova_plugins.js
@@ -132,6 +131,6 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     var final_contents = "cordova.define('cordova/plugin_list', function(require, exports, module) {\n";
     final_contents += 'module.exports = ' + JSON.stringify(moduleObjects) + '\n';
     final_contents += '});';
-    events.emit('log', 'Writing out cordova_plugins.js...');
+    require('../plugman').emit('log', 'Writing out cordova_plugins.js...');
     fs.writeFileSync(path.join(wwwDir, 'cordova_plugins.js'), final_contents, 'utf-8');
 };

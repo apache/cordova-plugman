@@ -2,7 +2,6 @@ var path = require('path'),
     fs   = require('fs'),
     et   = require('elementtree'),
     n    = require('ncallbacks'),
-    events = require('./events'),
     action_stack = require('./util/action-stack'),
     shell = require('shelljs'),
     semver = require('semver'),
@@ -72,7 +71,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
       , filtered_variables = {};
     var name         = plugin_et.findall('name').text;
     var plugin_id    = plugin_et.getroot().attrib['id'];
-    events.emit('log', 'Starting installation of "' + plugin_id + '"...');
+    require('../plugman').emit('log', 'Starting installation of "' + plugin_id + '"...');
 
     // check if platform has plugin installed already.
     var platform_config = config_changes.get_platform_json(plugins_dir, platform);
@@ -89,7 +88,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
         }
     });
     if (is_installed) {
-        events.emit('log', 'Plugin "' + plugin_id + '" already installed, \'sall good.');
+        require('../plugman').emit('log', 'Plugin "' + plugin_id + '" already installed, \'sall good.');
         if (callback) callback();
         return;
     }
@@ -123,7 +122,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
             });
         }
     } else {
-        events.emit('log', 'Cordova project version not detected (lacks a ./cordova/version script), continuing.');
+        require('../plugman').emit('log', 'Cordova project version not detected (lacks a ./cordova/version script), continuing.');
     }
 
     // checking preferences, if certain variables are not provided, we should throw.
@@ -148,7 +147,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
     // Check for dependencies, (co)recurse to install each one
     var dependencies = plugin_et.findall('dependency');
     if (dependencies && dependencies.length) {
-        events.emit('log', 'Dependencies detected, iterating through them...');
+        require('../plugman').emit('log', 'Dependencies detected, iterating through them...');
         var end = n(dependencies.length, function() {
             handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, options.www_dir, options.is_top_level, callback);
         });
@@ -204,7 +203,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
 
             var dep_plugin_dir = path.join(plugins_dir, dep_plugin_id);
             if (fs.existsSync(dep_plugin_dir)) {
-                events.emit('log', 'Dependent plugin "' + dep_plugin_id + '" already fetched, using that version.');
+                require('../plugman').emit('log', 'Dependent plugin "' + dep_plugin_id + '" already fetched, using that version.');
                 var opts = {
                     cli_variables: filtered_variables,
                     www_dir: options.www_dir,
@@ -212,7 +211,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
                 };
                 runInstall(actions, platform, project_dir, dep_plugin_dir, plugins_dir, opts, end);
             } else {
-                events.emit('log', 'Dependent plugin "' + dep_plugin_id + '" not fetched, retrieving then installing.');
+                require('../plugman').emit('log', 'Dependent plugin "' + dep_plugin_id + '" not fetched, retrieving then installing.');
                 var opts = {
                     cli_variables: filtered_variables,
                     www_dir: options.www_dir,
@@ -235,7 +234,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
 }
 
 function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, is_top_level, callback) {
-    events.emit('log', 'Installing plugin ' + plugin_id + '...');
+    require('../plugman').emit('log', 'Installing plugin ' + plugin_id + '...');
     var handler = platform_modules[platform];
     www_dir = www_dir || handler.www_dir(project_dir);
 
@@ -295,7 +294,7 @@ function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plu
             // call prepare after a successful install
             require('./../plugman').prepare(project_dir, platform, plugins_dir);
 
-            events.emit('log', plugin_id + ' installed.');
+            require('../plugman').emit('log', plugin_id + ' installed.');
             if (callback) callback();
         }
     });

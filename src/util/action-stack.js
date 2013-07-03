@@ -1,7 +1,6 @@
 var ios = require('../platforms/ios'),
     wp7 = require('../platforms/wp7'),
     wp8 = require('../platforms/wp8'),
-    events = require('../events'),
     fs = require('fs');
 
 function ActionStack() {
@@ -26,19 +25,19 @@ ActionStack.prototype = {
         this.stack.push(tx);
     },
     process:function(platform, project_dir, callback) {
-        events.emit('log', 'Beginning processing of action stack for ' + platform + ' project...');
+        require('../../plugman').emit('log', 'Beginning processing of action stack for ' + platform + ' project...');
         var project_files;
         // parse platform-specific project files once
         if (platform == 'ios') {
-            events.emit('log', 'Parsing iOS project files...');
+            require('../../plugman').emit('log', 'Parsing iOS project files...');
             project_files = ios.parseIOSProjectFiles(project_dir);
         }
         if (platform == 'wp7') {
-            events.emit('log', 'Parsing WP7 project files...');
+            require('../../plugman').emit('log', 'Parsing WP7 project files...');
             project_files = wp7.parseWP7ProjectFile(project_dir);
         }
         if (platform == 'wp8') {
-            events.emit('log', 'Parsing WP8 project files...');
+            require('../../plugman').emit('log', 'Parsing WP8 project files...');
             project_files = wp8.parseWP8ProjectFile(project_dir);
         } 
         while(this.stack.length) {
@@ -49,7 +48,7 @@ ActionStack.prototype = {
             try {
                 handler.apply(null, action_params);
             } catch(e) {
-                events.emit('warn', 'Error during processing of action! Attempting to revert...');
+                require('../../plugman').emit('warn', 'Error during processing of action! Attempting to revert...');
                 var incomplete = this.stack.unshift(action);
                 var issue = 'Uh oh!\n';
                 // revert completed tasks
@@ -61,7 +60,7 @@ ActionStack.prototype = {
                     try {
                         revert.apply(null, revert_params);
                     } catch(err) {
-                        events.emit('warn', 'Error during reversion of action! We probably really messed up your project now, sorry! D:');
+                        require('../plugman').emit('warn', 'Error during reversion of action! We probably really messed up your project now, sorry! D:');
                         issue += 'A reversion action failed: ' + err.message + '\n';
                     }
                 }
@@ -71,14 +70,14 @@ ActionStack.prototype = {
             }
             this.completed.push(action);
         }
-        events.emit('log', 'Action stack processing complete.');
+        require('../../plugman').emit('log', 'Action stack processing complete.');
         if (platform == 'ios') {
             // write out xcodeproj file
-            events.emit('log', 'Writing out iOS pbxproj file...');
+            require('../../plugman').emit('log', 'Writing out iOS pbxproj file...');
             fs.writeFileSync(project_files.pbx, project_files.xcode.writeSync());
         }
         if (platform == 'wp7' || platform == 'wp8') {
-            events.emit('log', 'Writing out ' + platform + ' project files...');
+            require('../../plugman').emit('log', 'Writing out ' + platform + ' project files...');
             project_files.write();
         }
         if (callback) callback();

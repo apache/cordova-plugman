@@ -31,4 +31,5 @@ module.exports = {
     on:             emitter.addListener,
     off:            emitter.removeListener,
     removeAllListeners: emitter.removeAllListeners,
+    emit:           emitter.emit
 };

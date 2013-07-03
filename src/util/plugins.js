@@ -24,7 +24,6 @@ var http = require('http'),
     util = require('util'),
     shell = require('shelljs'),
     xml_helpers = require('./xml-helpers'),
-    events = require('../events'),
     tmp_dir = path.join(os.tmpdir(), 'plugman-tmp');
 
 module.exports = {
@@ -41,14 +40,14 @@ module.exports = {
 
         shell.cd(path.dirname(tmp_dir));
         var cmd = util.format('git clone "%s" "%s"', plugin_git_url, path.basename(tmp_dir));
-        events.emit('log', 'Fetching plugin via git-clone command: ' + cmd);
+        require('../../plugman').emit('log', 'Fetching plugin via git-clone command: ' + cmd);
         shell.exec(cmd, {silent: true, async:true}, function(code, output) {
             if (code > 0) {
                 var err = new Error('failed to get the plugin via git from URL '+ plugin_git_url + ', output: ' + output);
                 if (callback) return callback(err)
                 else throw err;
             } else {
-                events.emit('log', 'Plugin "' + plugin_git_url + '" fetched.');
+                require('../../plugman').emit('log', 'Plugin "' + plugin_git_url + '" fetched.');
                 // Check out the specified revision, if provided.
                 if (git_ref) {
                     var cmd = util.format('cd "%s" && git checkout "%s"', tmp_dir, git_ref);
@@ -58,7 +57,7 @@ module.exports = {
                         if (callback) return callback(err);
                         else throw err;
                     }
-                    events.emit('log', 'Plugin "' + plugin_git_url + '" checked out to git ref "' + git_ref + '".');
+                    require('../../plugman').emit('log', 'Plugin "' + plugin_git_url + '" checked out to git ref "' + git_ref + '".');
                 }
 
                 // Read the plugin.xml file and extract the plugin's ID.
@@ -70,11 +69,11 @@ module.exports = {
 
                 // TODO: what if a plugin dependended on different subdirectories of the same plugin? this would fail.
                 // should probably copy over entire plugin git repo contents into plugins_dir and handle subdir seperately during install.
-                events.emit('log', 'Copying fetched plugin over "' + plugin_dir + '"...');
+                require('../../plugman').emit('log', 'Copying fetched plugin over "' + plugin_dir + '"...');
                 var plugin_dir = path.join(plugins_dir, plugin_id);
                 shell.cp('-R', path.join(tmp_dir, '*'), plugin_dir);
 
-                events.emit('log', 'Plugin "' + plugin_id + '" fetched.');
+                require('../../plugman').emit('log', 'Plugin "' + plugin_id + '" fetched.');
                 if (callback) callback(null, plugin_dir);
             }
         });

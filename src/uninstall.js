@@ -6,7 +6,6 @@ var path = require('path'),
     xml_helpers = require('./util/xml-helpers'),
     action_stack = require('./util/action-stack'),
     n = require('ncallbacks'),
-    events = require('./events'),
     dependencies = require('./util/dependencies'),
     underscore = require('underscore'),
     platform_modules = require('./platforms');
@@ -63,7 +62,7 @@ function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, o
     diff_arr.unshift(dependents);
     var danglers = underscore.difference.apply(null, diff_arr);
     if (dependents.length && danglers && danglers.length) {
-        events.emit('log', 'Uninstalling ' + danglers.length + ' dangling dependent plugins...');
+        require('../plugman').emit('log', 'Uninstalling ' + danglers.length + ' dangling dependent plugins...');
         var end = n(danglers.length, function() {
             handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, options.www_dir, plugins_dir, plugin_dir, options.is_top_level, callback);
         });
@@ -87,7 +86,7 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
     var handler = platform_modules[platform];
     var platformTag = plugin_et.find('./platform[@name="'+platform+'"]');
     www_dir = www_dir || handler.www_dir(project_dir);
-    events.emit('log', 'Uninstalling ' + plugin_id + '...');
+    require('../plugman').emit('log', 'Uninstalling ' + plugin_id + '...');
 
     var assets = plugin_et.findall('./asset');
     if (platformTag) {
@@ -134,7 +133,7 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
             require('./../plugman').prepare(project_dir, platform, plugins_dir);
             // axe the directory
             shell.rm('-rf', plugin_dir);
-            events.emit('log', plugin_id + ' uninstalled.');
+            require('../plugman').emit('log', plugin_id + ' uninstalled.');
             if (callback) callback();
         }
     });
