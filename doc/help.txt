@@ -28,3 +28,8 @@ Optional parameters
 
  - www <directory>: www assets for the plugin will be installed into this directory. Default is to install into the standard www directory for the platform specified
  - plugins_dir <directory>: a copy of the plugin will be stored in this directory. Default is to install into the <project directory>/plugins folder
+
+Optional flags
+--------------
+
+ --debug : Verbose mode

@@ -28,22 +28,24 @@ var http   = require('http'),
 
 describe('plugins utility module', function(){
     describe('clonePluginGitRepo', function(){
-        it('should shell out to git clone with correct arguments', function(){
-            var execSpy = spyOn(shell, 'exec').andReturn({
-                code: 0,
-                output: 'git output'
+        var fake_id = 'VillageDrunkard';
+        var execSpy, cp_spy, xml_spy;
+        beforeEach(function() {
+            execSpy = spyOn(shell, 'exec').andCallFake(function(cmd, opts, cb) {
+                cb(0, 'git output');
             });
-            var fake_id = 'fake.plugin.id';
-            var xml = {
-                getroot: function() {
-                    return { attrib: { id: fake_id } };
+            spyOn(shell, 'which').andReturn(true);
+            cp_spy = spyOn(shell, 'cp');
+            xml_spy = spyOn(xml_helpers, 'parseElementtreeSync').andReturn({
+                getroot:function() {
+                    return {
+                        attrib:{id:fake_id}
+                    };
                 }
-            };
-
-            spyOn(xml_helpers, 'parseElementtreeSync').andReturn(xml);
-            spyOn(shell, 'cp');
+            });
+        });
+        it('should shell out to git clone with correct arguments', function(){
             var plugin_git_url = 'https://github.com/imhotep/ChildBrowser'
-
             var callback = jasmine.createSpy();
 
             plugins.clonePluginGitRepo(plugin_git_url, temp, '.', undefined, callback);
@@ -57,16 +59,6 @@ describe('plugins utility module', function(){
             expect(callback.mostRecentCall.args[1]).toMatch(new RegExp('/' + fake_id + '$'));
         });
         it('should take into account subdirectory argument when copying over final repository into plugins+plugin_id directory', function() {
-            var exec_spy = spyOn(shell, 'exec').andReturn({ code: 0, output: 'git clone output' });
-            var cp_spy = spyOn(shell, 'cp');
-            var fake_id = 'VillageDrunkard';
-            var xml_spy = spyOn(xml_helpers, 'parseElementtreeSync').andReturn({
-                getroot:function() {
-                    return {
-                        attrib:{id:fake_id}
-                    };
-                }
-            });
             var plugin_git_url = 'https://github.com/imhotep/ChildBrowser'
             
             var fake_subdir = 'TheBrainRecoilsInHorror';

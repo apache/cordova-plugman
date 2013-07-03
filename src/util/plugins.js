@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /*
  *
  * Copyright 2013 Anis Kadri
@@ -25,6 +24,7 @@ var http = require('http'),
     util = require('util'),
     shell = require('shelljs'),
     xml_helpers = require('./xml-helpers'),
+    events = require('../events'),
     tmp_dir = path.join(os.tmpdir(), 'plugman-tmp');
 
 module.exports = {
@@ -33,7 +33,7 @@ module.exports = {
     clonePluginGitRepo:function(plugin_git_url, plugins_dir, subdir, git_ref, callback) {
         if(!shell.which('git')) {
             var err = new Error('git command line is not installed');
-            if (callback) callback(err);
+            if (callback) return callback(err);
             else throw err;
         }
 
@@ -41,39 +41,43 @@ module.exports = {
 
         shell.cd(path.dirname(tmp_dir));
         var cmd = util.format('git clone "%s" "%s"', plugin_git_url, path.basename(tmp_dir));
-        var result = shell.exec(cmd, {silent: true, async:false});
-        if (result.code > 0) {
-            var err = new Error('failed to get the plugin via git from URL '+ plugin_git_url + ', output: ' + result.output);
-            if (callback) callback(err)
-            else throw err;
-        } else {
-            console.log('Plugin "' + plugin_git_url + '" fetched.');
-            // Check out the specified revision, if provided.
-            if (git_ref) {
-                var cmd = util.format('cd "%s" && git checkout "%s"', tmp_dir, git_ref);
-                var result = shell.exec(cmd, { silent: true, async:false });
-                if (result.code > 0) {
-                    var err = new Error('failed to checkout git ref "' + git_ref + '" for plugin at git url "' + plugin_git_url + '", output: ' + result.output);
-                    if (callback) callback(err);
-                    else throw err;
+        events.emit('log', 'Fetching plugin via git-clone command: ' + cmd);
+        shell.exec(cmd, {silent: true, async:true}, function(code, output) {
+            if (code > 0) {
+                var err = new Error('failed to get the plugin via git from URL '+ plugin_git_url + ', output: ' + output);
+                if (callback) return callback(err)
+                else throw err;
+            } else {
+                events.emit('log', 'Plugin "' + plugin_git_url + '" fetched.');
+                // Check out the specified revision, if provided.
+                if (git_ref) {
+                    var cmd = util.format('cd "%s" && git checkout "%s"', tmp_dir, git_ref);
+                    var result = shell.exec(cmd, { silent: true, async:false });
+                    if (result.code > 0) {
+                        var err = new Error('failed to checkout git ref "' + git_ref + '" for plugin at git url "' + plugin_git_url + '", output: ' + result.output);
+                        if (callback) return callback(err);
+                        else throw err;
+                    }
+                    events.emit('log', 'Plugin "' + plugin_git_url + '" checked out to git ref "' + git_ref + '".');
                 }
-                console.log('Checked out ' + git_ref);
+
+                // Read the plugin.xml file and extract the plugin's ID.
+                tmp_dir = path.join(tmp_dir, subdir);
+                // TODO: what if plugin.xml does not exist?
+                var xml_file = path.join(tmp_dir, 'plugin.xml');
+                var xml = xml_helpers.parseElementtreeSync(xml_file);
+                var plugin_id = xml.getroot().attrib.id;
+
+                // TODO: what if a plugin dependended on different subdirectories of the same plugin? this would fail.
+                // should probably copy over entire plugin git repo contents into plugins_dir and handle subdir seperately during install.
+                events.emit('log', 'Copying fetched plugin over "' + plugin_dir + '"...');
+                var plugin_dir = path.join(plugins_dir, plugin_id);
+                shell.cp('-R', path.join(tmp_dir, '*'), plugin_dir);
+
+                events.emit('log', 'Plugin "' + plugin_id + '" fetched.');
+                if (callback) callback(null, plugin_dir);
             }
-
-            // Read the plugin.xml file and extract the plugin's ID.
-            tmp_dir = path.join(tmp_dir, subdir);
-            // TODO: what if plugin.xml does not exist?
-            var xml_file = path.join(tmp_dir, 'plugin.xml');
-            var xml = xml_helpers.parseElementtreeSync(xml_file);
-            var plugin_id = xml.getroot().attrib.id;
-
-            // TODO: what if a plugin dependended on different subdirectories of the same plugin? this would fail.
-            // should probably copy over entire plugin git repo contents into plugins_dir and handle subdir seperately during install.
-            var plugin_dir = path.join(plugins_dir, plugin_id);
-            shell.cp('-R', path.join(tmp_dir, '*'), plugin_dir);
-
-            if (callback) callback(null, plugin_dir);
-        }
+        });
     }
 };
 

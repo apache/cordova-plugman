@@ -60,9 +60,12 @@ process.on('uncaughtException', function(error){
     process.exit(1);
 });
 
+// Set up appropriate logging based on events
 if (cli_opts.debug) {
     plugman.on('log', console.log);
 }
+plugman.on('warn', console.warn);
+plugman.on('error', console.error);
 
 if (cli_opts.v) {
     console.log(package.name + ' version ' + package.version);

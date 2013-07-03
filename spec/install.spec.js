@@ -8,6 +8,7 @@ var install = require('../src/install'),
     path    = require('path'),
     shell   = require('shelljs'),
     semver  = require('semver'),
+    events = require('../src/events'),
     temp    = __dirname,
     dummyplugin = 'DummyPlugin',
     dummy_id = 'com.phonegap.plugins.dummyplugin',
@@ -50,7 +51,7 @@ describe('install', function() {
             expect(add_to_queue).toHaveBeenCalledWith(plugins_dir, 'DummyPlugin', 'android', {}, true);
         });
         it('should notify if plugin is already installed into project', function() {
-            var spy = spyOn(console, 'log');
+            var spy = spyOn(events, 'emit');
             get_json.andReturn({
                 installed_plugins:{
                     'com.phonegap.plugins.dummyplugin':{}
@@ -58,7 +59,7 @@ describe('install', function() {
                 dependent_plugins:{}
             });
             install('android', temp, dummyplugin, plugins_dir, {});
-            expect(spy).toHaveBeenCalledWith('Plugin "'+dummy_id+'" already installed, \'sall good.');
+            expect(spy).toHaveBeenCalledWith('log', 'Plugin "'+dummy_id+'" already installed, \'sall good.');
         });
         it('should check version if plugin has engine tag', function(){
             var spy = spyOn(semver, 'satisfies').andReturn(true);

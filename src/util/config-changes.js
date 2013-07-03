@@ -23,6 +23,7 @@ var fs   = require('fs'),
     plist = require('plist'),
     bplist = require('bplist-parser'),
     et   = require('elementtree'),
+    events = require('../events'),
     xml_helpers = require('./../util/xml-helpers'),
     plist_helpers = require('./../util/plist-helpers');
 
