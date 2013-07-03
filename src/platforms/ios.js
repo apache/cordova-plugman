@@ -39,11 +39,12 @@ module.exports = {
             var targetDir = path.resolve(project.plugins_dir, plugin_id, getRelativeDir(source_el));
             var destFile = path.resolve(targetDir, path.basename(src));
             var is_framework = source_el.attrib['framework'] && (source_el.attrib['framework'] == 'true' || source_el.attrib['framework'] == true);
+            var has_flags = source_el.attrib['compiler-flags'] && source_el.attrib['compiler-flags'].length ? true : false ;
 
             if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <source-file>');
             if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
             var project_ref = path.join('Plugins', path.relative(project.plugins_dir, destFile));
-            project.xcode.addSourceFile(project_ref);
+            project.xcode.addSourceFile(project_ref, has_flags ? {compilerFlags:source_el.attrib['compiler-flags']} : {});
             if (is_framework) {
                 var weak = source_el.attrib['weak'];
                 var opt = { weak: (weak == undefined || weak == null || weak != 'true' ? false : true ) };

@@ -133,13 +133,13 @@ describe('ios project handler', function() {
                 var source = copyArray(valid_source).filter(function(s) { return s.attrib['target-dir'] == undefined});
                 var spy = spyOn(proj_files.xcode, 'addSourceFile');
                 ios['source-file'].install(source[0], dummyplugin, temp, dummy_id, proj_files);
-                expect(spy).toHaveBeenCalledWith(path.join('Plugins', dummy_id, 'DummyPluginCommand.m'));
+                expect(spy).toHaveBeenCalledWith(path.join('Plugins', dummy_id, 'DummyPluginCommand.m'), {});
             });
             it('should call into xcodeproj\'s addSourceFile appropriately when element has a target-dir', function() {
                 var source = copyArray(valid_source).filter(function(s) { return s.attrib['target-dir'] != undefined});
                 var spy = spyOn(proj_files.xcode, 'addSourceFile');
                 ios['source-file'].install(source[0], dummyplugin, temp, dummy_id, proj_files);
-                expect(spy).toHaveBeenCalledWith(path.join('Plugins', dummy_id, 'targetDir', 'TargetDirTest.m'));
+                expect(spy).toHaveBeenCalledWith(path.join('Plugins', dummy_id, 'targetDir', 'TargetDirTest.m'), {});
             });
             it('should cp the file to the right target location when element has no target-dir', function() {
                 var source = copyArray(valid_source).filter(function(s) { return s.attrib['target-dir'] == undefined});

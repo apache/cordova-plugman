@@ -20,7 +20,7 @@
     "nopt": "1.0.x",
     "glob": "3.2.x",
     "elementtree": "0.1.x",
-    "xcode": "https://github.com/filmaj/node-xcode/tarball/master",
+    "xcode": "0.6.1",
     "plist": "0.4.x",
     "bplist-parser": "0.0.x",
     "shelljs": "0.1.x",
