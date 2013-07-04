@@ -98,4 +98,29 @@
         <framework src="src/ios/libsqlite3.dylib" />
         <framework src="src/ios/libsqlite3.dylib" weak="true" />
     </platform>
+
+    <!-- wp7 -->
+    <platform name="wp7">
+        <config-file target="config.xml" parent="/*">
+            <feature id="dummyPlugin" required="true" version="1.0.0.0"/>
+        </config-file>
+
+        <source-file src="src/wp7/DummyPlugin.cs"/>
+        <js-module src="www/dummyplugin.js" name="Dummy">
+            <clobbers target="dummy" />
+        </js-module>
+    </platform>
+
+    <!-- wp8 -->
+    <platform name="wp8">
+        <config-file target="config.xml" parent="/*">
+            <feature id="dummyPlugin" required="true" version="1.0.0.0"/>
+        </config-file>
+
+        <source-file src="src/wp8/DummyPlugin.cs"/>
+        <js-module src="www/dummyplugin.js" name="Dummy">
+            <clobbers target="dummy" />
+        </js-module>
+    </platform>
+
 </plugin>
