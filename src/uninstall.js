@@ -11,7 +11,17 @@ var path = require('path'),
     platform_modules = require('./platforms');
 
 // possible options: cli_variables, www_dir
-module.exports = function uninstallPlugin(platform, project_dir, id, plugins_dir, options, callback) {
+module.exports = function(platform, project_dir, id, plugins_dir, options, callback) {
+    module.exports.uninstallPlatform(platform, project_dir, id, plugins_dir, options, function(err) {
+        if (err) {
+            if (callback) return callback(err);
+            else throw err;
+        }
+        module.exports.uninstallPlugin(id, plugins_dir, options, callback);
+    });
+}
+
+module.exports.uninstallPlatform = function(platform, project_dir, id, plugins_dir, options, callback) {
     if (!platform_modules[platform]) {
         var err = new Error(platform + " not supported.");
         if (callback) return callback(err);
@@ -32,11 +42,21 @@ module.exports = function uninstallPlugin(platform, project_dir, id, plugins_dir
     runUninstall(current_stack, platform, project_dir, plugin_dir, plugins_dir, options, callback);
 };
 
+module.exports.uninstallPlugin = function(id, plugins_dir, callback) {
+    var plugin_dir = path.join(plugins_dir, id);
+    var xml_path     = path.join(plugin_dir, 'plugin.xml')
+      , plugin_et    = xml_helpers.parseElementtreeSync(xml_path);
+    var plugin_id    = plugin_et._root.attrib['id'];
+    // axe the directory
+    shell.rm('-rf', plugin_dir);
+    require('../plugman').emit('log', plugin_id + ' uninstalled.');
+    if (callback) callback();
+};
+
 // possible options: cli_variables, www_dir, is_top_level
 function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, options, callback) {
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , plugin_et    = xml_helpers.parseElementtreeSync(xml_path);
-    var name         = plugin_et.findall('name').text;
     var plugin_id    = plugin_et._root.attrib['id'];
     options = options || {};
 
@@ -131,9 +151,6 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
             config_changes.add_uninstalled_plugin_to_prepare_queue(plugins_dir, path.basename(plugin_dir), platform, is_top_level);
             // call prepare after a successful uninstall
             require('./../plugman').prepare(project_dir, platform, plugins_dir);
-            // axe the directory
-            shell.rm('-rf', plugin_dir);
-            require('../plugman').emit('log', plugin_id + ' uninstalled.');
             if (callback) callback();
         }
     });
