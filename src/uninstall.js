@@ -17,7 +17,7 @@ module.exports = function(platform, project_dir, id, plugins_dir, options, callb
             if (callback) return callback(err);
             else throw err;
         }
-        module.exports.uninstallPlugin(id, plugins_dir, options, callback);
+        module.exports.uninstallPlugin(id, plugins_dir, callback);
     });
 }
 
