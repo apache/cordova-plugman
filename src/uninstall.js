@@ -93,7 +93,13 @@ function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, o
                 cli_variables: options.cli_variables,
                 is_top_level: false /* TODO: should this "is_top_level" param be false for dependents? */
             };
-            runUninstall(actions, platform, project_dir, dependent_path, plugins_dir, opts, end);
+            runUninstall(actions, platform, project_dir, dependent_path, plugins_dir, opts, function(err) {
+                if (err) {
+                    if (callback) return callback(err);
+                    else throw err;
+                }
+                module.exports.uninstallPlugin(dangler, plugins_dir, end);
+            });
         });
     } else {
         // this plugin can get axed by itself, gogo!

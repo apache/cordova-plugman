@@ -51,7 +51,10 @@ describe('uninstallPlatform', function() {
         });
 
         describe('with dependencies', function() {
-            it('should uninstall "dangling" dependencies');
+            it('should uninstall "dangling" dependencies', function() {
+            });
+            it('should remove dangling dependent directories', function() {
+            });
             it('should not uninstall any dependencies that are relied on by other plugins');
         });
     });
