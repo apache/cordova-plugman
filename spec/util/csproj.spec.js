@@ -39,7 +39,6 @@ describe('csproj', function() {
 
             it('should properly add .xaml files', function() {
                 test_csproj.addSourceFile(page_test);
-                console.log(test_csproj.xml.getroot().findall('.//Page'));
                 expect(test_csproj.xml.getroot().find('.//Page[@Include="src\\UI\\PageTest.xaml"]')).toBeTruthy();        
                 expect(test_csproj.xml.getroot().find('.//Page[@Include="src\\UI\\PageTest.xaml"]/Generator').text).toEqual('MSBuild:Compile');
                 expect(test_csproj.xml.getroot().find('.//Page[@Include="src\\UI\\PageTest.xaml"]/SubType').text).toEqual('Designer');
