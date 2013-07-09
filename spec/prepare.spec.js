@@ -15,12 +15,12 @@ var json = path.join(temp, 'assets', 'www', 'cordova_plugins.json');
 var js = path.join(temp, 'assets', 'www', 'cordova_plugins.js');
 
 describe('prepare', function() {
-    var proc, readdir, write, stat, read, parseET, mkdir;
+    var proc, platform_json, write, stat, read, parseET, mkdir;
     var root, findall, find;
     beforeEach(function() {
         mkdir = spyOn(shell, 'mkdir');
         proc = spyOn(config_changes, 'process');
-        readdir = spyOn(fs, 'readdirSync').andReturn([]);
+        platform_json = spyOn(config_changes, 'get_platform_json').andReturn({installed_plugins:{},dependent_plugins:{}});
         write = spyOn(fs, 'writeFileSync');
         stat = spyOn(fs, 'statSync').andReturn({isDirectory:function() { return true; }});
         root = jasmine.createSpy('ElementTree getroot').andReturn({
@@ -46,11 +46,10 @@ describe('prepare', function() {
     });
     describe('handling of js-modules', function() {
         var read, child_one;
-        var fake_plugins = ['plugin_one', 'plugin_two'];
         beforeEach(function() {
             child_one = jasmine.createSpy('getchildren').andReturn([]);
             read = spyOn(fs, 'readFileSync').andReturn('JAVASCRIPT!');
-            readdir.andReturn(fake_plugins);
+            platform_json.andReturn({installed_plugins:{plugin_one:'',plugin_two:''},dependent_plugins:{}});
             findall.andReturn([
                 {attrib:{src:'somedir', name:'NAME'}, getchildren:child_one},
                 {attrib:{src:'someotherdir', name:'NAME'}, getchildren:child_one}

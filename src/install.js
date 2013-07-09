@@ -184,14 +184,12 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
                     var result = shell.exec('git rev-parse --show-toplevel', { silent:true, async:false});
                     if (result.code === 128) {
                         var err = new Error('Error: Plugin ' + plugin_id + ' is not in git repository. All plugins must be in a git repository.');
-                        if (callback) callback(err);
+                        if (callback) return callback(err);
                         else throw err;
-                        return;
                     } else if(result.code > 0) {
                         var err = new Error('Error trying to locate git repository for plugin.');
-                        if (callback) callback(err);
+                        if (callback) return callback(err);
                         else throw err;
-                        return;
                     }
 
                     var dep_url = path.join(result.output.trim(), dep_subdir);

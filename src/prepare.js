@@ -46,14 +46,12 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     config_changes.process(plugins_dir, project_dir, platform);
 
     var wwwDir = platform_modules[platform].www_dir(project_dir);
-    // TODO: perhaps this should look at platform json files to determine which plugins to prepare?
-    var plugins = fs.readdirSync(plugins_dir).filter(function(p) {
-        return p != '.svn' && p != 'CVS';
-    });
+    var platform_json = config_changes.get_platform_json(plugins_dir, platform);
+    var plugins = Object.keys(platform_json.installed_plugins).concat(Object.keys(platform_json.dependent_plugins));
 
     // This array holds all the metadata for each module and ends up in cordova_plugins.json
     var moduleObjects = [];
-    require('../plugman').emit('log', 'Iterating over installed plugins...');
+    require('../plugman').emit('log', 'Iterating over installed plugins:', plugins);
 
     plugins && plugins.forEach(function(plugin) {
         var pluginDir = path.join(plugins_dir, plugin);
