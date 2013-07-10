@@ -36,9 +36,9 @@ describe('prepare', function() {
             find:find
         });
     });
-    it('should NOT create a cordova_plugins.json file', function() {
+    it('should create a cordova_plugins.json file', function() {
         prepare(temp, 'android', plugins_dir);
-        expect(write).not.toHaveBeenCalledWith(json, jasmine.any(String), 'utf-8');
+        expect(write).toHaveBeenCalledWith(json, jasmine.any(String), 'utf-8');
     });
     it('should create a cordova_plugins.js file', function() {
         prepare(temp, 'android', plugins_dir);
