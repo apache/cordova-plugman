@@ -1,6 +1,7 @@
 var uninstall = require('../src/uninstall'),
     actions = require('../src/util/action-stack'),
     config_changes = require('../src/util/config-changes'),
+    dependencies = require('../src/util/dependencies'),
     xml_helpers = require('../src/util/xml-helpers'),
     plugman = require('../plugman'),
     fs      = require('fs'),
@@ -17,6 +18,7 @@ var uninstall = require('../src/uninstall'),
 
 describe('uninstallPlatform', function() {
     var exists, get_json, chmod, exec, proc, add_to_queue, prepare, actions_push, c_a, rm;
+    var gen_deps, get_chain;
     beforeEach(function() {
         proc = spyOn(actions.prototype, 'process').andCallFake(function(platform, proj, cb) {
             cb();
@@ -33,6 +35,13 @@ describe('uninstallPlatform', function() {
         });
         rm = spyOn(shell, 'rm');
         add_to_queue = spyOn(config_changes, 'add_uninstalled_plugin_to_prepare_queue');
+        dependents = jasmine.createSpy('getChain').andReturn([]),
+        gen_deps = spyOn(dependencies, 'generate_dependency_info').andReturn({
+            graph:{
+                getChain:dependents
+            },
+            top_level_plugins:[]
+        });
     });
     describe('success', function() {
         it('should call prepare after a successful uninstall', function() {
@@ -51,9 +60,46 @@ describe('uninstallPlatform', function() {
         });
 
         describe('with dependencies', function() {
-            it('should uninstall "dangling" dependencies', function() {
+            var uninstall_spy, parseET;
+            beforeEach(function() {
+                uninstall_spy = spyOn(uninstall, 'uninstallPlugin').andCallFake(function(id, dir, cb) {
+                    cb();
+                });
+                parseET = spyOn(xml_helpers, 'parseElementtreeSync').andReturn({
+                    _root:{
+                        attrib:{}
+                    },
+                    find:function() { return null },
+                    findall:function() { return [] }
+                });
             });
-            it('should remove dangling dependent directories', function() {
+            it('should uninstall "dangling" dependencies', function() {
+                // TODO: this is a terrible way to do conditional mocking, i am sorry.
+                // if you have a better idea on how to mock out this recursive function, plz patch it
+                var counter = 0;
+                gen_deps.andCallFake(function() {
+                    var obj;
+                    if (counter === 0) {
+                        counter++;
+                        obj = {
+                            graph:{
+                                getChain:function() { return ['one','two'] }
+                            },
+                            top_level_plugins:[]
+                        };
+                    } else {
+                        obj = {
+                            graph:{
+                                getChain:dependents
+                            },
+                            top_level_plugins:[]
+                        };
+                    }
+                    return obj;
+                });
+                uninstall.uninstallPlatform('android', temp, dummyplugin, plugins_dir, {});
+                expect(uninstall_spy).toHaveBeenCalledWith('one', plugins_dir, jasmine.any(Function));
+                expect(uninstall_spy).toHaveBeenCalledWith('two', plugins_dir, jasmine.any(Function));
             });
             it('should not uninstall any dependencies that are relied on by other plugins');
         });
