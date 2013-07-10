@@ -1,7 +1,5 @@
 # plugin.xml Manifest Format
 
-Last edited May 17 2013.
-
 The `plugin.xml` file is an XML document in the plugins namespace -
 `http://apache.org/cordova/ns/plugins/1.0`. It contains a top-level `plugin`
 element defining the plugin, and children that define the structure of the
