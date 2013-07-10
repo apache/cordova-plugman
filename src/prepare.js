@@ -41,15 +41,33 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     // - For each js-module (general first, then platform) build up an object storing the path and any clobbers, merges and runs for it.
     // - Write this object into www/cordova_plugins.json.
     // - Cordova.js contains code to load them at runtime from that file.
+    require('../plugman').emit('log', 'Preparing ' + platform + ' project...');
+    var platform_json = config_changes.get_platform_json(plugins_dir, platform);
+    var wwwDir = platform_modules[platform].www_dir(project_dir);
 
-    require('../plugman').emit('log', 'Preparing ' + platform + ' project, starting with processing of config changes...');
+    // Check if there are any plugins queued for uninstallation, and if so, remove any of their plugin web assets loaded in
+    // via <js-module> elements
+    var plugins_to_uninstall = platform_json.prepare_queue.uninstalled;
+    if (plugins_to_uninstall && plugins_to_uninstall.length) {
+        var plugins_www = path.join(wwwDir, 'plugins');
+        if (fs.existsSync(plugins_www)) {
+            plugins_to_uninstall.forEach(function(plug) {
+                var id = plug.id;
+                var plugin_modules = path.join(plugins_www, id);
+                if (fs.existsSync(plugin_modules)) {
+                    require('../plugman').emit('log', 'Removing plugins directory from www "'+plugin_modules+'"');
+                    shell.rm('-rf', plugin_modules);
+                }
+            });
+        }
+    }
+
+    require('../plugman').emit('log', 'Processing configuration changes for plugins.');
     config_changes.process(plugins_dir, project_dir, platform);
 
-    var wwwDir = platform_modules[platform].www_dir(project_dir);
-    var platform_json = config_changes.get_platform_json(plugins_dir, platform);
-    var plugins = Object.keys(platform_json.installed_plugins).concat(Object.keys(platform_json.dependent_plugins));
-
+    platform_json = config_changes.get_platform_json(plugins_dir, platform);
     // This array holds all the metadata for each module and ends up in cordova_plugins.json
+    var plugins = Object.keys(platform_json.installed_plugins).concat(Object.keys(platform_json.dependent_plugins));
     var moduleObjects = [];
     require('../plugman').emit('log', 'Iterating over installed plugins:', plugins);
 

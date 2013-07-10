@@ -15,12 +15,13 @@ var json = path.join(temp, 'assets', 'www', 'cordova_plugins.json');
 var js = path.join(temp, 'assets', 'www', 'cordova_plugins.js');
 
 describe('prepare', function() {
-    var proc, platform_json, write, stat, read, parseET, mkdir;
+    var proc, platform_json, write, stat, read, parseET, mkdir, rm;
     var root, findall, find;
     beforeEach(function() {
+        rm = spyOn(shell, 'rm');
         mkdir = spyOn(shell, 'mkdir');
         proc = spyOn(config_changes, 'process');
-        platform_json = spyOn(config_changes, 'get_platform_json').andReturn({installed_plugins:{},dependent_plugins:{}});
+        platform_json = spyOn(config_changes, 'get_platform_json').andReturn({installed_plugins:{},dependent_plugins:{},prepare_queue:{uninstalled:[]}});
         write = spyOn(fs, 'writeFileSync');
         stat = spyOn(fs, 'statSync').andReturn({isDirectory:function() { return true; }});
         root = jasmine.createSpy('ElementTree getroot').andReturn({
@@ -49,7 +50,7 @@ describe('prepare', function() {
         beforeEach(function() {
             child_one = jasmine.createSpy('getchildren').andReturn([]);
             read = spyOn(fs, 'readFileSync').andReturn('JAVASCRIPT!');
-            platform_json.andReturn({installed_plugins:{plugin_one:'',plugin_two:''},dependent_plugins:{}});
+            platform_json.andReturn({installed_plugins:{plugin_one:'',plugin_two:''},dependent_plugins:{},prepare_queue:{uninstalled:[]}});
             findall.andReturn([
                 {attrib:{src:'somedir', name:'NAME'}, getchildren:child_one},
                 {attrib:{src:'someotherdir', name:'NAME'}, getchildren:child_one}
@@ -63,6 +64,21 @@ describe('prepare', function() {
             prepare(temp, 'android', plugins_dir);
             expect(write).toHaveBeenCalledWith(path.join(temp, 'assets', 'www', 'plugins', 'someid', 'somedir'), jasmine.any(String), 'utf-8');
             expect(write).toHaveBeenCalledWith(path.join(temp, 'assets', 'www', 'plugins', 'someid', 'someotherdir'), jasmine.any(String), 'utf-8');
+        });
+        describe('uninstallation/removal', function() {
+            var existsSync;
+            beforeEach(function() {
+                existsSync = spyOn(fs, 'existsSync').andReturn(true);
+                platform_json.andReturn({installed_plugins:{},dependent_plugins:{},prepare_queue:{uninstalled:[{
+                    plugin:'nickelback',
+                    id:'nickelback',
+                    topLevel:true
+                }]}});
+            });
+            it('should remove any www/plugins directories related to plugins being queued for removal', function() {
+                prepare(temp, 'android', plugins_dir);
+                expect(rm).toHaveBeenCalledWith('-rf', path.join(temp, 'assets', 'www', 'plugins', 'nickelback'));
+            });
         });
     });
     it('should call into config-changes\' process method to do config processing', function() {
