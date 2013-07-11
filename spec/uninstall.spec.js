@@ -60,11 +60,9 @@ describe('uninstallPlatform', function() {
         });
 
         describe('with dependencies', function() {
-            var uninstall_spy, parseET;
+            var parseET, emit;
             beforeEach(function() {
-                uninstall_spy = spyOn(uninstall, 'uninstallPlugin').andCallFake(function(id, dir, cb) {
-                    cb();
-                });
+                emit = spyOn(plugman, 'emit');
                 parseET = spyOn(xml_helpers, 'parseElementtreeSync').andReturn({
                     _root:{
                         attrib:{}
@@ -98,8 +96,7 @@ describe('uninstallPlatform', function() {
                     return obj;
                 });
                 uninstall.uninstallPlatform('android', temp, dummyplugin, plugins_dir, {});
-                expect(uninstall_spy).toHaveBeenCalledWith('one', plugins_dir, jasmine.any(Function));
-                expect(uninstall_spy).toHaveBeenCalledWith('two', plugins_dir, jasmine.any(Function));
+                expect(emit).toHaveBeenCalledWith('log', 'Uninstalling 2 dangling dependent plugins...');
             });
             it('should not uninstall any dependencies that are relied on by other plugins');
         });
@@ -121,8 +118,9 @@ describe('uninstallPlatform', function() {
 });
 
 describe('uninstallPlugin', function() {
-    var exists, get_json, chmod, exec, proc, add_to_queue, prepare, actions_push, c_a, rm;
+    var exists, get_json, chmod, exec, proc, add_to_queue, prepare, actions_push, c_a, rm, uninstall_plugin;
     beforeEach(function() {
+        uninstall_plugin = spyOn(uninstall, 'uninstallPlugin').andCallThrough();
         proc = spyOn(actions.prototype, 'process').andCallFake(function(platform, proj, cb) {
             cb();
         });
@@ -143,6 +141,32 @@ describe('uninstallPlugin', function() {
         it('should remove the plugin directory', function() {
             uninstall.uninstallPlugin(dummyplugin, plugins_dir);
             expect(rm).toHaveBeenCalled();
+        });
+        describe('with dependencies', function() {
+            var parseET, emit;
+            beforeEach(function() {
+                emit = spyOn(plugman, 'emit');
+                var counter = 0;
+                parseET = spyOn(xml_helpers, 'parseElementtreeSync').andCallFake(function(p) {
+                    return {
+                        _root:{
+                            attrib:{}
+                        },
+                        find:function() { return null },
+                        findall:function() { 
+                            if (counter === 0) {
+                                counter++;
+                                return [{attrib:{id:'somedependent'}}] 
+                            }
+                            else return [];
+                        }
+                    }
+                });
+            });
+            it('should recurse if dependent plugins are detected', function() {
+                uninstall.uninstallPlugin(dummyplugin, plugins_dir);
+                expect(uninstall_plugin).toHaveBeenCalledWith('somedependent', plugins_dir, jasmine.any(Function));
+            });
         });
     });
 

@@ -46,11 +46,26 @@ module.exports.uninstallPlugin = function(id, plugins_dir, callback) {
     var plugin_dir = path.join(plugins_dir, id);
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , plugin_et    = xml_helpers.parseElementtreeSync(xml_path);
-    var plugin_id    = plugin_et._root.attrib['id'];
-    // axe the directory
-    shell.rm('-rf', plugin_dir);
-    require('../plugman').emit('log', plugin_id + ' uninstalled.');
-    if (callback) callback();
+
+    require('../plugman').emit('log', 'Removing plugin ' + id + '...');
+    // Check for dependents
+    var dependencies = plugin_et.findall('dependency');
+    if (dependencies && dependencies.length) {
+        require('../plugman').emit('log', 'Dependencies detected, iterating through them and removing them first...');
+        var end = n(dependencies.length, function() {
+            shell.rm('-rf', plugin_dir);
+            require('../plugman').emit('log', id + ' removed.');
+            if (callback) callback();
+        });
+        dependencies.forEach(function(dep) {
+            module.exports.uninstallPlugin(dep.attrib.id, plugins_dir, end);
+        });
+    } else {
+        // axe the directory
+        shell.rm('-rf', plugin_dir);
+        require('../plugman').emit('log', id + ' removed.');
+        if (callback) callback();
+    }
 };
 
 // possible options: cli_variables, www_dir, is_top_level
@@ -93,13 +108,7 @@ function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, o
                 cli_variables: options.cli_variables,
                 is_top_level: false /* TODO: should this "is_top_level" param be false for dependents? */
             };
-            runUninstall(actions, platform, project_dir, dependent_path, plugins_dir, opts, function(err) {
-                if (err) {
-                    if (callback) return callback(err);
-                    else throw err;
-                }
-                module.exports.uninstallPlugin(dangler, plugins_dir, end);
-            });
+            runUninstall(actions, platform, project_dir, dependent_path, plugins_dir, opts, end);
         });
     } else {
         // this plugin can get axed by itself, gogo!
