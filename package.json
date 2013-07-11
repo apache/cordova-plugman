@@ -28,7 +28,7 @@
     "ncallbacks":"1.1.0",
     "underscore":"1.4.4",
     "dep-graph":"1.1.0",
-    "semver": "2.0.x"
+    "semver": "2.0.x",
     "plugman-registry": "0.0.2"
   },
   "devDependencies": {
