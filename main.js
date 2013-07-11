@@ -108,5 +108,5 @@ else if(cli_opts.install) {
     };
     plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, opts);
 } else {
-  printUsage();
+  plugman.help();
 }
