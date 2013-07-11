@@ -44,6 +44,11 @@ module.exports.uninstallPlatform = function(platform, project_dir, id, plugins_d
 
 module.exports.uninstallPlugin = function(id, plugins_dir, callback) {
     var plugin_dir = path.join(plugins_dir, id);
+    // If already removed, skip.
+    if (!fs.existsSync(plugin_dir)) {
+        if (callback) callback();
+        return;
+    }
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , plugin_et    = xml_helpers.parseElementtreeSync(xml_path);
 
