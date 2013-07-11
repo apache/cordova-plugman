@@ -24,5 +24,9 @@ module.exports = {
     uninstall:require('./src/uninstall'),
     fetch:    require('./src/fetch'),
     prepare:  require('./src/prepare'),
+    adduser:  require('./src/adduser'),
+    publish:  require('./src/publish'),
+    unpublish:require('./src/unpublish'),
+    search:   require('./src/search'),
     config_changes:require('./src/util/config-changes')
 };

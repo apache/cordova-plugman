@@ -24,8 +24,6 @@ var path = require('path')
     , package = require(path.join(__dirname, 'package'))
     , nopt = require('nopt')
     , plugins = require('./src/util/plugins')
-    , registry = require('plugman-registry')
-    , config = require('./config')
     , plugman = require('./plugman');
 
 var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry10', 'wp7', 'wp8' ]
@@ -83,38 +81,16 @@ else if (cli_opts.uninstall) {
     plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, { www_dir: cli_opts.www });
 }
 else if (cli_opts.adduser) {
-  registry.use(config.registry, function(err) {
-    registry.adduser(null, function(err) {
-      if(err) return console.log(err);
-      console.log('user added');
-    });
-  });
+  plugman.adduser();
 }
 else if (cli_opts.publish && cli_opts.plugin) {
-  registry.use(config.registry, function(err) {
-    registry.publish([cli_opts.plugin], function(err, d) {
-      if(err) return console.log('Error publishing plugin', err); 
-      console.log('plugin published');
-    });
-  });
+  plugman.publish(new Array(cli_opts.plugin));
 }
 else if (cli_opts.unpublish && cli_opts.plugin) {
-  registry.use(config.registry, function(err) {
-    registry.unpublish([cli_opts.plugin], function(err, d) {
-      if(err) return console.log('Error unpublishing plugin'); 
-      console.log('plugin unpublished');
-    });
-  });
+  plugman.unpublish(new Array(cli_opts.plugin));
 }
 else if (cli_opts.search) {
-  registry.use(config.registry, function(err) {
-    registry.search(cli_opts.search.split(','), function(err, plugins) {
-      if(err) return console.log(err); 
-      for(var plugin in plugins) {
-        console.log(plugins[plugin].name, '-', plugins[plugin].description || 'no description provided'); 
-      }
-    });
-  });
+  plugman.search(cli_opts.search.split(',');
 }
 else if(cli_opts.install) {
     var cli_variables = {}
