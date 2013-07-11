@@ -90,7 +90,7 @@ else if (cli_opts.unpublish && cli_opts.plugin) {
   plugman.unpublish(new Array(cli_opts.plugin));
 }
 else if (cli_opts.search) {
-  plugman.search(cli_opts.search.split(',');
+  plugman.search(cli_opts.search.split(','));
 }
 else if(cli_opts.install) {
     var cli_variables = {}

@@ -28,3 +28,27 @@ Optional parameters
 
  - www <directory>: www assets for the plugin will be installed into this directory. Default is to install into the standard www directory for the platform specified
  - plugins_dir <directory>: a copy of the plugin will be stored in this directory. Default is to install into the <project directory>/plugins folder
+
+Interacting with the registry
+=============================
+
+Add a user account
+------------------
+
+    $ plugman --adduser
+
+Publish a plugin
+----------------
+
+    $ plugman --publish --plugin <directory>
+
+Unpublish a plugin
+------------------
+
+    $ plugman --unpublish <name>@<version>
+
+Search for a plugin
+-------------------
+
+    $ plugman --search plugin,keywords
+
