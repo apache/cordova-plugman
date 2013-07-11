@@ -44,13 +44,15 @@ module.exports = {
             if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <source-file>');
             if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
             var project_ref = path.join('Plugins', path.relative(project.plugins_dir, destFile));
-            project.xcode.addSourceFile(project_ref, has_flags ? {compilerFlags:source_el.attrib['compiler-flags']} : {});
+
             if (is_framework) {
                 var weak = source_el.attrib['weak'];
                 var opt = { weak: (weak == undefined || weak == null || weak != 'true' ? false : true ) };
                 var project_relative = path.join(path.basename(project.xcode_path), project_ref);
                 project.xcode.addFramework(project_relative, opt);
                 project.xcode.addToLibrarySearchPaths({path:project_ref});
+            } else {
+                project.xcode.addSourceFile(project_ref, has_flags ? {compilerFlags:source_el.attrib['compiler-flags']} : {});
             }
             shell.mkdir('-p', targetDir);
             shell.cp(srcFile, destFile);
