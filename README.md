@@ -23,7 +23,7 @@ This document defines tool usage.
 * iOS
 * Android
 * BlackBerry 10
-* Windows Phone 7
+* Windows Phone (7+8)
 
 ## Command Line Usage
 
