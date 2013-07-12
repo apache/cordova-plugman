@@ -13,6 +13,7 @@ var install = require('../src/install'),
     dummy_id = 'com.phonegap.plugins.dummyplugin',
     variableplugin = 'VariablePlugin',
     engineplugin = 'EnginePlugin',
+    childplugin = 'ChildBrowser',
     plugins_dir = path.join(temp, 'plugins');
 
 describe('install', function() {
@@ -71,6 +72,11 @@ describe('install', function() {
             expect(actions_push.calls.length).toEqual(3);
             expect(c_a).toHaveBeenCalledWith(jasmine.any(Function), [jasmine.any(Object), path.join(plugins_dir, dummyplugin), temp, dummy_id], jasmine.any(Function), [jasmine.any(Object), temp, dummy_id]);
             expect(proc).toHaveBeenCalled();
+        });
+        it('should emit a results event with platform-agnostic <info>', function() {
+            var emit = spyOn(plugman, 'emit');
+            install('android', temp, childplugin, plugins_dir, {});
+            expect(emit).toHaveBeenCalledWith('results', 'No matter what platform you are installing to, this notice is very important.');
         });
 
         describe('with dependencies', function() {

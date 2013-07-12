@@ -36,6 +36,8 @@
         <access origin="build.phonegap.com" />
         <access origin="s3.amazonaws.com" />
     </config-file>
+    
+    <info>No matter what platform you are installing to, this notice is very important.</info>
 
     <!-- android -->
     <platform name="android">
