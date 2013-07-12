@@ -26,6 +26,8 @@
     <name>Use Variables</name>
 
     <preference name="API_KEY" />
+
+    <info>Remember that your api key is $API_KEY!</info>
     <!-- android -->
     <platform name="android">
 		<config-file target="AndroidManifest.xml" parent="/manifest">

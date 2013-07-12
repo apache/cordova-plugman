@@ -291,13 +291,21 @@ function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plu
             // Log out plugin INFO element contents in case additional install steps are necessary
             var info = plugin_et.findall('./info');
             if(info.length) {
-                require('../plugman').emit('results', info[0].text);
+                require('../plugman').emit('results', interp_vars(filtered_variables, info[0].text));
             }
             info = (platformTag ? platformTag.findall('./info') : []);
             if(info.length) {
-                require('../plugman').emit('results', info[0].text);
+                require('../plugman').emit('results', interp_vars(filtered_variables, info[0].text));
             }
             if (callback) callback();
         }
     });
+}
+
+function interp_vars(vars, text) {
+    vars && Object.keys(vars).forEach(function(key) {
+        var regExp = new RegExp("\\$" + key, "g");
+        text = text.replace(regExp, vars[key]);
+    });
+    return text;
 }

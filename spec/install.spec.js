@@ -78,6 +78,16 @@ describe('install', function() {
             install('android', temp, childplugin, plugins_dir, {});
             expect(emit).toHaveBeenCalledWith('results', 'No matter what platform you are installing to, this notice is very important.');
         });
+        it('should emit a results event with platform-specific <info>', function() {
+            var emit = spyOn(plugman, 'emit');
+            install('android', temp, childplugin, plugins_dir, {});
+            expect(emit).toHaveBeenCalledWith('results', 'Please make sure you read this because it is very important to complete the installation of your plugin.');
+        });
+        it('should interpolate variables into <info> tags', function() {
+            var emit = spyOn(plugman, 'emit');
+            install('android', temp, variableplugin, plugins_dir, {cli_variables:{API_KEY:'batman'}});
+            expect(emit).toHaveBeenCalledWith('results', 'Remember that your api key is batman!');
+        });
 
         describe('with dependencies', function() {
             it('should process all dependent plugins', function() {
