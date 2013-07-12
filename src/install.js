@@ -88,7 +88,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
         }
     });
     if (is_installed) {
-        require('../plugman').emit('log', 'Plugin "' + plugin_id + '" already installed, \'sall good.');
+        require('../plugman').emit('results', 'Plugin "' + plugin_id + '" already installed, \'sall good.');
         if (callback) callback();
         return;
     }
@@ -292,7 +292,7 @@ function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plu
             // call prepare after a successful install
             require('./../plugman').prepare(project_dir, platform, plugins_dir);
 
-            require('../plugman').emit('log', plugin_id + ' installed.');
+            require('../plugman').emit('results', plugin_id + ' installed.');
             if (callback) callback();
         }
     });

@@ -68,7 +68,7 @@ module.exports.uninstallPlugin = function(id, plugins_dir, callback) {
     } else {
         // axe the directory
         shell.rm('-rf', plugin_dir);
-        require('../plugman').emit('log', id + ' removed.');
+        require('../plugman').emit('results', 'Deleted "' + plugin_dir + '".');
         if (callback) callback();
     }
 };
@@ -167,6 +167,7 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
             else throw err;
         } else {
             // WIN!
+            require('../plugman').emit('results', plugin_id + ' uninstalled.');
             // queue up the plugin so prepare can remove the config changes
             config_changes.add_uninstalled_plugin_to_prepare_queue(plugins_dir, path.basename(plugin_dir), platform, is_top_level);
             // call prepare after a successful uninstall

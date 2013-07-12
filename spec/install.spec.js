@@ -58,7 +58,7 @@ describe('install', function() {
                 dependent_plugins:{}
             });
             install('android', temp, dummyplugin, plugins_dir, {});
-            expect(spy).toHaveBeenCalledWith('log', 'Plugin "'+dummy_id+'" already installed, \'sall good.');
+            expect(spy).toHaveBeenCalledWith('results', 'Plugin "'+dummy_id+'" already installed, \'sall good.');
         });
         it('should check version if plugin has engine tag', function(){
             var spy = spyOn(semver, 'satisfies').andReturn(true);
