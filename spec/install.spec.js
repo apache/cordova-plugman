@@ -13,6 +13,7 @@ var install = require('../src/install'),
     dummy_id = 'com.phonegap.plugins.dummyplugin',
     variableplugin = 'VariablePlugin',
     engineplugin = 'EnginePlugin',
+    childplugin = 'ChildBrowser',
     plugins_dir = path.join(temp, 'plugins');
 
 describe('install', function() {
@@ -58,7 +59,7 @@ describe('install', function() {
                 dependent_plugins:{}
             });
             install('android', temp, dummyplugin, plugins_dir, {});
-            expect(spy).toHaveBeenCalledWith('log', 'Plugin "'+dummy_id+'" already installed, \'sall good.');
+            expect(spy).toHaveBeenCalledWith('results', 'Plugin "'+dummy_id+'" already installed, \'sall good.');
         });
         it('should check version if plugin has engine tag', function(){
             var spy = spyOn(semver, 'satisfies').andReturn(true);
@@ -71,6 +72,21 @@ describe('install', function() {
             expect(actions_push.calls.length).toEqual(3);
             expect(c_a).toHaveBeenCalledWith(jasmine.any(Function), [jasmine.any(Object), path.join(plugins_dir, dummyplugin), temp, dummy_id], jasmine.any(Function), [jasmine.any(Object), temp, dummy_id]);
             expect(proc).toHaveBeenCalled();
+        });
+        it('should emit a results event with platform-agnostic <info>', function() {
+            var emit = spyOn(plugman, 'emit');
+            install('android', temp, childplugin, plugins_dir, {});
+            expect(emit).toHaveBeenCalledWith('results', 'No matter what platform you are installing to, this notice is very important.');
+        });
+        it('should emit a results event with platform-specific <info>', function() {
+            var emit = spyOn(plugman, 'emit');
+            install('android', temp, childplugin, plugins_dir, {});
+            expect(emit).toHaveBeenCalledWith('results', 'Please make sure you read this because it is very important to complete the installation of your plugin.');
+        });
+        it('should interpolate variables into <info> tags', function() {
+            var emit = spyOn(plugman, 'emit');
+            install('android', temp, variableplugin, plugins_dir, {cli_variables:{API_KEY:'batman'}});
+            expect(emit).toHaveBeenCalledWith('results', 'Remember that your api key is batman!');
         });
 
         describe('with dependencies', function() {

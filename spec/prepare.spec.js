@@ -37,10 +37,6 @@ describe('prepare', function() {
             find:find
         });
     });
-    it('should create a cordova_plugins.json file', function() {
-        prepare(temp, 'android', plugins_dir);
-        expect(write).toHaveBeenCalledWith(json, jasmine.any(String), 'utf-8');
-    });
     it('should create a cordova_plugins.js file', function() {
         prepare(temp, 'android', plugins_dir);
         expect(write).toHaveBeenCalledWith(js, jasmine.any(String), 'utf-8');

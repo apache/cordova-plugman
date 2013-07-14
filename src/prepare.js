@@ -139,14 +139,9 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
         }
     });
 
-    require('../plugman').emit('log', 'Writing out cordova_plugins.json...');
-    // Write out moduleObjects as JSON to cordova_plugins.json
-    fs.writeFileSync(path.join(wwwDir, 'cordova_plugins.json'), JSON.stringify(moduleObjects), 'utf-8');
     // Write out moduleObjects as JSON wrapped in a cordova module to cordova_plugins.js
-    // This is to support Windows Phone platforms that have trouble with XHR during load
     var final_contents = "cordova.define('cordova/plugin_list', function(require, exports, module) {\n";
-    final_contents += 'module.exports = ' + JSON.stringify(moduleObjects) + '\n';
-    final_contents += '});';
+    final_contents += 'module.exports = ' + JSON.stringify(moduleObjects,null,'    ') + '\n});';
     require('../plugman').emit('log', 'Writing out cordova_plugins.js...');
     fs.writeFileSync(path.join(wwwDir, 'cordova_plugins.js'), final_contents, 'utf-8');
 };

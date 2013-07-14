@@ -36,6 +36,8 @@
         <access origin="build.phonegap.com" />
         <access origin="s3.amazonaws.com" />
     </config-file>
+    
+    <info>No matter what platform you are installing to, this notice is very important.</info>
 
     <!-- android -->
     <platform name="android">
@@ -61,9 +63,7 @@
 
         <source-file src="src/android/ChildBrowser.java"
                 target-dir="src/com/phonegap/plugins/childBrowser" />
-        <info>
-          Please make sure you read this because it is very important to complete the installation of your plugin
-        </info>
+        <info>Please make sure you read this because it is very important to complete the installation of your plugin.</info>
     </platform>
 
     <!-- ios -->

@@ -71,6 +71,7 @@ if (cli_opts.debug) {
 }
 plugman.on('warn', console.warn);
 plugman.on('error', console.error);
+plugman.on('results', console.log);
 if (cli_opts.version) {
     console.log(package.name + ' version ' + package.version);
 } 
