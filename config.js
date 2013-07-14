@@ -1,3 +1,3 @@
 module.exports = {
-  registry: "http://plugins.cordova.io"
+  registry: "http://registry.cordova.io"
 }
