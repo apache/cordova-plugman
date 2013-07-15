@@ -53,8 +53,13 @@ csproj.prototype = {
             item.append(compile);
         }
         // otherwise add it normally
-        else {
+        else if (relative_path.indexOf('.cs', relative_path.length - 3) > -1) {
             var compile = new et.Element('Compile');
+            compile.attrib.Include = relative_path;
+            item.append(compile);
+        }
+        else {
+            var compile = new et.Element('Content');
             compile.attrib.Include = relative_path;
             item.append(compile);
         }

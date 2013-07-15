@@ -21,6 +21,8 @@ var platform_modules = require('./platforms'),
     path            = require('path'),
     config_changes  = require('./util/config-changes'),
     xml_helpers     = require('./util/xml-helpers'),
+    wp7             = require('./platforms/wp7'),
+    wp8             = require('./platforms/wp8'),
     fs              = require('fs'),
     shell           = require('shelljs'),
     util            = require('util'),
@@ -64,6 +66,30 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
 
     require('../plugman').emit('log', 'Processing configuration changes for plugins.');
     config_changes.process(plugins_dir, project_dir, platform);
+
+    // for windows phone plaform we need to add all www resources to the .csproj file
+    // first we need to remove them all to prevent duplicates
+    var wp_csproj;
+    if(platform == 'wp7' || platform == 'wp8') {
+        wp_csproj = (platform == wp7? wp7.parseWP7ProjectFile(project_dir) : wp8.parseWP8ProjectFile(project_dir));
+        var item_groups = wp_csproj.xml.findall('ItemGroup');
+        for (var i = 0, l = item_groups.length; i < l; i++) {
+            var group = item_groups[i];
+            var files = group.findall('Content');
+            for (var j = 0, k = files.length; j < k; j++) {
+                var file = files[j];
+                if (file.attrib.Include.substr(0,11) == "www\\plugins" || file.attrib.Include == "www\\cordova_plugins.js") {
+                    // remove file reference
+                    group.remove(0, file);
+                    // remove ItemGroup if empty
+                    var new_group = group.findall('Content');
+                    if(new_group.length < 1) {
+                        wp_csproj.xml.getroot().remove(0, group);
+                    }
+                }
+            }
+        }
+    }
 
     platform_json = config_changes.get_platform_json(plugins_dir, platform);
     // This array holds all the metadata for each module and ends up in cordova_plugins.json
@@ -109,6 +135,9 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
                 var scriptContent = fs.readFileSync(path.join(pluginDir, module.attrib.src), 'utf-8');
                 scriptContent = 'cordova.define("' + moduleName + '", function(require, exports, module) {' + scriptContent + '});\n';
                 fs.writeFileSync(path.join(platformPluginsDir, plugin_id, module.attrib.src), scriptContent, 'utf-8');
+                if(platform == 'wp7' || platform == 'wp8') {
+                    wp_csproj.addSourceFile(path.join('www', 'plugins', plugin_id, module.attrib.src));
+                }
     
                 // Prepare the object for cordova_plugins.json.
                 var obj = {
@@ -144,4 +173,8 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     final_contents += 'module.exports = ' + JSON.stringify(moduleObjects,null,'    ') + '\n});';
     require('../plugman').emit('log', 'Writing out cordova_plugins.js...');
     fs.writeFileSync(path.join(wwwDir, 'cordova_plugins.js'), final_contents, 'utf-8');
+    if(platform == 'wp7' || platform == 'wp8') {
+        wp_csproj.addSourceFile (path.join('www', 'cordova_plugins.js'));
+        wp_csproj.write();
+    }
 };
