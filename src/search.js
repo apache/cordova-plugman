@@ -6,7 +6,7 @@ module.exports = function(search_opts, callback) {
     registry.search(search_opts, function(err, plugins) {
         if(callback) {
             if(err) return callback(err);
-            callback(plugins);
+            callback(null, plugins);
         } else {
           if(err) return console.log(err);
           for(var plugin in plugins) {
