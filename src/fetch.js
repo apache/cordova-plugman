@@ -5,8 +5,8 @@ var shell   = require('shelljs'),
     xml_helpers = require('./util/xml-helpers'),
     metadata = require('./util/metadata'),
     path    = require('path'),
-    registry    = require('plugman-registry');
-
+    registry = require('plugman-registry');
+// XXX: leave the require('../plugman') because jasmine shits itself if you declare it up top
 // possible options: link, subdir, git_ref
 module.exports = function fetchPlugin(plugin_dir, plugins_dir, options, callback) {
     require('../plugman').emit('log', 'Fetching plugin from location "' + plugin_dir + '"...');
@@ -80,9 +80,11 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options, callback
 
         
         if(!fs.existsSync(plugin_dir)) {
-          registry.use(null, function() {
+          registry.use(require('../plugman').config.registry, function() {
             registry.fetch([plugin_dir], function(err, plugin_dir) {
-              movePlugin(plugin_dir, false);
+                if (callback) return callback(err);
+                else throw err;
+                movePlugin(plugin_dir, false);
             });
           })
         } else {
