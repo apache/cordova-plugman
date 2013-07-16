@@ -34,6 +34,7 @@ describe('csproj', function() {
         var page_test_cs = path.join('src', 'UI', 'PageTest.xaml.cs');
         var lib_test    = path.join('lib', 'LibraryTest.dll');
         var file_test   = path.join('src', 'FileTest.cs');
+        var content_test   = path.join('src', 'Content.img');
 
         describe('add method', function() {
 
@@ -57,6 +58,10 @@ describe('csproj', function() {
                 test_csproj.addSourceFile(file_test);
                 expect(test_csproj.xml.getroot().find('.//Compile[@Include="src\\FileTest.cs"]')).toBeTruthy();
             });
+            it('should properly add content files', function() {
+                test_csproj.addSourceFile(content_test);
+                expect(test_csproj.xml.getroot().find('.//Content[@Include="src\\Content.img"]')).toBeTruthy();
+            });
 
         });
 
@@ -77,6 +82,10 @@ describe('csproj', function() {
             it('should properly remove .cs files', function() {
                 test_csproj.removeSourceFile(file_test);
                 expect(test_csproj.xml.getroot().find('.//Compile[@Include="src\\FileTest.cs"]')).toBeFalsy();
+            });
+            it('should properly remove content files', function() {
+                test_csproj.removeSourceFile(content_test);
+                expect(test_csproj.xml.getroot().find('.//Content[@Include="src\\Content.img"]')).toBeFalsy();
             });
             it('should remove all empty ItemGroup\'s', function() {
                 test_csproj.removeSourceFile(page_test);
