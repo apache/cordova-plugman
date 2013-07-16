@@ -70,14 +70,14 @@ csproj.prototype = {
         var item_groups = this.xml.findall('ItemGroup');
         for (var i = 0, l = item_groups.length; i < l; i++) {
             var group = item_groups[i];
-            var files = group.findall('Compile').concat(group.findall('Page'));
+            var files = group.findall('Compile').concat(group.findall('Page')).concat(group.findall('Content'));
             for (var j = 0, k = files.length; j < k; j++) {
                 var file = files[j];
                 if (file.attrib.Include == relative_path) {
                     // remove file reference
                     group.remove(0, file);
                     // remove ItemGroup if empty
-                    var new_group = group.findall('Compile').concat(group.findall('Page'));
+                    var new_group = group.findall('Compile').concat(group.findall('Page')).concat(group.findall('Content'));
                     if(new_group.length < 1) {
                         this.xml.getroot().remove(0, group);
                     }
