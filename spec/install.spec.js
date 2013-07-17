@@ -67,6 +67,12 @@ describe('install', function() {
             install('android', temp, 'engineplugin', plugins_dir, {});
             expect(spy).toHaveBeenCalledWith('2.5.0','>=2.3.0');
         });
+        it('should check version and munge it a little if it has "rc" in it so it plays nice with semver (introduce a dash in it)', function() {
+            var spy = spyOn(semver, 'satisfies').andReturn(true);
+            exec.andReturn({code:0,output:"3.0.0rc1"});
+            install('android', temp, 'engineplugin', plugins_dir, {});
+            expect(spy).toHaveBeenCalledWith('3.0.0-rc1','>=2.3.0');
+        });
         it('should queue up actions as appropriate for that plugin and call process on the action stack', function() {
             install('android', temp, dummyplugin, plugins_dir, {});
             expect(actions_push.calls.length).toEqual(3);
