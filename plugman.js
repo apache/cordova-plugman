@@ -74,17 +74,19 @@ plugman.commands =  {
     },
 
     'publish'  : function(cli_opts) {
-        if(!cli_opts.plugin) {
+        var plugin_path = cli_opts.argv.remain; 
+        if(!plugin_path) {
             return console.log(plugman.help());
         }
-        plugman.publish(new Array(cli_opts.plugin));
+        plugman.publish(plugin_path);
     },
 
     'unpublish': function(cli_opts) {
-        if(!cli_opts.plugin) {
+        var plugin = cli_opts.argv.remain; 
+        if(!plugin) {
             return console.log(plugman.help());
         }
-        plugman.unpublish(new Array(cli_opts.plugin));
+        plugman.unpublish(plugin);
     }
 };
 
