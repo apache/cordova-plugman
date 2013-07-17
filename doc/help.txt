@@ -1,4 +1,4 @@
-plugman installs and uninstalls plugin.xml-compatible cordova plugins into cordova-generated projects.
+plugman manages plugin.xml-compatible cordova plugins into cordova-generated projects.
 
 Usage
 =====
@@ -6,7 +6,7 @@ Usage
 Install a plugin
 ----------------
 
-    $ plugman --platform <platform> --project <directory> --plugin <plugin> [--variable NAME=VALUE]
+    $ plugman install --platform <platform> --project <directory> --plugin <plugin> [--variable NAME=VALUE]
 
 Parameters: 
 
@@ -18,7 +18,7 @@ Parameters:
 Uninstall a plugin
 ------------------
 
-    $ plugman --uninstall --platform <platform> --project <directory> --plugin <plugin-id>
+    $ plugman uninstall --platform <platform> --project <directory> --plugin <plugin-id>
 
 Parameters:
  - plugin <plugin-id>: The plugin to remove, identified by its id (see the plugin.xml's <plugin id> attribute)
@@ -32,7 +32,11 @@ Optional parameters
 Optional flags
 --------------
 
- --debug : Verbose mode
+ --debug|-d    : Verbose mode
+
+ --help|-h     : Displays this message
+
+ --version|-v  : Displays version 
 
 Interacting with the registry
 =============================
@@ -40,20 +44,20 @@ Interacting with the registry
 Add a user account
 ------------------
 
-    $ plugman --adduser
+    $ plugman adduser
 
 Publish a plugin
 ----------------
 
-    $ plugman --publish --plugin <directory>
+    $ plugman publish --plugin <directory>
 
 Unpublish a plugin
 ------------------
 
-    $ plugman --unpublish <name>@<version>
+    $ plugman unpublish <name>@<version>
 
 Search for a plugin
 -------------------
 
-    $ plugman --search plugin,keywords
+    $ plugman search plugin,keywords
 

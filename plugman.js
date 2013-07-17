@@ -21,20 +21,71 @@
 
 var emitter = require('./src/events');
 
-module.exports = {
-    help:           require('./src/help'),
-    install:        require('./src/install'),
-    uninstall:      require('./src/uninstall'),
-    fetch:          require('./src/fetch'),
-    prepare:        require('./src/prepare'),
-    config:         require('./config'), 
-    adduser:  require('./src/adduser'),
-    publish:  require('./src/publish'),
-    unpublish:require('./src/unpublish'),
-    search:   require('./src/search'),
-    config_changes: require('./src/util/config-changes'),
-    on:             emitter.addListener,
-    off:            emitter.removeListener,
+plugman = {
+    help:               require('./src/help'),
+    install:            require('./src/install'),
+    uninstall:          require('./src/uninstall'),
+    fetch:              require('./src/fetch'),
+    prepare:            require('./src/prepare'),
+    config:             require('./config'), 
+    adduser:            require('./src/adduser'),
+    publish:            require('./src/publish'),
+    unpublish:          require('./src/unpublish'),
+    search:             require('./src/search'),
+    config_changes:     require('./src/util/config-changes'),
+    on:                 emitter.addListener,
+    off:                emitter.removeListener,
     removeAllListeners: emitter.removeAllListeners,
-    emit:           emitter.emit
+    emit:               emitter.emit
 };
+
+plugman.commands =  {
+    'install'  : function(cli_opts) {
+        if(!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
+            return console.log(plugman.help());
+        }
+        var cli_variables = {}
+        if (cli_opts.variable) {
+            cli_opts.variable.forEach(function (variable) {
+                    var tokens = variable.split('=');
+                    var key = tokens.shift().toUpperCase();
+                    if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
+                    });
+        }
+        var opts = {
+            subdir: '.',
+            cli_variables: cli_variables,
+            www_dir: cli_opts.www
+        };
+        plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, cli_opts.plugins_dir, opts);
+    },
+    'uninstall': function(cli_opts) {
+        if(!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
+            return console.log(plugman.help());
+        }
+        plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, cli_opts.plugins_dir, { www_dir: cli_opts.www });
+    },
+    'adduser'  : function(cli_opts) {
+        plugman.adduser();
+    },
+
+    'search'   : function(cli_opts) {
+        plugman.search(cli_opts.argv.remain);
+    },
+
+    'publish'  : function(cli_opts) {
+        if(!cli_opts.plugin) {
+            return console.log(plugman.help());
+        }
+        plugman.publish(new Array(cli_opts.plugin));
+    },
+
+    'unpublish': function(cli_opts) {
+        if(!cli_opts.plugin) {
+            return console.log(plugman.help());
+        }
+        plugman.unpublish(new Array(cli_opts.plugin));
+    }
+};
+
+module.exports = plugman;

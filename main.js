@@ -29,12 +29,6 @@ var path = require('path')
 var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry10', 'wp7', 'wp8' ]
         , 'project' : path
         , 'plugin' : [String, path, url]
-        , 'install' : Boolean
-        , 'uninstall' : Boolean
-        , 'adduser' : Boolean
-        , 'publish' : Boolean 
-        , 'unpublish' : Boolean 
-        , 'search' : String
         , 'version' : Boolean
         , 'help' : Boolean
         , 'debug' : Boolean
@@ -46,71 +40,39 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry10', 'wp7', 'wp8'
 
 var cli_opts = nopt(known_opts, shortHands);
 
-// Default the plugins_dir to './cordova/plugins'.
-var plugins_dir;
+var cmd = cli_opts.argv.remain.shift();
 
 // Without these arguments, the commands will fail and print the usage anyway.
 if (cli_opts.plugins_dir || cli_opts.project) {
-    plugins_dir = typeof cli_opts.plugins_dir == 'string' ?
+    cli_opts.plugins_dir = typeof cli_opts.plugins_dir == 'string' ?
         cli_opts.plugins_dir :
         path.join(cli_opts.project, 'cordova', 'plugins');
 }
 
-process.on('uncaughtException', function(error){
-        if (cli_opts.debug) {
+process.on('uncaughtException', function(error) {
+    if (cli_opts.debug) {
         console.error(error.stack);
-        } else {
+    } else {
         console.error(error.message);
-        }
-        process.exit(1);
-        });
+    }
+    process.exit(1);
+});
 
 // Set up appropriate logging based on events
 if (cli_opts.debug) {
     plugman.on('log', console.log);
 }
+
 plugman.on('warn', console.warn);
 plugman.on('error', console.error);
 plugman.on('results', console.log);
+
 if (cli_opts.version) {
     console.log(package.name + ' version ' + package.version);
-} 
-else if (cli_opts.help) {
+} else if (cli_opts.help) {
     console.log(plugman.help());
-}
-else if ((cli_opts.install || cli_opts.uninstall || cli_opts.argv.original.length == 0) && (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin)) {
-    console.log(plugman.help());
-}
-else if (cli_opts.uninstall) {
-    plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, { www_dir: cli_opts.www });
-}
-else if (cli_opts.adduser) {
-  plugman.adduser();
-}
-else if (cli_opts.publish && cli_opts.plugin) {
-  plugman.publish(new Array(cli_opts.plugin));
-}
-else if (cli_opts.unpublish && cli_opts.plugin) {
-  plugman.unpublish(new Array(cli_opts.plugin));
-}
-else if (cli_opts.search) {
-  plugman.search(cli_opts.search.split(','));
-}
-else if(cli_opts.install) {
-    var cli_variables = {}
-    if (cli_opts.variable) {
-        cli_opts.variable.forEach(function (variable) {
-                var tokens = variable.split('=');
-                var key = tokens.shift().toUpperCase();
-                if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
-                });
-    }
-    var opts = {
-subdir: '.',
-        cli_variables: cli_variables,
-        www_dir: cli_opts.www
-    };
-    plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, plugins_dir, opts);
+} else if (plugman.commands[cmd]) {
+    plugman.commands[cmd](cli_opts);
 } else {
     console.log(plugman.help());
 }
