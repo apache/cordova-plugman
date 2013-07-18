@@ -103,6 +103,10 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
         // Only check cordova version if the version script was successful.
         if (versionScript.code === 0) {
             var current_version = versionScript.output.trim();
+            var rc_index = current_version.indexOf('rc');
+            if (rc_index > -1) {
+                current_version = current_version.substr(0, rc_index) + '-' + current_version.substr(rc_index);
+            }
             var engines = plugin_et.findall('engines/engine');
             engines.forEach(function(engine){
                 if(engine.attrib["name"].toLowerCase() === "cordova"){
