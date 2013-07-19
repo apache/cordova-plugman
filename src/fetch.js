@@ -82,8 +82,13 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options, callback
         if(!fs.existsSync(plugin_dir)) {
           registry.use(require('../plugman').config.registry, function() {
             registry.fetch([plugin_dir], function(err, plugin_dir) {
-                if (callback) return callback(err);
-                else throw err;
+                if (err) {
+                    if(callback) {
+                        return callback(err);
+                    } else {
+                         throw err;
+                    }
+                }
                 movePlugin(plugin_dir, false);
             });
           })
