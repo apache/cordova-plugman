@@ -198,6 +198,8 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
                     }
 
                     var dep_url = path.join(result.output.trim(), dep_subdir);
+                    //Clear out the subdir since the url now contains it
+                    dep_subdir = "";
                     shell.cd(old_pwd);
                 } else if (fetchdata.source.type === 'git') {
                     dep_url = fetchdata.source.url;

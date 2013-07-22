@@ -25,15 +25,15 @@
 
     <name>Plugin B</name>
 
-    <dependency id="D" />
-    <dependency id="E" />
+    <dependency id="D" url="." subdir="spec/plugins/dependencies/D"/>
+    <dependency id="E" url="." subdir="spec/plugins/dependencies/subdir/E"/>
 
     <asset src="www/plugin-b.js" target="plugin-b.js" />
 
     <config-file target="config.xml" parent="/*">
         <access origin="build.phonegap.com" />
     </config-file>
-	
+
     <!-- android -->
     <platform name="android">
         <config-file target="res/xml/config.xml" parent="plugins">
@@ -45,7 +45,7 @@
                 target-dir="src/com/phonegap/B" />
     </platform>
 
-        
+
     <!-- ios -->
     <platform name="ios">
         <!-- CDV 2.5+ -->
