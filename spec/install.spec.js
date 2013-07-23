@@ -103,17 +103,19 @@ describe('install', function() {
                 expect(proc.calls.length).toEqual(3);
             });
             it('should fetch any dependent plugins if missing', function() {
-                var s = spyOn(plugman, 'fetch').andCallFake(function(id, dir, opts, cb) {
+                var deps_dir = path.join(plugins_dir, 'dependencies'),
+                    s = spyOn(plugman, 'fetch').andCallFake(function(id, dir, opts, cb) {
                     cb(false, path.join(dir, id));
                 });
                 exists.andReturn(false);
                 // Plugin A depends on C & D
-                install('android', temp, 'A', path.join(plugins_dir, 'dependencies'), {});
+                install('android', temp, 'A', deps_dir, {});
+                expect(s).toHaveBeenCalledWith('C', deps_dir, { link: false, subdir: undefined, git_ref: undefined}, jasmine.any(Function));
                 expect(s.calls.length).toEqual(3);
             });
         });
     });
-    
+
     describe('failure', function() {
         it('should throw if platform is unrecognized', function() {
             expect(function() {
