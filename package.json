@@ -3,7 +3,7 @@
   "name": "plugman",
   "description": "install/uninstall Cordova plugins",
   "version": "0.9.24",
-  "repository": {
+"repository": {
     "type": "git",
     "url": "git://git-wip-us.apache.org/repos/asf/cordova-plugman.git"
   },
