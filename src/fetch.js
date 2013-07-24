@@ -46,7 +46,9 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options, callback
 
         // Copy from the local filesystem.
         // First, read the plugin.xml and grab the ID.
-        plugin_dir = path.join(uri.href, options.subdir);
+        // NOTE: Can't use uri.href here as it will convert spaces to %20 and make path invalid.
+        // Use original plugin_dir value instead.
+        plugin_dir = path.join(plugin_dir, options.subdir);
         var plugin_xml_path = path.join(plugin_dir, 'plugin.xml');
         require('../plugman').emit('log', 'Fetch is reading plugin.xml from location "' + plugin_xml_path + '"...');
         var xml = xml_helpers.parseElementtreeSync(plugin_xml_path);
