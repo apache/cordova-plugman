@@ -29,12 +29,16 @@ describe('csproj', function() {
     });
 
     describe('source file', function() {
-        var test_csproj = new csproj(example_csproj);
+        var test_csproj;
         var page_test   = path.join('src', 'UI', 'PageTest.xaml');
         var page_test_cs = path.join('src', 'UI', 'PageTest.xaml.cs');
         var lib_test    = path.join('lib', 'LibraryTest.dll');
         var file_test   = path.join('src', 'FileTest.cs');
         var content_test   = path.join('src', 'Content.img');
+
+        beforeEach(function() {
+            test_csproj = new csproj(example_csproj);
+        });
 
         describe('add method', function() {
 
