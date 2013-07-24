@@ -39,10 +39,6 @@ describe('csproj', function() {
         var file_test   = path.join('src', 'FileTest.cs');
         var content_test   = path.join('src', 'Content.img');
 
-        beforeEach(function() {
-            test_csproj = new csproj(example_csproj);
-        });
-
         describe('add method', function() {
             var test_csproj = new csproj(example1_csproj);
             it('should properly add .xaml files', function() {
