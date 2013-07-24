@@ -30,7 +30,7 @@ module.exports = {
     // Fetches plugin information from remote server
     clonePluginGitRepo:function(plugin_git_url, plugins_dir, subdir, git_ref, callback) {
         if(!shell.which('git')) {
-            var err = new Error('git command line is not installed');
+            var err = new Error('"git" command line tool is not installed: make sure it is accessible on your PATH.');
             if (callback) return callback(err);
             else throw err;
         }

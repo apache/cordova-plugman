@@ -7,6 +7,7 @@ var fetch   = require('../src/fetch'),
     metadata = require('../src/util/metadata'),
     temp    = path.join(os.tmpdir(), 'plugman'),
     test_plugin = path.join(__dirname, 'plugins', 'ChildBrowser'),
+    test_plugin_with_space = path.join(__dirname, 'folder with space', 'plugins', 'ChildBrowser'),
     plugins = require('../src/util/plugins');
 
 describe('fetch', function() {
@@ -25,6 +26,10 @@ describe('fetch', function() {
         it('should copy locally-available plugin to plugins directory', function() {
             fetch(test_plugin, temp);
             expect(cp).toHaveBeenCalledWith('-R', path.join(test_plugin, '*'), path.join(temp, 'id'));
+        });
+        it('should copy locally-available plugin to plugins directory when spaces in path', function() {
+            fetch(test_plugin_with_space, temp);
+            expect(cp).toHaveBeenCalledWith('-R', path.join(test_plugin_with_space, '*'), path.join(temp, 'id'));
         });
         it('should create a symlink if used with `link` param', function() {
             fetch(test_plugin, temp, { link: true });

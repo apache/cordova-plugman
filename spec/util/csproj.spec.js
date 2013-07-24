@@ -6,8 +6,10 @@ var csproj  = require('../../src/util/csproj'),
     xml_helpers = require('../../src/util/xml-helpers');
 
 var wp7_project     = path.join(__dirname, '..', 'projects', 'wp7'),
+    wp8_project     = path.join(__dirname, '..', 'projects', 'wp8'),
     temp            = path.join(os.tmpdir(), 'plugman'),
-    example_csproj  = path.join(wp7_project, 'CordovaAppProj.csproj'),
+    example1_csproj  = path.join(wp7_project, 'CordovaAppProj.csproj'),
+    example2_csproj  = path.join(wp8_project, 'CordovaAppProj.csproj'),
     wpcsproj        = path.join(__dirname, '..', 'plugins', 'WPcsproj');
 
 describe('csproj', function() {
@@ -19,7 +21,7 @@ describe('csproj', function() {
     it('should successfully parse a valid csproj file into an xml document', function() {
         var doc;
         expect(function() {
-            doc = new csproj(example_csproj);
+            doc = new csproj(example1_csproj);
         }).not.toThrow();
         expect(doc.xml.getroot()).toBeDefined();
     });
@@ -29,7 +31,7 @@ describe('csproj', function() {
     });
 
     describe('source file', function() {
-        var test_csproj = new csproj(example_csproj);
+
         var page_test   = path.join('src', 'UI', 'PageTest.xaml');
         var page_test_cs = path.join('src', 'UI', 'PageTest.xaml.cs');
         var lib_test    = path.join('lib', 'LibraryTest.dll');
@@ -37,7 +39,7 @@ describe('csproj', function() {
         var content_test   = path.join('src', 'Content.img');
 
         describe('add method', function() {
-
+            var test_csproj = new csproj(example1_csproj);
             it('should properly add .xaml files', function() {
                 test_csproj.addSourceFile(page_test);
                 expect(test_csproj.xml.getroot().find('.//Page[@Include="src\\UI\\PageTest.xaml"]')).toBeTruthy();        
@@ -62,11 +64,10 @@ describe('csproj', function() {
                 test_csproj.addSourceFile(content_test);
                 expect(test_csproj.xml.getroot().find('.//Content[@Include="src\\Content.img"]')).toBeTruthy();
             });
-
         });
 
         describe('remove method', function() {
-
+            var test_csproj = new csproj(example2_csproj);
             it('should properly remove .xaml pages', function() {
                 test_csproj.removeSourceFile(page_test);
                 expect(test_csproj.xml.getroot().find('.//Page[@Include="src\\UI\\PageTest.xaml"]')).toBeFalsy();

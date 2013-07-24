@@ -17,11 +17,12 @@ var install = require('../src/install'),
     plugins_dir = path.join(temp, 'plugins');
 
 describe('install', function() {
-    var exists, get_json, chmod, exec, proc, add_to_queue, prepare, actions_push, c_a;
+    var exists, get_json, chmod, exec, proc, add_to_queue, prepare, actions_push, c_a, mkdir;
     beforeEach(function() {
         proc = spyOn(actions.prototype, 'process').andCallFake(function(platform, proj, cb) {
             cb();
         });
+        mkdir = spyOn(shell, 'mkdir');
         actions_push = spyOn(actions.prototype, 'push');
         c_a = spyOn(actions.prototype, 'createAction');
         prepare = spyOn(plugman, 'prepare');
@@ -103,17 +104,19 @@ describe('install', function() {
                 expect(proc.calls.length).toEqual(3);
             });
             it('should fetch any dependent plugins if missing', function() {
-                var s = spyOn(plugman, 'fetch').andCallFake(function(id, dir, opts, cb) {
+                var deps_dir = path.join(plugins_dir, 'dependencies'),
+                    s = spyOn(plugman, 'fetch').andCallFake(function(id, dir, opts, cb) {
                     cb(false, path.join(dir, id));
                 });
                 exists.andReturn(false);
                 // Plugin A depends on C & D
-                install('android', temp, 'A', path.join(plugins_dir, 'dependencies'), {});
+                install('android', temp, 'A', deps_dir, {});
+                expect(s).toHaveBeenCalledWith('C', deps_dir, { link: false, subdir: undefined, git_ref: undefined}, jasmine.any(Function));
                 expect(s.calls.length).toEqual(3);
             });
         });
     });
-    
+
     describe('failure', function() {
         it('should throw if platform is unrecognized', function() {
             expect(function() {
@@ -124,6 +127,13 @@ describe('install', function() {
             expect(function() {
                 install('android', temp, variableplugin, plugins_dir, {});
             }).toThrow('Variable(s) missing: API_KEY');
+        });
+        it('should throw if git is not found on the path and a remote url is requested', function() {
+            exists.andReturn(false);
+            var which_spy = spyOn(shell, 'which').andReturn(null);
+            expect(function() {
+                install('android', temp, 'https://git-wip-us.apache.org/repos/asf/cordova-plugin-camera.git', plugins_dir, {});
+            }).toThrow('"git" command line tool is not installed: make sure it is accessible on your PATH.');
         });
     });
 });

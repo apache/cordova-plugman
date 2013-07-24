@@ -71,7 +71,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     // first we need to remove them all to prevent duplicates
     var wp_csproj;
     if(platform == 'wp7' || platform == 'wp8') {
-        wp_csproj = (platform == wp7? wp7.parseWP7ProjectFile(project_dir) : wp8.parseWP8ProjectFile(project_dir));
+        wp_csproj = (platform == wp7? wp7.parseProjectFile(project_dir) : wp8.parseProjectFile(project_dir));
         var item_groups = wp_csproj.xml.findall('ItemGroup');
         for (var i = 0, l = item_groups.length; i < l; i++) {
             var group = item_groups[i];

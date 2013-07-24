@@ -30,7 +30,7 @@ module.exports = {
     package_name:function(project_dir) {
         return xml_helpers.parseElementtreeSync(path.join(project_dir, 'Properties', 'WMAppManifest.xml')).find('App').attrib.ProductID;
     },
-    parseWP7ProjectFile:function(project_dir) {
+    parseProjectFile:function(project_dir) {
         var project_files = glob.sync('*.csproj', {
             cwd:project_dir
         });

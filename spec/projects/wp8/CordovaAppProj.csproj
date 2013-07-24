@@ -105,97 +105,32 @@
         <Compile Include="App.xaml.cs">
             <DependentUpon>App.xaml</DependentUpon>
         </Compile>
-        <Compile Include="cordovalib\BrowserMouseHelper.cs" />
-        <Compile Include="cordovalib\CommandFactory.cs" />
-        <Compile Include="cordovalib\Commands\BaseCommand.cs" />
-        <Compile Include="cordovalib\ConfigHandler.cs" />
-        <Compile Include="cordovalib\CordovaCommandCall.cs" />
-        <Compile Include="cordovalib\CordovaView.xaml.cs">
-            <DependentUpon>CordovaView.xaml</DependentUpon>
-        </Compile>
-        <Compile Include="cordovalib\IBrowserDecorator.cs" />
-        <Compile Include="cordovalib\ImageExifHelper.cs" />
-        <Compile Include="cordovalib\JSON\JsonHelper.cs" />
-        <Compile Include="cordovalib\NativeExecution.cs" />
-        <Compile Include="cordovalib\OrientationHelper.cs" />
-        <Compile Include="cordovalib\PluginResult.cs" />
-        <Compile Include="cordovalib\ScriptCallback.cs" />
-        <Compile Include="cordovalib\XHRHelper.cs" />
-        <Compile Include="cordovalib\MimeTypeMapper.cs" />
-        <Compile Include="Plugins\DebugConsole.cs" />
         <Compile Include="MainPage.xaml.cs">
             <DependentUpon>MainPage.xaml</DependentUpon>
         </Compile>
         <Compile Include="Properties\AssemblyInfo.cs" />
-    </ItemGroup>
-    <ItemGroup>
-        <ApplicationDefinition Include="App.xaml">
-            <SubType>Designer</SubType>
-            <Generator>MSBuild:Compile</Generator>
-        </ApplicationDefinition>
-        <Page Include="cordovalib\CordovaView.xaml">
-            <Generator>MSBuild:Compile</Generator>
-            <SubType>Designer</SubType>
-        </Page>
-        <Page Include="MainPage.xaml">
+        <Page Include="src\UI\PageTest.xaml">
             <SubType>Designer</SubType>
             <Generator>MSBuild:Compile</Generator>
         </Page>
     </ItemGroup>
-    <ItemGroup>
-        <Content Include="www\**" />
-        <None Include="cordova\lib\build.js" />
-        <None Include="cordova\lib\clean.js" />
-        <None Include="cordova\lib\deploy.js" />
-        <None Include="cordova\lib\log.js" />
-        <None Include="cordova\lib\target-list.js" />
-        <Content Include="config.xml" />
-        <Content Include="Images\**" />
-        <Content Include="resources\notification-beep.wav" />
-        <None Include="cordova\build.bat" />
-        <None Include="cordova\clean.bat" />
-        <None Include="cordova\lib\install-device.bat" />
-        <None Include="cordova\lib\install-emulator.bat" />
-        <None Include="cordova\lib\list-devices.bat" />
-        <None Include="cordova\lib\list-emulator-images.bat" />
-        <None Include="cordova\lib\list-started-emulators.bat" />
-        <None Include="cordova\lib\start-emulator.bat" />
-        <None Include="cordova\log.bat" />
-        <None Include="cordova\run.bat" />
-        <None Include="cordova\version.bat" />
-        <None Include="VERSION" />
-        <None Include="Properties\AppManifest.xml">
-            <SubType>Designer</SubType>
-        </None>
-        <None Include="Properties\WMAppManifest.xml">
-            <SubType>Designer</SubType>
-        </None>
-    </ItemGroup>
-    <ItemGroup>
-        <Content Include="ApplicationIcon.png">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-        <Content Include="Background.png">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-        <Content Include="SplashScreenImage.jpg" />
-    </ItemGroup>
-    <ItemGroup>
-        <WCFMetadata Include="Service References\" />
-    </ItemGroup>
-    <ItemGroup>
-        <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
-    </ItemGroup>
-    <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).$(TargetFrameworkVersion).Overrides.targets" />
-    <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).CSharp.targets" />
-    <ProjectExtensions />
-    <PropertyGroup>
-    </PropertyGroup>
-    <PropertyGroup>
-        <PostBuildEvent>
-        </PostBuildEvent>
-    </PropertyGroup>
     <ItemGroup>
         <Compile Include="Plugins\org.apache.cordova.core.InAppBrowser\InAppBrowser.cs" />
+    </ItemGroup>
+        <ItemGroup>
+        <Compile Include="src\UI\PageTest.xaml.cs">
+            <DependentUpon>PageTest.xaml</DependentUpon>
+        </Compile>
+    </ItemGroup>
+    <ItemGroup>
+        <Reference Include="LibraryTest">
+            <HintPath>lib\LibraryTest.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="src\FileTest.cs" />
+    </ItemGroup>
+    <ItemGroup>
+        <Content Include="src\Content.img" />
     </ItemGroup>
 </Project>

@@ -34,11 +34,11 @@ ActionStack.prototype = {
         }
         if (platform == 'wp7') {
             require('../../plugman').emit('log', 'Parsing WP7 project files...');
-            project_files = wp7.parseWP7ProjectFile(project_dir);
+            project_files = wp7.parseProjectFile(project_dir);
         }
         if (platform == 'wp8') {
             require('../../plugman').emit('log', 'Parsing WP8 project files...');
-            project_files = wp8.parseWP8ProjectFile(project_dir);
+            project_files = wp8.parseProjectFile(project_dir);
         } 
         while(this.stack.length) {
             var action = this.stack.shift();

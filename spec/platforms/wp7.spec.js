@@ -33,7 +33,7 @@ var faulty_id = plugin_et._root.attrib['id'];
 
 shell.mkdir('-p', temp);
 shell.cp('-rf', path.join(wp7_project, '*'), temp);
-var proj_files = wp7.parseWP7ProjectFile(temp);
+var proj_files = wp7.parseProjectFile(temp);
 shell.rm('-rf', temp);
 
 function copyArray(arr) {
@@ -61,10 +61,10 @@ describe('wp7 project handler', function() {
         });
     });
 
-    describe('parseWP7ProjectFile method', function() {
+    describe('parseProjectFile method', function() {
         it('should throw if project is not an wp7 project', function() {
             expect(function() {
-                wp7.parseWP7ProjectFile(temp);
+                wp7.parseProjectFile(temp);
             }).toThrow('does not appear to be a Windows Phone project (no .csproj file)');
         });
     });

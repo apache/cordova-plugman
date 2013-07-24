@@ -19,14 +19,19 @@ csproj.prototype = {
         // check if it's a .xaml page
         if(relative_path.indexOf('.xaml', relative_path.length - 5) > -1) {
             var page = new et.Element('Page');
+            var sub_type = new et.Element('SubType');
+            sub_type.text = "Designer";
+            page.append(sub_type);
             page.attrib.Include = relative_path;
             var gen = new et.Element('Generator');
             gen.text = "MSBuild:Compile";
             page.append(gen);
-            var sub_type = new et.Element('SubType');
-            sub_type.text = "Designer";
-            page.append(sub_type);
-            item.append(page);
+            var item_groups = this.xml.findall('ItemGroup');
+            if(item_groups.length == 0) {
+                item.append(page);
+            } else {
+                item_groups[0].append(page);
+            }
         }
         // check if it's a .xaml.cs page that would depend on a .xaml of the same name
         else if (relative_path.indexOf('.xaml.cs', relative_path.length - 8) > -1) {

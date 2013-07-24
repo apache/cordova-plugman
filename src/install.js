@@ -51,9 +51,10 @@ function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options,
     // Check that the plugin has already been fetched.
     if (!fs.existsSync(plugin_dir)) {
         // if plugin doesnt exist, use fetch to get it.
-        require('../plugman').fetch(id, plugins_dir, { link: false, subdir: '.', git_ref: options.git_ref }, function(err, plugin_dir) {
+        require('../plugman').fetch(id, plugins_dir, { link: false, subdir: options.subdir, git_ref: options.git_ref }, function(err, plugin_dir) {
             if (err) {
-                callback(err);
+                if (callback) callback(err);
+                else throw err;
             } else {
                 // update ref to plugin_dir after successful fetch, via fetch callback
                 runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, options, callback);
@@ -92,8 +93,8 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
         if (callback) callback();
         return;
     }
-    
-    // checking engine 
+
+    // checking engine
     // will there be a case for multiple engine support?
     var versionPath = path.join(project_dir, 'cordova', 'version');
     if (fs.existsSync(versionPath)) {
@@ -111,14 +112,14 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
             engines.forEach(function(engine){
                 if(engine.attrib["name"].toLowerCase() === "cordova"){
                     var engineVersion = engine.attrib["version"];
-                    // clean only versionScript.output since semver.clean strips out 
+                    // clean only versionScript.output since semver.clean strips out
                     // the gt and lt operators
                     if(current_version == 'dev' || semver.satisfies(current_version, engineVersion)){
                         // engine ok!
                     } else {
                         var err = new Error('Plugin doesn\'t support this project\'s Cordova version. Project version: ' + current_version + ', failed version requirement: ' + engineVersion);
                         if (callback) return callback(err);
-                        else throw err; 
+                        else throw err;
                     }
                 } else {
                     // check for other engines? worklight phonegap etc
@@ -149,7 +150,8 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
     }
 
     // Check for dependencies, (co)recurse to install each one
-    var dependencies = plugin_et.findall('dependency');
+    var dependencies = plugin_et.findall('dependency') || [];
+    dependencies = dependencies.concat(plugin_et.findall('./platform[@name="'+platform+'"]/dependency'));
     if (dependencies && dependencies.length) {
         require('../plugman').emit('log', 'Dependencies detected, iterating through them...');
         var end = n(dependencies.length, function() {
@@ -171,7 +173,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
             if (dep_url == '.') {
                 // Look up the parent plugin's fetch metadata and determine the correct URL.
                 var fetchdata = require('./util/metadata').get_fetch_metadata(plugin_dir);
-                
+
                 if (!fetchdata || !(fetchdata.source && fetchdata.source.type)) {
                     var err = new Error('No fetch metadata found for ' + plugin_id + '. Cannot install relative dependencies.');
                     if (callback) callback(err);
@@ -197,6 +199,8 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
                     }
 
                     var dep_url = path.join(result.output.trim(), dep_subdir);
+                    //Clear out the subdir since the url now contains it
+                    dep_subdir = "";
                     shell.cd(old_pwd);
                 } else if (fetchdata.source.type === 'git') {
                     dep_url = fetchdata.source.url;
