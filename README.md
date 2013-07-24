@@ -4,6 +4,10 @@ A command line tool to install and uninstall plugins for use with [Apache Cordov
 
 This document defines tool usage.
 
+## Requirements
+
+You must have `git` on your PATH to be able to install plugins directly from remote git URLs.
+
 ## Plugin Specification
 
 --&gt; [plugin_spec.md](plugin_spec.md) &lt;--

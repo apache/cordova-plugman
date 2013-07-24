@@ -17,11 +17,12 @@ var install = require('../src/install'),
     plugins_dir = path.join(temp, 'plugins');
 
 describe('install', function() {
-    var exists, get_json, chmod, exec, proc, add_to_queue, prepare, actions_push, c_a;
+    var exists, get_json, chmod, exec, proc, add_to_queue, prepare, actions_push, c_a, mkdir;
     beforeEach(function() {
         proc = spyOn(actions.prototype, 'process').andCallFake(function(platform, proj, cb) {
             cb();
         });
+        mkdir = spyOn(shell, 'mkdir');
         actions_push = spyOn(actions.prototype, 'push');
         c_a = spyOn(actions.prototype, 'createAction');
         prepare = spyOn(plugman, 'prepare');
@@ -126,6 +127,13 @@ describe('install', function() {
             expect(function() {
                 install('android', temp, variableplugin, plugins_dir, {});
             }).toThrow('Variable(s) missing: API_KEY');
+        });
+        it('should throw if git is not found on the path and a remote url is requested', function() {
+            exists.andReturn(false);
+            var which_spy = spyOn(shell, 'which').andReturn(null);
+            expect(function() {
+                install('android', temp, 'https://git-wip-us.apache.org/repos/asf/cordova-plugin-camera.git', plugins_dir, {});
+            }).toThrow('"git" command line tool is not installed: make sure it is accessible on your PATH.');
         });
     });
 });

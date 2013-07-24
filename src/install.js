@@ -53,7 +53,8 @@ function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options,
         // if plugin doesnt exist, use fetch to get it.
         require('../plugman').fetch(id, plugins_dir, { link: false, subdir: options.subdir, git_ref: options.git_ref }, function(err, plugin_dir) {
             if (err) {
-                callback(err);
+                if (callback) callback(err);
+                else throw err;
             } else {
                 // update ref to plugin_dir after successful fetch, via fetch callback
                 runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, options, callback);
