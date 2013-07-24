@@ -1,11 +1,18 @@
 var registry = require('plugman-registry')
   , config = require('../config');
 
-module.exports = function(plugin) {
+module.exports = function(plugin, callback) {
   registry.use(config.registry, function(err) {
     registry.unpublish(plugin, function(err, d) {
-      if(err) return console.log('Error unpublishing plugin'); 
-      console.log('plugin unpublished');
+      if(callback && typeof callback === 'function') {
+          err ? callback(err) : callback(null);
+      } else {
+          if(err) {
+              throw err;
+          } else {
+              console.log('Plugin unpublished');
+          }
+      }
     });
   });
 }

@@ -27,11 +27,11 @@ This document defines tool usage.
 
 ## Command Line Usage
 
-    plugman --platform <ios|android|blackberry10|wp7|wp8> --project <directory> --plugin <name|url|path> [--plugins_dir <directory>] [--www <directory>] [--variable <name>=<value> [--variable <name>=<value> ...]]
-    plugman --uninstall --platform <ios|android|blackberr10|wp7|wp8> --project <directory> --plugin <id> [--www <directory>] [--plugins_dir <directory>]
+    plugman install --platform <ios|android|blackberry10|wp7|wp8> --project <directory> --plugin <name|url|path> [--plugins_dir <directory>] [--www <directory>] [--variable <name>=<value> [--variable <name>=<value> ...]]
+    plugman uninstall --platform <ios|android|blackberr10|wp7|wp8> --project <directory> --plugin <id> [--www <directory>] [--plugins_dir <directory>]
 
 * Using minimum parameters, installs a plugin into a cordova project. You must specify a platform and cordova project location for that platform. You also must specify a plugin, with the different `--plugin` parameter forms being:
-  * `name`: The directory name where the plugin contents exist. This must be an existing directory under the `--plugins_dir` path (see below for more info).
+  * `name`: The directory name where the plugin contents exist. This must be an existing directory under the `--plugins_dir` path (see below for more info) or a plugin in the Cordova registry.
   * `url`: A URL starting with https:// or git://, pointing to a valid git repository that is clonable and contains a `plugin.xml` file. The contents of this repository would be copied into the `--plugins_dir`.
   * `path`: A path to a directory containing a valid plugin which includes a `plugin.xml` file. This path's contents will be copied into the `--plugins_dir`.
 * `--uninstall`: Uninstalls an already-`--install`'ed plugin from a cordova project. Specify the plugin ID.
@@ -49,6 +49,10 @@ Other parameters:
     { install: [Function: installPlugin],
       uninstall: [Function: uninstallPlugin],
       fetch: [Function: fetchPlugin],
+      search: [Function: search],
+      publish: [Function: publish],
+      unpublish: [Function: unpublish],
+      adduser: [Function: adduser],
       prepare: [Function: handlePrepare] }
 
 ### `install` method
@@ -59,7 +63,7 @@ Installs a plugin into a specified cordova project of a specified platform.
 
  * `platform`: one of `android`, `ios`, `blackberry10`, `wp7` or `wp8`
  * `project_dir`: path to an instance of the above specified platform's cordova project
- * `id`: a string representing the `id` of the plugin, a path to a cordova plugin with a valid `plugin.xml` file, or an `https://` or `git://` url to a git repository of a valid cordova plugin
+ * `id`: a string representing the `id` of the plugin, a path to a cordova plugin with a valid `plugin.xml` file, or an `https://` or `git://` url to a git repository of a valid cordova plugin or a plugin published to the Cordova registry
  * `plugins_dir`: path to directory where plugins will be stored, defaults to `<project_dir>/cordova/plugins`
  * `subdir`: subdirectory within the plugin directory to consider as plugin directory root, defaults to `.`
  * `cli_variables`: an object mapping cordova plugin specification variable namess (see [plugin specification](plugin_spec.md)) to values 
@@ -87,7 +91,7 @@ Copies a cordova plugin into a single location that plugman uses to track which 
 
     module.exports = function fetchPlugin(plugin_dir, plugins_dir, link, subdir, git_ref, callback) {
 
- * `plugin_dir`: path or URL to a plugin directory/repository
+ * `plugin_dir`: path, URL to a plugin directory/repository or name of a plugin published to the Cordova registry.
  * `plugins_dir`: path housing all plugins used in this project
  * `link`: if `plugin_dir` points to a local path, will create a symbolic link to that folder instead of copying into `plugins_dir`, defaults to `false`
  * `subdir`: subdirectory within the plugin directory to consider as plugin directory root, defaults to `.`
@@ -104,11 +108,46 @@ Finalizes plugin installation by making configuration file changes and setting u
  * `platform`: one of `android`, `ios`, `blackberry10`, `wp7` or `wp8`
  * `plugins_dir`: path housing all plugins used in this project
 
+## Registry related actions
+
+Plugman uses an [npmjs.org](http://github.com/isaacs/npmjs.org) based registry to host plugins. The URL can be configured in the `config.js` file at the root of the installation folder.
+
+### `config.js` file
+
+    module.exports = {
+        registry: "http://registry.cordova.io"
+    }
+
+### `adduser` method
+
+Adds a user account to the registry. Function takes no arguments other than a an optional callback
+
+    module.exports = function(callback) {
+
+### `publish` method
+
+Publishes plugins to the registry. `plugin_paths` is an array of plugin paths to publish to the reigstry.
+
+    module.exports = function(plugin_paths, callback) {
+
+### `unpublish` method
+
+unpublishes plugins from the registry. Can unpublish a version by specifying `plugin@version` or the whole plugin by just specifying `plugin`. `plugins` is an array of `plugin[@version]` elements.
+
+    module.exports = function(plugins, callback) {
+
+### `search` method
+
+Searches plugins in the registry. `search_opts` is an array of keywords
+
+    module.exports = function(search_opts, callback) {
+
 ## Example Plugins
 
 - Google has a [bunch of plugins](https://github.com/MobileChromeApps/chrome-cordova/tree/master/plugins) which are maintained actively by a contributor to plugman
 - Adobe maintains plugins for its Build cloud service, which are open sourced and [available on GitHub](https://github.com/phonegap-build)
 - BlackBerry has a [bunch of plugins](https://github.com/blackberry/cordova-blackberry/tree/master/blackberry10/plugins) offering deep platform integration
+- Core and 3rd party plugins can be found on the [Cordova Registry](http://plugins.cordova.io).
 
 ## Development
 
