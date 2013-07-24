@@ -116,4 +116,18 @@
         <!-- this desn't exist -->
         <source-file src="src/wp8/NotHere.cs" />
     </platform>
+
+    <!-- wp8 -->
+    <platform name="windows8">
+        <config-file target="config.xml" parent="/*">
+            <feature name="FaultyPlugin">
+                <param name="windows8-package" value="FaultyPlugin"/>
+            </feature>
+        </config-file>
+
+        <source-file src="src/windows8/faultyPlugin.js" />
+
+        <!-- does not exist -->
+        <source-file src="src/windows8/NotHere.js" />
+    </platform>
 </plugin>

@@ -20,32 +20,34 @@
 var common = require('./common'),
     path = require('path'),
     glob = require('glob'),
-    csproj = require('../util/w8jsproj');
+    w8jsproj = require('../util/w8jsproj');
     xml_helpers = require('../util/xml-helpers');
 
 
 module.exports = {
+    InvalidProjectPathError:'does not appear to be a Windows Store JS project (no .jsproj file)',
     www_dir:function(project_dir) {
         return path.join(project_dir, 'www');
     },
     package_name:function(project_dir) {
-        return xml_helpers.parseElementtreeSync(path.join(project_dir, 'Properties', 'WMAppManifest.xml')).find('App').attrib.ProductID;
+        var manifest = xml_helpers.parseElementtreeSync(path.join(project_dir, 'package.appxmanifest'));
+        return manifest.find("Properties/DisplayName").text;
     },
     parseProjectFile:function(project_dir) {
         var project_files = glob.sync('*.jsproj', {
             cwd:project_dir
         });
         if (project_files.length === 0) {
-            throw new Error('does not appear to be a Windows Store JS project (no .jsproj file)');
+            throw new Error(this.InvalidProjectPathError);
         }
-        return new jsproj(path.join(project_dir, project_files[0]));
+        return new w8jsproj(path.join(project_dir, project_files[0]));
     },
     "source-file":{
         install:function(source_el, plugin_dir, project_dir, plugin_id, project_file) {
             var targetDir = source_el.attrib['target-dir'] || '';
             var dest = path.join('Plugins', plugin_id, targetDir, path.basename(source_el.attrib['src']));
             common.copyFile(plugin_dir, source_el.attrib['src'], project_dir, dest);
-            // add reference to this file to csproj.
+            // add reference to this file to jsproj.
             project_file.addSourceFile(dest);
         },
         uninstall:function(source_el, project_dir, plugin_id, project_file) {
