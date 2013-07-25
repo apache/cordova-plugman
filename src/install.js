@@ -134,6 +134,35 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
         require('../plugman').emit('log', 'Cordova project version not detected (lacks a ./cordova/version script), continuing.');
     }
 
+    // check platform requirements - min sdks/min os version etc
+    var platformMinReqScript = { code: 0, output: { min_os_version: "5.0.0" , min_sdk_version: "1.0.0" } }; // place holder for now until we have an actual script    
+    if(platformMinReqScript.code === 0){
+        var platformMinOS = plugin_et.findall('./platform[@name="'+platform+'"][@min-os-version]')[0].attrib["min-os-version"];
+        var platformMinSDK = plugin_et.findall('./platform[@name="'+platform+'"][@min-sdk-version]')[0].attrib["min-sdk-version"];    
+
+        if( platformMinReqScript.output.min_os_version ) {
+            if(semver.satisfies(platformMinReqScript.output.min_os_version, platformMinOS)){
+                // min-os version ok
+            } else {
+                var err = new Error('Plugin doesn\'t support ' + platform + '  minimum os version.  ' + platform + '  minimum os version: ' + platformMinReqScript.output.min_os_version + ', failed version requirement: ' + platformMinOS);
+                if (callback) return callback(err);
+                else throw err;
+            }            
+        }
+
+        if(platformMinReqScript.output.min_sdk_version) {
+            if(semver.satisfies(platformMinReqScript.output.min_sdk_version, platformMinSDK)){
+                // min-sdk version ok
+            } else {
+                var err = new Error('Plugin doesn\'t support ' + platform + '  minimum sdk version.  ' + platform + '  minimum sdk version: ' + platformMinReqScript.output.min_sdk_version+ ', failed version requirement: ' + platformMinSDK);
+                if (callback) return callback(err);
+                else throw err;
+            }                        
+        }
+    } else {
+        require('../plugman').emit('log', 'Cordova project minimum sdk or os version not detected (lacks a ./cordova/sdkRequirement script), continuing.');
+    }
+    
     // checking preferences, if certain variables are not provided, we should throw.
     prefs = plugin_et.findall('./preference') || [];
     prefs = prefs.concat(plugin_et.findall('./platform[@name="'+platform+'"]/preference'));
