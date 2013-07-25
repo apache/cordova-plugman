@@ -102,12 +102,6 @@ Plugin keywords. The text content of the element contains comma separated keywor
 
 Plugin license. The text content of the element contains the plugin license. An example:
 
-    <keywords>foo,bar</keywords>
-
-## &lt;license&gt; element
-
-Plugin license. The text content of the element contains the plugin license. An example:
-
     <license>Apache</license>
 
 ## &lt;asset&gt; element
