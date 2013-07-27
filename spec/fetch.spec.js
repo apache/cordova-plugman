@@ -28,6 +28,8 @@ describe('fetch', function() {
             expect(cp).toHaveBeenCalledWith('-R', path.join(test_plugin, '*'), path.join(temp, 'id'));
         });
         it('should copy locally-available plugin to plugins directory when spaces in path', function() {
+            //XXX: added this because plugman tries to fetch from registry when plugin folder does not exist
+            spyOn(fs,'existsSync').andReturn(true);
             fetch(test_plugin_with_space, temp);
             expect(cp).toHaveBeenCalledWith('-R', path.join(test_plugin_with_space, '*'), path.join(temp, 'id'));
         });

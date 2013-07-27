@@ -1,13 +1,10 @@
 var adduser = require('../src/adduser'),
-    config = require('../config'),
-    registry = require('plugman-registry');
+    registry = require('../src/registry/registry');
 
 describe('adduser', function() {
     it('should add a user', function() {
-        var sUse = spyOn(registry, 'use').andCallThrough();
         var sAddUser = spyOn(registry, 'adduser');
-        adduser();
-        expect(sUse).toHaveBeenCalledWith(config.registry, jasmine.any(Function));
-        expect(sAddUser).toHaveBeenCalled();
+        adduser(function(err, result) { });
+        expect(sAddUser).toHaveBeenCalledWith(null, jasmine.any(Function));
     });
 });

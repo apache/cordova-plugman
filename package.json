@@ -29,7 +29,10 @@
     "underscore":"1.4.4",
     "dep-graph":"1.1.0",
     "semver": "2.0.x",
-    "plugman-registry": "0.0.6"
+    "npm": "1.3.4",
+    "rc": "0.3.0",
+    "xmldom": "0.1.16",
+    "tar.gz": "0.1.1"
   },
   "devDependencies": {
     "jasmine-node": "1.7.0"
