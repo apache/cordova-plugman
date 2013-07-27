@@ -25,6 +25,7 @@ var common = require('./common'),
 
 
 module.exports = {
+    platformName:"windows8",
     InvalidProjectPathError:'does not appear to be a Windows Store JS project (no .jsproj file)',
     www_dir:function(project_dir) {
         return path.join(project_dir, 'www');

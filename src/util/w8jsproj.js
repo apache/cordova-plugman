@@ -15,6 +15,8 @@ function jsproj(location) {
 }
 
 jsproj.prototype = {
+    location:null,
+    xml:null,
     write:function() {
         fs.writeFileSync(this.location, this.xml.write({indent:4}), 'utf-8');
     },

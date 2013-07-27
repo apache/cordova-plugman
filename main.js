@@ -26,7 +26,7 @@ var path = require('path')
     , plugins = require('./src/util/plugins')
     , plugman = require('./plugman');
 
-var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry10', 'wp7', 'wp8' ]
+var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry10', 'wp7', 'wp8' , 'windows8' ]
         , 'project' : path
         , 'plugin' : [String, path, url]
         , 'version' : Boolean

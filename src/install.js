@@ -97,6 +97,10 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
     // checking engine
     // will there be a case for multiple engine support?
     var versionPath = path.join(project_dir, 'cordova', 'version');
+    // windows8, wp7, wp8 all use a .bat file
+    if (!fs.existsSync(versionPath)) {
+        versionPath += ".bat";
+    }
     if (fs.existsSync(versionPath)) {
         // need to rethink this so I don't have to chmod anything
         fs.chmodSync(versionPath, '755');
