@@ -61,3 +61,8 @@ Search for a plugin
 
     $ plugman search plugin,keywords
 
+Manage registry configuration
+-----------------------------
+
+    $ plugman config registry set http://localhost:5984/registry/_design/app/_rewrite
+    $ plugman config get registry
