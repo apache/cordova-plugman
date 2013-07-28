@@ -2,8 +2,14 @@ var DOMParser = require('xmldom').DOMParser,
     path = require('path'),
     fs = require('fs');
 
+function handleError(err, cb) {
+    if(typeof cb == 'function') {
+        return cb(err);
+    }
+    throw err;
+}
+
 // Java world big-up!
-// TODO use CALLBACK
 function generatePackageJsonFromPluginXml(plugin_path, cb) {
   var package_json = {};
   var plugin_xml = fs.readFileSync(path.resolve(plugin_path, 'plugin.xml'), "utf8");
@@ -18,11 +24,7 @@ function generatePackageJsonFromPluginXml(plugin_path, cb) {
   var version = doc.documentElement.getAttribute('version')
   if(!version) {
     var e = new Error('`version` required');
-    if(cb) {
-      cb(e);
-      return null;
-    }
-    throw e;
+    return handleError(e, cb)
   }
   package_json.version = version;
 
@@ -30,14 +32,13 @@ function generatePackageJsonFromPluginXml(plugin_path, cb) {
   if(doc.documentElement.getElementsByTagName('name').length != 1 ||
      !doc.documentElement.getElementsByTagName('name').item(0).firstChild) {
     var e = new Error('`name` is required');
-    if(cb) {
-      cb(e);
-      return null;
-    }
-    throw e;
+    return handleError(e, cb)
   }
   var name = doc.documentElement.getElementsByTagName('name').item(0).firstChild.nodeValue;
-  if(!name.match(/^\w+|-*$/)) throw new Error('`name` can only contain alphanumberic characters and -')
+  if(!name.match(/^\w+|-*$/)) {
+      var e = new Error('`name` can only contain alphanumberic characters and -')
+      return handleError(e, cb);
+  }
   package_json.name = name.toLowerCase();
 
   // OPTIONAL fields: description, license, keywords. TODO: add more!

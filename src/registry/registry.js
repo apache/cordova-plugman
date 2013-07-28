@@ -9,56 +9,11 @@ var npm = require('npm'),
     plugmanConfigDir = path.resolve(process.env.HOME, '.plugman'),
     plugmanCacheDir = path.resolve(plugmanConfigDir, 'cache');
 
-var settings = module.exports.settings;
-
-function checkConfig(cb) {
-    if(settings != null) {
-        cb();
-    } else {
-        use(cb);
-    }
-}
-
 function handleError(err, cb) {
     if(typeof cb == 'function') {
         return cb(err);
     }
     throw err;
-}
-/**
- * @method use
- * @param {String} registry NPM registry URL 
- * @param {Function} cb callback
- */
-function use(cb) {
-    if(typeof cb != 'function') throw new Error('Please provide a callback');
-    // check if settings already set
-    if(settings != null) return cb();
-    
-    // setting up settings
-    // obviously if settings dir does not exist settings is going to be empty
-    if(!fs.existsSync(plugmanConfigDir)) {
-        fs.mkdirSync(plugmanConfigDir);
-        fs.mkdirSync(plugmanCacheDir);
-    }
-
-    settings = rc('plugman', {
-                 cache: plugmanCacheDir,
-                 force: true,
-                 logstream: fs.createWriteStream(path.resolve(plugmanConfigDir, 'plugman.log')),
-                 userconfig: path.resolve(plugmanConfigDir, 'config')
-              });
-    
-    if(settings.registry) {
-        cb();
-    } else {
-       // setting registry
-       npm.load(settings, function(er) {
-           if (er) return handlError(er);
-           npm.commands.config(['set', 'registry', 'http://registry.cordova.io'], cb);
-       });
-    }
-
 }
 
 /**
@@ -68,10 +23,12 @@ function use(cb) {
  */
 function getPackageInfo(args, cb) {
     var thing = args.length ? args.shift().split("@") : [],
-            name = thing.shift(),
-            version = thing.join("@"),
+                              name = thing.shift(),
+                              version = thing.join("@");
     
     version = version ? version : 'latest';
+    
+    var settings = module.exports.settings;
     
     http.get(settings.registry + '/' + name + '/' + version, function(res) {
          if(res.statusCode != 200) {
@@ -98,6 +55,8 @@ function getPackageInfo(args, cb) {
  * @param {Function} cb callback 
  */
 function fetchPackage(info, cb) {
+    var settings = module.exports.settings;
+    
     var cached = path.resolve(settings.cache, info.name, info.version, 'package');
     if(fs.existsSync(cached)) {
         cb(null, cached);
@@ -130,10 +89,10 @@ module.exports = {
      * @param {Function} cb Command callback
      */
     config: function(args, cb) {
-        checkConfig(function(err) {
-            if(err) return handleError(err, cb)
+        initSettings(function(err, settings) {
+            if(err) return handleError(err, cb);
             npm.load(settings, function(er) {
-                if (er) return handlError(er);
+                if (er) return handleError(er);
                 npm.commands.config(args, cb);
             });
         });
@@ -144,10 +103,10 @@ module.exports = {
      * @param {Function} cb Command callback
      */
     adduser: function(args, cb) {
-        checkConfig(function(err) {
-            if(err) return handleError(err, cb)
+        initSettings(function(err, settings) {
+            if(err) return handleError(err, cb);
             npm.load(settings, function(er) {
-                if (er) return handlError(er);
+                if (er) return handleError(er);
                 npm.commands.adduser(args, cb);
             });
         });
@@ -158,11 +117,11 @@ module.exports = {
      * @param {Function} cb Command callback
      */
     publish: function(args, cb) {
-        checkConfig(function(err) {
+        initSettings(function(err, settings) {
             if(err) return handleError(err, cb);
             manifest.generatePackageJsonFromPluginXml(args[0]);
             npm.load(settings, function(er) {
-                if (er) return handlError(er);
+                if (er) return handleError(er);
                 npm.commands.publish(args, function(err, data) {
                     fs.unlink(path.resolve(args[0], 'package.json'));
                     cb(err, data);
@@ -176,10 +135,10 @@ module.exports = {
      * @param {Function} cb Command callback
      */
     search: function(args, cb) {
-        checkConfig(function(err) {
+        initSettings(function(err, settings) {
             if(err) return handleError(err, cb);
             npm.load(settings, function(er) {
-                if (er) return handlError(er, cb);
+                if (er) return handleError(er, cb);
                 npm.commands.search(args, true, cb);
             });
         });
@@ -190,7 +149,7 @@ module.exports = {
      * @param {Function} cb Command callback
      */
     unpublish: function(args, cb) {
-        checkConfig(function(err) {
+        initSettings(function(err, settings) {
             if(err) return handleError(err, cb);
             npm.load(settings, function(er) {
                 if (er) return handlError(er);
@@ -207,12 +166,50 @@ module.exports = {
      * @param {Function} cb Command callback
      */
     fetch: function(args, cb) {
-        checkConfig(function(err) {
-            if(err) return handleError(err, cb)
+        initSettings(function(err, settings) {
+            if(err) return handleError(err, cb);
             getPackageInfo(args, function(err, info) {
                 if(err) return handleError(err, cb)
                 fetchPackage(info, cb);
             });
         });
     }
+}
+
+/**
+ * @method initSettings
+ * @param {Function} cb callback
+ */
+function initSettings(cb) {
+    var settings = module.exports.settings;
+    if(typeof cb != 'function') throw new Error('Please provide a callback');
+    // check if settings already set
+    if(settings != null) return cb(null, settings);
+    
+    // setting up settings
+    // obviously if settings dir does not exist settings is going to be empty
+    if(!fs.existsSync(plugmanConfigDir)) {
+        fs.mkdirSync(plugmanConfigDir);
+        fs.mkdirSync(plugmanCacheDir);
+    }
+
+    settings = rc('plugman', {
+                 cache: plugmanCacheDir,
+                 force: true,
+                 logstream: fs.createWriteStream(path.resolve(plugmanConfigDir, 'plugman.log')),
+                 userconfig: path.resolve(plugmanConfigDir, 'config')
+              });
+    
+    if(settings.registry) {
+        cb(null, settings);
+    } else {
+       // setting registry
+       npm.load(settings, function(er) {
+           if (er) return handlError(er);
+           npm.commands.config(['set', 'registry', 'http://registry.cordova.io'], function(err) {
+                cb(err, settings);
+           });
+       });
+    }
+
 }

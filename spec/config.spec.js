@@ -4,7 +4,8 @@ var config = require('../src/config'),
 describe('config', function() {
     it('should run config', function() {
         var sConfig = spyOn(registry, 'config');
-        config(function(err, result) { });
-        expect(sConfig).toHaveBeenCalledWith(jasmine.any(Function));
+        var params = ['set', 'registry', 'http://registry.cordova.io'];
+        config(params, function(err, result) { });
+        expect(sConfig).toHaveBeenCalledWith(params, jasmine.any(Function));
     });
 });

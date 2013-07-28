@@ -27,7 +27,7 @@ plugman = {
     uninstall:          require('./src/uninstall'),
     fetch:              require('./src/fetch'),
     prepare:            require('./src/prepare'),
-    config:             require('./config'), 
+    config:             require('./src/config'), 
     adduser:            require('./src/adduser'),
     publish:            require('./src/publish'),
     unpublish:          require('./src/unpublish'),
@@ -40,6 +40,9 @@ plugman = {
 };
 
 plugman.commands =  {
+    'config'   : function(cli_opts) {
+        plugman.config(cli_opts.argv.remain);
+    },
     'install'  : function(cli_opts) {
         if(!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
             return console.log(plugman.help());
