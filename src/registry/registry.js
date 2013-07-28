@@ -196,20 +196,10 @@ function initSettings(cb) {
     settings = rc('plugman', {
                  cache: plugmanCacheDir,
                  force: true,
+                 registry: 'http://registry.cordova.io',
                  logstream: fs.createWriteStream(path.resolve(plugmanConfigDir, 'plugman.log')),
                  userconfig: path.resolve(plugmanConfigDir, 'config')
               });
-    
-    if(settings.registry) {
-        cb(null, settings);
-    } else {
-       // setting registry
-       npm.load(settings, function(er) {
-           if (er) return handlError(er);
-           npm.commands.config(['set', 'registry', 'http://registry.cordova.io'], function(err) {
-                cb(err, settings);
-           });
-       });
-    }
+    cb(null, settings);
 
 }
