@@ -8,7 +8,7 @@ var xml_helpers = require('./xml-helpers'),
     fs = require('fs');
 
 function jsproj(location) {
-    console.log("creating jsproj at " + location);
+    require('../../plugman').emit('log','creating jsproj from project at : ' + location);
     this.location = location;
     this.xml = xml_helpers.parseElementtreeSync(location);
     return this;
