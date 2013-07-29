@@ -6,7 +6,8 @@ var npm = require('npm'),
     manifest = require('./manifest'),
     os = require('os'),
     rc = require('rc'),
-    plugmanConfigDir = path.resolve(process.env.HOME, '.plugman'),
+    home = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE,
+    plugmanConfigDir = path.resolve(home, '.plugman'),
     plugmanCacheDir = path.resolve(plugmanConfigDir, 'cache');
 
 function handleError(err, cb) {
@@ -61,7 +62,7 @@ function fetchPackage(info, cb) {
     if(fs.existsSync(cached)) {
         cb(null, cached);
     } else {
-        var target = os.tmpdir() + info.name;
+        var target = path.join(os.tmpdir(), info.name);
         var filename = target + '.tgz';
         var filestream = fs.createWriteStream(filename);
         var request = http.get(info.dist.tarball, function(res) {
