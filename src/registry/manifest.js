@@ -1,4 +1,4 @@
-var DOMParser = require('xmldom').DOMParser,
+var xml_helpers = require('../util/xml-helpers'),
     path = require('path'),
     fs = require('fs');
 
@@ -12,54 +12,35 @@ function handleError(err, cb) {
 // Java world big-up!
 function generatePackageJsonFromPluginXml(plugin_path, cb) {
   var package_json = {};
-  var plugin_xml = fs.readFileSync(path.resolve(plugin_path, 'plugin.xml'), "utf8");
-  var doc = new DOMParser().parseFromString(plugin_xml);
+  var pluginXml = xml_helpers.parseElementtreeSync(path.join(plugin_path, 'plugin.xml'));
   
-  if(!doc || !doc.documentElement) {
-    throw new Error('invalid plugin.xml document');
-  }
+  if(!pluginXml) return handleError(new Error('invalid plugin.xml document'), cb);
 
-  // name, version REQUIRED
-  // setting version
-  var version = doc.documentElement.getAttribute('version')
-  if(!version) {
-    var e = new Error('`version` required');
-    return handleError(e, cb)
-  }
+  var pluginElm = pluginXml.getroot();
+  
+  if(!pluginElm) return handleError(new Error('invalid plugin.xml document'), cb);
+  
+  // REQUIRED: name, version REQUIRED
+  // OPTIONAL: description, license, keywords
+  var name = pluginElm.attrib.id,
+      version = pluginElm.attrib.version,
+      description = pluginElm.findtext('description'),
+      license = pluginElm.findtext('license'),
+      keywords = pluginElm.findtext('keywords');
+
+  if(!version) return handleError(new Error('`version` required'), cb)
   package_json.version = version;
 
-  // setting name
-  if(doc.documentElement.getElementsByTagName('name').length != 1 ||
-     !doc.documentElement.getElementsByTagName('name').item(0).firstChild) {
-    var e = new Error('`name` is required');
-    return handleError(e, cb)
-  }
-  var name = doc.documentElement.getElementsByTagName('name').item(0).firstChild.nodeValue;
+  if(!name) return handleError(new Error('`name` is required'), cb)
   if(!name.match(/^\w+|-*$/)) {
       var e = new Error('`name` can only contain alphanumberic characters and -')
       return handleError(e, cb);
   }
   package_json.name = name.toLowerCase();
 
-  // OPTIONAL fields: description, license, keywords. TODO: add more!
-  if(doc.documentElement.getElementsByTagName('description').length == 1 &&
-     doc.documentElement.getElementsByTagName('description').item(0).firstChild) {
-    package_json.description = doc.documentElement
-                                  .getElementsByTagName('description')
-                                  .item(0).firstChild.nodeValue;
-  }
-  if(doc.documentElement.getElementsByTagName('license').length == 1 &&
-     doc.documentElement.getElementsByTagName('license').item(0).firstChild) {
-    package_json.license = doc.documentElement
-                              .getElementsByTagName('license')
-                              .item(0).firstChild.nodeValue;
-  }
-  if(doc.documentElement.getElementsByTagName('keywords').length == 1 &&
-     doc.documentElement.getElementsByTagName('keywords').item(0).firstChild) {
-    package_json.keywords = doc.documentElement
-                               .getElementsByTagName('keywords')
-                               .item(0).firstChild.nodeValue.split(',');
-  }
+  if(description) package_json.description = description;
+  if(license)     package_json.license     = license  
+  if(keywords)    package_json.keywords    = keywords.split(',');
 
   // write package.json
   var package_json_path = path.resolve(plugin_path, 'package.json');

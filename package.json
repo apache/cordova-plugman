@@ -2,7 +2,7 @@
   "author": "Andrew Lunny <alunny@gmail.com>",
   "name": "plugman",
   "description": "install/uninstall Cordova plugins",
-  "version": "0.9.23",
+  "version": "0.9.24",
   "repository": {
     "type": "git",
     "url": "git://git-wip-us.apache.org/repos/asf/cordova-plugman.git"
@@ -31,7 +31,6 @@
     "semver": "2.0.x",
     "npm": "1.3.4",
     "rc": "0.3.0",
-    "xmldom": "0.1.16",
     "tar.gz": "0.1.1"
   },
   "devDependencies": {

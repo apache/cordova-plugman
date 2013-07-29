@@ -18,7 +18,7 @@ describe('registry', function() {
         it('should generate a package.json from a plugin.xml', function() {
             manifest.generatePackageJsonFromPluginXml(pluginDir);
             expect(fs.existsSync(packageJson));
-            expect(JSON.parse(fs.readFileSync(packageJson)).name).toEqual('dummyplugin');
+            expect(JSON.parse(fs.readFileSync(packageJson)).name).toEqual('com.phonegap.plugins.dummyplugin');
             expect(JSON.parse(fs.readFileSync(packageJson)).version).toEqual('0.6.0');
         });
     });
