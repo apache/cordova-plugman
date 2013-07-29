@@ -193,13 +193,14 @@ function initSettings(cb) {
         fs.mkdirSync(plugmanCacheDir);
     }
 
-    settings = rc('plugman', {
-                 cache: plugmanCacheDir,
-                 force: true,
-                 registry: 'http://registry.cordova.io',
-                 logstream: fs.createWriteStream(path.resolve(plugmanConfigDir, 'plugman.log')),
-                 userconfig: path.resolve(plugmanConfigDir, 'config')
-              });
+    settings = 
+    module.exports.settings =
+    rc('plugman', {
+         cache: plugmanCacheDir,
+         force: true,
+         registry: 'http://registry.cordova.io',
+         logstream: fs.createWriteStream(path.resolve(plugmanConfigDir, 'plugman.log')),
+         userconfig: path.resolve(plugmanConfigDir, 'config')
+    });
     cb(null, settings);
-
 }
