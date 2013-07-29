@@ -23,7 +23,7 @@ var platform_modules = require('./platforms'),
     xml_helpers     = require('./util/xml-helpers'),
     wp7             = require('./platforms/wp7'),
     wp8             = require('./platforms/wp8'),
-    windows8             = require('./platforms/windows8'),
+    windows8        = require('./platforms/windows8'),
     fs              = require('fs'),
     shell           = require('shelljs'),
     util            = require('util'),
@@ -195,12 +195,9 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     final_contents += 'module.exports = ' + JSON.stringify(moduleObjects,null,'    ') + '\n});';
     require('../plugman').emit('log', 'Writing out cordova_plugins.js...');
     fs.writeFileSync(path.join(wwwDir, 'cordova_plugins.js'), final_contents, 'utf-8');
-    if(platform == 'wp7' || platform == 'wp8') {
-        wp_csproj.addSourceFile (path.join('www', 'cordova_plugins.js'));
-        wp_csproj.write();
-    }
-    else if(platform == "window8") {
-        wp_csproj.addSourceFile (path.join('www', 'cordova_plugins.js'));
+
+    if(platform == 'wp7' || platform == 'wp8' || platform == "windows8") {
+        wp_csproj.addSourceFile(path.join('www', 'cordova_plugins.js'));
         wp_csproj.write();
     }
 };
