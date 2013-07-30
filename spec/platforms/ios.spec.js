@@ -240,24 +240,6 @@ describe('ios project handler', function() {
                 expect(spy).toHaveBeenCalledWith('-R', path.join(dummyplugin, 'src', 'ios', 'DummyPlugin.bundle'), path.join(temp, 'SampleApp', 'Resources'));
             });
         });
-
-        describe('of <framework> elements', function() {
-            beforeEach(function() {
-                shell.cp('-rf', ios_config_xml_project, temp);
-            });
-            it('should call into xcodeproj\'s addFramework with weak false by default' ,function() {
-                var frameworks = copyArray(valid_frameworks).filter(function(f) { return f.attrib.weak == undefined; });
-                var spy = spyOn(proj_files.xcode, 'addFramework');
-                ios.framework.install(frameworks[0], dummyplugin, temp, proj_files);
-                expect(spy).toHaveBeenCalledWith(path.join('src', 'ios', 'libsqlite3.dylib').replace(/\\/g, '/'), {weak:false});
-            });
-            it('should pass in whether the framework is weak or not to xcodeproj.addFramework', function() {
-                var frameworks = copyArray(valid_frameworks).filter(function(f) { return f.attrib.weak != undefined; });;
-                var spy = spyOn(proj_files.xcode, 'addFramework');
-                ios.framework.install(frameworks[0], dummyplugin, temp, proj_files);
-                expect(spy).toHaveBeenCalledWith(path.join('src', 'ios', 'libsqlite3.dylib').replace(/\\/g, '/'), {weak:true});
-            });
-        });
     });
 
     describe('uninstallation', function() {
@@ -347,19 +329,6 @@ describe('ios project handler', function() {
 
                 ios['resource-file'].uninstall(resources[0], temp, proj_files);
                 expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'SampleApp', 'Resources', 'DummyPlugin.bundle'));
-            });
-        });
-
-        describe('of <framework> elements', function() {
-            beforeEach(function() {
-                shell.cp('-rf', ios_config_xml_project, temp);
-            });
-            it('should call into xcodeproj\'s removeFramework' ,function() {
-                var frameworks = copyArray(valid_frameworks).filter(function(f) { return f.attrib.weak == undefined; });
-                var spy = spyOn(proj_files.xcode, 'removeFramework');
-                
-                ios.framework.uninstall(frameworks[0], temp, proj_files);
-                expect(spy).toHaveBeenCalledWith(path.join('src', 'ios', 'libsqlite3.dylib').replace(/\\/g, '/'));
             });
         });
     });

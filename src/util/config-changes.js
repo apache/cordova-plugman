@@ -17,6 +17,19 @@
  *
 */
 
+/* 
+ * This module deals with shared configuration / dependency "stuff". That is:
+ * - XML configuration files such as config.xml or AndroidManifest.xml.
+ * - plist files in iOS
+ * - pbxproj files in iOS
+ * Essentially, any type of shared resources that we need to handle with awareness
+ * of how potentially multiple plugins depend on a single shared resource, should be
+ * handled in this module.
+ *
+ * The implementation uses an object as a hash table, with "leaves" of the table tracking
+ * reference counts.
+ */
+
 var fs   = require('fs'),
     path = require('path'),
     glob = require('glob'),
@@ -24,6 +37,7 @@ var fs   = require('fs'),
     bplist = require('bplist-parser'),
     et   = require('elementtree'),
     xml_helpers = require('./../util/xml-helpers'),
+    ios_parser = require('./../platforms/ios'),
     plist_helpers = require('./../util/plist-helpers');
 
 function checkPlatform(platform) {
@@ -102,6 +116,23 @@ module.exports = {
                     munge['plugins-plist'][key] = value;
                 }
             });
+            // note down pbxproj framework munges in special section of munge obj
+            var frameworks = platformTag.findall('framework');
+            frameworks.forEach(function(f) {
+                if (!munge['framework']) {
+                    munge['framework'] = {};
+                }
+                var file = f.attrib['src'];
+                var weak = f.attrib['weak'];
+                weak = (weak == undefined || weak == null || weak != 'true' ? 'false' : 'true');
+                if (!munge['framework'][file]) {
+                    munge['framework'][file] = {};
+                }
+                if (!munge['framework'][file][weak]) {
+                    munge['framework'][file][weak] = 0;
+                }
+                munge['framework'][file][weak] += 1;
+            });
         }
 
         changes.forEach(function(change) {
@@ -142,28 +173,40 @@ module.exports = {
         // global munge looks at all plugins' changes to config files
         var global_munge = platform_config.config_munge;
         
+        var plistObj, pbxproj;
+        if (platform == 'ios') {
+            if (global_munge['plugins-plist'] && config_munge['plugins-plist']) {
+                var plistfile = glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist'));
+                if (plistfile.length > 0) {
+                    plistfile = plistfile[0];
+                    // determine if this is a binary or ascii plist and choose the parser
+                    // this is temporary until binary support is added to node-plist
+                    var pl = (isBinaryPlist(plistfile) ? bplist : plist);
+                    plistObj = pl.parseFileSync(plistfile);
+                }
+            }
+            if (global_munge['framework'] && config_munge['framework']) {
+                pbxproj = ios_parser.parseIOSProjectFiles(project_dir);
+            }
+        }
+        
         // Traverse config munge and decrement global munge
         Object.keys(config_munge).forEach(function(file) {
             if (file == 'plugins-plist' && platform == 'ios') {
+                // Handle plist files in ios
                 if (global_munge[file]) {
                     Object.keys(config_munge[file]).forEach(function(key) {
-                        if (global_munge[file][key]) {
-                            // prune from old plist if exists
-                            var plistfile = glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist'));
-                            if (plistfile.length > 0) {
-                                plistfile = plistfile[0];
-                                // determine if this is a binary or ascii plist and choose the parser
-                                // this is temporary until binary support is added to node-plist
-                                var pl = (isBinaryPlist(plistfile) ? bplist : plist);
-                                var plistObj = pl.parseFileSync(plistfile);
-                                delete plistObj.Plugins[key];
-                                fs.writeFileSync(plistfile, plist.build(plistObj));
-                            }
+                        if (global_munge[file][key] && plistObj) {
+                            delete plistObj.Plugins[key];
+                            // TODO: don't write out on every change, do it once.
+                            fs.writeFileSync(plistfile, plist.build(plistObj));
                             delete global_munge[file][key];
                         }
                     });
                 }
             } else if (global_munge[file]) {
+                // Handle arbitrary XML/pbxproj changes
+                var is_framework = (platform == 'ios' && file == 'framework');
                 Object.keys(config_munge[file]).forEach(function(selector) {
                     if (global_munge[file][selector]) {
                         Object.keys(config_munge[file][selector]).forEach(function(xml_child) {
@@ -172,28 +215,36 @@ module.exports = {
                                     global_munge[file][selector][xml_child] -= 1;
                                 }
                                 if (global_munge[file][selector][xml_child] === 0) {
-                                    // this xml child is no longer necessary, prune it
-                                    // config.xml referenced in ios config changes refer to the project's config.xml, which we need to glob for.
-                                    var filepath = resolveConfigFilePath(project_dir, platform, file);
-                                    if (fs.existsSync(filepath)) {
-                                        if (path.extname(filepath) == '.xml') {
-                                            var xml_to_prune = [et.XML(xml_child)];
-                                            var doc = xml_helpers.parseElementtreeSync(filepath);
-                                            if (xml_helpers.pruneXML(doc, xml_to_prune, selector)) {
-                                                // were good, write out the file!
-                                                fs.writeFileSync(filepath, doc.write({indent: 4}), 'utf-8');
+                                    if (is_framework) {
+                                        // this is a .framework reference in ios files
+                                        pbxproj.xcode.removeFramework(selector); // in this case the 2nd-level key is the src attrib of <framework> els
+                                        // TODO: dont write on every loop eh
+                                        fs.writeFileSync(pbxproj.pbx, pbxproj.xcode.writeSync());
+                                    } else {
+                                        // this xml child is no longer necessary, prune it
+                                        // config.xml referenced in ios config changes refer to the project's config.xml, which we need to glob for.
+                                        var filepath = resolveConfigFilePath(project_dir, platform, file);
+                                        if (fs.existsSync(filepath)) {
+                                            if (path.extname(filepath) == '.xml') {
+                                                var xml_to_prune = [et.XML(xml_child)];
+                                                var doc = xml_helpers.parseElementtreeSync(filepath);
+                                                if (xml_helpers.pruneXML(doc, xml_to_prune, selector)) {
+                                                    // were good, write out the file!
+                                                    // TODO: don't write out on every change, do it once.
+                                                    fs.writeFileSync(filepath, doc.write({indent: 4}), 'utf-8');
+                                                } else {
+                                                    // uh oh
+                                                    throw new Error('pruning xml at selector "' + selector + '" from "' + filepath + '" during config uninstall went bad :(');
+                                                }
                                             } else {
-                                                // uh oh
-                                                throw new Error('pruning xml at selector "' + selector + '" from "' + filepath + '" during config uninstall went bad :(');
-                                            }
-                                        } else {
-                                            // plist file
-                                            var pl = (isBinaryPlist(filepath) ? bplist : plist);
-                                            var plistObj = pl.parseFileSync(filepath);
-                                            if (plist_helpers.prunePLIST(plistObj, xml_child, selector)) {
-                                                fs.writeFileSync(filepath, plist.build(plistObj));
-                                            } else {
-                                                throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
+                                                // plist file
+                                                var pl = (isBinaryPlist(filepath) ? bplist : plist);
+                                                var plistObj = pl.parseFileSync(filepath);
+                                                if (plist_helpers.prunePLIST(plistObj, xml_child, selector)) {
+                                                    fs.writeFileSync(filepath, plist.build(plistObj));
+                                                } else {
+                                                    throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
+                                                }
                                             }
                                         }
                                     }
@@ -226,30 +277,43 @@ module.exports = {
         var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, platform, project_dir, plugin_vars);
         // global munge looks at all plugins' changes to config files
         var global_munge = platform_config.config_munge;
+
+        var pbxproj, plistObj;
+        if (platform == 'ios') {
+            if (config_munge['plugins-plist']) {
+                var plistfile = glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist'));
+                if (plistfile.length > 0) {
+                    plistfile = plistfile[0];
+                    // determine if this is a binary or ascii plist and choose the parser
+                    // this is temporary until binary support is added to node-plist
+                    var pl = (isBinaryPlist(plistfile) ? bplist : plist);
+                    plistObj = pl.parseFileSync(plistfile);
+                }
+            }
+            if (config_munge['framework']) {
+                pbxproj = ios_parser.parseIOSProjectFiles(project_dir);
+            }
+        }
         
         // Traverse config munge and decrement global munge
         Object.keys(config_munge).forEach(function(file) {
             if (!global_munge[file]) {
                 global_munge[file] = {};
             }
+            var is_framework = (platform == 'ios' && file == 'framework');
             Object.keys(config_munge[file]).forEach(function(selector) {
+                // Handle plist files on ios.
                 if (file == 'plugins-plist' && platform == 'ios') {
                     var key = selector;
-                    if (!global_munge[file][key]) {
+                    if (!global_munge[file][key] && plistObj) {
                         // this key does not exist, so add it to plist
                         global_munge[file][key] = config_munge[file][key];
-                        var plistfile = glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist'));
-                        if (plistfile.length > 0) {
-                            plistfile = plistfile[0];
-                            // determine if this is a binary or ascii plist and choose the parser
-                            // this is temporary until binary support is added to node-plist
-                            var pl = (isBinaryPlist(plistfile) ? bplist : plist);
-                            var plistObj = pl.parseFileSync(plistfile);
-                            plistObj.Plugins[key] = config_munge[file][key];
-                            fs.writeFileSync(plistfile, plist.build(plistObj));
-                        }
+                        plistObj.Plugins[key] = config_munge[file][key];
+                        // TODO: dont write on every loop eh
+                        fs.writeFileSync(plistfile, plist.build(plistObj));
                     }
                 } else {
+                    // Handle arbitrary XML OR pbxproj framework stuff  
                     if (!global_munge[file][selector]) {
                         global_munge[file][selector] = {};
                     }
@@ -261,33 +325,44 @@ module.exports = {
                             global_munge[file][selector][xml_child] += 1;
                         }
                         if (global_munge[file][selector][xml_child] == 1) {
-                            // this xml child is new, graft it (only if config file exists)
-                            // config file may be in a place not exactly specified in the target
-                            var filepath = resolveConfigFilePath(project_dir, platform, file);
-                            if (fs.existsSync(filepath)) {
-                                // look at ext and do proper config change based on file type
-                                if (path.extname(filepath) == '.xml') {
-                                    var xml_to_graft = [et.XML(xml_child)];
-                                    var doc = xml_helpers.parseElementtreeSync(filepath);
-                                    if (xml_helpers.graftXML(doc, xml_to_graft, selector)) {
-                                        // were good, write out the file!
-                                        fs.writeFileSync(filepath, doc.write({indent: 4}), 'utf-8');
+                            if (is_framework) {
+                                var src = selector; // 2nd-level leaves are src path
+                                // xml_child in this case is whether the framework should use weak or not
+                                var opt = {weak: (xml_child != 'true' ? false : true)};
+                                pbxproj.xcode.addFramework(src, opt);
+                                // TODO: dont write on every loop eh
+                                fs.writeFileSync(pbxproj.pbx, pbxproj.xcode.writeSync());
+                            } else {
+                                // this xml child is new, graft it (only if config file exists)
+                                // config file may be in a place not exactly specified in the target
+                                var filepath = resolveConfigFilePath(project_dir, platform, file);
+                                if (fs.existsSync(filepath)) {
+                                    // look at ext and do proper config change based on file type
+                                    if (path.extname(filepath) == '.xml') {
+                                        var xml_to_graft = [et.XML(xml_child)];
+                                        // TODO: could parse the filepath once per unique target instead of on every change
+                                        var doc = xml_helpers.parseElementtreeSync(filepath);
+                                        if (xml_helpers.graftXML(doc, xml_to_graft, selector)) {
+                                            // were good, write out the file!
+                                            fs.writeFileSync(filepath, doc.write({indent: 4}), 'utf-8');
+                                        } else {
+                                            // uh oh
+                                            throw new Error('grafting xml at selector "' + selector + '" from "' + filepath + '" during config install went bad :(');
+                                        }
                                     } else {
-                                        // uh oh
-                                        throw new Error('grafting xml at selector "' + selector + '" from "' + filepath + '" during config install went bad :(');
+                                        // plist file
+                                        var pl = (isBinaryPlist(filepath) ? bplist : plist);
+                                        // TODO: could parse the filepath once per unique target instead of on every change
+                                        var plistObj = pl.parseFileSync(filepath);
+                                        if (plist_helpers.graftPLIST(plistObj, xml_child, selector)) {
+                                            fs.writeFileSync(filepath, plist.build(plistObj));
+                                        } else {
+                                            throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
+                                        }
                                     }
                                 } else {
-                                    // plist file
-                                    var pl = (isBinaryPlist(filepath) ? bplist : plist);
-                                    var plistObj = pl.parseFileSync(filepath);
-                                    if (plist_helpers.graftPLIST(plistObj, xml_child, selector)) {
-                                        fs.writeFileSync(filepath, plist.build(plistObj));
-                                    } else {
-                                        throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
-                                    }
+                                    // TODO: ignore if file doesnt exist?
                                 }
-                            } else {
-                                // ignore if file doesnt exist
                             }
                         }
                     });

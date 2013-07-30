@@ -18,7 +18,7 @@
 */
 
 var path = require('path')
-  , fs = require('../util/fs')  // use existsSync in 0.6.x
+  , fs   = require('fs')
   , glob = require('glob')
   , xcode = require('xcode')
   , plist = require('plist')
@@ -113,18 +113,6 @@ module.exports = {
                 destFile = path.resolve(project.resources_dir, path.basename(src));
             project.xcode.removeResourceFile(path.join('Resources', path.basename(src)));
             shell.rm('-rf', destFile);
-        }
-    },
-    "framework":{
-        install:function(framework_el, plugin_dir, project_dir, project) {
-            var src = framework_el.attrib['src'],
-                weak = framework_el.attrib['weak'];
-            var opt = { weak: (weak == undefined || weak == null || weak != 'true' ? false : true ) };
-            project.xcode.addFramework(src, opt);
-        },
-        uninstall:function(framework_el, project_dir, project) {
-            var src = framework_el.attrib['src'];
-            project.xcode.removeFramework(src);
         }
     },
     parseIOSProjectFiles:function(project_dir) {
