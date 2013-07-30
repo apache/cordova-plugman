@@ -24,6 +24,7 @@ function generatePackageJsonFromPluginXml(plugin_path, cb) {
   // OPTIONAL: description, license, keywords
   var name = pluginElm.attrib.id,
       version = pluginElm.attrib.version,
+      cordova_name = pluginElm.findtext('name'),
       description = pluginElm.findtext('description'),
       license = pluginElm.findtext('license'),
       keywords = pluginElm.findtext('keywords');
@@ -38,9 +39,10 @@ function generatePackageJsonFromPluginXml(plugin_path, cb) {
   }
   package_json.name = name.toLowerCase();
 
-  if(description) package_json.description = description;
-  if(license)     package_json.license     = license  
-  if(keywords)    package_json.keywords    = keywords.split(',');
+  if(cordova_name) package_json.cordova_name = cordova_name;
+  if(description)  package_json.description  = description;
+  if(license)      package_json.license      = license;
+  if(keywords)     package_json.keywords     = keywords.split(',');
 
   // write package.json
   var package_json_path = path.resolve(plugin_path, 'package.json');
