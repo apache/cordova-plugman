@@ -44,6 +44,14 @@ function checkPlatform(platform) {
     if (!(platform in require('./../platforms'))) throw new Error('platform "' + platform + '" not recognized.');
 }
 
+// These frameworks are required by cordova-ios by default. We should never add/remove them.
+var keep_these_frameworks = [
+    'MobileCoreServices.framework',
+    'CoreGraphics.framework',
+    'CoreLocation.framework',
+    'AssetsLibrary.framework'
+];
+
 module.exports = {
     add_installed_plugin_to_prepare_queue:function(plugins_dir, plugin, platform, vars, is_top_level) {
         checkPlatform(platform);
@@ -217,9 +225,12 @@ module.exports = {
                                 if (global_munge[file][selector][xml_child] === 0) {
                                     if (is_framework) {
                                         // this is a .framework reference in ios files
-                                        pbxproj.xcode.removeFramework(selector); // in this case the 2nd-level key is the src attrib of <framework> els
-                                        // TODO: dont write on every loop eh
-                                        fs.writeFileSync(pbxproj.pbx, pbxproj.xcode.writeSync());
+                                        // We also need to keep some frameworks core to cordova-ios
+                                        if (keep_these_frameworks.indexOf(selector) == -1) {
+                                            pbxproj.xcode.removeFramework(selector); // in this case the 2nd-level key is the src attrib of <framework> els
+                                            // TODO: dont write on every loop eh
+                                            fs.writeFileSync(pbxproj.pbx, pbxproj.xcode.writeSync());
+                                        }
                                     } else {
                                         // this xml child is no longer necessary, prune it
                                         // config.xml referenced in ios config changes refer to the project's config.xml, which we need to glob for.
@@ -327,11 +338,14 @@ module.exports = {
                         if (global_munge[file][selector][xml_child] == 1) {
                             if (is_framework) {
                                 var src = selector; // 2nd-level leaves are src path
-                                // xml_child in this case is whether the framework should use weak or not
-                                var opt = {weak: (xml_child != 'true' ? false : true)};
-                                pbxproj.xcode.addFramework(src, opt);
-                                // TODO: dont write on every loop eh
-                                fs.writeFileSync(pbxproj.pbx, pbxproj.xcode.writeSync());
+                                // Only add the framework if it's not a cordova-ios core framework
+                                if (keep_these_frameworks.indexOf(src) > -1) {
+                                    // xml_child in this case is whether the framework should use weak or not
+                                    var opt = {weak: (xml_child != 'true' ? false : true)};
+                                    pbxproj.xcode.addFramework(src, opt);
+                                    // TODO: dont write on every loop eh
+                                    fs.writeFileSync(pbxproj.pbx, pbxproj.xcode.writeSync());
+                                }
                             } else {
                                 // this xml child is new, graft it (only if config file exists)
                                 // config file may be in a place not exactly specified in the target

@@ -132,8 +132,7 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
     if (platformTag) {
         var sourceFiles = platformTag.findall('./source-file'),
             headerFiles = platformTag.findall('./header-file'),
-            resourceFiles = platformTag.findall('./resource-file'),
-            frameworks = platformTag.findall('./framework');
+            resourceFiles = platformTag.findall('./resource-file');
         assets = assets.concat(platformTag.findall('./asset'));
 
         // queue up native stuff
@@ -147,10 +146,6 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
 
         resourceFiles && resourceFiles.forEach(function(resource) {
             actions.push(actions.createAction(handler["resource-file"].uninstall, [resource, project_dir], handler["resource-file"].install, [resource, plugin_dir, project_dir]));
-        });
-
-        frameworks && frameworks.forEach(function(framework) {
-            actions.push(actions.createAction(handler["framework"].uninstall, [framework, project_dir], handler["framework"].install, [framework, plugin_dir, project_dir]));
         });
     }
 

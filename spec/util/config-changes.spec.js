@@ -19,6 +19,8 @@ var configChanges = require('../../src/util/config-changes'),
     ios_config_xml = path.join(__dirname, '..', 'projects', 'ios-config-xml', '*'),
     plugins_dir = path.join(temp, 'cordova', 'plugins');
 
+// TODO: dont do fs so much
+
 var dummy_xml = new et.ElementTree(et.XML(fs.readFileSync(path.join(dummyplugin, 'plugin.xml'), 'utf-8')));
 
 function innerXML(xmltext) {
@@ -32,23 +34,6 @@ describe('config-changes module', function() {
     });
     afterEach(function() {
         shell.rm('-rf', temp);
-    });
-
-    it('should have queue methods', function() {
-        expect(configChanges.add_installed_plugin_to_prepare_queue).toBeDefined();
-        expect(configChanges.add_uninstalled_plugin_to_prepare_queue).toBeDefined();
-    });
-    it('should have a get_platform_json method', function() {
-        expect(configChanges.get_platform_json).toBeDefined();
-    });
-    it('should have a save_platform_json method', function() {
-        expect(configChanges.save_platform_json).toBeDefined();
-    });
-    it('should have a generate_plugin_config_munge method', function() {
-        expect(configChanges.generate_plugin_config_munge).toBeDefined();
-    });
-    it('should have a process method', function() {
-        expect(configChanges.process).toBeDefined();
     });
 
     describe('queue methods', function() {
@@ -218,6 +203,9 @@ describe('config-changes module', function() {
             var munge = configChanges.generate_plugin_config_munge(dummyplugin, 'ios', temp, {});
             expect(munge['plugins-plist']).toBeDefined();
             expect(munge['plugins-plist']['com.phonegap.plugins.dummyplugin']).toEqual('DummyPluginCommand');
+        });
+        it('should special case framework elements for ios', function() {
+
         });
     });
 
