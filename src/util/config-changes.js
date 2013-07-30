@@ -339,7 +339,7 @@ module.exports = {
                             if (is_framework) {
                                 var src = selector; // 2nd-level leaves are src path
                                 // Only add the framework if it's not a cordova-ios core framework
-                                if (keep_these_frameworks.indexOf(src) > -1) {
+                                if (keep_these_frameworks.indexOf(src) == -1) {
                                     // xml_child in this case is whether the framework should use weak or not
                                     var opt = {weak: (xml_child != 'true' ? false : true)};
                                     pbxproj.xcode.addFramework(src, opt);
