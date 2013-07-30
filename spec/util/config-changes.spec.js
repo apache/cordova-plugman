@@ -293,7 +293,7 @@ describe('config-changes module', function() {
                             removeFramework:xcode_rm,
                             writeSync:function(){}
                         },
-                        pbx:'pbxpath'
+                        pbx:path.join(temp, 'pbxpath')
                     });
                 });
                 it('should call into xcode.addFramework if plugin has <framework> file defined and is ios',function() {
