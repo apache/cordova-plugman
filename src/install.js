@@ -65,6 +65,102 @@ function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options,
     }
 }
 
+function checkMinimumReq(currentProjectInfo, minRequirements, platform, callback) {
+    if(currentProjectInfo.cordovaVersion) {
+        if(currentProjectInfo.cordovaVersion == 'dev' || semver.satisfies(currentProjectInfo.cordovaVersion, minRequirements.cordovaMinVersion)){
+            // engine ok!
+        } else {
+            var err = new Error('Plugin doesn\'t support this project\'s Cordova version. Project version: ' + currentProjectInfo.cordovaVersion + ', failed version requirement: ' + minRequirements.cordovaMinVersion);
+            if (callback) return callback(err);
+            else throw err;
+        }   
+    }
+    
+    if(currentProjectInfo.min_os_version) {
+        if(semver.satisfies(currentProjectInfo.min_os_version, minRequirements.platformMinOS)) {
+            // min-os version ok
+        } else {
+            var err = new Error('Plugin doesn\'t support ' + platform + '  minimum os version.  ' + platform + '  minimum os version: ' + currentProjectInfo.min_os_version + ', failed version requirement: ' + minRequirements.platformMinOS);
+            if (callback) return callback(err);
+            else throw err;
+        }            
+    }
+
+    if(currentProjectInfo.min_sdk_version) {
+        if(semver.satisfies(currentProjectInfo.min_sdk_version, minRequirements.platformMinSDK)) {
+            // min-sdk version ok
+        } else {
+            var err = new Error('Plugin doesn\'t support ' + platform + '  minimum sdk version.  ' + platform + '  minimum sdk version: ' + currentProjectInfo.min_sdk_version + ', failed version requirement: ' + minRequirements.platformMinSDK);
+            if (callback) return callback(err);
+            else throw err;
+        }                        
+    }     
+}
+
+// use the project level cordova scripts to get the current cordova version and platform information
+function getCurrentProjectVersion(versionPath, platformPath) {
+    // need to think about a more graceful way of handling when these scripts break or when they are not detected
+    // setting version/platform to null if they do fail or do not exist and then just continuing
+    
+    var cordovaVersion, platformInfo;
+    
+    fs.chmodSync(versionPath, '755');
+    fs.chmodSync(platformPath, '755');
+
+    if (fs.existsSync(versionPath)) {   
+        var versionScript = shell.exec(versionPath, {silent: true});
+        if (versionScript.code === 0) {
+            cordovaVersion = cordovaVersion.output.trim();
+            var rc_index = cordovaVersion.indexOf('rc');
+            if (rc_index > -1) {
+                cordovaVersion = cordovaVersion.substr(0, rc_index) + '-' + cordovaVersion.substr(rc_index);
+            }
+        }else{
+            cordovaVersion = null;
+            require('../plugman').emit('log', 'Cordova project version script failed (has a ./cordova/version script, but something went wrong executing it), continuing anyways.');
+        }
+    }else{
+        cordovaVersion = null;
+        require('../plugman').emit('log', 'Cordova project version not detected (lacks a ./cordova/version script), continuing.');
+    }  
+    
+    if (fs.existsSync(platformPath)) {   
+        var platformScript = shell.exec(platformPath, {silent: true});
+        if (platformScript.code === 0) {
+            // thinking platformScript.output would be a JSON string like:
+            // { min_os_version: "5.0.0" , min_sdk_version: "1.0.0" }
+            platformInfo = platformScript.output;
+        }else{
+            platformInfo =  null;
+            require('../plugman').emit('log', 'Cordova project platformReq script failed (has a ./cordova/platformReq script, but something went wrong executing it), continuing anyways.');
+        }
+    }else{  
+        platformInfo =  null;
+        require('../plugman').emit('log', 'Cordova project version not detected (lacks a ./cordova/version script), continuing.');
+    }     
+    
+    return { 'cordovaVersion' : cordovaVersion, 'platformInfo' : platformInfo };
+}
+
+function getMinReq(pluginElement){
+    var cordovaMinVersion, platformMinOS, platformMinSDK;
+    
+    var engines = pluginElement.findall('engines/engine');
+    engines.forEach(function(engine){
+                if(engine.attrib["name"].toLowerCase() === "cordova"){
+                    cordovaMinVersion = engine.attrib["version"];
+                }else{
+                    // check for other engines - if found, shove the info into return statement 
+                }
+            });
+            
+    platformMinOS = plugin_et.findall('./platform[@name="'+platform+'"][@min-os-version]')[0].attrib["min-os-version"];
+    platformMinSDK = plugin_et.findall('./platform[@name="'+platform+'"][@min-sdk-version]')[0].attrib["min-sdk-version"];
+    
+    return { 'cordovaMinVersion': cordovaMinVersion, 'platformMinOS' : platformMinOS, 'platformMinSDK' : platformMinSDK };
+}
+
+
 // possible options: cli_variables, www_dir, is_top_level
 function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, options, callback) {
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
@@ -93,75 +189,19 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
         if (callback) callback();
         return;
     }
-
-    // checking engine
-    // will there be a case for multiple engine support?
+    
     var versionPath = path.join(project_dir, 'cordova', 'version');
     // windows8, wp7, wp8 all use a .bat file
-    if (!fs.existsSync(versionPath)) {
+    if (platform === "windows8" || platform === "wp7" || platform === "wp8") {
         versionPath += ".bat";
     }
-    if (fs.existsSync(versionPath)) {
-        // need to rethink this so I don't have to chmod anything
-        fs.chmodSync(versionPath, '755');
-        var versionScript = shell.exec(versionPath, {silent: true});
-        // Only check cordova version if the version script was successful.
-        if (versionScript.code === 0) {
-            var current_version = versionScript.output.trim();
-            var rc_index = current_version.indexOf('rc');
-            if (rc_index > -1) {
-                current_version = current_version.substr(0, rc_index) + '-' + current_version.substr(rc_index);
-            }
-            var engines = plugin_et.findall('engines/engine');
-            engines.forEach(function(engine){
-                if(engine.attrib["name"].toLowerCase() === "cordova"){
-                    var engineVersion = engine.attrib["version"];
-                    // clean only versionScript.output since semver.clean strips out
-                    // the gt and lt operators
-                    if(current_version == 'dev' || semver.satisfies(current_version, engineVersion)){
-                        // engine ok!
-                    } else {
-                        var err = new Error('Plugin doesn\'t support this project\'s Cordova version. Project version: ' + current_version + ', failed version requirement: ' + engineVersion);
-                        if (callback) return callback(err);
-                        else throw err;
-                    }
-                } else {
-                    // check for other engines? worklight phonegap etc
-                }
-            });
-        }
-    } else {
-        require('../plugman').emit('log', 'Cordova project version not detected (lacks a ./cordova/version script), continuing.');
-    }
 
-    // check platform requirements - min sdks/min os version etc
-    var platformMinReqScript = { code: 0, output: { min_os_version: "5.0.0" , min_sdk_version: "1.0.0" } }; // place holder for now until we have an actual script    
-    if(platformMinReqScript.code === 0){
-        var platformMinOS = plugin_et.findall('./platform[@name="'+platform+'"][@min-os-version]')[0].attrib["min-os-version"];
-        var platformMinSDK = plugin_et.findall('./platform[@name="'+platform+'"][@min-sdk-version]')[0].attrib["min-sdk-version"];    
-
-        if( platformMinReqScript.output.min_os_version ) {
-            if(semver.satisfies(platformMinReqScript.output.min_os_version, platformMinOS)){
-                // min-os version ok
-            } else {
-                var err = new Error('Plugin doesn\'t support ' + platform + '  minimum os version.  ' + platform + '  minimum os version: ' + platformMinReqScript.output.min_os_version + ', failed version requirement: ' + platformMinOS);
-                if (callback) return callback(err);
-                else throw err;
-            }            
-        }
-
-        if(platformMinReqScript.output.min_sdk_version) {
-            if(semver.satisfies(platformMinReqScript.output.min_sdk_version, platformMinSDK)){
-                // min-sdk version ok
-            } else {
-                var err = new Error('Plugin doesn\'t support ' + platform + '  minimum sdk version.  ' + platform + '  minimum sdk version: ' + platformMinReqScript.output.min_sdk_version+ ', failed version requirement: ' + platformMinSDK);
-                if (callback) return callback(err);
-                else throw err;
-            }                        
-        }
-    } else {
-        require('../plugman').emit('log', 'Cordova project minimum sdk or os version not detected (lacks a ./cordova/sdkRequirement script), continuing.');
-    }
+    var platformPath = path.join(project_dir, 'cordova', 'platformReq');
+    
+    var currentProjectInfo = getCurrentProjectVersion(versionPath, platformPath);
+    var minRequirements = getMinReq(plugin_et);
+    
+    checkMinimumReq(currentProjectInfo, minRequirements, platform, callback);
     
     // checking preferences, if certain variables are not provided, we should throw.
     prefs = plugin_et.findall('./preference') || [];
