@@ -23,12 +23,8 @@
 
     <name>Engine Choo Choo</name>
 
-
+    <engines>
+        <engine name="cordova" version=">=2.3.0" />
+    </engines>
     
-    
-    <platform name="android" min-sdk-version="1.0.1" min-os-version="9.2.1" />
-    <platform name="blackberry10" min-sdk-version="0.0.1" min-os-version="0.0.1" />
-    <platform name="ios" min-sdk-version="5.1" min-os-version="10.1" />
-    <platform name="wp7" min-sdk-version="0.0.1"/>
-    <platform name="wp8"  min-os-version="0.0.1"/>
 </plugin>

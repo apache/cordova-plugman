@@ -110,7 +110,7 @@ function getCurrentProjectVersion(versionPath, platformPath) {
     if (fs.existsSync(versionPath)) {   
         var versionScript = shell.exec(versionPath, {silent: true});
         if (versionScript.code === 0) {
-            cordovaVersion = cordovaVersion.output.trim();
+            cordovaVersion = versionScript.output.trim();
             var rc_index = cordovaVersion.indexOf('rc');
             if (rc_index > -1) {
                 cordovaVersion = cordovaVersion.substr(0, rc_index) + '-' + cordovaVersion.substr(rc_index);
@@ -142,7 +142,8 @@ function getCurrentProjectVersion(versionPath, platformPath) {
     return { 'cordovaVersion' : cordovaVersion, 'platformInfo' : platformInfo };
 }
 
-function getMinReq(pluginElement){
+function getMinReq(pluginElement, platform){
+
     var cordovaMinVersion, platformMinOS, platformMinSDK;
     
     var engines = pluginElement.findall('engines/engine');
@@ -153,9 +154,13 @@ function getMinReq(pluginElement){
                     // check for other engines - if found, shove the info into return statement 
                 }
             });
-            
-    platformMinOS = plugin_et.findall('./platform[@name="'+platform+'"][@min-os-version]')[0].attrib["min-os-version"];
-    platformMinSDK = plugin_et.findall('./platform[@name="'+platform+'"][@min-sdk-version]')[0].attrib["min-sdk-version"];
+    
+    
+    platformMinOS = pluginElement.findall('./platform[@name="'+platform+'"][@min-os-version]');
+    platformMinOS = platformMinOS[0] ? platformMinOS[0].attrib["min-os-version"] : null
+
+    platformMinSDK = pluginElement.findall('./platform[@name="'+platform+'"][@min-sdk-version]');
+    platformMinSDK = platformMinSDK[0] ? platformMinSDK[0].attrib["min-sdk-version"] : null;
     
     return { 'cordovaMinVersion': cordovaMinVersion, 'platformMinOS' : platformMinOS, 'platformMinSDK' : platformMinSDK };
 }
@@ -199,7 +204,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
     var platformPath = path.join(project_dir, 'cordova', 'platformReq');
     
     var currentProjectInfo = getCurrentProjectVersion(versionPath, platformPath);
-    var minRequirements = getMinReq(plugin_et);
+    var minRequirements = getMinReq(plugin_et, platform);
     
     checkMinimumReq(currentProjectInfo, minRequirements, platform, callback);
     
