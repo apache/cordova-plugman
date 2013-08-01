@@ -103,11 +103,9 @@ function getCurrentProjectVersion(versionPath, platformPath) {
     // setting version/platform to null if they do fail or do not exist and then just continuing
     
     var cordovaVersion, platformInfo;
-    
-    fs.chmodSync(versionPath, '755');
-    fs.chmodSync(platformPath, '755');
 
     if (fs.existsSync(versionPath)) {   
+        fs.chmodSync(versionPath, '755');
         var versionScript = shell.exec(versionPath, {silent: true});
         if (versionScript.code === 0) {
             cordovaVersion = versionScript.output.trim();
@@ -125,6 +123,7 @@ function getCurrentProjectVersion(versionPath, platformPath) {
     }  
     
     if (fs.existsSync(platformPath)) {   
+        fs.chmodSync(platformPath, '755');
         var platformScript = shell.exec(platformPath, {silent: true});
         if (platformScript.code === 0) {
             // thinking platformScript.output would be a JSON string like:
@@ -156,6 +155,7 @@ function getMinReq(pluginElement, platform){
             });
     
     
+    // these elements are still in flux - most likely to change when the platforms start implementing these scripts
     platformMinOS = pluginElement.findall('./platform[@name="'+platform+'"][@min-os-version]');
     platformMinOS = platformMinOS[0] ? platformMinOS[0].attrib["min-os-version"] : null
 
