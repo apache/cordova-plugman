@@ -39,7 +39,7 @@ module.exports = {
         shell.rm('-rf', tmp_dir);
 
         shell.cd(path.dirname(tmp_dir));
-        var cmd = util.format('git clone "%s" "%s"', plugin_git_url, path.basename(tmp_dir));
+        var cmd = util.format('git clone "%s" "%s"', plugin_git_url, tmp_dir);
         require('../../plugman').emit('log', 'Fetching plugin via git-clone command: ' + cmd);
         shell.exec(cmd, {silent: true, async:true}, function(code, output) {
             if (code > 0) {
