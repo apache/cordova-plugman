@@ -24,7 +24,7 @@
     <name>Engine Choo Choo</name>
 
     <engines>
-        <engine name="cordova" version=">=2.3.0" />
+        <engine name="cordova" version=">=2.3.0" platform="*" />
     </engines>
     
 </plugin>
