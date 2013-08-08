@@ -83,9 +83,9 @@ function callEngineScripts(engines) {
     var engineScriptVersion;
     
     engines.forEach(function(engine){
-        if(fs.exists(engine.scriptTarget)){
+        if(fs.existsSync(engine.scriptTarget)){
             fs.chmodSync(engine.scriptTarget, '755');
-            engineScript = shell.exec(versionPath, {silent: true});
+            engineScript = shell.exec(engine.scriptTarget, {silent: true});
             
             if (engineScript.code === 0) {
                 engineScriptVersion = engineScript.output.trim();
@@ -103,7 +103,6 @@ function callEngineScripts(engines) {
             require('../plugman').emit('log', 'Cordova project '+ engine.scriptTarget +' not detected (lacks a '+ engine.scriptTarget +' script), continuing.');
         } 
         engine.currentVersion = engineScriptVersion;
-        
     });
     
     return engines;
@@ -121,7 +120,7 @@ function getEngines(pluginElement, platform, project_dir){
         // this may need some changes - what to do for default platforms - why need to specify platforms?
         if(engine.attrib["platform"] === platform || engine.attrib["platform"] === '*'){
             if(defaultEngines[engine.attrib["name"]]){
-                defaultEngines[engine.attrib["name"]].minVersion = defaultEngines[engine.attrib["version"]];
+                defaultEngines[engine.attrib["name"]].minVersion = engine.attrib["version"];
                 defaultEngines[engine.attrib["name"]].scriptTarget = path.join(project_dir, defaultEngines[engine.attrib["name"]].scriptTarget);
                 uncheckedEngines.push(defaultEngines[engine.attrib["name"]]);
             }else{
