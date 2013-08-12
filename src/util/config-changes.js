@@ -19,7 +19,7 @@
 
 /* 
  * This module deals with shared configuration / dependency "stuff". That is:
- * - XML configuration files such as config.xml or AndroidManifest.xml.
+ * - XML configuration files such as config.xml, AndroidManifest.xml or WMAppManifest.xml.
  * - plist files in iOS
  * - pbxproj files in iOS
  * Essentially, any type of shared resources that we need to handle with awareness
@@ -205,6 +205,8 @@ module.exports = {
                 if (global_munge[file]) {
                     Object.keys(config_munge[file]).forEach(function(key) {
                         if (global_munge[file][key] && plistObj) {
+                            // TODO: REMOVE in 3.4 (https://issues.apache.org/jira/browse/CB-4456)
+                            require('../../plugman').emit('warn', 'DEPRECATION WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
                             delete plistObj.Plugins[key];
                             // TODO: don't write out on every change, do it once.
                             fs.writeFileSync(plistfile, plist.build(plistObj));
@@ -317,6 +319,8 @@ module.exports = {
                 if (file == 'plugins-plist' && platform == 'ios') {
                     var key = selector;
                     if (!global_munge[file][key] && plistObj) {
+                        // TODO: REMOVE in 3.4 (https://issues.apache.org/jira/browse/CB-4456)
+                        require('../../plugman').emit('warn', 'DEPRECATION WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
                         // this key does not exist, so add it to plist
                         global_munge[file][key] = config_munge[file][key];
                         plistObj.Plugins[key] = config_munge[file][key];
