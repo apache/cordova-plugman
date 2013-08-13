@@ -77,6 +77,15 @@ function checkMinimumReq(engines, callback) {
     });
 }
 
+function cleanVersionRC(version){
+    var out = version.trim();
+    var rc_index = out.indexOf('rc');
+    if (rc_index > -1) {
+        out = out.substr(0, rc_index) + '-' + out.substr(rc_index);
+    }    
+    return out;
+}
+
 // exec engine scripts in order to get the current engine version
 function callEngineScripts(engines) {
     var engineScript;
@@ -86,18 +95,14 @@ function callEngineScripts(engines) {
         if(fs.existsSync(engine.scriptTarget)){
             fs.chmodSync(engine.scriptTarget, '755');
             engineScript = shell.exec(engine.scriptTarget, {silent: true});
-            
             if (engineScript.code === 0) {
-                engineScriptVersion = engineScript.output.trim();
-                var rc_index = engineScriptVersion.indexOf('rc');
-                if (rc_index > -1) {
-                    engineScriptVersion = engineScriptVersion.substr(0, rc_index) + '-' + engineScriptVersion.substr(rc_index);
-                }
-                
+                engineScriptVersion = cleanVersionRC(engineScript.output)
             }else{
                 engineScriptVersion = null;
                 require('../plugman').emit('log', 'Cordova project '+ engine.scriptTarget +' script failed (has a '+ engine.scriptTarget +' script, but something went wrong executing it), continuing anyways.');
-            }            
+            }  
+        }else if(engine.minVersion){
+            engineScriptVersion = cleanVersionRC(engine.minVersion)           
         }else{
             engineScriptVersion = null;
             require('../plugman').emit('log', 'Cordova project '+ engine.scriptTarget +' not detected (lacks a '+ engine.scriptTarget +' script), continuing.');
@@ -114,14 +119,13 @@ function getEngines(pluginElement, platform, project_dir){
     var defaultEngines = require('./util/default-engines');
     var uncheckedEngines = [];
     var tempEngine;
-
     // load in all known defaults and compare
     engines.forEach(function(engine){   
         // this may need some changes - what to do for default platforms - why need to specify platforms?
         if(engine.attrib["platform"] === platform || engine.attrib["platform"] === '*'){
             if(defaultEngines[engine.attrib["name"]]){
-                defaultEngines[engine.attrib["name"]].minVersion = engine.attrib["version"];
-                defaultEngines[engine.attrib["name"]].scriptTarget = path.join(project_dir, defaultEngines[engine.attrib["name"]].scriptTarget);
+                defaultEngines[engine.attrib["name"]].minVersion = defaultEngines[engine.attrib["name"]].minVersion ? defaultEngines[engine.attrib["name"]].minVersion : engine.attrib["version"];
+                defaultEngines[engine.attrib["name"]].scriptTarget = defaultEngines[engine.attrib["name"]].scriptTarget ? path.join(project_dir, defaultEngines[engine.attrib["name"]].scriptTarget) : null;
                 uncheckedEngines.push(defaultEngines[engine.attrib["name"]]);
             }else{
                 // check for other engines

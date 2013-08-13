@@ -25,6 +25,7 @@
 
     <engines>
         <engine name="cordova" version=">=2.3.0" platform="*" />
+        <engine name="cordova-plugman" version=">=0.10.0" platform="*" />
     </engines>
     
 </plugin>
