@@ -354,9 +354,15 @@ module.exports = {
                                 // this xml child is new, graft it (only if config file exists)
                                 // config file may be in a place not exactly specified in the target
                                 var filepath = resolveConfigFilePath(project_dir, platform, file);
+
                                 if (fs.existsSync(filepath)) {
+
                                     // look at ext and do proper config change based on file type
-                                    if (path.extname(filepath) == '.xml') {
+                                    var ext = path.extname(filepath);
+                                    // Windows8 uses an appxmanifest, and wp8 will likely use
+                                    // the same in a future release
+                                    // TODO: consider proper xml file detection, via <?xml version='1.0' encoding='utf-8'?>
+                                    if (ext == '.xml' || ext == '.appxmanifest') {
                                         var xml_to_graft = [et.XML(xml_child)];
                                         // TODO: could parse the filepath once per unique target instead of on every change
                                         var doc = xml_helpers.parseElementtreeSync(filepath);
