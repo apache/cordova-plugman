@@ -66,8 +66,8 @@ function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options,
 }
 
 function checkMinimumReq(engines, callback) {
-    engines.forEach(function(engine){
-        if(engine.currentVersion == 'dev' || semver.satisfies(engine.currentVersion, engine.minVersion || engine.currentVersion == null)){
+    engines.forEach(function(engine){    
+        if(semver.satisfies(engine.currentVersion, engine.minVersion || engine.currentVersion == null)){
             // engine ok!
         }else{
             var err = new Error('Plugin doesn\'t support this project\'s '+engine.name+' version. '+engine.name+': ' + engine.currentVersion + ', failed version requirement: ' + engine.minVersion);
@@ -77,12 +77,19 @@ function checkMinimumReq(engines, callback) {
     });
 }
 
-function cleanVersionRC(version){
+function cleanVersionOutput(version, platform){
     var out = version.trim();
     var rc_index = out.indexOf('rc');
+    var dev_index = out.indexOf('dev');
     if (rc_index > -1) {
         out = out.substr(0, rc_index) + '-' + out.substr(rc_index);
-    }    
+    }  
+
+    // strip out the -dev and put a warning about using the dev branch
+    if (dev_index > -1) {
+        out = out.substr(0, dev_index-1);
+        require('../plugman').emit('log', 'Cordova-'+platform+' has been detected as using a development branch. Attemping to install as Cordova-'+platform+' '+out);
+    }     
     return out;
 }
 
@@ -96,13 +103,13 @@ function callEngineScripts(engines) {
             fs.chmodSync(engine.scriptTarget, '755');
             engineScript = shell.exec(engine.scriptTarget, {silent: true});
             if (engineScript.code === 0) {
-                engineScriptVersion = cleanVersionRC(engineScript.output)
+                engineScriptVersion = cleanVersionOutput(engineScript.output, engine.platform)
             }else{
                 engineScriptVersion = null;
                 require('../plugman').emit('log', 'Cordova project '+ engine.scriptTarget +' script failed (has a '+ engine.scriptTarget +' script, but something went wrong executing it), continuing anyways.');
             }  
-        }else if(engine.minVersion){
-            engineScriptVersion = cleanVersionRC(engine.minVersion)           
+        }else if(engine.currentVersion){
+            engineScriptVersion = cleanVersionOutput(engine.currentVersion, engine.platform)           
         }else{
             engineScriptVersion = null;
             require('../plugman').emit('log', 'Cordova project '+ engine.scriptTarget +' not detected (lacks a '+ engine.scriptTarget +' script), continuing.');
@@ -119,22 +126,37 @@ function getEngines(pluginElement, platform, project_dir){
     var defaultEngines = require('./util/default-engines');
     var uncheckedEngines = [];
     var tempEngine;
-    // load in all known defaults and compare
+    var cordovaEngineIndex;
+    var cordovaPlatformEngineIndex;
+    
+    var theName;
+    // load in known defaults and update when necessary
     engines.forEach(function(engine){   
-        // this may need some changes - what to do for default platforms - why need to specify platforms?
         if(engine.attrib["platform"] === platform || engine.attrib["platform"] === '*'){
-            if(defaultEngines[engine.attrib["name"]]){
-                defaultEngines[engine.attrib["name"]].minVersion = defaultEngines[engine.attrib["name"]].minVersion ? defaultEngines[engine.attrib["name"]].minVersion : engine.attrib["version"];
-                defaultEngines[engine.attrib["name"]].scriptTarget = defaultEngines[engine.attrib["name"]].scriptTarget ? path.join(project_dir, defaultEngines[engine.attrib["name"]].scriptTarget) : null;
-                uncheckedEngines.push(defaultEngines[engine.attrib["name"]]);
+            theName = engine.attrib["name"];
+            if(defaultEngines[theName]){
+                defaultEngines[theName].minVersion = defaultEngines[theName].minVersion ? defaultEngines[theName].minVersion : engine.attrib["version"];
+                defaultEngines[theName].currentVersion = defaultEngines[theName].currentVersion ? defaultEngines[theName].currentVersion : null;
+                defaultEngines[theName].scriptTarget = defaultEngines[theName].scriptTarget ? path.join(project_dir, defaultEngines[theName].scriptTarget) : null;
+                defaultEngines[theName].name = theName;
+                
+                // set the indices so we can pop the cordova engine when needed
+                if(theName==='cordova') cordovaEngineIndex = uncheckedEngines.length;
+                if(theName==='cordova-'+platform) cordovaPlatformEngineIndex = uncheckedEngines.length;
+                
+                uncheckedEngines.push(defaultEngines[theName]);
+                
             }else{
                 // check for other engines
                 tempEngine = {};
-                tempEngine[engine.attrib["name"]] = { 'platform': engine.attrib["platform"], 'scriptTarget':path.join(project_dir,engine.attrib["scriptTarget"]), 'minVersion' :  engine.attrib["version"]};
+                tempEngine[theName] = { 'platform': engine.attrib["platform"], 'scriptTarget':path.join(project_dir,engine.attrib["scriptTarget"]), 'minVersion' :  engine.attrib["version"]};
                 uncheckedEngines.push(tempEngine);
             }
         }    
     });
+    
+    // make sure we check for platform req's and not just cordova reqs
+    if(cordovaEngineIndex && cordovaPlatformEngineIndex) uncheckedEngines.pop(cordovaEngineIndex);
     return uncheckedEngines;
 }
 
@@ -167,14 +189,6 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
         if (callback) callback();
         return;
     }
-
-    //var versionPath = path.join(project_dir, 'cordova', 'version');
-    // windows8, wp7, wp8 all use a .bat file
-    /*
-    if (platform === "windows8" || platform === "wp7" || platform === "wp8") {
-        versionPath += ".bat";
-    }
-    */
     
     var theEngines = getEngines(plugin_et, platform, project_dir);
     theEngines = callEngineScripts(theEngines);

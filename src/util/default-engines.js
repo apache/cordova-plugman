@@ -9,19 +9,19 @@ module.exports = {
         { 'platform':'*', 'scriptTarget': path.join('cordova','version') },   
     // no location needed for plugman as this should be the calling process
     'cordova-plugman': 
-        { 'platform':'*', 'minVersion': process.version },
+        { 'platform':'*', 'currentVersion': process.version },
     'cordova-android': 
-        { 'platform':'android', 'scriptTarget': '' },
+        { 'platform':'android', 'scriptTarget': path.join('cordova','version') },
     'cordova-ios': 
-        { 'platform':'ios', 'scriptTarget': '' },
+        { 'platform':'ios', 'scriptTarget': path.join('cordova','version') },
     'cordova-blackberry10': 
-        { 'platform':'blackberry10', 'scriptTarget': '' },
+        { 'platform':'blackberry10', 'scriptTarget': path.join('cordova','version') },
     'cordova-wp7': 
-        { 'platform':'wp7', 'scriptTarget': '' },
+        { 'platform':'wp7', 'scriptTarget': path.join('cordova','version') },
     'cordova-wp8': 
-        { 'platform':'wp8', 'scriptTarget': '' },
+        { 'platform':'wp8', 'scriptTarget': path.join('cordova','version') },
     'cordova-windows8': 
-        { 'platform':'windows8', 'scriptTarget': '' },
+        { 'platform':'windows8', 'scriptTarget': path.join('cordova','version') },
     
     // ideally these sdk versions will be known via a script
     // that calls the sdk's version command - the idea would be that
