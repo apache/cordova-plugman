@@ -6,38 +6,38 @@ var path = require('path');
 
 module.exports = {
     'cordova': 
-        { 'platform':'*', 'scriptTarget': path.join('cordova','version') },   
+        { 'platform':'*', 'scriptSrc': path.join('cordova','version') },   
     // no location needed for plugman as this should be the calling process
     'cordova-plugman': 
         { 'platform':'*', 'currentVersion': process.version },
     'cordova-android': 
-        { 'platform':'android', 'scriptTarget': path.join('cordova','version') },
+        { 'platform':'android', 'scriptSrc': path.join('cordova','version') },
     'cordova-ios': 
-        { 'platform':'ios', 'scriptTarget': path.join('cordova','version') },
+        { 'platform':'ios', 'scriptSrc': path.join('cordova','version') },
     'cordova-blackberry10': 
-        { 'platform':'blackberry10', 'scriptTarget': path.join('cordova','version') },
+        { 'platform':'blackberry10', 'scriptSrc': path.join('cordova','version') },
     'cordova-wp7': 
-        { 'platform':'wp7', 'scriptTarget': path.join('cordova','version') },
+        { 'platform':'wp7', 'scriptSrc': path.join('cordova','version') },
     'cordova-wp8': 
-        { 'platform':'wp8', 'scriptTarget': path.join('cordova','version') },
+        { 'platform':'wp8', 'scriptSrc': path.join('cordova','version') },
     'cordova-windows8': 
-        { 'platform':'windows8', 'scriptTarget': path.join('cordova','version') },
+        { 'platform':'windows8', 'scriptSrc': path.join('cordova','version') },
     
     // ideally these sdk versions will be known via a script
     // that calls the sdk's version command - the idea would be that
     // these version scripts output all in the same way and parse
     // the appropriate blob of info returned from the sdk version command
     'apple-xcode' : 
-        { 'platform':'ios', 'scriptTarget': '' },
+        { 'platform':'ios', 'scriptSrc': '' },
     'apple-ios' : 
-        { 'platform':'ios', 'scriptTarget': '' },
+        { 'platform':'ios', 'scriptSrc': '' },
     'blackberry-webworks' : 
         // use path to sdk/Framework/lib/webworks-info.js 
         // will export as version number
         // currently though, all versions of webworks sdk should be good to go 
         // so this is technically *not* needed right now
-        { 'platform':'blackberry10', 'scriptTarget': '' },
+        { 'platform':'blackberry10', 'scriptSrc': '' },
     'android-sdk' : 
         // will have to parse string output from android list targets
-        { 'platform':'android', 'scriptTarget': '' }
+        { 'platform':'android', 'scriptSrc': '' }
 };

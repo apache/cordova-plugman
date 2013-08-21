@@ -24,8 +24,8 @@
     <name>Engine Choo Choo</name>
 
     <engines>
-        <engine name="cordova" version=">=2.3.0"/>
-        <engine name="cordova-plugman" version=">=0.10.0" />
+        <engine name="cordova" version=">=3.0.0"/>
+        <engine name="cordova-android" version=">=3.1.0"/>
     </engines>
     
 </plugin>

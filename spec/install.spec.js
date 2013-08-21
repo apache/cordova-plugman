@@ -74,6 +74,17 @@ describe('install', function() {
             install('android', temp, 'engineplugin', plugins_dir, {});
             expect(spy).toHaveBeenCalledWith('3.0.0-rc1','>=2.3.0');
         });
+        it('should check specific platform version if specified', function() {
+            var spy = spyOn(semver, 'satisfies').andReturn(true);
+            exec.andReturn({code:0,output:"3.1.0"});
+            install('android', temp, 'enginepluginAndroid', plugins_dir, {});
+            expect(spy).toHaveBeenCalledWith('3.1.0','>=3.1.0');
+        });
+        it('should check plugmans version', function() {
+            var spy = spyOn(semver, 'satisfies').andReturn(true);
+            install('android', temp, 'engineplugin', plugins_dir, {});
+            expect(spy).toHaveBeenCalledWith(null,'>=0.10.0');
+        });
         it('should queue up actions as appropriate for that plugin and call process on the action stack', function() {
             install('android', temp, dummyplugin, plugins_dir, {});
             expect(actions_push.calls.length).toEqual(3);
@@ -134,6 +145,13 @@ describe('install', function() {
             expect(function() {
                 install('android', temp, 'https://git-wip-us.apache.org/repos/asf/cordova-plugin-camera.git', plugins_dir, {});
             }).toThrow('"git" command line tool is not installed: make sure it is accessible on your PATH.');
+        });
+        it('should throw if plugin version is less than the minimum requirement', function(){
+            var spy = spyOn(semver, 'satisfies').andReturn(false);
+            exec.andReturn({code:0,output:"0.0.1"});
+            expect(function() {
+                install('android', temp, 'engineplugin', plugins_dir, {});
+             }).toThrow('Plugin doesn\'t support this project\'s cordova version. cordova: 0.0.1, failed version requirement: >=2.3.0');        
         });
     });
 });

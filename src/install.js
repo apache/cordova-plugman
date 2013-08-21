@@ -99,20 +99,20 @@ function callEngineScripts(engines) {
     var engineScriptVersion;
     
     engines.forEach(function(engine){
-        if(fs.existsSync(engine.scriptTarget)){
-            fs.chmodSync(engine.scriptTarget, '755');
-            engineScript = shell.exec(engine.scriptTarget, {silent: true});
+        if(fs.existsSync(engine.scriptSrc)){
+            fs.chmodSync(engine.scriptSrc, '755');
+            engineScript = shell.exec(engine.scriptSrc, {silent: true});
             if (engineScript.code === 0) {
                 engineScriptVersion = cleanVersionOutput(engineScript.output, engine.platform)
             }else{
                 engineScriptVersion = null;
-                require('../plugman').emit('log', 'Cordova project '+ engine.scriptTarget +' script failed (has a '+ engine.scriptTarget +' script, but something went wrong executing it), continuing anyways.');
+                require('../plugman').emit('log', 'Cordova project '+ engine.scriptSrc +' script failed (has a '+ engine.scriptSrc +' script, but something went wrong executing it), continuing anyways.');
             }  
         }else if(engine.currentVersion){
             engineScriptVersion = cleanVersionOutput(engine.currentVersion, engine.platform)           
         }else{
             engineScriptVersion = null;
-            require('../plugman').emit('log', 'Cordova project '+ engine.scriptTarget +' not detected (lacks a '+ engine.scriptTarget +' script), continuing.');
+            require('../plugman').emit('log', 'Cordova project '+ engine.scriptSrc +' not detected (lacks a '+ engine.scriptSrc +' script), continuing.');
         } 
         engine.currentVersion = engineScriptVersion;
     });
@@ -125,34 +125,28 @@ function getEngines(pluginElement, platform, project_dir){
     var engines = pluginElement.findall('engines/engine');
     var defaultEngines = require('./util/default-engines');
     var uncheckedEngines = [];
-    var tempEngine;
-    var cordovaEngineIndex;
-    var cordovaPlatformEngineIndex;
-    
-    var theName;
+    var tempEngine, cordovaEngineIndex, cordovaPlatformEngineIndex, theName;
     // load in known defaults and update when necessary
     engines.forEach(function(engine){   
-        if(engine.attrib["platform"] === platform || engine.attrib["platform"] === '*'){
-            theName = engine.attrib["name"];
-            if(defaultEngines[theName]){
-                defaultEngines[theName].minVersion = defaultEngines[theName].minVersion ? defaultEngines[theName].minVersion : engine.attrib["version"];
-                defaultEngines[theName].currentVersion = defaultEngines[theName].currentVersion ? defaultEngines[theName].currentVersion : null;
-                defaultEngines[theName].scriptTarget = defaultEngines[theName].scriptTarget ? path.join(project_dir, defaultEngines[theName].scriptTarget) : null;
-                defaultEngines[theName].name = theName;
-                
-                // set the indices so we can pop the cordova engine when needed
-                if(theName==='cordova') cordovaEngineIndex = uncheckedEngines.length;
-                if(theName==='cordova-'+platform) cordovaPlatformEngineIndex = uncheckedEngines.length;
-                
-                uncheckedEngines.push(defaultEngines[theName]);
-                
-            }else{
-                // check for other engines
-                tempEngine = {};
-                tempEngine[theName] = { 'platform': engine.attrib["platform"], 'scriptTarget':path.join(project_dir,engine.attrib["scriptTarget"]), 'minVersion' :  engine.attrib["version"]};
-                uncheckedEngines.push(tempEngine);
-            }
-        }    
+        theName = engine.attrib["name"];
+        if(defaultEngines[theName] && (defaultEngines[theName].platform === platform || defaultEngines[theName].platform === '*')){
+            defaultEngines[theName].minVersion = defaultEngines[theName].minVersion ? defaultEngines[theName].minVersion : engine.attrib["version"];
+            defaultEngines[theName].currentVersion = defaultEngines[theName].currentVersion ? defaultEngines[theName].currentVersion : null;
+            defaultEngines[theName].scriptSrc = defaultEngines[theName].scriptSrc ? path.join(project_dir, defaultEngines[theName].scriptSrc) : null;
+            defaultEngines[theName].name = theName;
+            
+            // set the indices so we can pop the cordova engine when needed
+            if(theName==='cordova') cordovaEngineIndex = uncheckedEngines.length;
+            if(theName==='cordova-'+platform) cordovaPlatformEngineIndex = uncheckedEngines.length;
+            
+            uncheckedEngines.push(defaultEngines[theName]);
+            
+        }else if(engine.attrib["platform"] === platform || engine.attrib["platform"] === '*'){
+            // check for other engines
+            tempEngine = {};
+            tempEngine[theName] = { 'platform': engine.attrib["platform"], 'scriptSrc':engine.attrib["scriptSrc"], 'minVersion' :  engine.attrib["version"]};
+            uncheckedEngines.push(tempEngine);
+        }
     });
     
     // make sure we check for platform req's and not just cordova reqs
