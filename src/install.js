@@ -65,7 +65,7 @@ function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options,
     }
 }
 
-function checkMinimumReq(engines, callback) {
+function checkEngines(engines, callback) {
     engines.forEach(function(engine){    
         if(semver.satisfies(engine.currentVersion, engine.minVersion || engine.currentVersion == null)){
             // engine ok!
@@ -123,7 +123,7 @@ function callEngineScripts(engines) {
 // return only the engines we care about/need
 function getEngines(pluginElement, platform, project_dir){
     var engines = pluginElement.findall('engines/engine');
-    var defaultEngines = require('./util/default-engines');
+    var defaultEngines = require('./util/default-engines')(project_dir);
     var uncheckedEngines = [];
     var tempEngine, cordovaEngineIndex, cordovaPlatformEngineIndex, theName;
     // load in known defaults and update when necessary
@@ -132,7 +132,7 @@ function getEngines(pluginElement, platform, project_dir){
         if(defaultEngines[theName] && (defaultEngines[theName].platform === platform || defaultEngines[theName].platform === '*')){
             defaultEngines[theName].minVersion = defaultEngines[theName].minVersion ? defaultEngines[theName].minVersion : engine.attrib["version"];
             defaultEngines[theName].currentVersion = defaultEngines[theName].currentVersion ? defaultEngines[theName].currentVersion : null;
-            defaultEngines[theName].scriptSrc = defaultEngines[theName].scriptSrc ? path.join(project_dir, defaultEngines[theName].scriptSrc) : null;
+            defaultEngines[theName].scriptSrc = defaultEngines[theName].scriptSrc ? defaultEngines[theName].scriptSrc : null;
             defaultEngines[theName].name = theName;
             
             // set the indices so we can pop the cordova engine when needed
@@ -186,7 +186,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
     
     var theEngines = getEngines(plugin_et, platform, project_dir);
     theEngines = callEngineScripts(theEngines);
-    checkMinimumReq(theEngines, callback);
+    checkEngines(theEngines, callback);
     
     // checking preferences, if certain variables are not provided, we should throw.
     prefs = plugin_et.findall('./preference') || [];

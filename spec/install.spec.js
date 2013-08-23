@@ -74,11 +74,17 @@ describe('install', function() {
             install('android', temp, 'engineplugin', plugins_dir, {});
             expect(spy).toHaveBeenCalledWith('3.0.0-rc1','>=2.3.0');
         });
-        it('should check specific platform version if specified', function() {
+        it('should check specific platform version over cordova version if specified', function() {
             var spy = spyOn(semver, 'satisfies').andReturn(true);
             exec.andReturn({code:0,output:"3.1.0"});
             install('android', temp, 'enginepluginAndroid', plugins_dir, {});
             expect(spy).toHaveBeenCalledWith('3.1.0','>=3.1.0');
+        });
+        it('should check platform sdk version if specified', function() {
+            var spy = spyOn(semver, 'satisfies').andReturn(true);
+            exec.andReturn({code:0,output:"4.3"});
+            install('android', temp, 'enginepluginAndroid', plugins_dir, {});
+            expect(spy).toHaveBeenCalledWith('4.3','>=4.3');
         });
         it('should check plugmans version', function() {
             var spy = spyOn(semver, 'satisfies').andReturn(true);
