@@ -1,9 +1,5 @@
 var path = require('path');
 
-// wondering how to nicely store paths here...
-// it'd be nice to just point to this file and get the correct path
-// since these scripts should ideally be accessed from the cordova project folder
-
 module.exports = function(project_dir){
     return {
         'cordova': 
@@ -24,22 +20,15 @@ module.exports = function(project_dir){
         'cordova-windows8': 
             { 'platform':'windows8', 'scriptSrc': path.join(project_dir,'cordova','version') },
         
-        // ideally these sdk versions will be known via a script
-        // that calls the sdk's version command - the idea would be that
-        // these version scripts output all in the same way and parse
-        // the appropriate blob of info returned from the sdk version command
+        // TODO: these scripts have not been made!
         'apple-xcode' : 
-            { 'platform':'ios', 'scriptSrc': '' },
+            { 'platform':'ios', 'scriptSrc':  path.join(project_dir,'cordova','apple-xcode-version') },
         'apple-ios' : 
-            { 'platform':'ios', 'scriptSrc': '' },
+            { 'platform':'ios', 'scriptSrc': path.join(project_dir,'cordova','apple-ios-version') },
         'blackberry-webworks' : 
-            // use path to sdk/Framework/lib/webworks-info.js 
-            // will export as version number
-            // currently though, all versions of webworks sdk should be good to go 
-            // so this is technically *not* needed right now
-            { 'platform':'blackberry10', 'scriptSrc': '' },
+            { 'platform':'blackberry10', 'scriptSrc': path.join(project_dir,'blackberry-webworks-version') },
         'android-sdk' : 
             // will have to parse string output from android list targets
-            { 'platform':'android', 'scriptSrc': '' }
+            { 'platform':'android', 'scriptSrc': path.join(project_dir,'cordova','android-sdk-version') }
     }
 };
