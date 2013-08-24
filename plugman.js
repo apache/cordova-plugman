@@ -58,7 +58,7 @@ plugman.commands =  {
     },
     'install'  : function(cli_opts) {
         if(!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
-            return console.log(plugman.help());
+            return //console.log(plugman.help());
         }
         var cli_variables = {}
         if (cli_opts.variable) {

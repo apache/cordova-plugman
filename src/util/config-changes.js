@@ -55,7 +55,6 @@ var keep_these_frameworks = [
 module.exports = {
     add_installed_plugin_to_prepare_queue:function(plugins_dir, plugin, platform, vars, is_top_level) {
         checkPlatform(platform);
-
         var config = module.exports.get_platform_json(plugins_dir, platform);
         config.prepare_queue.installed.push({'plugin':plugin, 'vars':vars, 'topLevel':is_top_level});
         module.exports.save_platform_json(config, plugins_dir, platform);
@@ -284,6 +283,7 @@ module.exports = {
     add_plugin_changes:function(platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment) {
         var platform_config = module.exports.get_platform_json(plugins_dir, platform);
         var plugin_dir = path.join(plugins_dir, plugin_id);
+        
         plugin_id = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'), 'utf-8')._root.attrib['id'];
 
         // get config munge, aka how should this plugin change various config files
@@ -409,7 +409,6 @@ module.exports = {
         checkPlatform(platform);
 
         var platform_config = module.exports.get_platform_json(plugins_dir, platform);
-
         // Uninstallation first
         platform_config.prepare_queue.uninstalled.forEach(function(u) {
             module.exports.remove_plugin_changes(platform, project_dir, plugins_dir, u.plugin, u.id, u.topLevel, true);

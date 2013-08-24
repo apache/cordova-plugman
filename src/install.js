@@ -37,9 +37,7 @@ module.exports = function installPlugin(platform, project_dir, id, plugins_dir, 
         if (callback) return callback(err);
         else throw err;
     }
-
     var current_stack = new action_stack();
-
     options.is_top_level = true;
     possiblyFetch(current_stack, platform, project_dir, id, plugins_dir, options, callback);
 };
@@ -326,7 +324,7 @@ function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plu
             resourceFiles = platformTag.findall('./resource-file'),
             libFiles = platformTag.findall('./lib-file');
         assets = assets.concat(platformTag.findall('./asset'));
-
+        
         // queue up native stuff
         sourceFiles && sourceFiles.forEach(function(source) {
             actions.push(actions.createAction(handler["source-file"].install, [source, plugin_dir, project_dir, plugin_id], handler["source-file"].uninstall, [source, project_dir, plugin_id]));
@@ -357,7 +355,6 @@ function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plu
             if (callback) callback(err);
             else throw err;
         } else {
-
             // queue up the plugin so prepare knows what to do.
             config_changes.add_installed_plugin_to_prepare_queue(plugins_dir, plugin_basename, platform, filtered_variables, is_top_level);
             // call prepare after a successful install
