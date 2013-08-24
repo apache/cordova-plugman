@@ -37,8 +37,10 @@ module.exports = {
         install:function(source_el, plugin_dir, project_dir, plugin_id) {
             var src = source_el.attrib['src'];
             var target = source_el.attrib['target-dir'] || plugin_id;
+            console.log(target);
             TARGETS.forEach(function(arch) {
                 var dest = path.join("native", arch, "chrome", "plugin", target, path.basename(src));
+                console.log(dest);
                 common.copyFile(plugin_dir, src, project_dir, dest);
             });
         },
