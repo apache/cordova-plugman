@@ -77,7 +77,7 @@ function checkEngines(engines, callback) {
     });
 }
 
-function cleanVersionOutput(version, platform){
+function cleanVersionOutput(version, name){
     var out = version.trim();
     var rc_index = out.indexOf('rc');
     var dev_index = out.indexOf('dev');
@@ -87,8 +87,13 @@ function cleanVersionOutput(version, platform){
 
     // strip out the -dev and put a warning about using the dev branch
     if (dev_index > -1) {
-        out = out.substr(0, dev_index-1);
-        require('../plugman').emit('log', 'Cordova-'+platform+' has been detected as using a development branch. Attemping to install as Cordova-'+platform+' '+out);
+        // some platform still lists dev branches as just dev, set to null and continue
+        if(out=="dev"){
+            out = null;
+        }else{
+            out = out.substr(0, dev_index-1);
+        }
+        require('../plugman').emit('log', name+' has been detected as using a development branch. Attemping to install anyways.');
     }     
     return out;
 }
@@ -97,19 +102,19 @@ function cleanVersionOutput(version, platform){
 function callEngineScripts(engines) {
     var engineScript;
     var engineScriptVersion;
-    
+   
     engines.forEach(function(engine){
         if(fs.existsSync(engine.scriptSrc)){
             fs.chmodSync(engine.scriptSrc, '755');
             engineScript = shell.exec(engine.scriptSrc, {silent: true});
             if (engineScript.code === 0) {
-                engineScriptVersion = cleanVersionOutput(engineScript.output, engine.platform)
+                engineScriptVersion = cleanVersionOutput(engineScript.output, engine.name)
             }else{
                 engineScriptVersion = null;
                 require('../plugman').emit('log', 'Cordova project '+ engine.scriptSrc +' script failed (has a '+ engine.scriptSrc +' script, but something went wrong executing it), continuing anyways.');
             }  
         }else if(engine.currentVersion){
-            engineScriptVersion = cleanVersionOutput(engine.currentVersion, engine.platform)           
+            engineScriptVersion = cleanVersionOutput(engine.currentVersion, engine.name)           
         }else{
             engineScriptVersion = null;
             require('../plugman').emit('log', 'Cordova project '+ engine.scriptSrc +' not detected (lacks a '+ engine.scriptSrc +' script), continuing.');
