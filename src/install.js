@@ -130,25 +130,33 @@ function getEngines(pluginElement, platform, project_dir, plugin_dir){
     var engines = pluginElement.findall('engines/engine');
     var defaultEngines = require('./util/default-engines')(project_dir);
     var uncheckedEngines = [];
-    var cordovaEngineIndex, cordovaPlatformEngineIndex, theName;
+    var cordovaEngineIndex, cordovaPlatformEngineIndex, theName, platformIndex, defaultPlatformIndex;
     // load in known defaults and update when necessary
     engines.forEach(function(engine){   
         theName = engine.attrib["name"];
+        
         // check to see if the engine is listed as a default engine
-        if(defaultEngines[theName] && (defaultEngines[theName].platform === platform || defaultEngines[theName].platform === '*')){
-            defaultEngines[theName].minVersion = defaultEngines[theName].minVersion ? defaultEngines[theName].minVersion : engine.attrib["version"];
-            defaultEngines[theName].currentVersion = defaultEngines[theName].currentVersion ? defaultEngines[theName].currentVersion : null;
-            defaultEngines[theName].scriptSrc = defaultEngines[theName].scriptSrc ? defaultEngines[theName].scriptSrc : null;
-            defaultEngines[theName].name = theName;
-            
-            // set the indices so we can pop the cordova engine when needed
-            if(theName==='cordova') cordovaEngineIndex = uncheckedEngines.length;
-            if(theName==='cordova-'+platform) cordovaPlatformEngineIndex = uncheckedEngines.length;
-            
-            uncheckedEngines.push(defaultEngines[theName]);
+        if(defaultEngines[theName]){
+            // make sure engine is for platform we are installing on
+            defaultPlatformIndex = defaultEngines[theName].platform.indexOf(platform);
+            if(defaultPlatformIndex > -1 || defaultEngines[theName].platform === '*'){
+                defaultEngines[theName].minVersion = defaultEngines[theName].minVersion ? defaultEngines[theName].minVersion : engine.attrib["version"];
+                defaultEngines[theName].currentVersion = defaultEngines[theName].currentVersion ? defaultEngines[theName].currentVersion : null;
+                defaultEngines[theName].scriptSrc = defaultEngines[theName].scriptSrc ? defaultEngines[theName].scriptSrc : null;
+                defaultEngines[theName].name = theName;
+                
+                // set the indices so we can pop the cordova engine when needed
+                if(theName==='cordova') cordovaEngineIndex = uncheckedEngines.length;
+                if(theName==='cordova-'+platform) cordovaPlatformEngineIndex = uncheckedEngines.length;
+                
+                uncheckedEngines.push(defaultEngines[theName]);
+            }
         // check for other engines
-        }else if(engine.attrib["platform"] === platform || engine.attrib["platform"] === '*'){
-            uncheckedEngines.push({ 'name': theName, 'platform': engine.attrib["platform"], 'scriptSrc':path.resolve(plugin_dir, engine.attrib["scriptSrc"]), 'minVersion' :  engine.attrib["version"]});
+        }else{
+            platformIndex = engine.attrib["platform"].indexOf(platform);
+            if(platformIndex > -1 || engine.attrib["platform"] === '*'){
+                uncheckedEngines.push({ 'name': theName, 'platform': engine.attrib["platform"], 'scriptSrc':path.resolve(plugin_dir, engine.attrib["scriptSrc"]), 'minVersion' :  engine.attrib["version"]});
+            }
         }
     });
     

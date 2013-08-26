@@ -96,6 +96,16 @@ describe('install', function() {
             install('android', temp, 'engineplugin', plugins_dir, {});
             expect(spy).toHaveBeenCalledWith(null,'>=1.0.0');
         });
+        it('should check custom engine version that supports multiple platforms', function() {
+            var spy = spyOn(semver, 'satisfies').andReturn(true);
+            install('android', temp, 'engineplugin', plugins_dir, {});
+            expect(spy).toHaveBeenCalledWith(null,'>=3.0.0');
+        });
+        it('should not check custom engine version that is not supported for platform', function() {
+            var spy = spyOn(semver, 'satisfies').andReturn(true);
+            install('blackberry10', temp, 'engineplugin', plugins_dir, {});
+            expect(spy).not.toHaveBeenCalledWith(null,'>=3.0.0');
+        });
         it('should queue up actions as appropriate for that plugin and call process on the action stack', function() {
             install('android', temp, dummyplugin, plugins_dir, {});
             expect(actions_push.calls.length).toEqual(3);
