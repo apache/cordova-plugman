@@ -26,7 +26,7 @@
     <engines>
         <engine name="cordova" version=">=2.3.0"/>
         <engine name="cordova-plugman" version=">=0.10.0" />
-        <engine name="mega-fun-plugin" version=">=100" scriptSrc="megaFunVesion" platform="*" />
+        <engine name="mega-fun-plugin" version=">=1.0.0" scriptSrc="megaFunVersion" platform="*" />
     </engines>
     
 </plugin>

@@ -94,7 +94,7 @@ describe('install', function() {
         it('should check custom engine version', function() {
             var spy = spyOn(semver, 'satisfies').andReturn(true);
             install('android', temp, 'engineplugin', plugins_dir, {});
-            expect(spy).toHaveBeenCalledWith(null,'>=100');
+            expect(spy).toHaveBeenCalledWith(null,'>=1.0.0');
         });
         it('should queue up actions as appropriate for that plugin and call process on the action stack', function() {
             install('android', temp, dummyplugin, plugins_dir, {});

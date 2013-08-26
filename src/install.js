@@ -67,7 +67,7 @@ function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options,
 
 function checkEngines(engines, callback) {
     engines.forEach(function(engine){    
-        if(semver.satisfies(engine.currentVersion, engine.minVersion || engine.currentVersion == null)){
+        if(semver.satisfies(engine.currentVersion, engine.minVersion) || engine.currentVersion == null){
             // engine ok!
         }else{
             var err = new Error('Plugin doesn\'t support this project\'s '+engine.name+' version. '+engine.name+': ' + engine.currentVersion + ', failed version requirement: ' + engine.minVersion);
@@ -121,7 +121,7 @@ function callEngineScripts(engines) {
 }
 
 // return only the engines we care about/need
-function getEngines(pluginElement, platform, project_dir){
+function getEngines(pluginElement, platform, project_dir, plugin_dir){
     var engines = pluginElement.findall('engines/engine');
     var defaultEngines = require('./util/default-engines')(project_dir);
     var uncheckedEngines = [];
@@ -143,7 +143,7 @@ function getEngines(pluginElement, platform, project_dir){
             uncheckedEngines.push(defaultEngines[theName]);
         // check for other engines
         }else if(engine.attrib["platform"] === platform || engine.attrib["platform"] === '*'){
-            uncheckedEngines.push({ 'name': theName, 'platform': engine.attrib["platform"], 'scriptSrc':engine.attrib["scriptSrc"], 'minVersion' :  engine.attrib["version"]});
+            uncheckedEngines.push({ 'name': theName, 'platform': engine.attrib["platform"], 'scriptSrc':path.resolve(plugin_dir, engine.attrib["scriptSrc"]), 'minVersion' :  engine.attrib["version"]});
         }
     });
     
@@ -182,7 +182,7 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
         return;
     }
     
-    var theEngines = getEngines(plugin_et, platform, project_dir);
+    var theEngines = getEngines(plugin_et, platform, project_dir, plugin_dir);
     theEngines = callEngineScripts(theEngines);
     checkEngines(theEngines, callback);
     
