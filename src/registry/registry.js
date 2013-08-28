@@ -1,6 +1,7 @@
 var npm = require('npm'),
     path = require('path'),
     http = require('http'),
+    url = require('url'),
     targz = require('tar.gz'),
     fs = require('fs'),
     manifest = require('./manifest'),
@@ -71,6 +72,27 @@ function fetchPackage(info, cb) {
                 if (cb) cb(err);
                 else throw err;
             } else {
+                // Update the download count for this plugin.
+                // Fingers crossed that the timestamps are unique, and that no plugin is downloaded
+                // twice in a single millisecond.
+                //
+                // This is acceptable, because the failure mode is Couch gracefully rejecting the second one
+                // (for lacking a _rev), and dropped a download count is not important.
+                var now = new Date();
+                var pkgId = info._id.substring(0, info._id.indexOf('@'));
+                var id = pkgId + '_' + now.toISOString();
+                var uri = url.parse(module.exports.settings.registry);
+                // Overriding the path to point at /downloads.
+                uri.path = '/downloads/' + id;
+                uri.method = 'PUT';
+                var dlcReq = http.request(uri);
+
+                dlcReq.write(JSON.stringify({
+                    day: now.getUTCFullYear() + '-' + (now.getUTCMonth()+1) + '-' + now.getUTCDate(),
+                    pkg: pkgId
+                }));
+                dlcReq.end();
+
                 res.pipe(filestream);
                 filestream.on('finish', function() {
                     var decompress = new targz().extract(filename, target, function(err) {
