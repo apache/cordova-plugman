@@ -34,7 +34,7 @@ function getPackageInfo(args, cb) {
     
     http.get(settings.registry + '/' + name + '/' + version, function(res) {
          if(res.statusCode != 200) {
-                 var err = new Error('Error');
+                 var err = new Error('error: Could not fetch package information for '+name);
                  if (cb) cb(err);
                  else throw err;
          } else {
@@ -80,12 +80,13 @@ function fetchPackage(info, cb) {
                 // (for lacking a _rev), and dropped a download count is not important.
                 var now = new Date();
                 var pkgId = info._id.substring(0, info._id.indexOf('@'));
-                var id = pkgId + '_' + now.toISOString();
                 var uri = url.parse(module.exports.settings.registry);
                 // Overriding the path to point at /downloads.
-                uri.path = '/downloads/' + id;
-                uri.method = 'PUT';
+                uri.path = '/downloads';
+                uri.method = 'POST';
                 var dlcReq = http.request(uri);
+
+                dlcReq.setHeader('Content-Type', 'application/json');
 
                 dlcReq.write(JSON.stringify({
                     day: now.getUTCFullYear() + '-' + (now.getUTCMonth()+1) + '-' + now.getUTCDate(),
