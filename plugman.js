@@ -32,6 +32,7 @@ plugman = {
     publish:            require('./src/publish'),
     unpublish:          require('./src/unpublish'),
     search:             require('./src/search'),
+	app:                require('./src/app'),
     config_changes:     require('./src/util/config-changes'),
     on:                 emitter.addListener,
     off:                emitter.removeListener,
