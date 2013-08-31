@@ -4,32 +4,36 @@ var path = require('path'),
 
 module.exports = {
 
+    paths: {},
+
     wwwPath: function(appDir) {
         return path.join(appDir, 'www');
     }, 
 
     configPath: function(appDir) {
         return path.join(appDir, 'www', 'config.xml');
-    },     
+    },  
 
     getPaths: function(appDir) {
-        // Check for cordova.js in application, make path relative to this file
-        var wwwDir = this.wwwPath(appDir);
+        if(!this.paths[appDir]) {
+            // Check for cordova.js in application, make path relative to this file
+            var wwwDir = this.wwwPath(appDir);
 
-        var jsDir = wwwDir;
-        var relDir = "";
-        var rel = glob.sync('**/cordova.js', {cwd: wwwDir});
-        
-        console.log(rel);
-        if(rel.length) {
-            relDir = path.join("", rel.pop().replace(/[/\\]?cordova.js/, ""));
-            jsDir = path.join(wwwDir, relDir);
+            var jsDir = wwwDir;
+            var relDir = "";
+            
+            var rel = glob.sync('**/cordova.js', {cwd: wwwDir});
+            if(rel.length == 1) {
+                relDir = path.join("", rel.pop().replace(/[/\\]?cordova.js/, ""));
+                jsDir = path.join(wwwDir, relDir);
+            }
+            this.paths[appDir] = {
+                'www': wwwDir,
+                'www.js' : relDir,
+                'js': jsDir,
+                'config' : this.configPath(appDir)
+            };
         }
-        return {
-            'www': wwwDir,
-            'www.js' : relDir,
-            'js': jsDir,
-            'config' : this.configPath(appDir)
-        };
+        return this.paths[appDir];
     }
 };
