@@ -49,7 +49,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     plugman.emit('log', 'Preparing ' + platform + ' project...');
     var platform_json = config_changes.get_platform_json(plugins_dir, platform);
 
-    var wwwDir = platform_modules[platform].www_dir(project_dir);    
+    var wwwDir = platform_modules[platform].www_dir(project_dir);   
     var appPaths = app.getPaths(path.join(wwwDir, '..'));
     var jsDir = path.join(wwwDir, appPaths['www.js']);
 
@@ -128,9 +128,15 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
 
     plugins && plugins.forEach(function(plugin) {
         var pluginDir = path.join(plugins_dir, plugin);
+
+        if( !fs.existsSync(pluginDir) ) {
+            plugman.emit('log', 'Could not find plugin in '+ pluginDir);
+            return;
+        }
+
+        // Do we need statSync()
         if(fs.statSync(pluginDir).isDirectory()){
             var xml = xml_helpers.parseElementtreeSync(path.join(pluginDir, 'plugin.xml'));
-    
             var plugin_id = xml.getroot().attrib.id;
     
             // add the plugins dir to the platform's www.
