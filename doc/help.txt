@@ -61,6 +61,11 @@ Search for a plugin
 
     $ plugman search plugin,keywords
 
+Display plugin information
+-----------------------
+
+    $ plugman info plugin
+
 Manage registry configuration
 -----------------------------
 

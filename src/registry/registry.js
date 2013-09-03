@@ -193,8 +193,26 @@ module.exports = {
         initSettings(function(err, settings) {
             if(err) return handleError(err, cb);
             getPackageInfo(args, function(err, info) {
-                if(err) return handleError(err, cb)
+                if(err) return handleError(err, cb);
                 fetchPackage(info, cb);
+            });
+        });
+    },
+    /**
+     * @method info
+     * @param {String} name Plugin name
+     * @param {Function} cb Command callback
+     */
+    info: function(args, cb) {
+        initSettings(function(err, settings) {
+            if(err) return handleError(err, cb);
+            getPackageInfo(args, function(err, info) {
+                if(err) return handleError(err, cb);
+                if(cb) {
+                    cb(null, info);
+                } else {
+                    console.log(info);
+                }
             });
         });
     }
