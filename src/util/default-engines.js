@@ -14,11 +14,11 @@ module.exports = function(project_dir){
         'cordova-blackberry10': 
             { 'platform':'blackberry10', 'scriptSrc': path.join(project_dir,'cordova','version') },
         'cordova-wp7': 
-            { 'platform':'wp7', 'scriptSrc': path.join(project_dir,'cordova','version') },
+            { 'platform':'wp7', 'scriptSrc': path.join(project_dir,'cordova','version.bat') },
         'cordova-wp8': 
-            { 'platform':'wp8', 'scriptSrc': path.join(project_dir,'cordova','version') },
+            { 'platform':'wp8', 'scriptSrc': path.join(project_dir,'cordova','version.bat') },
         'cordova-windows8': 
-            { 'platform':'windows8', 'scriptSrc': path.join(project_dir,'cordova','version') },
+            { 'platform':'windows8', 'scriptSrc': path.join(project_dir,'cordova','version.bat') },
         
         // TODO: these scripts have not been made!
         'apple-xcode' : 
