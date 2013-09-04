@@ -44,10 +44,8 @@ module.exports.uninstallPlatform = function(platform, project_dir, id, plugins_d
 
 module.exports.uninstallPlugin = function(id, plugins_dir, callback) {
     var plugin_dir = path.join(plugins_dir, id);
-    
-    // If already removed, skip.    
+    // If already removed, skip.
     if (!fs.existsSync(plugin_dir)) {
-        // console.log("Skipped " + plugin_dir + " (not found)");
         if (callback) callback();
         return;
     }
@@ -77,34 +75,24 @@ module.exports.uninstallPlugin = function(id, plugins_dir, callback) {
 
 // possible options: cli_variables, www_dir, is_top_level
 function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, options, callback) {
-    var xml_path     = path.join(plugin_dir, 'plugin.xml');
-    if (!fs.existsSync(xml_path)) {
-        // log warning?
-        return;
-    }
-    
-    var plugin_et    = xml_helpers.parseElementtreeSync(xml_path);
+    var xml_path     = path.join(plugin_dir, 'plugin.xml')
+      , plugin_et    = xml_helpers.parseElementtreeSync(xml_path);
     var plugin_id    = plugin_et._root.attrib['id'];
     options = options || {};
 
-    var dependency_info = dependencies.generate_dependency_info(plugins_dir, platform, 'remove');
+    var dependency_info = dependencies.generate_dependency_info(plugins_dir, platform);
     var graph = dependency_info.graph;
     var dependents = graph.getChain(plugin_id);
 
-    var forced = options.cmd && (options.cmd.indexOf('-f') + options.cmd.indexOf('-force') > -2);   
     var tlps = dependency_info.top_level_plugins;
     var diff_arr = [];
     tlps.forEach(function(tlp) {
         if (tlp != plugin_id) {
             var ds = graph.getChain(tlp);
             if (options.is_top_level && ds.indexOf(plugin_id) > -1) {
-                if(forced) {
-                    require('../plugman').emit('log', tlp + ' depends on '+ plugin_id + ', but forcing removal...');
-                } else {
-                    var err = new Error('Another top-level plugin (' + tlp + ') relies on plugin ' + plugin_id + ', therefore aborting uninstallation.');
-                    if (callback) return callback(err);
-                    else throw err;
-                }
+                var err = new Error('Another top-level plugin (' + tlp + ') relies on plugin ' + plugin_id + ', therefore aborting uninstallation.');
+                if (callback) return callback(err);
+                else throw err;
             }
             diff_arr.push(ds);
         }
@@ -183,7 +171,7 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
             // queue up the plugin so prepare can remove the config changes
             config_changes.add_uninstalled_plugin_to_prepare_queue(plugins_dir, path.basename(plugin_dir), platform, is_top_level);
             // call prepare after a successful uninstall
-            require('../plugman').prepare(project_dir, platform, plugins_dir);
+            require('./../plugman').prepare(project_dir, platform, plugins_dir);
             if (callback) callback();
         }
     });
