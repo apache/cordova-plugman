@@ -108,7 +108,7 @@ describe('install', function() {
         });
         it('should queue up actions as appropriate for that plugin and call process on the action stack', function() {
             install('android', temp, dummyplugin, plugins_dir, {});
-            expect(actions_push.calls.length).toEqual(3);
+            expect(actions_push.calls.length).toEqual(4);
             expect(c_a).toHaveBeenCalledWith(jasmine.any(Function), [jasmine.any(Object), path.join(plugins_dir, dummyplugin), temp, dummy_id], jasmine.any(Function), [jasmine.any(Object), temp, dummy_id]);
             expect(proc).toHaveBeenCalled();
         });
