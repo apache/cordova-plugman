@@ -295,6 +295,11 @@ function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opt
                     git_ref: dep_git_ref
                 };
 
+                // CB-4770: registry fetching
+                if(dep_url === undefined) {
+                    dep_url = dep_plugin_id;
+                }
+
                 possiblyFetch(actions, platform, project_dir, dep_url, plugins_dir, opts, function(err) {
                     if (err) {
                         if (callback) callback(err);

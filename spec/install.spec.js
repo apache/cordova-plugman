@@ -146,6 +146,17 @@ describe('install', function() {
                 expect(s).toHaveBeenCalledWith('C', deps_dir, { link: false, subdir: undefined, git_ref: undefined}, jasmine.any(Function));
                 expect(s.calls.length).toEqual(3);
             });
+            it('should try to fetch any dependent plugins from registry when url is not defined', function() {
+                var deps_dir = path.join(plugins_dir, 'dependencies'),
+                    s = spyOn(plugman, 'fetch').andCallFake(function(id, dir, opts, cb) {
+                    cb(false, path.join(dir, id));
+                });
+                exists.andReturn(false);
+                // Plugin A depends on C & D
+                install('android', temp, 'E', deps_dir, {});
+                expect(s).toHaveBeenCalledWith('D', deps_dir, { link: false, subdir: undefined, git_ref: undefined}, jasmine.any(Function));
+                expect(s.calls.length).toEqual(2);
+            });
         });
     });
 
