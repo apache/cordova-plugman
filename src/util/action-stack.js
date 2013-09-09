@@ -2,6 +2,7 @@ var ios = require('../platforms/ios'),
     wp7 = require('../platforms/wp7'),
     wp8 = require('../platforms/wp8'),
     windows8 = require('../platforms/windows8'),
+    Q = require('q'),
     fs = require('fs');
 
 function ActionStack() {
@@ -25,7 +26,8 @@ ActionStack.prototype = {
     push:function(tx) {
         this.stack.push(tx);
     },
-    process:function(platform, project_dir, callback) {
+    // Returns a promise.
+    process:function(platform, project_dir) {
         require('../../plugman').emit('log', 'Beginning processing of action stack for ' + platform + ' project...');
         var project_files;
         // parse platform-specific project files once
@@ -81,8 +83,7 @@ ActionStack.prototype = {
                     }
                 }
                 e.message = issue + e.message;
-                if (callback) return callback(e);
-                else throw e;
+                return Q.reject(e);
             }
             this.completed.push(action);
         }
@@ -96,7 +97,7 @@ ActionStack.prototype = {
             require('../../plugman').emit('log', 'Writing out ' + platform + ' project files...');
             project_files.write();
         }
-        if (callback) callback();
+        return Q();
     }
 };
 

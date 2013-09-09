@@ -8,46 +8,42 @@ var path = require('path'),
     n = require('ncallbacks'),
     dependencies = require('./util/dependencies'),
     underscore = require('underscore'),
+    Q = require('q'),
     platform_modules = require('./platforms');
 
 // possible options: cli_variables, www_dir
-module.exports = function(platform, project_dir, id, plugins_dir, options, callback) {
-    module.exports.uninstallPlatform(platform, project_dir, id, plugins_dir, options, function(err) {
-        if (err) {
-            if (callback) return callback(err);
-            else throw err;
-        }
-        module.exports.uninstallPlugin(id, plugins_dir, callback);
+// Returns a promise.
+module.exports = function(platform, project_dir, id, plugins_dir, options) {
+    return module.exports.uninstallPlatform(platform, project_dir, id, plugins_dir, options)
+    .then(function() {
+        return module.exports.uninstallPlugin(id, plugins_dir);
     });
 }
 
-module.exports.uninstallPlatform = function(platform, project_dir, id, plugins_dir, options, callback) {
+// Returns a promise.
+module.exports.uninstallPlatform = function(platform, project_dir, id, plugins_dir, options) {
     if (!platform_modules[platform]) {
-        var err = new Error(platform + " not supported.");
-        if (callback) return callback(err);
-        else throw err;
+        return Q.reject(new Error(platform + " not supported."));
     }
 
     var plugin_dir = path.join(plugins_dir, id);
 
     if (!fs.existsSync(plugin_dir)) {
-        var err = new Error('Plugin "' + id + '" not found. Already uninstalled?');
-        if (callback) return callback(err);
-        else throw err;
+        return Q.reject(new Error('Plugin "' + id + '" not found. Already uninstalled?'));
     }
 
     var current_stack = new action_stack();
 
     options.is_top_level = true;
-    runUninstall(current_stack, platform, project_dir, plugin_dir, plugins_dir, options, callback);
+    return runUninstall(current_stack, platform, project_dir, plugin_dir, plugins_dir, options);
 };
 
-module.exports.uninstallPlugin = function(id, plugins_dir, callback) {
+// Returns a promise.
+module.exports.uninstallPlugin = function(id, plugins_dir) {
     var plugin_dir = path.join(plugins_dir, id);
     // If already removed, skip.
     if (!fs.existsSync(plugin_dir)) {
-        if (callback) callback();
-        return;
+        return Q();
     }
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , plugin_et    = xml_helpers.parseElementtreeSync(xml_path);
@@ -57,24 +53,25 @@ module.exports.uninstallPlugin = function(id, plugins_dir, callback) {
     var dependencies = plugin_et.findall('dependency');
     if (dependencies && dependencies.length) {
         require('../plugman').emit('log', 'Dependencies detected, iterating through them and removing them first...');
-        var end = n(dependencies.length, function() {
+        return Q.all(
+            dependencies.map(function(dep) {
+                return module.exports.uninstallPlugin(dep.attrib.id, plugins_dir);
+            })
+        ).then(function() {
             shell.rm('-rf', plugin_dir);
             require('../plugman').emit('log', id + ' removed.');
-            if (callback) callback();
-        });
-        dependencies.forEach(function(dep) {
-            module.exports.uninstallPlugin(dep.attrib.id, plugins_dir, end);
         });
     } else {
         // axe the directory
         shell.rm('-rf', plugin_dir);
         require('../plugman').emit('results', 'Deleted "' + plugin_dir + '".');
-        if (callback) callback();
+        return Q();
     }
 };
 
 // possible options: cli_variables, www_dir, is_top_level
-function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, options, callback) {
+// Returns a promise.
+function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, options) {
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , plugin_et    = xml_helpers.parseElementtreeSync(xml_path);
     var plugin_id    = plugin_et._root.attrib['id'];
@@ -90,9 +87,7 @@ function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, o
         if (tlp != plugin_id) {
             var ds = graph.getChain(tlp);
             if (options.is_top_level && ds.indexOf(plugin_id) > -1) {
-                var err = new Error('Another top-level plugin (' + tlp + ') relies on plugin ' + plugin_id + ', therefore aborting uninstallation.');
-                if (callback) return callback(err);
-                else throw err;
+                throw new Error('Another top-level plugin (' + tlp + ') relies on plugin ' + plugin_id + ', therefore aborting uninstallation.');
             }
             diff_arr.push(ds);
         }
@@ -103,25 +98,27 @@ function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, o
     var danglers = underscore.difference.apply(null, diff_arr);
     if (dependents.length && danglers && danglers.length) {
         require('../plugman').emit('log', 'Uninstalling ' + danglers.length + ' dangling dependent plugins...');
-        var end = n(danglers.length, function() {
-            handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, options.www_dir, plugins_dir, plugin_dir, options.is_top_level, callback);
-        });
-        danglers.forEach(function(dangler) {
-            var dependent_path = path.join(plugins_dir, dangler);
-            var opts = {
-                www_dir: options.www_dir,
-                cli_variables: options.cli_variables,
-                is_top_level: false /* TODO: should this "is_top_level" param be false for dependents? */
-            };
-            runUninstall(actions, platform, project_dir, dependent_path, plugins_dir, opts, end);
+        return Q.all(
+            danglers.map(function(dangler) {
+                var dependent_path = path.join(plugins_dir, dangler);
+                var opts = {
+                    www_dir: options.www_dir,
+                    cli_variables: options.cli_variables,
+                    is_top_level: false /* TODO: should this "is_top_level" param be false for dependents? */
+                };
+                return runUninstall(actions, platform, project_dir, dependent_path, plugins_dir, opts);
+            })
+        ).then(function() {
+            return handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, options.www_dir, plugins_dir, plugin_dir, options.is_top_level);
         });
     } else {
         // this plugin can get axed by itself, gogo!
-        handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, options.www_dir, plugins_dir, plugin_dir, options.is_top_level, callback);
+        return handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, options.www_dir, plugins_dir, plugin_dir, options.is_top_level);
     }
 }
 
-function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, www_dir, plugins_dir, plugin_dir, is_top_level, callback) {
+// Returns a promise.
+function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, www_dir, plugins_dir, plugin_dir, is_top_level) {
     var platform_modules = require('./platforms');
     var handler = platform_modules[platform];
     var platformTag = plugin_et.find('./platform[@name="'+platform+'"]');
@@ -161,18 +158,13 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
     });
 
     // run through the action stack
-    actions.process(platform, project_dir, function(err) {
-        if (err) {
-            if (callback) callback(err);
-            else throw err;
-        } else {
-            // WIN!
-            require('../plugman').emit('results', plugin_id + ' uninstalled.');
-            // queue up the plugin so prepare can remove the config changes
-            config_changes.add_uninstalled_plugin_to_prepare_queue(plugins_dir, path.basename(plugin_dir), platform, is_top_level);
-            // call prepare after a successful uninstall
-            require('./../plugman').prepare(project_dir, platform, plugins_dir);
-            if (callback) callback();
-        }
+    return actions.process(platform, project_dir)
+    .then(function() {
+        // WIN!
+        require('../plugman').emit('results', plugin_id + ' uninstalled.');
+        // queue up the plugin so prepare can remove the config changes
+        config_changes.add_uninstalled_plugin_to_prepare_queue(plugins_dir, path.basename(plugin_dir), platform, is_top_level);
+        // call prepare after a successful uninstall
+        require('./../plugman').prepare(project_dir, platform, plugins_dir);
     });
 }
