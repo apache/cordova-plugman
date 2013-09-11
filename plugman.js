@@ -33,6 +33,7 @@ plugman = {
     unpublish:          require('./src/unpublish'),
     search:             require('./src/search'),
     info:               require('./src/info'),
+    owner:              require('./src/owner'),
     config_changes:     require('./src/util/config-changes'),
     on:                 emitter.addListener,
     off:                emitter.removeListener,
@@ -43,6 +44,9 @@ plugman = {
 plugman.commands =  {
     'config'   : function(cli_opts) {
         plugman.config(cli_opts.argv.remain);
+    },
+    'owner'   : function(cli_opts) {
+        plugman.owner(cli_opts.argv.remain);
     },
     'install'  : function(cli_opts) {
         if(!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {

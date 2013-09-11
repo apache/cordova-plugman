@@ -122,6 +122,20 @@ module.exports = {
         });
     },
     /**
+     * @method owner
+     * @param {Array} args Command argument
+     * @param {Function} cb Command callback
+     */
+    owner: function(args, cb) {
+        initSettings(function(err, settings) {
+            if(err) return handleError(err, cb);
+            npm.load(settings, function(er) {
+                if (er) return handleError(er);
+                npm.commands.owner(args, cb);
+            });
+        });
+    },
+    /**
      * @method adduser
      * @param {Array} args Command argument
      * @param {Function} cb Command callback
