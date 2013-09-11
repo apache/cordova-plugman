@@ -21,24 +21,29 @@
 
 var emitter = require('./src/events');
 
+function addProperty(o, symbol, modulePath) {
+    Object.defineProperty(o, symbol, {
+        get : function() { return require(modulePath); }});
+}
+
 plugman = {
-    help:               require('./src/help'),
-    install:            require('./src/install'),
-    uninstall:          require('./src/uninstall'),
-    fetch:              require('./src/fetch'),
-    prepare:            require('./src/prepare'),
-    config:             require('./src/config'), 
-    adduser:            require('./src/adduser'),
-    publish:            require('./src/publish'),
-    unpublish:          require('./src/unpublish'),
-    search:             require('./src/search'),
-    info:               require('./src/info'),
-    config_changes:     require('./src/util/config-changes'),
     on:                 emitter.addListener,
     off:                emitter.removeListener,
     removeAllListeners: emitter.removeAllListeners,
     emit:               emitter.emit
 };
+addProperty(plugman, 'help', './src/help');
+addProperty(plugman, 'install', './src/install');
+addProperty(plugman, 'uninstall', './src/uninstall');
+addProperty(plugman, 'fetch', './src/fetch');
+addProperty(plugman, 'prepare', './src/prepare');
+addProperty(plugman, 'config', './src/config');
+addProperty(plugman, 'adduser', './src/adduser');
+addProperty(plugman, 'publish', './src/publish');
+addProperty(plugman, 'unpublish', './src/unpublish');
+addProperty(plugman, 'search', './src/search');
+addProperty(plugman, 'info', './src/info');
+addProperty(plugman, 'config_changes', './src/util/config-changes');
 
 plugman.commands =  {
     'config'   : function(cli_opts) {
