@@ -22,8 +22,11 @@
 var emitter = require('./src/events');
 
 function addProperty(o, symbol, modulePath) {
+    var val = null;
     Object.defineProperty(o, symbol, {
-        get : function() { return require(modulePath); }});
+        get : function() { return val = val || require(modulePath); },
+        set : function(v) { val = v; }
+    });
 }
 
 plugman = {
