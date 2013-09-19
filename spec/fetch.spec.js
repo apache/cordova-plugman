@@ -8,7 +8,8 @@ var fetch   = require('../src/fetch'),
     temp    = path.join(os.tmpdir(), 'plugman'),
     test_plugin = path.join(__dirname, 'plugins', 'ChildBrowser'),
     test_plugin_with_space = path.join(__dirname, 'folder with space', 'plugins', 'ChildBrowser'),
-    plugins = require('../src/util/plugins');
+    plugins = require('../src/util/plugins'),
+    registry = require('../src/registry/registry');
 
 describe('fetch', function() {
     describe('local plugins', function() {
@@ -38,7 +39,7 @@ describe('fetch', function() {
             expect(sym).toHaveBeenCalledWith(test_plugin, path.join(temp, 'id'), 'dir');
         });
     });
-    describe('remote plugins', function() {
+    describe('git plugins', function() {
         var clone;
         beforeEach(function() {
             clone = spyOn(plugins, 'clonePluginGitRepo');
@@ -83,6 +84,16 @@ describe('fetch', function() {
             expect(function() {
                 fetch("https://github.com/bobeast/GAPlugin.git", temp, {link:true});
             }).toThrow('--link is not supported for git URLs');
+        });
+    });
+    describe('registry plugins', function() {
+        var pluginId = 'dummyplugin', sFetch;
+        beforeEach(function() {
+            sFetch = spyOn(registry, 'fetch');
+        });
+        it('should get a plugin from registry and set the right client when argument is not a folder nor URL', function() {
+            fetch(pluginId, temp, {client: 'plugman'})
+            expect(sFetch).toHaveBeenCalledWith([pluginId], 'plugman', jasmine.any(Function));
         });
     });
 });

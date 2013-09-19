@@ -56,7 +56,7 @@ function getPackageInfo(args, cb) {
  * @param {String} info Package info 
  * @param {Function} cb callback 
  */
-function fetchPackage(info, cb) {
+function fetchPackage(info, cl, cb) {
     var settings = module.exports.settings;
     
     var cached = path.resolve(settings.cache, info.name, info.version, 'package');
@@ -88,10 +88,13 @@ function fetchPackage(info, cb) {
 
                 dlcReq.setHeader('Content-Type', 'application/json');
 
-                dlcReq.write(JSON.stringify({
+                var message = {
                     day: now.getUTCFullYear() + '-' + (now.getUTCMonth()+1) + '-' + now.getUTCDate(),
-                    pkg: pkgId
-                }));
+                    pkg: pkgId,
+                    client: cl
+                };
+
+                dlcReq.write(JSON.stringify(message));
                 dlcReq.end();
 
                 res.pipe(filestream);
@@ -203,12 +206,13 @@ module.exports = {
      * @param {String} name Plugin name
      * @param {Function} cb Command callback
      */
-    fetch: function(args, cb) {
+    fetch: function(args, client, cb) {
         initSettings(function(err, settings) {
             if(err) return handleError(err, cb);
+            var cl = (client === 'plugman' ? 'plugman' : 'cordova-cli')
             getPackageInfo(args, function(err, info) {
                 if(err) return handleError(err, cb);
-                fetchPackage(info, cb);
+                fetchPackage(info, cl, cb);
             });
         });
     },

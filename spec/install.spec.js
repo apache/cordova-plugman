@@ -143,7 +143,7 @@ describe('install', function() {
                 exists.andReturn(false);
                 // Plugin A depends on C & D
                 install('android', temp, 'A', deps_dir, {});
-                expect(s).toHaveBeenCalledWith('C', deps_dir, { link: false, subdir: undefined, git_ref: undefined}, jasmine.any(Function));
+                expect(s).toHaveBeenCalledWith('C', deps_dir, { link: false, subdir: undefined, git_ref: undefined, client: 'plugman'}, jasmine.any(Function));
                 expect(s.calls.length).toEqual(3);
             });
             it('should try to fetch any dependent plugins from registry when url is not defined', function() {
@@ -154,7 +154,7 @@ describe('install', function() {
                 exists.andReturn(false);
                 // Plugin A depends on C & D
                 install('android', temp, 'E', deps_dir, {});
-                expect(s).toHaveBeenCalledWith('D', deps_dir, { link: false, subdir: undefined, git_ref: undefined}, jasmine.any(Function));
+                expect(s).toHaveBeenCalledWith('D', deps_dir, { link: false, subdir: undefined, git_ref: undefined, client: 'plugman'}, jasmine.any(Function));
                 expect(s.calls.length).toEqual(2);
             });
         });

@@ -100,7 +100,7 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options, callback
 
         
         if(!fs.existsSync(plugin_dir)) {
-            registry.fetch([plugin_dir], function(err, plugin_dir) {
+            registry.fetch([plugin_dir], options.client, function(err, plugin_dir) {
                 if (err) {
                     if(callback) {
                         return callback(err);

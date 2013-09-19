@@ -49,7 +49,7 @@ function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options,
     // Check that the plugin has already been fetched.
     if (!fs.existsSync(plugin_dir)) {
         // if plugin doesnt exist, use fetch to get it.
-        require('../plugman').fetch(id, plugins_dir, { link: false, subdir: options.subdir, git_ref: options.git_ref }, function(err, plugin_dir) {
+        require('../plugman').fetch(id, plugins_dir, { link: false, subdir: options.subdir, git_ref: options.git_ref, client: 'plugman' }, function(err, plugin_dir) {
             if (err) {
                 if (callback) callback(err);
                 else throw err;
