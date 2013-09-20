@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.0
+
+### Features
+
+- Firefox OS support.
+- Speed improvements (many commands ~350ms faster)
+- Dependencies can now be fetched from the plugin repository.
+
 ## 0.11.0
 
 ### Features
