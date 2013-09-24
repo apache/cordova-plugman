@@ -24,7 +24,7 @@ var path = require('path')
     , package = require(path.join(__dirname, 'package'))
     , nopt = require('nopt')
     , plugins = require('./src/util/plugins')
-    , Q = require('q'),
+    , Q = require('q')
     , plugman = require('./plugman');
 
 var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry10', 'wp7', 'wp8' , 'windows8', 'firefoxos' ]
