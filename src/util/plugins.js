@@ -42,7 +42,7 @@ module.exports = {
 
         shell.cd(path.dirname(tmp_dir));
         var cmd = util.format('git clone "%s" "%s"', plugin_git_url, path.basename(tmp_dir));
-        require('../../plugman').emit('log', 'Fetching plugin via git-clone command: ' + cmd);
+        require('../../plugman').emit('verbose', 'Fetching plugin via git-clone command: ' + cmd);
         var d = Q.defer();
         child_process.exec(cmd, function(err, stdout, stderr) {
             if (err) {
@@ -52,7 +52,7 @@ module.exports = {
             }
         });
         return d.promise.then(function() {
-            require('../../plugman').emit('log', 'Plugin "' + plugin_git_url + '" fetched.');
+            require('../../plugman').emit('verbose', 'Plugin "' + plugin_git_url + '" fetched.');
             // Check out the specified revision, if provided.
             if (git_ref) {
                 var cmd = util.format('git checkout "%s"', tmp_dir, git_ref);
@@ -76,10 +76,10 @@ module.exports = {
             // TODO: what if a plugin dependended on different subdirectories of the same plugin? this would fail.
             // should probably copy over entire plugin git repo contents into plugins_dir and handle subdir seperately during install.
             var plugin_dir = path.join(plugins_dir, plugin_id);
-            require('../../plugman').emit('log', 'Copying fetched plugin over "' + plugin_dir + '"...');
+            require('../../plugman').emit('verbose', 'Copying fetched plugin over "' + plugin_dir + '"...');
             shell.cp('-R', path.join(tmp_dir, '*'), plugin_dir);
 
-            require('../../plugman').emit('log', 'Plugin "' + plugin_id + '" fetched.');
+            require('../../plugman').emit('verbose', 'Plugin "' + plugin_id + '" fetched.');
             return plugin_dir;
         });
     }

@@ -120,7 +120,7 @@ describe('uninstallPlatform', function() {
                 });
                 waitsFor(function() { return done; }, 'promise never resolved', 500);
                 runs(function() {
-                    expect(emit).toHaveBeenCalledWith('log', 'Uninstalling 2 dangling dependent plugins...');
+                    expect(emit).toHaveBeenCalledWith('log', 'Uninstalling 2 dangling dependent plugins.');
                 });
             });
             it('should not uninstall any dependencies that are relied on by other plugins');

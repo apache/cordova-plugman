@@ -89,7 +89,7 @@ function cleanVersionOutput(version, name){
         }else{
             out = out.substr(0, dev_index-1);
         }
-        require('../plugman').emit('log', name+' has been detected as using a development branch. Attemping to install anyways.');
+        require('../plugman').emit('verbose', name+' has been detected as using a development branch. Attemping to install anyways.');
     }     
     return out;
 }
@@ -119,7 +119,7 @@ function callEngineScripts(engines) {
             }else if(engine.currentVersion){
                 return cleanVersionOutput(engine.currentVersion, engine.name)
             }else{
-                require('../plugman').emit('log', 'Cordova project '+ engine.scriptSrc +' not detected (lacks a '+ engine.scriptSrc +' script), continuing.');
+                require('../plugman').emit('verbose', 'Cordova project '+ engine.scriptSrc +' not detected (lacks a '+ engine.scriptSrc +' script), continuing.');
                 return null;
             }
         })
@@ -175,7 +175,7 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
       , filtered_variables = {};
     var name         = plugin_et.findall('name').text;
     var plugin_id    = plugin_et.getroot().attrib['id'];
-    require('../plugman').emit('log', 'Starting installation of "' + plugin_id + '"...');
+    require('../plugman').emit('log', 'Starting installation of "' + plugin_id + '" for ' + platform);
 
     // check if platform has plugin installed already.
     var platform_config = config_changes.get_platform_json(plugins_dir, platform);
@@ -220,7 +220,7 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
         var dependencies = plugin_et.findall('dependency') || [];
         dependencies = dependencies.concat(plugin_et.findall('./platform[@name="'+platform+'"]/dependency'));
         if (dependencies && dependencies.length) {
-            require('../plugman').emit('log', 'Dependencies detected, iterating through them...');
+            require('../plugman').emit('verbose', 'Dependencies detected, iterating through them...');
             return Q.all(dependencies.map(function(dep) {
                 var dep_plugin_id = dep.attrib.id;
                 var dep_subdir = dep.attrib.subdir;
@@ -275,7 +275,7 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
                 return urlPromise.then(function(dep_url) {
                     var dep_plugin_dir = path.join(plugins_dir, dep_plugin_id);
                     if (fs.existsSync(dep_plugin_dir)) {
-                        require('../plugman').emit('log', 'Dependent plugin "' + dep_plugin_id + '" already fetched, using that version.');
+                        require('../plugman').emit('verbose', 'Dependent plugin "' + dep_plugin_id + '" already fetched, using that version.');
                         var opts = {
                             cli_variables: filtered_variables,
                             www_dir: options.www_dir,
@@ -283,7 +283,7 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
                         };
                         return runInstall(actions, platform, project_dir, dep_plugin_dir, plugins_dir, opts);
                     } else {
-                        require('../plugman').emit('log', 'Dependent plugin "' + dep_plugin_id + '" not fetched, retrieving then installing.');
+                        require('../plugman').emit('verbose', 'Dependent plugin "' + dep_plugin_id + '" not fetched, retrieving then installing.');
                         var opts = {
                             cli_variables: filtered_variables,
                             www_dir: options.www_dir,
@@ -311,7 +311,7 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
 }
 
 function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, www_dir, is_top_level) {
-    require('../plugman').emit('log', 'Installing plugin ' + plugin_id + '...');
+    require('../plugman').emit('verbose', 'Installing plugin ' + plugin_id);
     var handler = platform_modules[platform];
     www_dir = www_dir || handler.www_dir(project_dir);
 
@@ -356,7 +356,7 @@ function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plu
         // call prepare after a successful install
         require('./../plugman').prepare(project_dir, platform, plugins_dir);
 
-        require('../plugman').emit('results', plugin_id + ' installed.');
+        require('../plugman').emit('log', plugin_id + ' installed on ' + platform + '.');
         // WIN!
         // Log out plugin INFO element contents in case additional install steps are necessary
         var info = plugin_et.findall('./info');

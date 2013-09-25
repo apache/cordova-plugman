@@ -11,7 +11,7 @@ var shell   = require('shelljs'),
 // possible options: link, subdir, git_ref
 // Returns a promise.
 module.exports = function fetchPlugin(plugin_dir, plugins_dir, options) {
-    require('../plugman').emit('log', 'Fetching plugin from location "' + plugin_dir + '"...');
+    require('../plugman').emit('log', 'Fetching plugin from "' + plugin_dir + '"...');
     // Ensure the containing directory exists.
     shell.mkdir('-p', plugins_dir);
 
@@ -67,7 +67,7 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options) {
         var linkable = true;
         var movePlugin = function(plugin_dir) {
             var plugin_xml_path = path.join(plugin_dir, 'plugin.xml');
-            require('../plugman').emit('log', 'Fetch is reading plugin.xml from location "' + plugin_xml_path + '"...');
+            require('../plugman').emit('verbose', 'Fetch is reading plugin.xml from location "' + plugin_xml_path + '"...');
             var xml = xml_helpers.parseElementtreeSync(plugin_xml_path);
             var plugin_id = xml.getroot().attrib.id;
 
@@ -75,11 +75,11 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options) {
 
             shell.rm('-rf', dest);
             if (options.link && linkable) {
-                require('../plugman').emit('log', 'Symlinking from location "' + plugin_dir + '" to location "' + dest + '"');
+                require('../plugman').emit('verbose', 'Symlinking from location "' + plugin_dir + '" to location "' + dest + '"');
                 fs.symlinkSync(plugin_dir, dest, 'dir');
             } else {
                 shell.mkdir('-p', dest);
-                require('../plugman').emit('log', 'Copying from location "' + plugin_dir + '" to location "' + dest + '"');
+                require('../plugman').emit('verbose', 'Copying from location "' + plugin_dir + '" to location "' + dest + '"');
                 shell.cp('-R', path.join(plugin_dir, '*') , dest);
             }
 

@@ -48,23 +48,24 @@ module.exports.uninstallPlugin = function(id, plugins_dir) {
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , plugin_et    = xml_helpers.parseElementtreeSync(xml_path);
 
-    require('../plugman').emit('log', 'Removing plugin ' + id + '...');
+    require('../plugman').emit('log', 'Deleting plugin ' + id);
     // Check for dependents
     var dependencies = plugin_et.findall('dependency');
     if (dependencies && dependencies.length) {
-        require('../plugman').emit('log', 'Dependencies detected, iterating through them and removing them first...');
-        return Q.all(
-            dependencies.map(function(dep) {
+        require('../plugman').emit('verbose', 'Dependencies detected, iterating through them and removing them first.');
+        return dependencies.reduce(function(soFar, dep) {
+            return soFar.then(function() {
                 return module.exports.uninstallPlugin(dep.attrib.id, plugins_dir);
-            })
-        ).then(function() {
+            });
+        }, Q())
+        .then(function() {
             shell.rm('-rf', plugin_dir);
-            require('../plugman').emit('log', id + ' removed.');
+            require('../plugman').emit('verbose', id + ' deleted.');
         });
     } else {
         // axe the directory
         shell.rm('-rf', plugin_dir);
-        require('../plugman').emit('results', 'Deleted "' + plugin_dir + '".');
+        require('../plugman').emit('verbose', 'Deleted "' + plugin_dir + '".');
         return Q();
     }
 };
@@ -97,7 +98,7 @@ function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, o
     diff_arr.unshift(dependents);
     var danglers = underscore.difference.apply(null, diff_arr);
     if (dependents.length && danglers && danglers.length) {
-        require('../plugman').emit('log', 'Uninstalling ' + danglers.length + ' dangling dependent plugins...');
+        require('../plugman').emit('log', 'Uninstalling ' + danglers.length + ' dangling dependent plugins.');
         return Q.all(
             danglers.map(function(dangler) {
                 var dependent_path = path.join(plugins_dir, dangler);
@@ -123,7 +124,7 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
     var handler = platform_modules[platform];
     var platformTag = plugin_et.find('./platform[@name="'+platform+'"]');
     www_dir = www_dir || handler.www_dir(project_dir);
-    require('../plugman').emit('log', 'Uninstalling ' + plugin_id + '...');
+    require('../plugman').emit('log', 'Uninstalling ' + plugin_id + ' from ' + platform);
 
     var assets = plugin_et.findall('./asset');
     if (platformTag) {
@@ -161,7 +162,7 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
     return actions.process(platform, project_dir)
     .then(function() {
         // WIN!
-        require('../plugman').emit('results', plugin_id + ' uninstalled.');
+        require('../plugman').emit('verbose', plugin_id + ' uninstalled from ' + platform + '.');
         // queue up the plugin so prepare can remove the config changes
         config_changes.add_uninstalled_plugin_to_prepare_queue(plugins_dir, path.basename(plugin_dir), platform, is_top_level);
         // call prepare after a successful uninstall

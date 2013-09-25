@@ -28,25 +28,25 @@ ActionStack.prototype = {
     },
     // Returns a promise.
     process:function(platform, project_dir) {
-        require('../../plugman').emit('log', 'Beginning processing of action stack for ' + platform + ' project...');
+        require('../../plugman').emit('verbose', 'Beginning processing of action stack for ' + platform + ' project...');
         var project_files;
         // parse platform-specific project files once
-        require('../../plugman').emit('log', 'Parsing ' + platform + ' project files...');
+        require('../../plugman').emit('verbose', 'Parsing ' + platform + ' project files...');
         switch(platform) {
             case "ios": 
-                require('../../plugman').emit('log', 'Parsing iOS project files...');
+                require('../../plugman').emit('verbose', 'Parsing iOS project files...');
                 project_files = ios.parseIOSProjectFiles(project_dir);
                 break;
             case "wp7": 
-                require('../../plugman').emit('log', 'Parsing WP7 project files...');
+                require('../../plugman').emit('verbose', 'Parsing WP7 project files...');
                 project_files = wp7.parseProjectFile(project_dir);
                 break;
             case "wp8": 
-                require('../../plugman').emit('log', 'Parsing WP8 project files...');
+                require('../../plugman').emit('verbose', 'Parsing WP8 project files...');
                 project_files = wp8.parseProjectFile(project_dir);
                 break;
             case "windows8": 
-                require('../../plugman').emit('log', 'Parsing Windows8 project files...');
+                require('../../plugman').emit('verbose', 'Parsing Windows8 project files...');
                 project_files = windows8.parseProjectFile(project_dir);
                 break;
         }
@@ -87,14 +87,14 @@ ActionStack.prototype = {
             }
             this.completed.push(action);
         }
-        require('../../plugman').emit('log', 'Action stack processing complete.');
+        require('../../plugman').emit('verbose', 'Action stack processing complete.');
         if (platform == 'ios') {
             // write out xcodeproj file
-            require('../../plugman').emit('log', 'Writing out iOS pbxproj file...');
+            require('../../plugman').emit('verbose', 'Writing out iOS pbxproj file...');
             fs.writeFileSync(project_files.pbx, project_files.xcode.writeSync());
         }
         if (platform == 'wp7' || platform == 'wp8' || platform == "windows8") {
-            require('../../plugman').emit('log', 'Writing out ' + platform + ' project files...');
+            require('../../plugman').emit('verbose', 'Writing out ' + platform + ' project files...');
             project_files.write();
         }
         return Q();

@@ -33,6 +33,7 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry10', 'wp7', 'wp8'
         , 'version' : Boolean
         , 'help' : Boolean
         , 'debug' : Boolean
+        , 'silent' : Boolean
         , 'plugins': path
         , 'link': Boolean
         , 'variable' : Array
@@ -61,12 +62,16 @@ process.on('uncaughtException', function(error) {
 
 // Set up appropriate logging based on events
 if (cli_opts.debug) {
-    plugman.on('log', console.log);
+    plugman.on('verbose', console.log);
 }
 
-plugman.on('warn', console.warn);
+if (!cli_opts.silent) {
+    plugman.on('log', console.log);
+    plugman.on('warn', console.warn);
+    plugman.on('results', console.log);
+}
+
 plugman.on('error', console.error);
-plugman.on('results', console.log);
 
 if (cli_opts.version) {
     console.log(package.name + ' version ' + package.version);
