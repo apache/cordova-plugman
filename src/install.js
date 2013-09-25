@@ -5,7 +5,7 @@ var path = require('path'),
     action_stack = require('./util/action-stack'),
     shell = require('shelljs'),
     child_process = require('child_process'),
-    semver = require('semver'),
+    version_compare = require('./util/version-compare'),
     config_changes = require('./util/config-changes'),
     xml_helpers = require('./util/xml-helpers'),
     Q = require('q'),
@@ -63,7 +63,7 @@ function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options)
 function checkEngines(engines) {
     for(var i = 0; i < engines.length; i++) {
         var engine = engines[i];
-        if(semver.satisfies(engine.currentVersion, engine.minVersion) || engine.currentVersion == null){
+        if(version_compare.satisfies(engine.currentVersion, engine.minVersion) || engine.currentVersion == null){
             // engine ok!
         }else{
             return Q.reject(new Error('Plugin doesn\'t support this project\'s '+engine.name+' version. '+engine.name+': ' + engine.currentVersion + ', failed version requirement: ' + engine.minVersion));

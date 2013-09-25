@@ -26,7 +26,9 @@
     <engines>
         <engine name="cordova" version=">=3.0.0"/>
         <engine name="cordova-android" version=">=3.1.0"/>
-        <engine name="android-sdk" version=">=18"/>
+        <engine name="apple-ios" version="6.1"/>
+        <engine name="apple-osx" version=">10.0"/>
+        <engine name="apple-xcode" version=">=4.6.3"/>
     </engines>
     
 </plugin>

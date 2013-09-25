@@ -8,7 +8,7 @@ var install = require('../src/install'),
     path    = require('path'),
     shell   = require('shelljs'),
     child_process = require('child_process'),
-    semver  = require('semver'),
+    version_compare  = require('../src/util/version-compare'),
     temp    = __dirname,
     dummyplugin = 'DummyPlugin',
     dummy_id = 'com.phonegap.plugins.dummyplugin',
@@ -91,7 +91,7 @@ describe('install', function() {
             expect(spy).toHaveBeenCalledWith('results', 'Plugin "'+dummy_id+'" already installed, \'sall good.');
         });
         it('should check version if plugin has engine tag', function(){
-            var spy = spyOn(semver, 'satisfies').andReturn(true);
+            var spy = spyOn(version_compare, 'satisfies').andReturn(true);
             exec.andCallFake(function(cmd, cb) {
                 cb(null, '2.5.0\n', '');
             });
@@ -103,8 +103,8 @@ describe('install', function() {
                 expect(spy).toHaveBeenCalledWith('2.5.0','>=2.3.0');
             });
         });
-        it('should check version and munge it a little if it has "rc" in it so it plays nice with semver (introduce a dash in it)', function() {
-            var spy = spyOn(semver, 'satisfies').andReturn(true);
+        it('should check version and munge it a little if it has "rc" in it so it plays nice with version_compare (introduce a dash in it)', function() {
+            var spy = spyOn(version_compare, 'satisfies').andReturn(true);
             exec.andCallFake(function(cmd, cb) {
                 cb(null, '3.0.0rc1\n');
             });
@@ -117,7 +117,7 @@ describe('install', function() {
             });
         });
         it('should check specific platform version over cordova version if specified', function() {
-            var spy = spyOn(semver, 'satisfies').andReturn(true);
+            var spy = spyOn(version_compare, 'satisfies').andReturn(true);
             exec.andCallFake(function(cmd, cb) {
                 cb(null, '3.1.0\n', '');
             });
@@ -130,20 +130,20 @@ describe('install', function() {
             });
         });
         it('should check platform sdk version if specified', function() {
-            var spy = spyOn(semver, 'satisfies').andReturn(true);
+            var spy = spyOn(version_compare, 'satisfies').andReturn(true);
             exec.andCallFake(function(cmd, cb) {
-                cb(null, '4.3\n', '');
+                cb(null, '18\n', '');
             });
             runs(function() {
                 installPromise(install('android', temp, 'enginepluginAndroid', plugins_dir, {}));
             });
             waitsFor(function() { return done; }, 'install promise never resolved', 500);
             runs(function() {
-                expect(spy).toHaveBeenCalledWith('4.3','>=4.3');
+                expect(spy).toHaveBeenCalledWith('18','>=18');
             });
         });
         it('should check plugmans version', function() {
-            var spy = spyOn(semver, 'satisfies').andReturn(true);
+            var spy = spyOn(version_compare, 'satisfies').andReturn(true);
             runs(function() {
                 installPromise(install('android', temp, 'engineplugin', plugins_dir, {}));
             });
@@ -153,7 +153,7 @@ describe('install', function() {
             });
         });
         it('should check custom engine version', function() {
-            var spy = spyOn(semver, 'satisfies').andReturn(true);
+            var spy = spyOn(version_compare, 'satisfies').andReturn(true);
             runs(function() {
                 installPromise(install('android', temp, 'engineplugin', plugins_dir, {}));
             });
@@ -163,7 +163,7 @@ describe('install', function() {
             });
         });
         it('should check custom engine version that supports multiple platforms', function() {
-            var spy = spyOn(semver, 'satisfies').andReturn(true);
+            var spy = spyOn(version_compare, 'satisfies').andReturn(true);
             runs(function() {
                 installPromise(install('android', temp, 'engineplugin', plugins_dir, {}));
             });
@@ -173,7 +173,7 @@ describe('install', function() {
             });
         });
         it('should not check custom engine version that is not supported for platform', function() {
-            var spy = spyOn(semver, 'satisfies').andReturn(true);
+            var spy = spyOn(version_compare, 'satisfies').andReturn(true);
             runs(function() {
                 installPromise(install('blackberry10', temp, 'engineplugin', plugins_dir, {}));
             });
@@ -302,7 +302,7 @@ describe('install', function() {
             });
         });
         it('should throw if plugin version is less than the minimum requirement', function(){
-            var spy = spyOn(semver, 'satisfies').andReturn(false);
+            var spy = spyOn(version_compare, 'satisfies').andReturn(false);
             exec.andCallFake(function(cmd, cb) {
                 cb(null, '0.0.1\n', '');
             });
