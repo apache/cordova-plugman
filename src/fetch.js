@@ -8,7 +8,7 @@ var shell   = require('shelljs'),
     Q       = require('q'),
     registry = require('./registry/registry');
 // XXX: leave the require('../plugman') because jasmine shits itself if you declare it up top
-// possible options: link, subdir, git_ref
+// possible options: link, subdir, git_ref, client, expected_id
 // Returns a promise.
 module.exports = function fetchPlugin(plugin_dir, plugins_dir, options) {
     require('../plugman').emit('log', 'Fetching plugin from "' + plugin_dir + '"...');
@@ -51,6 +51,9 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options) {
             };
 
             return plugins.clonePluginGitRepo(plugin_dir, plugins_dir, options.subdir, options.git_ref)
+            .then(function(dir) {
+                return checkID(options, dir);
+            })
             .then(function(dir) {
                 metadata.save_fetch_metadata(dir, data);
                 return dir;
@@ -98,9 +101,29 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options) {
             .then(function(dir) {
                 linkable = false;
                 return movePlugin(dir);
+            })
+            .then(function(dir) {
+                return checkID(options, dir);
             });
         } else {
-            return Q(movePlugin(plugin_dir));
+            return Q(movePlugin(plugin_dir))
+            .then(function(dir) {
+                return checkID(options, dir);
+            });
         }
     }
 };
+
+// Helper function for checking expected plugin IDs against reality.
+function checkID(options, dir) {
+    // Read the plugin.xml file and check the ID matches options.expected_id if set.
+    if (options.expected_id) {
+        var et = xml_helpers.parseElementtreeSync(path.join(dir, 'plugin.xml'));
+        if (et.getroot().attrib.id == options.expected_id) {
+            return dir;
+        } else {
+            return Q.reject(new Error('Expected Fetched plugin to have ID "' + options.expected_id + '" but got "' + et.getroot().attrib.id + '".'));
+        }
+    }
+    return dir;
+}

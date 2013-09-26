@@ -248,7 +248,7 @@ describe('install', function() {
                 });
                 waits(100);
                 runs(function() {
-                    expect(s).toHaveBeenCalledWith('C', deps_dir, { link: false, subdir: undefined, git_ref: undefined, client: 'plugman' });
+                    expect(s).toHaveBeenCalledWith('C', deps_dir, { link: false, subdir: undefined, git_ref: undefined, client: 'plugman', expected_id: 'C' });
                     expect(s.calls.length).toEqual(3);
                 });
             });
@@ -264,7 +264,7 @@ describe('install', function() {
                 });
                 waitsFor(function() { return done; }, 'promise never resolved', 500);
                 runs(function() {
-                    expect(s).toHaveBeenCalledWith('D', deps_dir, { link: false, subdir: undefined, git_ref: undefined, client: 'plugman' });
+                    expect(s).toHaveBeenCalledWith('D', deps_dir, { link: false, subdir: undefined, git_ref: undefined, client: 'plugman', expected_id: 'D' });
                     expect(s.calls.length).toEqual(2);
                 });
             });

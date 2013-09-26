@@ -49,9 +49,22 @@ describe('fetch', function() {
                 expect(sym).toHaveBeenCalledWith(test_plugin, path.join(temp, 'id'), 'dir');
             });
         });
+        it('should fail when the expected ID doesn\'t match', function(done) {
+            fetch(test_plugin, temp, { expected_id: 'wrongID' })
+            .then(function() {
+                expect('this call').toBe('fail');
+            }, function(err) {
+                expect(err).toEqual(new Error('Expected fetched plugin to have ID "wrongID" but got "id".'));
+            }).fin(done);
+        });
+        it('should succeed when the expected ID is correct', function(done) {
+            wrapper(fetch(test_plugin, temp, { expected_id: 'id' }), done, function() {
+                expect(1).toBe(1);
+            });
+        });
     });
     describe('git plugins', function() {
-        var clone, save_metadata, done;
+        var clone, save_metadata, done, xml;
 
         function fetchPromise(f) {
             f.then(function() { done = true; }, function(err) { done = err; });
@@ -61,6 +74,9 @@ describe('fetch', function() {
             clone = spyOn(plugins, 'clonePluginGitRepo').andReturn(Q('somedir'));
             save_metadata = spyOn(metadata, 'save_fetch_metadata');
             done = false;
+            xml = spyOn(xml_helpers, 'parseElementtreeSync').andReturn({
+                getroot:function() { return {attrib:{id:'id'}};}
+            });
         });
         it('should call clonePluginGitRepo for https:// and git:// based urls', function() {
             var url = "https://github.com/bobeast/GAPlugin.git";
@@ -144,6 +160,19 @@ describe('fetch', function() {
                 expect(done).toEqual(new Error('--link is not supported for git URLs'));
             });
         });
+        it('should fail when the expected ID doesn\'t match', function(done) {
+            fetch('https://github.com/bobeast/GAPlugin.git', temp, { expected_id: 'wrongID' })
+            .then(function() {
+                expect('this call').toBe('fail');
+            }, function(err) {
+                expect(err).toEqual(new Error('Expected fetched plugin to have ID "wrongID" but got "id".'));
+            }).fin(done);
+        });
+        it('should succeed when the expected ID is correct', function(done) {
+            wrapper(fetch('https://github.com/bobeast/GAPlugin.git', temp, { expected_id: 'id' }), done, function() {
+                expect(1).toBe(1);
+            });
+        });
     });
     describe('registry plugins', function() {
         var pluginId = 'dummyplugin', sFetch;
@@ -163,6 +192,19 @@ describe('fetch', function() {
         it('should get a plugin from registry and set the right client when argument is not a folder nor URL', function(done) {
             wrapper(fetch(pluginId, temp, {client: 'plugman'}), done, function() {
                 expect(sFetch).toHaveBeenCalledWith([pluginId], 'plugman');
+            });
+        });
+        it('should fail when the expected ID doesn\'t match', function(done) {
+            fetch(pluginId, temp, { expected_id: 'wrongID' })
+            .then(function() {
+                expect('this call').toBe('fail');
+            }, function(err) {
+                expect(err).toEqual(new Error('Expected fetched plugin to have ID "wrongID" but got "id".'));
+            }).fin(done);
+        });
+        it('should succeed when the expected ID is correct', function(done) {
+            wrapper(fetch(pluginId, temp, { expected_id: 'id' }), done, function() {
+                expect(1).toBe(1);
             });
         });
     });

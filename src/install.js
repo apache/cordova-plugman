@@ -51,7 +51,7 @@ function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options)
     // Check that the plugin has already been fetched.
     if (!fs.existsSync(plugin_dir)) {
         // if plugin doesnt exist, use fetch to get it.
-        return require('../plugman').raw.fetch(id, plugins_dir, { link: false, subdir: options.subdir, git_ref: options.git_ref, client: 'plugman' })
+        return require('../plugman').raw.fetch(id, plugins_dir, { link: false, subdir: options.subdir, git_ref: options.git_ref, client: 'plugman', expected_id: options.expected_id })
         .then(function(plugin_dir) {
             return runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, options);
         });
@@ -221,58 +221,59 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
         dependencies = dependencies.concat(plugin_et.findall('./platform[@name="'+platform+'"]/dependency'));
         if (dependencies && dependencies.length) {
             require('../plugman').emit('verbose', 'Dependencies detected, iterating through them...');
-            return Q.all(dependencies.map(function(dep) {
-                var dep_plugin_id = dep.attrib.id;
-                var dep_subdir = dep.attrib.subdir;
-                var dep_url = dep.attrib.url;
-                var dep_git_ref = dep.attrib.commit;
-                if (dep_subdir) {
-                    dep_subdir = path.join.apply(null, dep_subdir.split('/'));
-                }
-
-                // Handle relative dependency paths by expanding and resolving them.
-                // The easy case of relative paths is to have a URL of '.' and a different subdir.
-                // TODO: Implement the hard case of different repo URLs, rather than the special case of
-                // same-repo-different-subdir.
-                var urlPromise;
-                if (dep_url == '.') {
-                    // Look up the parent plugin's fetch metadata and determine the correct URL.
-                    var fetchdata = require('./util/metadata').get_fetch_metadata(plugin_dir);
-
-                    if (!fetchdata || !(fetchdata.source && fetchdata.source.type)) {
-                        return Q.reject(new Error('No fetch metadata found for ' + plugin_id + '. Cannot install relative dependencies.'));
+            var dep_plugin_id, dep_subdir, dep_git_ref;
+            return dependencies.reduce(function(soFar, dep) {
+                return soFar.then(function() {
+                    dep_plugin_id = dep.attrib.id;
+                    dep_subdir = dep.attrib.subdir;
+                    var dep_url = dep.attrib.url;
+                    dep_git_ref = dep.attrib.commit;
+                    if (dep_subdir) {
+                        dep_subdir = path.join.apply(null, dep_subdir.split('/'));
                     }
 
-                    // Now there are two cases here: local directory, and git URL.
-                    if (fetchdata.source.type === 'local') {
-                        dep_url = fetchdata.source.path;
+                    // Handle relative dependency paths by expanding and resolving them.
+                    // The easy case of relative paths is to have a URL of '.' and a different subdir.
+                    // TODO: Implement the hard case of different repo URLs, rather than the special case of
+                    // same-repo-different-subdir.
+                    if (dep_url == '.') {
+                        // Look up the parent plugin's fetch metadata and determine the correct URL.
+                        var fetchdata = require('./util/metadata').get_fetch_metadata(plugin_dir);
 
-                        var d = Q.defer();
-                        child_process.exec('git rev-parse --show-toplevel', { cwd:dep_url }, function(err, stdout, stderr) {
-                            if (err) {
-                                if (err.code == 128) {
-                                    return d.reject(new Error('Error: Plugin ' + plugin_id + ' is not in git repository. All plugins must be in a git repository.'));
-                                } else {
-                                    return d.reject(new Error('Error trying to locate git repository for plugin.'));
+                        if (!fetchdata || !(fetchdata.source && fetchdata.source.type)) {
+                            return Q.reject(new Error('No fetch metadata found for ' + plugin_id + '. Cannot install relative dependencies.'));
+                        }
+
+                        // Now there are two cases here: local directory, and git URL.
+                        if (fetchdata.source.type === 'local') {
+                            dep_url = fetchdata.source.path;
+
+                            var d = Q.defer();
+                            child_process.exec('git rev-parse --show-toplevel', { cwd:dep_url }, function(err, stdout, stderr) {
+                                if (err) {
+                                    if (err.code == 128) {
+                                        return d.reject(new Error('Error: Plugin ' + plugin_id + ' is not in git repository. All plugins must be in a git repository.'));
+                                    } else {
+                                        return d.reject(new Error('Error trying to locate git repository for plugin.'));
+                                    }
                                 }
-                            }
 
-                            return d.resolve(stdout.trim());
-                        });
-                        urlPromise = d.promise.then(function(git_repo) {
-                            //Clear out the subdir since the url now contains it
-                            var url = path.join(git_repo, dep_subdir);
-                            dep_subdir = "";
-                            return url;
-                        });
-                    } else if (fetchdata.source.type === 'git') {
-                        urlPromise = Q(fetchdata.source.url);
+                                return d.resolve(stdout.trim());
+                            });
+                            return d.promise.then(function(git_repo) {
+                                //Clear out the subdir since the url now contains it
+                                var url = path.join(git_repo, dep_subdir);
+                                dep_subdir = "";
+                                return url;
+                            });
+                        } else if (fetchdata.source.type === 'git') {
+                            return Q(fetchdata.source.url);
+                        }
+                    } else {
+                        return Q(dep_url);
                     }
-                } else {
-                    urlPromise = Q(dep_url);
-                }
-
-                return urlPromise.then(function(dep_url) {
+                })
+                .then(function(dep_url) {
                     var dep_plugin_dir = path.join(plugins_dir, dep_plugin_id);
                     if (fs.existsSync(dep_plugin_dir)) {
                         require('../plugman').emit('verbose', 'Dependent plugin "' + dep_plugin_id + '" already fetched, using that version.');
@@ -289,7 +290,8 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
                             www_dir: options.www_dir,
                             is_top_level: false,
                             subdir: dep_subdir,
-                            git_ref: dep_git_ref
+                            git_ref: dep_git_ref,
+                            expected_id: dep_plugin_id
                         };
 
                         // CB-4770: registry fetching
@@ -300,7 +302,7 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
                         return possiblyFetch(actions, platform, project_dir, dep_url, plugins_dir, opts);
                     }
                 });
-            }))
+            }, Q())
             .then(function() {
                 return handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_basename, plugin_dir, filtered_variables, options.www_dir, options.is_top_level);
             });
