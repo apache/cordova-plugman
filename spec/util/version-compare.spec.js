@@ -17,17 +17,6 @@
 */
 
 var version_compare = require('../../src/util/version-compare');
-// if major satisfies, all satisfied
-// if major equals, continue to next
-// if major not satisfies, fail
-
-// if minor satisfies, all satisfied,
-// if minor equal, continue
-// if minor not satisfied, fail
-
-// if patch satisfied, all satisfied
-// if patch not satisfied, fail
-
 describe('version-compare', function(){
     describe('=', function() {
         it('should satisfy', function(){
