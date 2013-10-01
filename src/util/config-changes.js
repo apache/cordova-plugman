@@ -17,7 +17,7 @@
  *
 */
 
-/* 
+/*
  * This module deals with shared configuration / dependency "stuff". That is:
  * - XML configuration files such as config.xml, AndroidManifest.xml or WMAppManifest.xml.
  * - plist files in iOS
@@ -70,7 +70,7 @@ module.exports = {
     get_platform_json:function(plugins_dir, platform) {
         checkPlatform(platform);
 
-        var filepath = path.join(plugins_dir, platform + '.json'); 
+        var filepath = path.join(plugins_dir, platform + '.json');
         if (fs.existsSync(filepath)) {
             return JSON.parse(fs.readFileSync(filepath, 'utf-8'));
         } else {
@@ -87,7 +87,7 @@ module.exports = {
     save_platform_json:function(config, plugins_dir, platform) {
         checkPlatform(platform);
 
-        var filepath = path.join(plugins_dir, platform + '.json'); 
+        var filepath = path.join(plugins_dir, platform + '.json');
         fs.writeFileSync(filepath, JSON.stringify(config), 'utf-8');
     },
     generate_plugin_config_munge:function(plugin_dir, platform, project_dir, vars) {
@@ -179,7 +179,7 @@ module.exports = {
         var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, platform, project_dir, plugin_vars);
         // global munge looks at all plugins' changes to config files
         var global_munge = platform_config.config_munge;
-        
+
         var plistObj, pbxproj;
         if (platform == 'ios') {
             if (global_munge['plugins-plist'] && config_munge['plugins-plist']) {
@@ -196,7 +196,7 @@ module.exports = {
                 pbxproj = ios_parser.parseIOSProjectFiles(project_dir);
             }
         }
-        
+
         // Traverse config munge and decrement global munge
         Object.keys(config_munge).forEach(function(file) {
             if (file == 'plugins-plist' && platform == 'ios') {
@@ -237,7 +237,13 @@ module.exports = {
                                         // config.xml referenced in ios config changes refer to the project's config.xml, which we need to glob for.
                                         var filepath = resolveConfigFilePath(project_dir, platform, file);
                                         if (fs.existsSync(filepath)) {
-                                            if (path.extname(filepath) == '.xml') {
+
+                                            // look at ext and do proper config change based on file type
+                                            var ext = path.extname(filepath);
+                                            // Windows8 uses an appxmanifest, and wp8 will likely use
+                                            // the same in a future release
+                                            // TODO: consider proper xml file detection, via <?xml version='1.0' encoding='utf-8'?>
+                                            if (ext == '.xml' || ext == '.appxmanifest') {
                                                 var xml_to_prune = [et.XML(xml_child)];
                                                 var doc = xml_helpers.parseElementtreeSync(filepath);
                                                 if (xml_helpers.pruneXML(doc, xml_to_prune, selector)) {
@@ -283,7 +289,7 @@ module.exports = {
     add_plugin_changes:function(platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment) {
         var platform_config = module.exports.get_platform_json(plugins_dir, platform);
         var plugin_dir = path.join(plugins_dir, plugin_id);
-        
+
         plugin_id = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'), 'utf-8')._root.attrib['id'];
 
         // get config munge, aka how should this plugin change various config files
@@ -307,7 +313,7 @@ module.exports = {
                 pbxproj = ios_parser.parseIOSProjectFiles(project_dir);
             }
         }
-        
+
         // Traverse config munge and decrement global munge
         Object.keys(config_munge).forEach(function(file) {
             if (!global_munge[file]) {
@@ -328,7 +334,7 @@ module.exports = {
                         fs.writeFileSync(plistfile, plist.build(plistObj));
                     }
                 } else {
-                    // Handle arbitrary XML OR pbxproj framework stuff  
+                    // Handle arbitrary XML OR pbxproj framework stuff
                     if (!global_munge[file][selector]) {
                         global_munge[file][selector] = {};
                     }
@@ -418,7 +424,7 @@ module.exports = {
         platform_config.prepare_queue.installed.forEach(function(u) {
             module.exports.add_plugin_changes(platform, project_dir, plugins_dir, u.plugin, u.vars, u.topLevel, true);
         });
-        
+
         platform_config = module.exports.get_platform_json(plugins_dir, platform);
 
         // Empty out uninstalled queue.
@@ -433,7 +439,7 @@ module.exports = {
 // determine if a plist file is binary
 function isBinaryPlist(filename) {
     // I wish there was a synchronous way to read only the first 6 bytes of a
-    // file. This is wasteful :/ 
+    // file. This is wasteful :/
     var buf = '' + fs.readFileSync(filename, 'utf8');
     // binary plists start with a magic header, "bplist"
     return buf.substring(0, 6) === 'bplist';
