@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.0
+
+### Features
+
+- Windows 8 Support
+
 ## 0.12.0
 
 ### Features
