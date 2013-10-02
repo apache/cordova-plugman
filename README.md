@@ -75,7 +75,9 @@ This section details how to consume Plugman as a node module and is only for Cor
       publish: [Function: publish],
       unpublish: [Function: unpublish],
       adduser: [Function: adduser],
-      prepare: [Function: handlePrepare] }
+      prepare: [Function: handlePrepare],
+      create: [Function: create],
+      platform: [Function: platform] }
 
 ### `install` method
 
@@ -164,6 +166,30 @@ Configures registry settings. `params` is an array that describes the action
     * var params = ['set', 'registry', 'http://registry.cordova.io'];
     * module.exports = function(params, callback) {
     */
+
+## Create plugin related actions
+
+### `create` method
+
+Creates basic scaffolding for a new plugin
+
+  module.exports = function create( name, id, version, pluginPath, options, callback ) {...}
+
+* `name` : a name for the plugin
+* `id` : an id for the plugin
+* `version` : a version for the plugin
+* `pluginPath` : a path to create the plugin in
+* `options` : an array of options
+* `callback` : callback to invoke once complete. If specified, will pass in an error object as a first parameter if the action failed. If not and an error occurs, `plugman` will throw the error
+
+### `platform` method
+
+Add/Remove a platform from a newly created plugin
+
+  module.exports = function platform( { operation: operation, platform_name: cli_opts.platform_name } );
+
+* `operation` : "add or remove"
+* `platform_name` : ios, android
 
 ## Example Plugins
 
