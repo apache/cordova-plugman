@@ -70,6 +70,7 @@ addProperty(plugman, 'publish', './src/publish', true);
 addProperty(plugman, 'unpublish', './src/unpublish', true);
 addProperty(plugman, 'search', './src/search', true);
 addProperty(plugman, 'info', './src/info', true);
+addProperty(plugman, 'create', './src/create', true);
 addProperty(plugman, 'config_changes', './src/util/config-changes');
 
 plugman.commands =  {
@@ -159,6 +160,20 @@ plugman.commands =  {
             if (err) throw err;
             else console.log('Plugin unpublished');
         });
+    },
+    'create': function(cli_opts) {
+        if( !cli_opts.name || !cli_opts.plugin_id || !cli_opts.plugin_version ) {
+            return console.log( plugman.help() );
+        }
+        var cli_variables = {};
+        if (cli_opts.variable) {
+            cli_opts.variable.forEach(function (variable) {
+                    var tokens = variable.split('=');
+                    var key = tokens.shift().toUpperCase();
+                    if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
+                    });
+        }
+        plugman.create( cli_opts.name, cli_opts.plugin_id, cli_opts.plugin_version, cli_opts.path || ".", cli_variables );
     }
 };
 
