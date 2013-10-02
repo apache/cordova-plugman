@@ -71,6 +71,7 @@ addProperty(plugman, 'unpublish', './src/unpublish', true);
 addProperty(plugman, 'search', './src/search', true);
 addProperty(plugman, 'info', './src/info', true);
 addProperty(plugman, 'create', './src/create', true);
+addProperty(plugman, 'platform', './src/platform_operation', true);
 addProperty(plugman, 'config_changes', './src/util/config-changes');
 
 plugman.commands =  {
@@ -120,7 +121,7 @@ plugman.commands =  {
             if (err) throw err;
             else {
                 for(var plugin in plugins) {
-                    console.log(plugins[plugin].name, '-', plugins[plugin].description || 'no description provided'); 
+                    console.log(plugins[plugin].name, '-', plugins[plugin].description || 'no description provided');
                 }
             }
         });
@@ -141,7 +142,7 @@ plugman.commands =  {
     },
 
     'publish'  : function(cli_opts) {
-        var plugin_path = cli_opts.argv.remain; 
+        var plugin_path = cli_opts.argv.remain;
         if(!plugin_path) {
             return console.log(plugman.help());
         }
@@ -152,7 +153,7 @@ plugman.commands =  {
     },
 
     'unpublish': function(cli_opts) {
-        var plugin = cli_opts.argv.remain; 
+        var plugin = cli_opts.argv.remain;
         if(!plugin) {
             return console.log(plugman.help());
         }
@@ -162,7 +163,7 @@ plugman.commands =  {
         });
     },
     'create': function(cli_opts) {
-        if( !cli_opts.name || !cli_opts.plugin_id || !cli_opts.plugin_version ) {
+        if( !cli_opts.name || !cli_opts.plugin_id || !cli_opts.plugin_version) {
             return console.log( plugman.help() );
         }
         var cli_variables = {};
@@ -174,6 +175,13 @@ plugman.commands =  {
                     });
         }
         plugman.create( cli_opts.name, cli_opts.plugin_id, cli_opts.plugin_version, cli_opts.path || ".", cli_variables );
+    },
+    'platform': function(cli_opts) {
+        var operation = cli_opts.argv.remain[ 0 ] || "";
+        if( ( operation !== 'add' && operation !== 'remove' ) ||  !cli_opts.platform_name ) {
+            return console.log( plugman.help() );
+        }
+        plugman.platform( { operation: operation, platform_name: cli_opts.platform_name } );
     }
 };
 

@@ -19,6 +19,7 @@
 var Q = require('q'),
     fs = require('fs'),
     path = require('path'),
+    shell = require('shelljs'),
     et = require('elementtree');
 
 module.exports = function create( name, id, version, pluginPath, options ) {
@@ -56,13 +57,8 @@ module.exports = function create( name, id, version, pluginPath, options ) {
     }
 
     //setup the directory structure
-    try {
-        fs.mkdirSync(cwd);
-        fs.mkdirSync(cwd + "www");
-        fs.mkdirSync(cwd + "src");
-    } catch( e ) {
-        return Q.reject( new Error( 'There was an error setting up the directory structure' ) );
-    }
+    shell.mkdir( '-p', cwd + "www" );
+    shell.mkdir( '-p', cwd + "src" );
 
     //create a base plugin.js file
     baseJS = fs.readFileSync( docDir + 'base.js', 'utf-8').replace( /%pluginName%/g, name );
