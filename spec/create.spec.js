@@ -1,6 +1,7 @@
 var create = require('../src/create'),
     Q = require('q'),
     fs = require('fs'),
+    shell = require('shelljs'),
     plugman = require('../plugman');
 
 describe( 'create', function() {
@@ -21,7 +22,7 @@ describe( 'create plugin', function() {
     }
     beforeEach( function() {
         existsSync = spyOn( fs, 'existsSync' ).andReturn( false );
-        mkdir = spyOn( fs, 'mkdirSync' ).andReturn( true );
+        mkdir = spyOn( shell, 'mkdir' ).andReturn( true );
         writeFileSync = spyOn( fs, 'writeFileSync' );
         done = false;
     });
@@ -34,28 +35,6 @@ describe( 'create plugin', function() {
         runs(function() {
             expect( done ).toBe( true );
             expect( writeFileSync.calls.length ).toEqual( 2 );
-        });
-    });
-});
-
-describe( 'create plugin with bad directory error', function() {
-    var done = false,
-        existsSync;
-    function createPromise( f ) {
-        f.then( function() { done = true; }, function(err) { done = err; } );
-    }
-    beforeEach( function() {
-        existsSync = spyOn( fs, 'existsSync' ).andReturn( false );
-        done = false;
-    });
-
-    it( 'should fail due to a create directory error', function() {
-        runs(function() {
-            createPromise( create() );
-        });
-        waitsFor(function() { return done; }, 'create promise never resolved', 500);
-        runs(function() {
-            expect( done ).toEqual( new Error( 'Error: There was an error setting up the directory structure' ) );
         });
     });
 });
