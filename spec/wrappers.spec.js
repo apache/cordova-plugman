@@ -2,7 +2,7 @@ var Q = require('q'),
     plugman = require('../plugman');
 
 describe('callback wrapper', function() {
-    var calls = ['install', 'uninstall', 'fetch', 'config', 'owner', 'adduser', 'publish', 'unpublish', 'search', 'info', 'create'];
+    var calls = ['install', 'uninstall', 'fetch', 'config', 'owner', 'adduser', 'publish', 'unpublish', 'search', 'info', 'create', 'platform'];
     for (var i = 0; i < calls.length; i++) {
         var call = calls[i];
 
