@@ -8,7 +8,7 @@ Install a plugin
 
     $ plugman install --platform <platform> --project <directory> --plugin <plugin> [--variable NAME=VALUE]
 
-Parameters: 
+Parameters:
 
  - <platform>: One of android, ios, blackberry10, wp7 or wp8
  - project <directory>: Path reference to a cordova-generated project of the platform you specify
@@ -36,7 +36,7 @@ Optional flags
 
  --help|-h     : Displays this message
 
- --version|-v  : Displays version 
+ --version|-v  : Displays version
 
 Interacting with the registry
 =============================
@@ -75,6 +75,37 @@ Manage registry configuration
 Manage owners
 -------------
 
-    $ plugman owner ls org.apache.cordova.core.file 
+    $ plugman owner ls org.apache.cordova.core.file
     $ plugman owner add username org.apache.cordova.core.file
     $ plugman owner rm username org.apache.cordova.core.file
+
+Create A Plugin
+---------------
+
+    $ plugman create --name <Plugin Name> --plugin_id <Plugin ID> --plugin_version <Plugin Version> [--path <Directory Path>] [--variable NAME=VALUE]
+
+Parameters:
+
+ - <Plugin Name>: A Name for a Plugin
+ - <Plugin ID>: An ID for the plugin, ex: org.bar.foo
+ - <Plugin Version>: A version for the plugin, ex: 0.0.0
+ - variable NAME=VALUE: Extra variables such as description or Author
+
+Add a Platform to a Plugin
+--------------------------
+
+    $ plugman platform add --platform_name <Platform>
+
+Parameters:
+
+- <Platform>: One of android, ios
+
+Remove a Platform from a Plugin
+-------------------------------
+
+    $ plugman platform remove --platform_name <Platform>
+
+Parameters:
+
+- <Platform>: One of android, ios
+
