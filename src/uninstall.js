@@ -105,7 +105,7 @@ function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, o
                 var opts = {
                     www_dir: options.www_dir,
                     cli_variables: options.cli_variables,
-                    is_top_level: false /* TODO: should this "is_top_level" param be false for dependents? */
+                    is_top_level: (tlps.indexOf(dangler) > -1 ? true : false)
                 };
                 return runUninstall(actions, platform, project_dir, dependent_path, plugins_dir, opts);
             })
