@@ -31,9 +31,9 @@ function generatePackageJsonFromPluginXml(plugin_path) {
 
     if(!name) return Q.reject(new Error('`name` is required'));
 
-    if(!name.match(/^\w+|-*$/))
-        return Q.reject(new Error('`name` can only contain alphanumberic characters and -'));
-
+    if(!name.match(/^(\w+\.){2,}.*$/))
+        return Q.reject(new Error('`name` has to follow com.domain.plugin format'));
+    
     package_json.name = name.toLowerCase();
 
     if(cordova_name) package_json.cordova_name = cordova_name;

@@ -3,27 +3,38 @@ var registry = require('../../src/registry/registry'),
     fs = require('fs'),
     path = require('path'),
     Q = require('q'),
+    shell   = require('shelljs'),
+    os = require('os'),
     npm = require('npm');
 
 describe('registry', function() {
     describe('manifest', function() {
-        var pluginDir, packageJson;
+        var pluginDir, packageJson, tmp_plugin, tmp_plugin_xml, tmp_package_json;
         beforeEach(function() {
             pluginDir = __dirname + '/../plugins/EnginePlugin';
-            packageJson = path.resolve(pluginDir, 'package.json');
+            tmp_plugin = os.tmpdir() + 'plugin';
+            tmp_plugin_xml = path.join(tmp_plugin, 'plugin.xml');
+            tmp_package_json = path.join(tmp_plugin, 'package.json');
+            shell.cp('-R', pluginDir+"/*", tmp_plugin);
         });
         afterEach(function() {
-            fs.unlink(packageJson);
-            
+            shell.rm('-rf', tmp_plugin);
         });
         it('should generate a package.json from a plugin.xml', function() {
-            manifest.generatePackageJsonFromPluginXml(pluginDir);
-            expect(fs.existsSync(packageJson));
-            expect(JSON.parse(fs.readFileSync(packageJson)).name).toEqual('com.cordova.engine');
-            expect(JSON.parse(fs.readFileSync(packageJson)).version).toEqual('1.0.0');
-            expect(JSON.parse(fs.readFileSync(packageJson)).engines).toEqual(
+            manifest.generatePackageJsonFromPluginXml(tmp_plugin);
+            expect(fs.existsSync(tmp_package_json));
+            var packageJson = JSON.parse(fs.readFileSync(tmp_package_json));
+            expect(packageJson.name).toEqual('com.cordova.engine');
+            expect(packageJson.version).toEqual('1.0.0');
+            expect(packageJson.engines).toEqual(
                 [ { name : 'cordova', version : '>=2.3.0' }, { name : 'cordova-plugman', version : '>=0.10.0' }, { name : 'mega-fun-plugin', version : '>=1.0.0' }, { name : 'mega-boring-plugin', version : '>=3.0.0' } ]
             );
+        });
+        it('should raise an error if name does not follow com.domain.* format', function() {
+            var xmlData = fs.readFileSync(tmp_plugin_xml).toString().replace('id="com.cordova.engine"', 'id="engine"');
+            fs.writeFileSync(tmp_plugin_xml, xmlData);
+            manifest.generatePackageJsonFromPluginXml(tmp_plugin);
+            expect(!fs.existsSync(tmp_package_json));
         });
     });
     describe('actions', function() {
