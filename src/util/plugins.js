@@ -55,7 +55,7 @@ module.exports = {
             require('../../plugman').emit('verbose', 'Plugin "' + plugin_git_url + '" fetched.');
             // Check out the specified revision, if provided.
             if (git_ref) {
-                var cmd = util.format('git checkout "%s"', tmp_dir, git_ref);
+                var cmd = util.format('git checkout "%s"', git_ref);
                 var d2 = Q.defer();
                 child_process.exec(cmd, { cwd: tmp_dir }, function(err, stdout, stderr) {
                     if (err) d2.reject(err);
