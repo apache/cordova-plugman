@@ -193,7 +193,7 @@ module.exports = {
                 }
             }
             if (global_munge['framework'] && config_munge['framework']) {
-                pbxproj = ios_parser.parseIOSProjectFiles(project_dir);
+                pbxproj = ios_parser.parseProjectFile(project_dir);
             }
         }
 
@@ -310,7 +310,7 @@ module.exports = {
                 }
             }
             if (config_munge['framework']) {
-                pbxproj = ios_parser.parseIOSProjectFiles(project_dir);
+                pbxproj = ios_parser.parseProjectFile(project_dir);
             }
         }
 
