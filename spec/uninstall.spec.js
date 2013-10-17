@@ -3,6 +3,7 @@ var uninstall = require('../src/uninstall'),
     config_changes = require('../src/util/config-changes'),
     dependencies = require('../src/util/dependencies'),
     xml_helpers = require('../src/util/xml-helpers'),
+    plugins = require('../src/util/plugins.js'),
     plugman = require('../plugman'),
     fs      = require('fs'),
     os      = require('osenv'),
@@ -79,7 +80,7 @@ describe('uninstallPlatform', function() {
         });
 
         describe('with dependencies', function() {
-            var parseET, emit;
+            var parseET, emit, danglers, dependents;
             beforeEach(function() {
                 emit = spyOn(plugman, 'emit');
                 parseET = spyOn(xml_helpers, 'parseElementtreeSync').andReturn({
@@ -89,8 +90,10 @@ describe('uninstallPlatform', function() {
                     find:function() { return null },
                     findall:function() { return [] }
                 });
+                danglers = spyOn(dependencies, 'danglers');
+                dependents = spyOn(dependencies, 'dependents').andReturn([]);
             });
-            it('should uninstall "dangling" dependencies', function() {
+            it('should uninstall "dangling" dependencies', function(done) {
                 // TODO: this is a terrible way to do conditional mocking, i am sorry.
                 // if you have a better idea on how to mock out this recursive function, plz patch it
                 var counter = 0;
@@ -115,13 +118,14 @@ describe('uninstallPlatform', function() {
                     return obj;
                 });
 
-                runs(function() {
-                    uninstallPromise(uninstall.uninstallPlatform('android', temp, dummyplugin, plugins_dir, {}));
-                });
-                waitsFor(function() { return done; }, 'promise never resolved', 500);
-                runs(function() {
+                danglers.andReturn(['one', 'two']);
+
+                uninstall.uninstallPlatform('android', temp, dummyplugin, plugins_dir, {})
+                .then(function() {
                     expect(emit).toHaveBeenCalledWith('log', 'Uninstalling 2 dangling dependent plugins.');
-                });
+                }, function(err) {
+                    expect(err).toBeUndefined();
+                }).done(done);
             });
             it('should not uninstall any dependencies that are relied on by other plugins');
         });
@@ -184,7 +188,7 @@ describe('uninstallPlugin', function() {
             });
         });
         describe('with dependencies', function() {
-            var parseET, emit;
+            var parseET, emit, findPlugins;
             beforeEach(function() {
                 emit = spyOn(plugman, 'emit');
                 var counter = 0;
@@ -203,15 +207,17 @@ describe('uninstallPlugin', function() {
                         }
                     }
                 });
+
+                findPlugins = spyOn(plugins, 'findPlugins').andReturn([dummyplugin, 'somedependent']);
             });
-            it('should recurse if dependent plugins are detected', function() {
-                runs(function() {
-                    uninstallPromise(uninstall.uninstallPlugin(dummyplugin, plugins_dir));
-                });
-                waitsFor(function() { return done; }, 'promise never resolved', 500);
-                runs(function() {
-                    expect(uninstall_plugin).toHaveBeenCalledWith('somedependent', plugins_dir);
-                });
+            it('should delete all dangling plugins', function(done) {
+                uninstall.uninstallPlugin(dummyplugin, plugins_dir)
+                .then(function() {
+                    expect(rm).toHaveBeenCalledWith('-rf', path.join(plugins_dir, dummyplugin));
+                    expect(rm).toHaveBeenCalledWith('-rf', path.join(plugins_dir, 'somedependent'));
+                }, function(err) {
+                    expect(err).toBeUndefined();
+                }).done(done);
             });
         });
     });

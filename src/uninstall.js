@@ -9,13 +9,14 @@ var path = require('path'),
     dependencies = require('./util/dependencies'),
     underscore = require('underscore'),
     Q = require('q'),
+    plugins = require('./util/plugins'),
     platform_modules = require('./platforms');
 
 // possible options: cli_variables, www_dir
 // Returns a promise.
 module.exports = function(platform, project_dir, id, plugins_dir, options) {
     return module.exports.uninstallPlatform(platform, project_dir, id, plugins_dir, options)
-    .then(function() {
+    .then(function(uninstalled) {
         return module.exports.uninstallPlugin(id, plugins_dir);
     });
 }
@@ -49,73 +50,90 @@ module.exports.uninstallPlugin = function(id, plugins_dir) {
       , plugin_et    = xml_helpers.parseElementtreeSync(xml_path);
 
     require('../plugman').emit('log', 'Deleting plugin ' + id);
-    // Check for dependents
-    var dependencies = plugin_et.findall('dependency');
-    if (dependencies && dependencies.length) {
-        require('../plugman').emit('verbose', 'Dependencies detected, iterating through them and removing them first.');
-        return dependencies.reduce(function(soFar, dep) {
-            return soFar.then(function() {
-                return module.exports.uninstallPlugin(dep.attrib.id, plugins_dir);
-            });
-        }, Q())
-        .then(function() {
-            shell.rm('-rf', plugin_dir);
-            require('../plugman').emit('verbose', id + ' deleted.');
-        });
-    } else {
-        // axe the directory
+
+    var doDelete = function(id) {
+        var plugin_dir = path.join(plugins_dir, id);
+        if (!fs.existsSync(plugin_dir)) return;
         shell.rm('-rf', plugin_dir);
-        require('../plugman').emit('verbose', 'Deleted "' + plugin_dir + '".');
-        return Q();
+        require('../plugman').emit('verbose', id + ' deleted.');
+    };
+
+    // We've now lost the metadata for the plugins that have been uninstalled, so we can't use that info.
+    // Instead, we list all dependencies of the target plugin, and check the remaining metadata to see if
+    // anything depends on them, or if they're listed as top-level.
+    // If neither, they can be deleted.
+    var toDelete = plugin_et.findall('dependency');
+    toDelete = toDelete && toDelete.length ? toDelete.map(function(p) { return p.attrib.id; }) : [];
+    toDelete.push(id);
+
+    // Okay, now we check if any of these are depended on, or top-level.
+    // Find the installed platforms by whether they have a metadata file.
+    var platforms = Object.keys(platform_modules).filter(function(plat) {
+        return fs.existsSync(path.join(plugins_dir, plat + '.json'));
+    });
+
+    var found = [];
+    platforms.forEach(function(plat) {
+        var tlps = dependencies.generate_dependency_info(plugins_dir, plat).top_level_plugins;
+        toDelete.forEach(function(plugin) {
+            if (tlps.indexOf(plugin) >= 0 || dependencies.dependents(plugin, plugins_dir, plat).length) {
+                found.push(plugin);
+            }
+        });
+    });
+
+    var danglers = underscore.difference(plugins.findPlugins(plugins_dir), found);
+    if (danglers && danglers.length) {
+        require('../plugman').emit('log', 'Found ' + danglers.length + ' removable plugins. Deleting them.');
+        danglers.forEach(doDelete);
+    } else {
+        require('../plugman').emit('log', 'No dangling plugins to remove.');
     }
+
+    return Q();
 };
 
 // possible options: cli_variables, www_dir, is_top_level
-// Returns a promise.
+// Returns a promise
 function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, options) {
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , plugin_et    = xml_helpers.parseElementtreeSync(xml_path);
     var plugin_id    = plugin_et._root.attrib['id'];
     options = options || {};
 
+    // Check that this plugin has no dependents.
+    var dependents = dependencies.dependents(plugin_id, plugins_dir, platform);
+    if(options.is_top_level && dependents && dependents.length > 0) {
+        require('../plugman').emit('verbose', 'Other top-level plugins (' + dependents.join(', ') + ') depend on ' + plugin_id + ', skipping uninstallation.');
+        return Q();
+    }
+
+    // Check how many dangling dependencies this plugin has.
     var dependency_info = dependencies.generate_dependency_info(plugins_dir, platform);
-    var graph = dependency_info.graph;
-    var dependents = graph.getChain(plugin_id);
+    var deps = dependency_info.graph.getChain(plugin_id);
+    var danglers = dependencies.danglers(plugin_id, plugins_dir, platform);
 
-    var tlps = dependency_info.top_level_plugins;
-    var diff_arr = [];
-    tlps.forEach(function(tlp) {
-        if (tlp != plugin_id) {
-            var ds = graph.getChain(tlp);
-            if (options.is_top_level && ds.indexOf(plugin_id) > -1) {
-                throw new Error('Another top-level plugin (' + tlp + ') relies on plugin ' + plugin_id + ', therefore aborting uninstallation.');
-            }
-            diff_arr.push(ds);
-        }
-    });
-
-    // if this plugin has dependencies, do a set difference to determine which dependencies are not required by other existing plugins
-    diff_arr.unshift(dependents);
-    var danglers = underscore.difference.apply(null, diff_arr);
-    if (dependents.length && danglers && danglers.length) {
+    var promise;
+    if (deps && deps.length && danglers && danglers.length) {
         require('../plugman').emit('log', 'Uninstalling ' + danglers.length + ' dangling dependent plugins.');
-        return Q.all(
+        promise = Q.all(
             danglers.map(function(dangler) {
                 var dependent_path = path.join(plugins_dir, dangler);
                 var opts = {
                     www_dir: options.www_dir,
                     cli_variables: options.cli_variables,
-                    is_top_level: tlps.indexOf(dangler) > -1
+                    is_top_level: dependency_info.top_level_plugins.indexOf(dangler) > -1
                 };
                 return runUninstall(actions, platform, project_dir, dependent_path, plugins_dir, opts);
             })
-        ).then(function() {
-            return handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, options.www_dir, plugins_dir, plugin_dir, options.is_top_level);
-        });
+        );
     } else {
-        // this plugin can get axed by itself, gogo!
-        return handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, options.www_dir, plugins_dir, plugin_dir, options.is_top_level);
+        promise = Q();
     }
+
+    return promise.then(function() {
+        return handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, options.www_dir, plugins_dir, plugin_dir, options.is_top_level);
+    });
 }
 
 // Returns a promise.
@@ -169,3 +187,4 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
         require('./../plugman').prepare(project_dir, platform, plugins_dir);
     });
 }
+
