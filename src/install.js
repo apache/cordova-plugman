@@ -5,7 +5,7 @@ var path = require('path'),
     action_stack = require('./util/action-stack'),
     shell = require('shelljs'),
     child_process = require('child_process'),
-    version_compare = require('./util/version-compare'),
+    semver = require('semver'),
     config_changes = require('./util/config-changes'),
     xml_helpers = require('./util/xml-helpers'),
     Q = require('q'),
@@ -63,7 +63,7 @@ function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options)
 function checkEngines(engines) {
     for(var i = 0; i < engines.length; i++) {
         var engine = engines[i];
-        if(version_compare.satisfies(engine.currentVersion, engine.minVersion) || engine.currentVersion == null){
+        if(semver.satisfies(engine.currentVersion, engine.minVersion) || engine.currentVersion == null){
             // engine ok!
         }else{
             return Q.reject(new Error('Plugin doesn\'t support this project\'s '+engine.name+' version. '+engine.name+': ' + engine.currentVersion + ', failed version requirement: ' + engine.minVersion));
@@ -91,6 +91,21 @@ function cleanVersionOutput(version, name){
         }
         require('../plugman').emit('verbose', name+' has been detected as using a development branch. Attemping to install anyways.');
     }     
+    
+    // add extra period/digits to conform to semver - some version scripts will output
+    // just a major or major minor version number
+    var majorReg = /\d+/,
+        minorReg = /\d+\.\d+/,
+        patchReg = /\d+\.\d+\.\d+/;
+    
+    if(patchReg.test(out)){
+        
+    }else if(minorReg.test(out)){
+        out = out.match(minorReg)[0]+'.0';
+    }else if(majorReg.test(out)){
+        out = out.match(majorReg)[0]+'.0.0';
+    }    
+    
     return out;
 }
 
