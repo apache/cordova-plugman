@@ -27,10 +27,9 @@ module.exports = function(project_dir){
             { 'platform':'ios', 'scriptSrc': path.join(project_dir,'cordova','apple_ios_version') },
         'apple-osx' : 
             { 'platform':'ios', 'scriptSrc': path.join(project_dir,'cordova','apple_osx_version') },
-        'blackberry-webworks' : 
-            { 'platform':'blackberry10', 'scriptSrc': path.join(project_dir,'blackberry-webworks-version') },
+        'blackberry-ndk' : 
+            { 'platform':'blackberry10', 'scriptSrc': path.join(project_dir,'cordova','bb10-ndk-version') },
         'android-sdk' : 
-            // will have to parse string output from android list targets
             { 'platform':'android', 'scriptSrc': path.join(project_dir,'cordova','android_sdk_version') }
     }
 };
