@@ -127,7 +127,6 @@ describe('uninstallPlatform', function() {
                     expect(err).toBeUndefined();
                 }).done(done);
             });
-            it('should not uninstall any dependencies that are relied on by other plugins');
         });
     });
 
@@ -188,7 +187,7 @@ describe('uninstallPlugin', function() {
             });
         });
         describe('with dependencies', function() {
-            var parseET, emit, findPlugins;
+            var parseET, emit;
             beforeEach(function() {
                 emit = spyOn(plugman, 'emit');
                 var counter = 0;
@@ -207,17 +206,16 @@ describe('uninstallPlugin', function() {
                         }
                     }
                 });
-
-                findPlugins = spyOn(plugins, 'findPlugins').andReturn([dummyplugin, 'somedependent']);
             });
             it('should delete all dangling plugins', function(done) {
                 uninstall.uninstallPlugin(dummyplugin, plugins_dir)
                 .then(function() {
                     expect(rm).toHaveBeenCalledWith('-rf', path.join(plugins_dir, dummyplugin));
                     expect(rm).toHaveBeenCalledWith('-rf', path.join(plugins_dir, 'somedependent'));
+                    expect(rm.calls.length).toBe(2);
                 }, function(err) {
                     expect(err).toBeUndefined();
-                }).done(done);
+                }).fin(done);
             });
         });
     });

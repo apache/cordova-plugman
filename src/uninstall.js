@@ -82,7 +82,7 @@ module.exports.uninstallPlugin = function(id, plugins_dir) {
         });
     });
 
-    var danglers = underscore.difference(plugins.findPlugins(plugins_dir), found);
+    var danglers = underscore.difference(toDelete, found);
     if (danglers && danglers.length) {
         require('../plugman').emit('log', 'Found ' + danglers.length + ' removable plugins. Deleting them.');
         danglers.forEach(doDelete);
