@@ -30,6 +30,10 @@ You must have `git` on your PATH to be able to install plugins directly from rem
 * Windows Phone (7+8)
 
 ## Command Line Usage
+    plugman help
+    
+* Displays all available plugman commands
+
 
     plugman install --platform <ios|android|blackberry10|wp7|wp8> --project <directory> --plugin <name|url|path> [--plugins_dir <directory>] [--www <directory>] [--variable <name>=<value> [--variable <name>=<value> ...]]
     plugman uninstall --platform <ios|android|blackberr10|wp7|wp8> --project <directory> --plugin <id> [--www <directory>] [--plugins_dir <directory>]
@@ -46,7 +50,19 @@ Other parameters:
 * `--www` defaults to the project's `www` folder location, but can be any directory that is to be used as cordova project application web assets.
 * `--variable` allows to specify certain variables at install time, necessary for certain plugins requiring API keys or other custom, user-defined parameters. Please see the [plugin specification](plugin_spec.md) for more information.
 
+
+    plugman search <plugin keywords>
+
+* Search the [Plugin registry](http://plugins.cordova.io) for plugin id's that match the given space separated list of keywords.
+
+
+    plugman config set registry <url-to-registry>
+    plugman config get registry
+
+* Get or set the URL of the current plugin registry that plugman is using. Generally you should leave this set at http://registry.cordova.io unless you want to use a third party plugin registry.
+    
 ## Node Module Usage
+This section details how to consume Plugman as a node module and is only for Cordova tool authors and other hackers. You should not need to read this section if you are just using Plugman to manage a Cordova project. 
 
     node
     > require('plugman')
