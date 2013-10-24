@@ -9,7 +9,9 @@ var path = require('path'),
     config_changes = require('./util/config-changes'),
     xml_helpers = require('./util/xml-helpers'),
     Q = require('q'),
-    platform_modules = require('./platforms');
+    platform_modules = require('./platforms'),
+    os = require('os'),
+    isWindows = (os.platform() === 'win32');
 
 /* INSTALL FLOW
    ------------
@@ -116,12 +118,16 @@ function callEngineScripts(engines) {
 
     return Q.all(
         engines.map(function(engine){
-            if(fs.existsSync(engine.scriptSrc)){
-                fs.chmodSync(engine.scriptSrc, '755');
+            // CB-5192; on Windows scriptSrc doesn't have file extension so we shouldn't check whether the script exists
+            if(isWindows || fs.existsSync(engine.scriptSrc)){
+                
+                if(!isWindows) { // not required on Windows
+                    fs.chmodSync(engine.scriptSrc, '755');
+                }
                 var d = Q.defer();
                 child_process.exec(engine.scriptSrc, function(error, stdout, stderr) {
                     if (error) {
-                        require('../plugman').emit('log', 'Cordova project '+ engine.scriptSrc +' script failed (has a '+ engine.scriptSrc +' script, but something went wrong executing it), continuing anyways.');
+                        require('../plugman').emit('log', 'Cordova project '+ engine.scriptSrc +' script failed, continuing anyways.');
                         engine.currentVersion = null;
                         d.resolve(engine); // Yes, resolve. We're trying to continue despite the error.
                     } else {
