@@ -132,14 +132,14 @@ describe('install', function() {
         it('should check platform sdk version if specified', function() {
             var spy = spyOn(semver, 'satisfies').andReturn(true);
             exec.andCallFake(function(cmd, cb) {
-                cb(null, '4.3\n', '');
+                cb(null, '18\n', '');
             });
             runs(function() {
                 installPromise(install('android', temp, 'enginepluginAndroid', plugins_dir, {}));
             });
             waitsFor(function() { return done; }, 'install promise never resolved', 500);
             runs(function() {
-                expect(spy).toHaveBeenCalledWith('4.3','>=4.3');
+                expect(spy).toHaveBeenCalledWith('18.0.0','>=18');
             });
         });
         it('should check plugmans version', function() {

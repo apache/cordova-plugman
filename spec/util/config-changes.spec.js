@@ -298,7 +298,7 @@ describe('config-changes module', function() {
                     shell.cp('-rf', cbplugin, plugins_dir);
                     xcode_add = jasmine.createSpy();
                     xcode_rm = jasmine.createSpy();
-                    spyOn(ios_parser, 'parseIOSProjectFiles').andReturn({
+                    spyOn(ios_parser, 'parseProjectFile').andReturn({
                         xcode:{
                             addFramework:xcode_add,
                             removeFramework:xcode_rm,
