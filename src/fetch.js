@@ -19,7 +19,7 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options) {
     options.subdir = options.subdir || '.';
 
     // clone from git repository
-    var uri = url.parse(plugin_dir);
+    var uri = url.parse(plugin_dir, true);
 
     // If the hash exists, it has the form from npm: http://foo.com/bar#git-ref[:subdir]
     // NB: No leading or trailing slash on the subdir.
@@ -35,6 +35,16 @@ module.exports = function fetchPlugin(plugin_dir, plugins_dir, options) {
             var new_dir = plugin_dir.substring(0, plugin_dir.indexOf('#'));
             return fetchPlugin(new_dir, plugins_dir, options);
         }
+    } else {
+        // Allow options in url
+        // https://github.com/apache/cordova-labs?subdir=cordova-plugin-echo&ref=master
+        if(uri.query.subdir)
+            options.subdir = uri.query.subdir;
+        if(uri.query.ref)
+            options.git_ref = uri.query.ref;
+
+        if(uri.query.subdir || uri.query.ref)
+            plugin_dir = plugin_dir.replace(/\?.*/, '');    
     }
 
     if ( uri.protocol && uri.protocol != 'file:' && !plugin_dir.match(/^\w+:\\/)) {
