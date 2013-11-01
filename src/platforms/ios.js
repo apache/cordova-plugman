@@ -115,7 +115,7 @@ module.exports = {
             shell.rm('-rf', destFile);
         }
     },
-    parseIOSProjectFiles:function(project_dir) {
+    parseProjectFile:function(project_dir) {
         // grab and parse pbxproj
         // we don't want CordovaLib's xcode project
         var project_files = glob.sync(path.join(project_dir, '*.xcodeproj', 'project.pbxproj'));
@@ -134,7 +134,7 @@ module.exports = {
                            );
 
         config_files = config_files.filter(function (val) {
-            return !(/^build\//.test(val));
+            return !(/^build\//.test(val)) && !(/\/www\/config.xml$/.test(val));
         });
 
         if (config_files.length === 0) {
@@ -152,7 +152,10 @@ module.exports = {
             resources_dir:resourcesDir,
             xcode:xcodeproj,
             xcode_path:xcode_dir,
-            pbx:pbxPath
+            pbx: pbxPath,
+            write: function () {
+                fs.writeFileSync(pbxPath, xcodeproj.writeSync());
+            }
         };
     }
 };
