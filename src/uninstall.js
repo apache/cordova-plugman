@@ -11,7 +11,7 @@ var path = require('path'),
     underscore = require('underscore'),
     Q = require('q'),
     plugins = require('./util/plugins'),
-	events = require('./events');
+    events = require('./events');
     platform_modules = require('./platforms');
 
 // possible options: cli_variables, www_dir
@@ -44,7 +44,7 @@ module.exports.uninstallPlatform = function(platform, project_dir, id, plugins_d
 // Returns a promise.
 module.exports.uninstallPlugin = function(id, plugins_dir, options) {
     var plugin_dir = path.join(plugins_dir, id);
-	var quoteId = "'" + id + "'";
+    var quoteId = "'" + id + "'";
 
     // If already removed, skip.
     if (!fs.existsSync(plugin_dir)) {
@@ -54,7 +54,7 @@ module.exports.uninstallPlugin = function(id, plugins_dir, options) {
       , plugin_et    = xml_helpers.parseElementtreeSync(xml_path);
 
     events.emit('log', 'Deleting ' + quoteId);
-	options = options || {};
+    options = options || {};
 
     var doDelete = function(id) {
         var plugin_dir = path.join(plugins_dir, id);
@@ -79,36 +79,36 @@ module.exports.uninstallPlugin = function(id, plugins_dir, options) {
 
     var dependList = {};
     platforms.forEach(function(platform) {
-		var depsInfo = dependencies.generate_dependency_info(plugins_dir, platform, 'remove');
+        var depsInfo = dependencies.generate_dependency_info(plugins_dir, platform, 'remove');
         var tlps = depsInfo.top_level_plugins,
-		    deps;
+            deps;
 
         toDelete.forEach(function(plugin) {
             if (tlps.indexOf(plugin) >= 0 ) {
                 dependList[plugin] = tlps.join(',');
             } else if( (deps = dependencies.dependents(plugin, depsInfo)) && deps.length ) {
-				dependList[plugin] = deps.join(',');
-			}
+                dependList[plugin] = deps.join(',');
+            }
         });
     });
 
-	var forced = (options.indexOf('-f') + options.indexOf('--force') > -2);   
+    var forced = (options.indexOf('-f') + options.indexOf('--force') > -2);   
     var i, plugin_id, msg;
-	for(i in toDelete) {
-		plugin_id = toDelete[i];
+    for(i in toDelete) {
+        plugin_id = toDelete[i];
 
-		if( dependList[plugin_id] ) {
-			msg = quoteId + ' is required by ('+ dependList[plugin_id] + ')';
-			if(forced) {
-				events.emit('log', msg +' but forcing removal.');
-			} else {
-				events.emit('log', msg +' and cannot be removed (hint: use -f or --force)');
-				continue;
-			}
-		}
+        if( dependList[plugin_id] ) {
+            msg = quoteId + ' is required by ('+ dependList[plugin_id] + ')';
+            if(forced) {
+                events.emit('log', msg +' but forcing removal.');
+            } else {
+                events.emit('log', msg +' and cannot be removed (hint: use -f or --force)');
+                continue;
+            }
+        }
 
-		doDelete(plugin_id);
-	}
+        doDelete(plugin_id);
+    }
 
     return Q();
 };

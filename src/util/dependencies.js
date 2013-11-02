@@ -1,6 +1,6 @@
 var dep_graph = require('dep-graph'),
     path = require('path'),
-	fs = require('fs'),
+    fs = require('fs'),
     config_changes = require('./config-changes'),
     underscore = require('underscore'),
     xml_helpers = require('./xml-helpers');
@@ -20,11 +20,11 @@ module.exports = {
             });
         });
         Object.keys(json.dependent_plugins).forEach(function(plug) {
-			var xmlPath = path.join(plugins_dir, plug, 'plugin.xml');
-			if (context == 'remove' && !fs.existsSync(xmlPath)) {
-				return; // dependency may have been forcefully removed
-			}
- 			var xml = xml_helpers.parseElementtreeSync(xmlPath);															
+            var xmlPath = path.join(plugins_dir, plug, 'plugin.xml');
+            if (context == 'remove' && !fs.existsSync(xmlPath)) {
+                return; // dependency may have been forcefully removed
+            }
+            var xml = xml_helpers.parseElementtreeSync(xmlPath);                                                            
             var deps = xml.findall('dependency');
             deps && deps.forEach(function(dep) {
                 var id = dep.attrib.id;
@@ -40,12 +40,12 @@ module.exports = {
 
     // Returns a list of top-level plugins which are (transitively) dependent on the given plugin.
     dependents: function(plugin_id, plugins_dir, platform) {
-		if(typeof plugins_dir == 'object')
-			var depsInfo = plugins_dir;
-		else
-       		var depsInfo = module.exports.generate_dependency_info(plugins_dir, platform);
+        if(typeof plugins_dir == 'object')
+            var depsInfo = plugins_dir;
+        else
+            var depsInfo = module.exports.generate_dependency_info(plugins_dir, platform);
 
-		var graph = depsInfo.graph;
+        var graph = depsInfo.graph;
         var tlps = depsInfo.top_level_plugins;
         var dependents = tlps.filter(function(tlp) {
             return tlp != plugin_id && graph.getChain(tlp).indexOf(plugin_id) >= 0;

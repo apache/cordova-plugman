@@ -57,7 +57,7 @@ plugman = {
     removeAllListeners: emitter.removeAllListeners,
     emit:               emitter.emit,
     raw:                {},
-	_emitter:           emitter
+    _emitter:           emitter
 };
 addProperty(plugman, 'help', './src/help');
 addProperty(plugman, 'install', './src/install', true);
