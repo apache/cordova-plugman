@@ -24,6 +24,7 @@
     "plist": "0.4.x",
     "bplist-parser": "0.0.x",
     "shelljs": "0.1.x",
+    "exit": "0.1.1",
     "osenv": "0.0.x",
     "ncallbacks":"1.1.0",
     "underscore":"1.4.4",

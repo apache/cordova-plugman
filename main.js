@@ -21,6 +21,7 @@
 // copyright (c) 2013 Andrew Lunny, Adobe Systems
 var path = require('path')
     , url = require('url')
+    , exit = require('exit')
     , package = require(path.join(__dirname, 'package'))
     , nopt = require('nopt')
     , plugins = require('./src/util/plugins')
@@ -57,7 +58,7 @@ process.on('uncaughtException', function(error) {
     } else {
         console.error(error.message);
     }
-    process.exit(1);
+    exit(1);
 });
 
 // Set up appropriate logging based on events
