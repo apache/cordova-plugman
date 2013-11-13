@@ -54,7 +54,7 @@ module.exports.uninstallPlugin = function(id, plugins_dir, options) {
       , plugin_et    = xml_helpers.parseElementtreeSync(xml_path);
 
     events.emit('log', 'Deleting ' + quoteId);
-    options = options || {};
+    options = options || [];
 
     var doDelete = function(id) {
         var plugin_dir = path.join(plugins_dir, id);
