@@ -149,11 +149,16 @@ describe('config-changes module', function() {
                 xml = (new et.ElementTree(dummy_xml.find('./platform[@name="android"]/config-file[@target="res/xml/plugins.xml"]'))).write({xml_declaration:false});
                 xml = innerXML(xml);
                 expect(munge['res/xml/plugins.xml']['/plugins'][xml]).toEqual(1);
+
+                expect(munge['config.xml']).toBeDefined();
+                expect(munge['config.xml']['/widget/plugins']).toBeDefined();
+                expect(munge['config.xml']['/widget/plugins']['<plugin id="com.phonegap.plugins.dummyplugin" version="0.6.0" />']).toBeDefined();
+
                 expect(munge['res/xml/config.xml']).toBeDefined();
-                expect(munge['res/xml/config.xml']['/cordova/plugins']).toBeDefined();
+                expect(munge['res/xml/config.xml']['/widget/plugins']).toBeDefined();
                 xml = (new et.ElementTree(dummy_xml.find('./platform[@name="android"]/config-file[@target="res/xml/config.xml"]'))).write({xml_declaration:false});
                 xml = innerXML(xml);
-                expect(munge['res/xml/config.xml']['/cordova/plugins'][xml]).toEqual(1);
+                expect(munge['res/xml/config.xml']['/widget/plugins'][xml]).toEqual(1);
             });
             it('should split out multiple children of config-file elements into individual leaves', function() {
                 var munge = configChanges.generate_plugin_config_munge(childrenplugin, 'android', temp, {});
@@ -258,11 +263,12 @@ describe('config-changes module', function() {
                     var manifest_doc = new et.ElementTree(et.XML(fs.readFileSync(path.join(temp, 'AndroidManifest.xml'), 'utf-8')));
                     var munge = dummy_xml.find('./platform[@name="android"]/config-file[@target="AndroidManifest.xml"]');
                     configChanges.process(plugins_dir, temp, 'android');
-                    expect(spy.calls.length).toEqual(4);
+                    expect(spy.calls.length).toEqual(5);
                     expect(spy.argsForCall[0][2]).toEqual('/*');
                     expect(spy.argsForCall[1][2]).toEqual('/*');
-                    expect(spy.argsForCall[2][2]).toEqual('/manifest/application');
-                    expect(spy.argsForCall[3][2]).toEqual('/cordova/plugins');
+                    expect(spy.argsForCall[2][2]).toEqual('/widget/plugins');
+                    expect(spy.argsForCall[3][2]).toEqual('/manifest/application');
+                    expect(spy.argsForCall[4][2]).toEqual('/widget/plugins');
                 });
                 it('should not call graftXML for a config munge that already exists from another plugin', function() {
                     shell.cp('-rf', configplugin, plugins_dir);
@@ -270,7 +276,7 @@ describe('config-changes module', function() {
 
                     var spy = spyOn(xml_helpers, 'graftXML').andReturn(true);
                     configChanges.process(plugins_dir, temp, 'android');
-                    expect(spy.calls.length).toEqual(1);
+                    expect(spy.calls.length).toEqual(2);
                 });
                 it('should not call graftXML for a config munge targeting a config file that does not exist', function() {
                     configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'DummyPlugin', 'android', {});
@@ -383,11 +389,12 @@ describe('config-changes module', function() {
                 configChanges.add_uninstalled_plugin_to_prepare_queue(plugins_dir, 'DummyPlugin', 'android');
                 var spy = spyOn(xml_helpers, 'pruneXML').andReturn(true);
                 configChanges.process(plugins_dir, temp, 'android');
-                expect(spy.calls.length).toEqual(4);
+                expect(spy.calls.length).toEqual(5);
                 expect(spy.argsForCall[0][2]).toEqual('/*');
                 expect(spy.argsForCall[1][2]).toEqual('/*');
-                expect(spy.argsForCall[2][2]).toEqual('/manifest/application');
-                expect(spy.argsForCall[3][2]).toEqual('/cordova/plugins');
+                expect(spy.argsForCall[2][2]).toEqual('/widget/plugins');
+                expect(spy.argsForCall[3][2]).toEqual('/manifest/application');
+                expect(spy.argsForCall[4][2]).toEqual('/widget/plugins');
             });
             it('should generate a config munge that interpolates variables into config changes, if applicable', function() {
                 shell.cp('-rf', android_two_project, temp);
