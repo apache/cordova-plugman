@@ -12,7 +12,7 @@ describe('registry', function() {
         var pluginDir, packageJson, tmp_plugin, tmp_plugin_xml, tmp_package_json;
         beforeEach(function() {
             pluginDir = __dirname + '/../plugins/EnginePlugin';
-            tmp_plugin = os.tmpdir() + 'plugin';
+            tmp_plugin = path.join(os.tmpdir(), 'plugin');
             tmp_plugin_xml = path.join(tmp_plugin, 'plugin.xml');
             tmp_package_json = path.join(tmp_plugin, 'package.json');
             shell.cp('-R', pluginDir+"/*", tmp_plugin);
