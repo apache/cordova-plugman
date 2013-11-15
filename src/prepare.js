@@ -117,6 +117,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     // This array holds all the metadata for each module and ends up in cordova_plugins.json
     var plugins = Object.keys(platform_json.installed_plugins).concat(Object.keys(platform_json.dependent_plugins));
     var moduleObjects = [];
+    var pluginMetadata = {};
     require('../plugman').emit('verbose', 'Iterating over installed plugins:', plugins);
 
     plugins && plugins.forEach(function(plugin) {
@@ -125,6 +126,9 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
             var xml = xml_helpers.parseElementtreeSync(path.join(pluginDir, 'plugin.xml'));
     
             var plugin_id = xml.getroot().attrib.id;
+
+            // pluginMetadata is a mapping from plugin IDs to versions.
+            pluginMetadata[plugin_id] = xml.getroot().attrib.version;
     
             // add the plugins dir to the platform's www.
             var platformPluginsDir = path.join(wwwDir, 'plugins');
@@ -196,7 +200,13 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
 
     // Write out moduleObjects as JSON wrapped in a cordova module to cordova_plugins.js
     var final_contents = "cordova.define('cordova/plugin_list', function(require, exports, module) {\n";
-    final_contents += 'module.exports = ' + JSON.stringify(moduleObjects,null,'    ') + '\n});';
+    final_contents += 'module.exports = ' + JSON.stringify(moduleObjects,null,'    ') + ';\n';
+    final_contents += 'module.exports.metadata = \n';
+    final_contents += '// TOP OF METADATA\n';
+    final_contents += JSON.stringify(pluginMetadata, null, '    ') + '\n';
+    final_contents += '// BOTTOM OF METADATA\n';
+    final_contents += '});'; // Close cordova.define.
+
     require('../plugman').emit('verbose', 'Writing out cordova_plugins.js...');
     fs.writeFileSync(path.join(wwwDir, 'cordova_plugins.js'), final_contents, 'utf-8');
 
