@@ -142,11 +142,8 @@ module.exports = {
             });
         }
 
-        // <config-file> tags without a target attribute are targeting the main config.xml.
-        // These changes get put on the 'config.xml' key, which gets special processing to handle
-        // platform differences.
         changes.forEach(function(change) {
-            var target = change.attrib['target'] || 'config.xml';
+            var target = change.attrib['target'];
             var parent = change.attrib['parent'];
             if (!munge[target]) {
                 munge[target] = {};
@@ -170,12 +167,6 @@ module.exports = {
                 munge[target][parent][stringified] += 1;
             });
         });
-
-        // Add the <plugin> tag to the <plugins> list.
-        if (!munge['config.xml']) munge['config.xml'] = {};
-        if (!munge['config.xml']['/widget/plugins']) munge['config.xml']['/widget/plugins'] = {};
-        var pluginTag = '<plugin id="' + plugin_xml.getroot().attrib.id + '" version="' + plugin_xml.getroot().attrib.version + '" />';
-        munge['config.xml']['/widget/plugins'][pluginTag] = 1;
         return munge;
     },
 

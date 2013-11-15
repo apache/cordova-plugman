@@ -76,7 +76,7 @@ describe('xml-helpers', function(){
         var config_xml;
 
         beforeEach(function() {
-            config_xml = xml_helpers.parseElementtreeSync(path.join(__dirname, '..', 'projects', 'ios-config-xml', 'SampleApp', 'config.xml'));
+            config_xml = xml_helpers.parseElementtreeSync(path.join(__dirname, '..', 'projects', 'android_two', 'res', 'xml', 'config.xml'));
         });
 
         it('should remove any children that match the specified selector', function() {
@@ -87,11 +87,11 @@ describe('xml-helpers', function(){
         it('should do nothing if the children cannot be found', function() {
             var children = [title];
             xml_helpers.pruneXML(config_xml, children, 'plugins');
-            expect(config_xml.find('plugins').getchildren().length).toEqual(19);
+            expect(config_xml.find('plugins').getchildren().length).toEqual(17);
         });
         it('should be able to handle absolute selectors', function() {
             var children = config_xml.findall('plugins/plugin');
-            xml_helpers.pruneXML(config_xml, children, '/widget/plugins');
+            xml_helpers.pruneXML(config_xml, children, '/cordova/plugins');
             expect(config_xml.find('plugins').getchildren().length).toEqual(0);
         });
         it('should be able to handle absolute selectors with wildcards', function() {
@@ -111,12 +111,12 @@ describe('xml-helpers', function(){
 
         it('should add children to the specified selector', function() {
             var children = plugin_xml.find('config-file').getchildren();
-            xml_helpers.graftXML(config_xml, children, 'test');
-            expect(config_xml.find('test').getchildren().length).toEqual(2);
+            xml_helpers.graftXML(config_xml, children, 'plugins');
+            expect(config_xml.find('plugins').getchildren().length).toEqual(19);
         });
         it('should be able to handle absolute selectors', function() {
             var children = plugin_xml.find('config-file').getchildren();
-            xml_helpers.graftXML(config_xml, children, '/widget');
+            xml_helpers.graftXML(config_xml, children, '/cordova');
             expect(config_xml.findall('access').length).toEqual(3);
         });
         it('should be able to handle absolute selectors with wildcards', function() {

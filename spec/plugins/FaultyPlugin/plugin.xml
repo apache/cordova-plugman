@@ -51,7 +51,7 @@
         </config-file>
 
         <!-- CDV 2.0+ (for now) -->
-        <config-file target="res/xml/config.xml" parent="/widget/plugins">
+        <config-file target="res/xml/config.xml" parent="/cordova/plugins">
             <plugin name="FaultyPlugin"
                 value="com.phonegap.plugins.faultyplugin.FaultyPlugin"/>
         </config-file>
