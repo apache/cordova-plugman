@@ -124,21 +124,25 @@ module.exports = {
                 }
             });
             // note down pbxproj framework munges in special section of munge obj
+            // CB-5238 this is only for systems frameworks
             var frameworks = platformTag.findall('framework');
             frameworks.forEach(function(f) {
-                if (!munge['framework']) {
-                    munge['framework'] = {};
+                var custom = f.attrib['custom'];
+                if(!custom) {
+                  if (!munge['framework']) {
+                      munge['framework'] = {};
+                  }
+                  var file = f.attrib['src'];
+                  var weak = f.attrib['weak'];
+                  weak = (weak == undefined || weak == null || weak != 'true' ? 'false' : 'true');
+                  if (!munge['framework'][file]) {
+                      munge['framework'][file] = {};
+                  }
+                  if (!munge['framework'][file][weak]) {
+                      munge['framework'][file][weak] = 0;
+                  }
+                  munge['framework'][file][weak] += 1;
                 }
-                var file = f.attrib['src'];
-                var weak = f.attrib['weak'];
-                weak = (weak == undefined || weak == null || weak != 'true' ? 'false' : 'true');
-                if (!munge['framework'][file]) {
-                    munge['framework'][file] = {};
-                }
-                if (!munge['framework'][file][weak]) {
-                    munge['framework'][file][weak] = 0;
-                }
-                munge['framework'][file][weak] += 1;
             });
         }
 

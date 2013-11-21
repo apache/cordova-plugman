@@ -105,6 +105,7 @@
         <!-- framework for testing (not actual dependency of DummyPlugin -->
         <framework src="src/ios/libsqlite3.dylib" />
         <framework src="src/ios/libsqlite3.dylib" weak="true" />
+        <framework src="src/ios/Custom.framework" custom="true" />
     </platform>
 
     <!-- wp7 -->
