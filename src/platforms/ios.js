@@ -124,7 +124,7 @@ module.exports = {
             if (!custom) throw new Error('cannot add non custom frameworks.');
             if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <framework>');
             if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
-            shell.cp('-R', srcFile, destFile);
+            shell.cp('-R', srcFile, project_dir); // frameworks are directories
             project.xcode.addFramework(destFile, {customFramework: true});
         },
         uninstall:function(framework_el, project_dir, project) {

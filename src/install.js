@@ -344,10 +344,10 @@ function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plu
         var sourceFiles = platformTag.findall('./source-file'),
             headerFiles = platformTag.findall('./header-file'),
             resourceFiles = platformTag.findall('./resource-file'),
-            frameworkFiles = platformTag.findall('./framework-file[@custom="true"]'), // CB-5238 adding only custom frameworks
+            frameworkFiles = platformTag.findall('./framework[@custom="true"]'), // CB-5238 adding only custom frameworks
             libFiles = platformTag.findall('./lib-file');
         assets = assets.concat(platformTag.findall('./asset'));
-        
+
         // queue up native stuff
         sourceFiles && sourceFiles.forEach(function(source) {
             actions.push(actions.createAction(handler["source-file"].install, [source, plugin_dir, project_dir, plugin_id], handler["source-file"].uninstall, [source, project_dir, plugin_id]));

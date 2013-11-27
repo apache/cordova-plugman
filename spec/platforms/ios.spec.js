@@ -272,7 +272,7 @@ describe('ios project handler', function() {
                 var spy = spyOn(shell, 'cp');
                 ios['framework'].install(frameworks[0], dummyplugin, temp, proj_files);
                 expect(spy).toHaveBeenCalledWith('-R', path.join(dummyplugin, 'src', 'ios', 'Custom.framework'),
-                                                 path.join(temp, 'Custom.framework'));
+                                                 temp);
             });
         });
     });
