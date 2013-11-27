@@ -460,7 +460,9 @@ function resolveConfigFilePath(project_dir, platform, file) {
     } else {
         // special-case config.xml target that is just "config.xml". this should be resolved to the real location of the file.
         if (file == 'config.xml') {
-            if (platform == 'android') {
+            if (platform == 'ubuntu') {
+                filepath = path.join(project_dir, 'config.xml');
+            } else if (platform == 'android') {
                 filepath = path.join(project_dir, 'res', 'xml', 'config.xml');
             } else {
                 var matches = glob.sync(path.join(project_dir, '**', 'config.xml'));
