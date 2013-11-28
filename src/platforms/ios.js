@@ -45,15 +45,29 @@ module.exports = {
             if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
             var project_ref = path.join('Plugins', path.relative(project.plugins_dir, destFile));
             project.xcode.addSourceFile(project_ref, has_flags ? {compilerFlags:source_el.attrib['compiler-flags']} : {});
+            
+            var customFramework = source_el.attrrib['custom'];
+            customFramework = (customFramework == undefined || customFramework == null || customFramework != 'true' ? false : true );
+            
             if (is_framework) {
                 var weak = source_el.attrib['weak'];
-                var opt = { weak: (weak == undefined || weak == null || weak != 'true' ? false : true ) };
+                var opt = { 
+                    weak: (weak == undefined || weak == null || weak != 'true' ? false : true ),
+                    customFramework: customFramework
+                };
                 var project_relative = path.join(path.basename(project.xcode_path), project_ref);
+                
+                console.log(project_relative + " | " +project_ref);
+                
                 project.xcode.addFramework(project_relative, opt);
                 project.xcode.addToLibrarySearchPaths({path:project_ref});
             }
             shell.mkdir('-p', targetDir);
-            shell.cp(srcFile, destFile);
+            
+            if(customFramework)
+                shell.cp('-r', srcFile, destFile);
+            else    
+                shell.cp(srcFile, destFile);
         },
         uninstall:function(source_el, project_dir, plugin_id, project) {
             var src = source_el.attrib['src'];
