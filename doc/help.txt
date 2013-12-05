@@ -59,7 +59,7 @@ Unpublish a plugin
 Search for a plugin
 -------------------
 
-    $ plugman search plugin,keywords
+    $ plugman search <keyword1 keyword2 ...>
 
 Display plugin information
 -----------------------
