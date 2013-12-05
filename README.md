@@ -58,7 +58,7 @@ Other parameters:
       unpublish: [Function: unpublish],
       adduser: [Function: adduser],
       prepare: [Function: handlePrepare],
-      create: [Function: create] ,
+      create: [Function: create],
       platform: [Function: platform] }
 
 ### `install` method
