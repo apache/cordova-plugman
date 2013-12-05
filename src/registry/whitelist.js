@@ -14,5 +14,7 @@ module.exports = [
     'org.apache.cordova.device',
     'org.apache.cordova.contacts',
     'org.apache.cordova.console',
-    'org.apache.cordova.camera'
+    'org.apache.cordova.camera',
+    'org.apache.cordova.device-motion',
+    'org.apache.cordova.battery-status'
 ]
