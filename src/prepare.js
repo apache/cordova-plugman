@@ -34,7 +34,7 @@ var platform_modules = require('./platforms'),
 // Sets up each plugin's Javascript code to be loaded properly.
 // Expects a path to the project (platforms/android in CLI, . in plugman-only),
 // a path to where the plugins are downloaded, the www dir, and the platform ('android', 'ios', etc.).
-module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
+module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_dir) {
     // Process:
     // - Do config munging by calling into config-changes module
     // - List all plugins in plugins_dir
@@ -46,7 +46,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     // - Cordova.js contains code to load them at runtime from that file.
     require('../plugman').emit('log', 'Preparing ' + platform + ' project');
     var platform_json = config_changes.get_platform_json(plugins_dir, platform);
-    var wwwDir = platform_modules[platform].www_dir(project_dir);
+    var wwwDir = www_dir || platform_modules[platform].www_dir(project_dir);
 
     // Check if there are any plugins queued for uninstallation, and if so, remove any of their plugin web assets loaded in
     // via <js-module> elements
