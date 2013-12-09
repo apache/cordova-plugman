@@ -273,9 +273,9 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
                             child_process.exec('git rev-parse --show-toplevel', { cwd:dep_url }, function(err, stdout, stderr) {
                                 if (err) {
                                     if (err.code == 128) {
-                                        return d.reject(new Error('Error: Plugin ' + plugin_id + ' is not in git repository. All plugins must be in a git repository.'));
+                                        return d.reject(new Error('Plugin ' + plugin_id + ' is not in git repository. All plugins must be in a git repository.'));
                                     } else {
-                                        return d.reject(new Error('Error trying to locate git repository for plugin.'));
+                                        return d.reject(new Error('Failed to locate git repository for ' + plugin_id + ' plugin.'));
                                     }
                                 }
 
