@@ -2,12 +2,15 @@ var npm = require('npm'),
     path = require('path'),
     http = require('http'),
     url = require('url'),
-    targz = require('tar.gz'),
     fs = require('fs'),
     manifest = require('./manifest'),
     os = require('os'),
     rc = require('rc'),
     Q = require('q'),
+    request = require('request'),
+    zlib = require('zlib'),
+    tar = require('tar'),
+    shell = require('shelljs'),
     home = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE,
     plugmanConfigDir = path.resolve(home, '.plugman'),
     plugmanCacheDir = path.resolve(plugmanConfigDir, 'cache');
@@ -24,19 +27,14 @@ function getPackageInfo(args) {
     var settings = module.exports.settings;
 
     var d = Q.defer();
-    http.get(settings.registry + '/' + name + '/' + version, function(res) {
-         if(res.statusCode != 200) {
-             d.reject(new Error('error: Could not fetch package information for '+name));
-         } else {
-             var info = '';
-             res.on('data', function(chunk) {
-                info += chunk;
-             });
-             res.on('end', function() {
-                 d.resolve(JSON.parse(info));
-             });
-         }
-    }).on('error', function(err) {
+    var req = makeRequest('GET', settings.registry + '/' + name + '/' + version, function(err, res, body){
+        if(err || res.statusCode != 200) {
+          d.reject(new Error('error: Could not fetch package information for '+name));
+        } else {
+          d.resolve(JSON.parse(body));
+        }
+    });
+    req.on('error', function(err) {
         d.reject(err);
     });
     return d.promise;
@@ -54,11 +52,11 @@ function fetchPackage(info, cl) {
     if(fs.existsSync(cached)) {
         d.resolve(cached);
     } else {
-        var target = path.join(os.tmpdir(), info.name);
-        var filename = target + '.tgz';
-        var filestream = fs.createWriteStream(filename);
-        var request = http.get(info.dist.tarball, function(res) {
-            if(res.statusCode != 200) {
+        var download_dir = path.join(os.tmpdir(), info.name);
+        shell.mkdir('-p', download_dir);
+
+        var req = makeRequest('GET', info.dist.tarball, function (err, res, body) {
+            if(err || res.statusCode != 200) {
                 d.reject(new Error('failed to fetch the plugin archive'));
             } else {
                 // Update the download count for this plugin.
@@ -69,31 +67,26 @@ function fetchPackage(info, cl) {
                 // (for lacking a _rev), and dropped a download count is not important.
                 var now = new Date();
                 var pkgId = info._id.substring(0, info._id.indexOf('@'));
-                var uri = url.parse(module.exports.settings.registry);
-                // Overriding the path to point at /downloads.
-                uri.path = '/downloads';
-                uri.method = 'POST';
-                var dlcReq = http.request(uri);
-
-                dlcReq.setHeader('Content-Type', 'application/json');
-
                 var message = {
                     day: now.getUTCFullYear() + '-' + (now.getUTCMonth()+1) + '-' + now.getUTCDate(),
                     pkg: pkgId,
                     client: cl
                 };
+                var remote = settings.registry + '/downloads'
 
-                dlcReq.write(JSON.stringify(message));
-                dlcReq.end();
-
-                res.pipe(filestream);
-                filestream.on('finish', function() {
-                    var decompress = new targz().extract(filename, target, function(err) {
-                        if (err) d.reject(err);
-                        else d.resolve(path.resolve(target, 'package'));
-                    });
+                makeRequest('POST', remote, message, function (err, res, body) {
+                    // ignore errors
                 });
             }
+        });
+        req.pipe(zlib.createUnzip())
+        .pipe(tar.Extract({path:download_dir}))
+        .on('error', function(err) {
+            shell.rm('-rf', download_dir);
+            d.reject(err);
+        })
+        .on('end', function() {
+            d.resolve(path.resolve(download_dir, 'package'));
         });
     }
     return d.promise;
@@ -244,4 +237,54 @@ function initSettings() {
          userconfig: path.resolve(plugmanConfigDir, 'config')
     });
     return Q(settings);
+}
+
+
+function makeRequest (method, where, what, cb_) {
+  var settings = module.exports.settings
+  var remote = url.parse(where)
+  if (typeof cb_ !== "function") cb_ = what, what = null
+  var cbCalled = false
+  function cb () {
+    if (cbCalled) return
+    cbCalled = true
+    cb_.apply(null, arguments)
+  }
+
+  var strict = settings['strict-ssl']
+  if (strict === undefined) strict = true
+  var opts = { url: remote
+             , method: method
+             , ca: settings.ca
+             , strictSSL: strict }
+    , headers = opts.headers = {}
+
+  headers.accept = "application/json"
+
+  headers["user-agent"] = settings['user-agent'] ||
+                          'node/' + process.version
+
+  var p = settings.proxy
+  var sp = settings['https-proxy'] || p
+  opts.proxy = remote.protocol === "https:" ? sp : p
+
+  // figure out wth 'what' is
+  if (what) {
+    if (Buffer.isBuffer(what) || typeof what === "string") {
+      opts.body = what
+      headers["content-type"] = "application/json"
+      headers["content-length"] = Buffer.byteLength(what)
+    } else {
+      opts.json = what
+    }
+  }
+
+  var req = request(opts, cb)
+
+  req.on("error", cb)
+  req.on("socket", function (s) {
+    s.on("error", cb)
+  })
+
+  return req
 }
