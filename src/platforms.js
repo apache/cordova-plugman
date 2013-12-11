@@ -1,5 +1,6 @@
 module.exports = {
     'android': require('./platforms/android'),
+    'amazon-fireos': require('./platforms/amazon-fireos'),
     'ios': require('./platforms/ios'),
     'blackberry10': require('./platforms/blackberry10'),
     'wp7': require('./platforms/wp7'),
