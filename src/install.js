@@ -273,9 +273,9 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
                             child_process.exec('git rev-parse --show-toplevel', { cwd:dep_url }, function(err, stdout, stderr) {
                                 if (err) {
                                     if (err.code == 128) {
-                                        return d.reject(new Error('Error: Plugin ' + plugin_id + ' is not in git repository. All plugins must be in a git repository.'));
+                                        return d.reject(new Error('Plugin ' + plugin_id + ' is not in git repository. All plugins must be in a git repository.'));
                                     } else {
-                                        return d.reject(new Error('Error trying to locate git repository for plugin.'));
+                                        return d.reject(new Error('Failed to locate git repository for ' + plugin_id + ' plugin.'));
                                     }
                                 }
 
@@ -382,7 +382,7 @@ function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plu
         // queue up the plugin so prepare knows what to do.
         config_changes.add_installed_plugin_to_prepare_queue(plugins_dir, plugin_basename, platform, filtered_variables, is_top_level);
         // call prepare after a successful install
-        require('./../plugman').prepare(project_dir, platform, plugins_dir);
+        require('./../plugman').prepare(project_dir, platform, plugins_dir, www_dir);
 
         require('../plugman').emit('log', plugin_id + ' installed on ' + platform + '.');
         // WIN!

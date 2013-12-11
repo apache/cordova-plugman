@@ -190,7 +190,7 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
         // queue up the plugin so prepare can remove the config changes
         config_changes.add_uninstalled_plugin_to_prepare_queue(plugins_dir, path.basename(plugin_dir), platform, is_top_level);
         // call prepare after a successful uninstall
-        require('./../plugman').prepare(project_dir, platform, plugins_dir);
+        require('./../plugman').prepare(project_dir, platform, plugins_dir, www_dir);
     });
 }
 
