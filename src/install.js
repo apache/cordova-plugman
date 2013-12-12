@@ -182,7 +182,7 @@ function getEngines(pluginElement, platform, project_dir, plugin_dir){
         }
     });
     
-    // make sure we check for platform req's and not just cordova reqs
+    // make sure we check for platform req's and not just Cordova reqs
     if(cordovaEngineIndex && cordovaPlatformEngineIndex) uncheckedEngines.pop(cordovaEngineIndex);
     return uncheckedEngines;
 }

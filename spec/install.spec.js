@@ -116,7 +116,7 @@ describe('install', function() {
                 expect(spy).toHaveBeenCalledWith('3.0.0-rc1','>=2.3.0');
             });
         });
-        it('should check specific platform version over cordova version if specified', function() {
+        it('should check specific platform version over Cordova version if specified', function() {
             var spy = spyOn(semver, 'satisfies').andReturn(true);
             exec.andCallFake(function(cmd, cb) {
                 cb(null, '3.1.0\n', '');
@@ -311,7 +311,7 @@ describe('install', function() {
             });
             waitsFor(function(){ return done; }, 'install promise never resolved', 500);
             runs(function() {
-                expect(done).toEqual(new Error('Plugin doesn\'t support this project\'s cordova version. cordova: 0.0.1, failed version requirement: >=2.3.0'));
+                expect(done).toEqual(new Error('Plugin doesn\'t support this project\'s Cordova version. cordova: 0.0.1, failed version requirement: >=2.3.0'));
             });
         });
     });
