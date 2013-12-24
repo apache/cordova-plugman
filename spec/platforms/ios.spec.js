@@ -249,30 +249,29 @@ describe('ios project handler', function() {
             it('should throw if framework src cannot be found', function() {
                 var frameworks = copyArray(invalid_custom_frameworks);
                 expect(function() {
-                    ios['framework'].install(frameworks[0], faultyplugin, temp, proj_files);
+                    ios['framework'].install(frameworks[0], faultyplugin, temp, dummy_id, proj_files);
                 }).toThrow('cannot find "' + path.resolve(faultyplugin, 'src/ios/NonExistantCustomFramework.framework') + '" ios <framework>');
             });
             it('should throw if framework target already exists', function() {
                 var frameworks = copyArray(valid_custom_frameworks);
-                var target = path.join(temp, 'Custom.framework');
-                shell.mkdir('-p', path.dirname(target));
-                fs.writeFileSync(target, 'some bs', 'utf-8');
+                var target = path.join(temp, 'SampleApp/Plugins/com.phonegap.plugins.dummyplugin/Custom.framework');
+                shell.mkdir('-p', target);
                 expect(function() {
-                    ios['framework'].install(frameworks[0], dummyplugin, temp, proj_files);
+                    ios['framework'].install(frameworks[0], dummyplugin, temp, dummy_id, proj_files);
                 }).toThrow('target destination "' + target + '" already exists');
             });
             it('should call into xcodeproj\'s addFramework', function() {
                 var frameworks = copyArray(valid_custom_frameworks);
                 var spy = spyOn(proj_files.xcode, 'addFramework');
-                ios['framework'].install(frameworks[0], dummyplugin, temp, proj_files);
-                expect(spy).toHaveBeenCalledWith(path.join(temp, 'Custom.framework'), {customFramework:true});
+                ios['framework'].install(frameworks[0], dummyplugin, temp, dummy_id, proj_files);
+                expect(spy).toHaveBeenCalledWith('SampleApp/Plugins/com.phonegap.plugins.dummyplugin/Custom.framework', {customFramework:true});
             });
             it('should cp the file to the right target location', function() {
                 var frameworks = copyArray(valid_custom_frameworks);
                 var spy = spyOn(shell, 'cp');
-                ios['framework'].install(frameworks[0], dummyplugin, temp, proj_files);
+                ios['framework'].install(frameworks[0], dummyplugin, temp, dummy_id, proj_files);
                 expect(spy).toHaveBeenCalledWith('-R', path.join(dummyplugin, 'src', 'ios', 'Custom.framework'),
-                                                 temp);
+                                                 path.join(temp, 'SampleApp/Plugins/com.phonegap.plugins.dummyplugin'));
             });
         });
     });
@@ -374,15 +373,15 @@ describe('ios project handler', function() {
                 var frameworks = copyArray(valid_custom_frameworks);
                 var spy = spyOn(proj_files.xcode, 'removeFramework');
 
-                ios['framework'].uninstall(frameworks[0], temp, proj_files);
-                expect(spy).toHaveBeenCalledWith(path.join(temp, 'Custom.framework'), {customFramework:true});
+                ios['framework'].uninstall(frameworks[0], temp, dummy_id, proj_files);
+                expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp/Plugins/com.phonegap.plugins.dummyplugin/Custom.framework'), {customFramework:true});
             });
             it('should rm the file from the right target location', function(){
                 var frameworks = copyArray(valid_custom_frameworks);
                 var spy = spyOn(shell, 'rm');
 
-                ios['framework'].uninstall(frameworks[0], temp, proj_files);
-                expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'Custom.framework'));
+                ios['framework'].uninstall(frameworks[0], temp, dummy_id, proj_files);
+                expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'SampleApp/Plugins/com.phonegap.plugins.dummyplugin/Custom.framework'));
             });
         });
     });

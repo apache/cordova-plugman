@@ -168,7 +168,7 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
         
         // CB-5238 custom frameworks only 
         frameworkFiles && frameworkFiles.forEach(function(framework) {
-            actions.push(actions.createAction(handler["framework"].uninstall, [framework, project_dir], handler["framework"].install, [framework, plugin_dir, project_dir]));
+            actions.push(actions.createAction(handler["framework"].uninstall, [framework, project_dir, plugin_id], handler["framework"].install, [framework, plugin_dir, project_dir]));
         });
 
         libFiles && libFiles.forEach(function(source) {
