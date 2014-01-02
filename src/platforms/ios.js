@@ -32,6 +32,12 @@ module.exports = {
         var plist_file = glob.sync(path.join(project_dir, '**', '*-Info.plist'))[0];
         return plist.parseFileSync(plist_file).CFBundleIdentifier;
     },
+    "resource-file":{
+        install:function(el, plugin_dir, project_dir) {
+        },
+        uninstall:function(el, project_dir) {
+        }
+    },
     "source-file":{
         install:function(source_el, plugin_dir, project_dir, plugin_id, project) {
             var src = source_el.attrib['src'];

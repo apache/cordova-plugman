@@ -55,5 +55,11 @@ module.exports = {
             var dest = path.join("libs", path.basename(src));
             common.removeFile(project_dir, dest);
         }
+    },
+    "resource-file":{
+        install:function(el, plugin_dir, project_dir) {
+        },
+        uninstall:function(el, project_dir) {
+        }
     }
 };

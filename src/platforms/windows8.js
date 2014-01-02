@@ -57,5 +57,11 @@ module.exports = {
             // remove reference to this file from csproj.
             project_file.removeSourceFile(dest);
         }
+    },
+    "resource-file":{
+        install:function(el, plugin_dir, project_dir) {
+        },
+        uninstall:function(el, project_dir) {
+        }
     }
 };
