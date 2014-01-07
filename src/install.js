@@ -50,7 +50,7 @@ function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options)
     // Check that the plugin has already been fetched.
     if (!fs.existsSync(plugin_dir)) {
         // if plugin doesnt exist, use fetch to get it.
-        return require('../plugman').raw.fetch(id, plugins_dir, { link: false, subdir: options.subdir, git_ref: options.git_ref, client: 'plugman', expected_id: options.expected_id })
+        return require('../plugman').raw.fetch(id, plugins_dir, { link: false, subdir: options.subdir, git_ref: options.git_ref, client: 'plugman', expected_id: options.expected_id, searchpath: options.searchpath })
         .then(function(plugin_dir) {
             return runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, options);
         });
