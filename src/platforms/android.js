@@ -60,13 +60,12 @@ module.exports = {
         install:function(el, plugin_dir, project_dir) {
             var src = el.attrib.src;
             var target = el.attrib.target;
-            var dest = path.join("res", target);
-            common.copyFile(plugin_dir, src, project_dir, dest);
+            require('../../plugman').emit('verbose', 'copying file ' + src + ' to ' + target);
+            common.copyFile(plugin_dir, src, project_dir, target);
         },
         uninstall:function(el, project_dir) {
             var target = el.attrib.target;
-            var dest = path.join("res", target);
-            common.removeFile(project_dir, dest);
+            common.removeFile(project_dir, target);
         }
     }
 };
