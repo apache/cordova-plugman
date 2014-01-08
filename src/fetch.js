@@ -18,6 +18,9 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
     options = options || {};
     options.subdir = options.subdir || '.';
     options.searchpath = options.searchpath || [];
+    if ( typeof options.searchpath === 'string' ) {
+        options.searchpath = [ options.searchpath ];
+    }
 
     // clone from git repository
     var uri = url.parse(plugin_src);
