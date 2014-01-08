@@ -52,5 +52,12 @@ module.exports = {
             // remove reference to this file from csproj.
             project_file.removeSourceFile(dest);
         }
+    },
+    "resource-file":{
+        install:function(el, plugin_dir, project_dir) {
+          require('../../plugman').emit('verbose', 'resource-file is not supported on this platform');
+        },
+        uninstall:function(el, project_dir) {
+        }
     }
 };
