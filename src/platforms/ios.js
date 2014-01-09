@@ -21,7 +21,7 @@ var path = require('path')
   , fs   = require('fs')
   , glob = require('glob')
   , xcode = require('xcode')
-  , plist = require('plist')
+  , plist = require('plist-with-patches')
   , shell = require('shelljs');
 
 module.exports = {

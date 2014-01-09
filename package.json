@@ -23,7 +23,7 @@
     "glob": "3.2.x",
     "elementtree": "0.1.5",
     "xcode": "git+https://github.com/kronenthaler/node-xcode.git",
-    "plist": "0.4.x",
+    "plist-with-patches": "0.5.x",
     "bplist-parser": "0.0.x",
     "shelljs": "0.1.x",
     "osenv": "0.0.x",

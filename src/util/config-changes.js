@@ -33,7 +33,7 @@
 var fs   = require('fs'),
     path = require('path'),
     glob = require('glob'),
-    plist = require('plist'),
+    plist = require('plist-with-patches'),
     bplist = require('bplist-parser'),
     et   = require('elementtree'),
     xml_helpers = require('./../util/xml-helpers'),
