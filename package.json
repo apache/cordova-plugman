@@ -26,8 +26,6 @@
     "plist-with-patches": "0.5.x",
     "bplist-parser": "0.0.x",
     "shelljs": "0.1.x",
-    "osenv": "0.0.x",
-    "ncallbacks":"1.1.0",
     "underscore":"1.4.4",
     "dep-graph":"1.1.0",
     "semver": "2.0.x",
@@ -37,7 +35,8 @@
     "tar.gz": "0.1.1"
   },
   "devDependencies": {
-    "jasmine-node": "1.7.0"
+    "jasmine-node": "1.7.0",
+    "osenv": "0.0.x",
   },
   "bin" : { "plugman" : "./main.js" },
   "scripts": {
