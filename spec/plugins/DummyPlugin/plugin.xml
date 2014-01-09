@@ -50,6 +50,8 @@
             </activity>
         </config-file>
 
+        <resource-file src="android-resource.xml" target="res/xml/dummy.xml" />
+
         <!-- CDV < 2.0 -->
         <config-file target="res/xml/plugins.xml" parent="/plugins">
             <plugin name="DummyPlugin"

@@ -60,7 +60,7 @@ module.exports = {
     },
     "resource-file":{
         install:function(el, plugin_dir, project_dir) {
-          require('../../plugman').emit('verbose', 'resource-file is not supported on this platform');
+            require('../../plugman').emit('verbose', 'resource-file is not supported for Windows 8');
         },
         uninstall:function(el, project_dir) {
         }

@@ -57,7 +57,6 @@ describe('install', function() {
                 expect(prepare).toHaveBeenCalled();
             });
         });
-
         it('should call fetch if provided plugin cannot be resolved locally', function() {
             fetchSpy = spyOn(plugman.raw, 'fetch').andReturn(Q(path.join(plugins_dir, dummyplugin)));
             exists.andReturn(false);
@@ -188,7 +187,7 @@ describe('install', function() {
             });
             waitsFor(function() { return done; }, 'install promise never resolved', 500);
             runs(function() {
-                expect(actions_push.calls.length).toEqual(4);
+                expect(actions_push.calls.length).toEqual(5);
                 expect(c_a).toHaveBeenCalledWith(jasmine.any(Function), [jasmine.any(Object), path.join(plugins_dir, dummyplugin), temp, dummy_id], jasmine.any(Function), [jasmine.any(Object), temp, dummy_id]);
                 expect(proc).toHaveBeenCalled();
             });
