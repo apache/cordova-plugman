@@ -16,13 +16,11 @@
     "node": ">=0.9.9"
   },
   "engineStrict":true,
-  "//": ["Can remove node-xcode git dependency once pull request is merged:",
-         "https://github.com/alunny/node-xcode/pull/25"],
   "dependencies": {
     "nopt": "1.0.x",
     "glob": "3.2.x",
     "elementtree": "0.1.5",
-    "xcode": "git+https://github.com/kronenthaler/node-xcode.git",
+    "xcode": "0.6.4",
     "plist-with-patches": "0.5.x",
     "bplist-parser": "0.0.x",
     "shelljs": "0.1.x",
