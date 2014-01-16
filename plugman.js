@@ -20,6 +20,7 @@
 // copyright (c) 2013 Andrew Lunny, Adobe Systems
 
 var emitter = require('./src/events');
+var Q = require('q');
 
 function addProperty(o, symbol, modulePath, doWrap) {
     var val = null;
@@ -102,13 +103,29 @@ plugman.commands =  {
             www_dir: cli_opts.www,
             searchpath: cli_opts.searchpath
         };
-        return plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, cli_opts.plugins_dir, opts);
+
+        var p = Q();
+        cli_opts.plugin.forEach(function (pluginSrc) {
+            p = p.then(function () {
+                return plugman.raw.install(cli_opts.platform, cli_opts.project, pluginSrc, cli_opts.plugins_dir, opts);
+            })
+        });
+        
+        return p;
     },
     'uninstall': function(cli_opts) {
         if(!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
             return console.log(plugman.help());
         }
-        return plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, cli_opts.plugins_dir, { www_dir: cli_opts.www });
+
+        var p = Q();
+        cli_opts.plugin.forEach(function (pluginSrc) {
+            p = p.then(function () {
+                return plugman.raw.uninstall(cli_opts.platform, cli_opts.project, pluginSrc, cli_opts.plugins_dir, { www_dir: cli_opts.www });
+            });
+        });
+
+        return p;
     },
     'adduser'  : function(cli_opts) {
         plugman.adduser(function(err) {

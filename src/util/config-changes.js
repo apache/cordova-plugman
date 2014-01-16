@@ -290,7 +290,7 @@ module.exports = {
         // save
         module.exports.save_platform_json(platform_config, plugins_dir, platform);
     },
-    add_plugin_changes:function(platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
+    add_plugin_changes:function(platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment) {
         var platform_config = module.exports.get_platform_json(plugins_dir, platform);
         var plugin_dir = path.join(plugins_dir, plugin_id);
 
@@ -301,10 +301,7 @@ module.exports = {
         // global munge looks at all plugins' changes to config files
         var global_munge = platform_config.config_munge;
 
-        var plistObj;
-        // Cache some slow stuff for reuse with multiple plugins.
-        cache = cache || {};
-        var pbxproj = cache.pbxproj;
+        var plistObj, pbxproj;
 
         if (platform == 'ios') {
             if (config_munge['plugins-plist']) {
@@ -318,10 +315,7 @@ module.exports = {
                 }
             }
             if (config_munge['framework']) {
-                if (!pbxproj) {
-                    // Note, parseProjectFile() is slow, ~250ms on MacBook Pro 2013.
-                    cache.pbxproj = pbxproj = ios_parser.parseProjectFile(project_dir);
-                }
+                pbxproj = ios_parser.parseProjectFile(project_dir);
             }
         }
 
@@ -435,9 +429,8 @@ module.exports = {
         });
 
         // Now handle installation
-        var cache = {};
         platform_config.prepare_queue.installed.forEach(function(u) {
-            module.exports.add_plugin_changes(platform, project_dir, plugins_dir, u.plugin, u.vars, u.topLevel, true, cache);
+            module.exports.add_plugin_changes(platform, project_dir, plugins_dir, u.plugin, u.vars, u.topLevel, true);
         });
 
         platform_config = module.exports.get_platform_json(plugins_dir, platform);

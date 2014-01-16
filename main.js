@@ -29,7 +29,7 @@ var path = require('path')
 
 var known_opts = { 'platform' : [ 'ios', 'android', 'amazon-fireos', 'blackberry10', 'wp7', 'wp8' , 'windows8', 'firefoxos' ]
         , 'project' : path
-        , 'plugin' : [String, path, url]
+        , 'plugin' : [String, path, url, Array]
         , 'version' : Boolean
         , 'help' : Boolean
         , 'debug' : Boolean

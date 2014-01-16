@@ -36,6 +36,7 @@ describe('config-changes module', function() {
     });
     afterEach(function() {
         shell.rm('-rf', temp);
+        ios_parser.purgeProjectFileCache(temp);
     });
 
     describe('queue methods', function() {
@@ -462,6 +463,7 @@ describe('config-changes module', function() {
                 // set up an uninstall
                 configChanges.add_uninstalled_plugin_to_prepare_queue(plugins_dir, 'DummyPlugin', 'ios');
 
+                ios_parser.purgeProjectFileCache(temp);
                 var spy = spyOn(plist, 'parseFileSync').andReturn({Plugins:{}});
                 configChanges.process(plugins_dir, temp, 'ios');
                 expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'PhoneGap.plist').replace(/\\/g, '/'));
@@ -474,6 +476,7 @@ describe('config-changes module', function() {
                 // set up an uninstall
                 configChanges.add_uninstalled_plugin_to_prepare_queue(plugins_dir, 'DummyPlugin', 'ios');
 
+                ios_parser.purgeProjectFileCache(temp);
                 spyOn(plist, 'parseFileSync').andReturn({Plugins:{}});
                 var spy = spyOn(plugman, 'emit');
                 configChanges.process(plugins_dir, temp, 'ios');
