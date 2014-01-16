@@ -20,7 +20,7 @@
     "nopt": "1.0.x",
     "glob": "3.2.x",
     "elementtree": "0.1.5",
-    "xcode": "0.6.5",
+    "xcode": "0.6.6",
     "plist-with-patches": "0.5.x",
     "bplist-parser": "0.0.x",
     "shelljs": "0.1.x",
