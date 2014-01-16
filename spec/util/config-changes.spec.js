@@ -69,7 +69,7 @@ describe('config-changes module', function() {
                 expect(config.prepare_queue.installed[0].plugin).toEqual('PooPlugin');
             });
         });
-        
+
         describe('add_uninstalled_plugin_to_prepare_queue', function() {
             beforeEach(function() {
                 shell.cp('-rf', dummyplugin, plugins_dir);
@@ -305,7 +305,8 @@ describe('config-changes module', function() {
                             removeFramework:xcode_rm,
                             writeSync:function(){}
                         },
-                        pbx:path.join(temp, 'pbxpath')
+                        pbx:path.join(temp, 'pbxpath'),
+                        write: function() {}
                     });
                 });
                 it('should call into xcode.addFramework if plugin has <framework> file defined and is ios',function() {
