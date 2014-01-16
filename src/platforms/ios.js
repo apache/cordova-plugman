@@ -22,7 +22,8 @@ var path = require('path')
   , glob = require('glob')
   , xcode = require('xcode')
   , plist = require('plist-with-patches')
-  , shell = require('shelljs');
+  , shell = require('shelljs')
+  , cachedProjectFiles = {};
 
 module.exports = {
     www_dir:function(project_dir) {
@@ -139,6 +140,9 @@ module.exports = {
         }
     },
     parseProjectFile:function(project_dir) {
+        if (cachedProjectFiles[project_dir]) {
+            return cachedProjectFiles[project_dir];
+        }
         // grab and parse pbxproj
         // we don't want CordovaLib's xcode project
         var project_files = glob.sync(path.join(project_dir, '*.xcodeproj', 'project.pbxproj'));
@@ -170,7 +174,7 @@ module.exports = {
         var pluginsDir = path.resolve(xcode_dir, 'Plugins');
         var resourcesDir = path.resolve(xcode_dir, 'Resources');
 
-        return {
+        cachedProjectFiles[project_dir] = {
             plugins_dir:pluginsDir,
             resources_dir:resourcesDir,
             xcode:xcodeproj,
@@ -180,7 +184,13 @@ module.exports = {
                 fs.writeFileSync(pbxPath, xcodeproj.writeSync());
             }
         };
+
+        return cachedProjectFiles[project_dir];
+    },
+    purgeProjectFileCache:function(project_dir) {
+        delete cachedProjectFiles[project_dir];
     }
+
 };
 
 function getRelativeDir(file) {
