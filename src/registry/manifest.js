@@ -36,6 +36,8 @@ function generatePackageJsonFromPluginXml(plugin_path) {
         description = pluginElm.findtext('description'),
         license = pluginElm.findtext('license'),
         keywords = pluginElm.findtext('keywords'),
+        repo = pluginElm.findtext('repo'),
+        issue = pluginElm.findtext('issue'),
         engines = pluginElm.findall('engines/engine');
 
     if(!version) return Q.reject(new Error('`version` required'));
@@ -52,6 +54,8 @@ function generatePackageJsonFromPluginXml(plugin_path) {
     if(cordova_name) package_json.cordova_name = cordova_name;
     if(description)  package_json.description  = description;
     if(license)      package_json.license      = license;
+    if(repo)         package_json.repo         = repo;
+    if(issue)        package_json.issue        = issue;
     if(keywords)     package_json.keywords     = keywords.split(',');
 
     // adding engines
