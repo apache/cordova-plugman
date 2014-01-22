@@ -114,7 +114,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
     }
 
     platform_json = config_changes.get_platform_json(plugins_dir, platform);
-    // This array holds all the metadata for each module and ends up in cordova_plugins.json
+    // This array holds all the metadata for each module and ends up in cordova_plugins.js
     var plugins = Object.keys(platform_json.installed_plugins).concat(Object.keys(platform_json.dependent_plugins));
     var moduleObjects = [];
     require('../plugman').emit('verbose', 'Iterating over installed plugins:', plugins);
