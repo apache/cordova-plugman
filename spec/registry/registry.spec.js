@@ -36,6 +36,18 @@ describe('registry', function() {
             manifest.generatePackageJsonFromPluginXml(tmp_plugin);
             expect(!fs.existsSync(tmp_package_json));
         });
+        it('should generate a package.json if name uses org.apache.cordova.* for a whitlisted plugin', function() {
+            var xmlData = fs.readFileSync(tmp_plugin_xml).toString().replace('id="com.cordova.engine"', 'id="org.apache.cordova.camera"');
+            fs.writeFileSync(tmp_plugin_xml, xmlData);
+            manifest.generatePackageJsonFromPluginXml(tmp_plugin);
+            expect(!fs.existsSync(tmp_package_json));
+        });
+        it('should raise an error if name uses org.apache.cordova.* for a non-whitlisted plugin', function() {
+            var xmlData = fs.readFileSync(tmp_plugin_xml).toString().replace('id="com.cordova.engine"', 'id="org.apache.cordova.myinvalidplugin"');
+            fs.writeFileSync(tmp_plugin_xml, xmlData);
+            manifest.generatePackageJsonFromPluginXml(tmp_plugin);
+            expect(!fs.existsSync(tmp_package_json));
+        });
     });
     describe('actions', function() {
         var done, fakeLoad, fakeNPMCommands;

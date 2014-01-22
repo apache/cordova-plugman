@@ -1,7 +1,20 @@
 var xml_helpers = require('../util/xml-helpers'),
     path = require('path'),
     Q = require('q'),
-    fs = require('fs');
+    fs = require('fs'),
+    whitelist = require('./whitelist');
+
+function validateName(name) {
+    if(!name.match(/^(\w+\.){2,}.*$/)) {
+      return false;
+    }
+
+    if(name.match(/org.apache.cordova\..*/) && whitelist.indexOf(name) === -1) {
+      return false;
+    }
+
+    return true;
+}
 
 // Java world big-up!
 // Returns a promise.
@@ -23,6 +36,8 @@ function generatePackageJsonFromPluginXml(plugin_path) {
         description = pluginElm.findtext('description'),
         license = pluginElm.findtext('license'),
         keywords = pluginElm.findtext('keywords'),
+        repo = pluginElm.findtext('repo'),
+        issue = pluginElm.findtext('issue'),
         engines = pluginElm.findall('engines/engine');
 
     if(!version) return Q.reject(new Error('`version` required'));
@@ -31,14 +46,16 @@ function generatePackageJsonFromPluginXml(plugin_path) {
 
     if(!name) return Q.reject(new Error('`name` is required'));
 
-    if(!name.match(/^(\w+\.){2,}.*$/))
-        return Q.reject(new Error('`name` has to follow com.domain.plugin format'));
+    if(!validateName(name))
+        return Q.reject(new Error('`name` is invalid. It has to follow the reverse domain `com.domain.plugin` format'));
     
     package_json.name = name.toLowerCase();
 
     if(cordova_name) package_json.cordova_name = cordova_name;
     if(description)  package_json.description  = description;
     if(license)      package_json.license      = license;
+    if(repo)         package_json.repo         = repo;
+    if(issue)        package_json.issue        = issue;
     if(keywords)     package_json.keywords     = keywords.split(',');
 
     // adding engines

@@ -1,6 +1,51 @@
-# Changelog
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+# http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#  KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+-->
+# Cordova-plugman Release Notes
 
-## 0.14.0
+### 0.18.0 (Jan 15, 2014)
+* CB-5770 plugman prepare.js script content wrapping no longer allows ending parens/braces to be commented out from end of line comment
+* CB-4871 Reduced package size significantly.
+* CB-5720 Allow <resource-file> on Android
+* CB-5006 Add --searchpath option for local plugin search path
+* CB-5701 Reference custom frameworks using relative paths
+* CB-5495, CB=5568 Fix config.xml path for ios
+
+## 0.17.0 (Dec 11, 2013)
+* CB-5579 Add support for --www param for install, uninstall, prepare commands.
+
+## 0.16.0 (Dec 5, 2013)
+* Added amazon-fireos platform.
+* Added ubuntu platform
+* CB-5034 Document registry functions in plugman
+* CB-5584 Fix git clone of not working on windows.
+* CB-5238 Add support for <framework src="..." custom="true" />
+* CB-5367 Reject non-whitelisted org.apache.cordova plugins
+* Write plugin metadata (ID and version) into cordova_plugins.js
+
+## 0.15.0 (Nov 8, 2013)
+* CB-4994 Update xcode dependency to parse Xcode 5 capabilities.
+* CB-5091 Use cwd option rather than shell.cd when cloning plugin repos
+* CB-4872 Updated default engine names to include windows scripts
+
+## 0.14.0 (Oct 28, 2013)
 
 * CB-5192 Plugman engine check fails on Windows
 * [CB-5184] Fix uninstall logic being too aggressive

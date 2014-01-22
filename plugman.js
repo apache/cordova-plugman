@@ -98,7 +98,8 @@ plugman.commands =  {
         var opts = {
             subdir: '.',
             cli_variables: cli_variables,
-            www_dir: cli_opts.www
+            www_dir: cli_opts.www,
+            searchpath: cli_opts.searchpath
         };
         return plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, cli_opts.plugins_dir, opts);
     },
@@ -120,7 +121,7 @@ plugman.commands =  {
             if (err) throw err;
             else {
                 for(var plugin in plugins) {
-                    console.log(plugins[plugin].name, '-', plugins[plugin].description || 'no description provided'); 
+                    console.log(plugins[plugin].name, '-', plugins[plugin].description || 'no description provided');
                 }
             }
         });
@@ -141,7 +142,7 @@ plugman.commands =  {
     },
 
     'publish'  : function(cli_opts) {
-        var plugin_path = cli_opts.argv.remain; 
+        var plugin_path = cli_opts.argv.remain;
         if(!plugin_path) {
             return console.log(plugman.help());
         }
@@ -152,7 +153,7 @@ plugman.commands =  {
     },
 
     'unpublish': function(cli_opts) {
-        var plugin = cli_opts.argv.remain; 
+        var plugin = cli_opts.argv.remain;
         if(!plugin) {
             return console.log(plugman.help());
         }
