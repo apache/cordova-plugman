@@ -122,7 +122,7 @@ function callEngineScripts(engines) {
                     fs.chmodSync(engine.scriptSrc, '755');
                 }
                 var d = Q.defer();
-                child_process.exec(engine.scriptSrc, function(error, stdout, stderr) {
+                child_process.exec('"' + engine.scriptSrc + '"', function(error, stdout, stderr) {
                     if (error) {
                         require('../plugman').emit('log', 'Cordova project '+ engine.scriptSrc +' script failed, continuing anyways.');
                         engine.currentVersion = null;
