@@ -33,7 +33,7 @@
 var fs   = require('fs'),
     path = require('path'),
     glob = require('glob'),
-    plist = require('plist'),
+    plist = require('plist-with-patches'),
     bplist = require('bplist-parser'),
     et   = require('elementtree'),
     xml_helpers = require('./../util/xml-helpers'),
@@ -124,21 +124,25 @@ module.exports = {
                 }
             });
             // note down pbxproj framework munges in special section of munge obj
+            // CB-5238 this is only for systems frameworks
             var frameworks = platformTag.findall('framework');
             frameworks.forEach(function(f) {
-                if (!munge['framework']) {
-                    munge['framework'] = {};
+                var custom = f.attrib['custom'];
+                if(!custom) {
+                  if (!munge['framework']) {
+                      munge['framework'] = {};
+                  }
+                  var file = f.attrib['src'];
+                  var weak = f.attrib['weak'];
+                  weak = (weak == undefined || weak == null || weak != 'true' ? 'false' : 'true');
+                  if (!munge['framework'][file]) {
+                      munge['framework'][file] = {};
+                  }
+                  if (!munge['framework'][file][weak]) {
+                      munge['framework'][file][weak] = 0;
+                  }
+                  munge['framework'][file][weak] += 1;
                 }
-                var file = f.attrib['src'];
-                var weak = f.attrib['weak'];
-                weak = (weak == undefined || weak == null || weak != 'true' ? 'false' : 'true');
-                if (!munge['framework'][file]) {
-                    munge['framework'][file] = {};
-                }
-                if (!munge['framework'][file][weak]) {
-                    munge['framework'][file][weak] = 0;
-                }
-                munge['framework'][file][weak] += 1;
             });
         }
 
@@ -286,7 +290,7 @@ module.exports = {
         // save
         module.exports.save_platform_json(platform_config, plugins_dir, platform);
     },
-    add_plugin_changes:function(platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment) {
+    add_plugin_changes:function(platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
         var platform_config = module.exports.get_platform_json(plugins_dir, platform);
         var plugin_dir = path.join(plugins_dir, plugin_id);
 
@@ -297,7 +301,11 @@ module.exports = {
         // global munge looks at all plugins' changes to config files
         var global_munge = platform_config.config_munge;
 
-        var pbxproj, plistObj;
+        var plistObj;
+        // Cache some slow stuff for reuse with multiple plugins.
+        cache = cache || {};
+        var pbxproj = cache.pbxproj;
+
         if (platform == 'ios') {
             if (config_munge['plugins-plist']) {
                 var plistfile = glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist'));
@@ -310,7 +318,10 @@ module.exports = {
                 }
             }
             if (config_munge['framework']) {
-                pbxproj = ios_parser.parseProjectFile(project_dir);
+                if (!pbxproj) {
+                    // Note, parseProjectFile() is slow, ~250ms on MacBook Pro 2013.
+                    cache.pbxproj = pbxproj = ios_parser.parseProjectFile(project_dir);
+                }
             }
         }
 
@@ -353,8 +364,7 @@ module.exports = {
                                     // xml_child in this case is whether the framework should use weak or not
                                     var opt = {weak: (xml_child != 'true' ? false : true)};
                                     pbxproj.xcode.addFramework(src, opt);
-                                    // TODO: dont write on every loop eh
-                                    fs.writeFileSync(pbxproj.pbx, pbxproj.xcode.writeSync());
+                                    pbxproj.needs_write = true;
                                 }
                             } else {
                                 // this xml child is new, graft it (only if config file exists)
@@ -411,6 +421,9 @@ module.exports = {
 
         // save
         module.exports.save_platform_json(platform_config, plugins_dir, platform);
+        if ( pbxproj && pbxproj.needs_write ){
+            pbxproj.write()
+        }
     },
     process:function(plugins_dir, project_dir, platform) {
         checkPlatform(platform);
@@ -422,8 +435,9 @@ module.exports = {
         });
 
         // Now handle installation
+        var cache = {};
         platform_config.prepare_queue.installed.forEach(function(u) {
-            module.exports.add_plugin_changes(platform, project_dir, plugins_dir, u.plugin, u.vars, u.topLevel, true);
+            module.exports.add_plugin_changes(platform, project_dir, plugins_dir, u.plugin, u.vars, u.topLevel, true, cache);
         });
 
         platform_config = module.exports.get_platform_json(plugins_dir, platform);
@@ -445,6 +459,14 @@ function isBinaryPlist(filename) {
     // binary plists start with a magic header, "bplist"
     return buf.substring(0, 6) === 'bplist';
 }
+function getIOSProjectname(project_dir){
+  var matches = glob.sync(path.join(project_dir, '*.xcodeproj'));
+  var iospath= project_dir;
+  if (matches.length) {
+      iospath = path.basename(matches[0],'.xcodeproj');
+  }
+  return iospath;
+}
 
 // Some config-file target attributes are not qualified with a full leading directory, or contain wildcards. resolve to a real path in this function
 function resolveConfigFilePath(project_dir, platform, file) {
@@ -456,7 +478,12 @@ function resolveConfigFilePath(project_dir, platform, file) {
     } else {
         // special-case config.xml target that is just "config.xml". this should be resolved to the real location of the file.
         if (file == 'config.xml') {
-            if (platform == 'android') {
+            if (platform == 'ubuntu') {
+                filepath = path.join(project_dir, 'config.xml');
+            } else if (platform == 'ios') {
+                var iospath = getIOSProjectname(project_dir);
+                filepath = path.join(project_dir,iospath, 'config.xml');
+            } else if (platform == 'android') {
                 filepath = path.join(project_dir, 'res', 'xml', 'config.xml');
             } else {
                 var matches = glob.sync(path.join(project_dir, '**', 'config.xml'));

@@ -57,7 +57,6 @@ describe('install', function() {
                 expect(prepare).toHaveBeenCalled();
             });
         });
-
         it('should call fetch if provided plugin cannot be resolved locally', function() {
             fetchSpy = spyOn(plugman.raw, 'fetch').andReturn(Q(path.join(plugins_dir, dummyplugin)));
             exists.andReturn(false);
@@ -96,7 +95,7 @@ describe('install', function() {
                 cb(null, '2.5.0\n', '');
             });
             runs(function() {
-                installPromise(install('android', temp, 'engineplugin', plugins_dir, {}));
+                installPromise(install('android', temp, engineplugin, plugins_dir, {}));
             });
             waitsFor(function() { return done; }, 'install promise never resolved', 500);
             runs(function() {
@@ -109,7 +108,7 @@ describe('install', function() {
                 cb(null, '3.0.0rc1\n');
             });
             runs(function() {
-                installPromise(install('android', temp, 'engineplugin', plugins_dir, {}));
+                installPromise(install('android', temp, engineplugin, plugins_dir, {}));
             });
             waitsFor(function() { return done; }, 'install promise never resolved', 500);
             runs(function() {
@@ -122,7 +121,7 @@ describe('install', function() {
                 cb(null, '3.1.0\n', '');
             });
             runs(function() {
-                installPromise(install('android', temp, 'enginepluginAndroid', plugins_dir, {}));
+                installPromise(install('android', temp, 'EnginePluginAndroid', plugins_dir, {}));
             });
             waitsFor(function() { return done; }, 'install promise never resolved', 500);
             runs(function() {
@@ -135,7 +134,7 @@ describe('install', function() {
                 cb(null, '18\n', '');
             });
             runs(function() {
-                installPromise(install('android', temp, 'enginepluginAndroid', plugins_dir, {}));
+                installPromise(install('android', temp, 'EnginePluginAndroid', plugins_dir, {}));
             });
             waitsFor(function() { return done; }, 'install promise never resolved', 500);
             runs(function() {
@@ -145,7 +144,7 @@ describe('install', function() {
         it('should check plugmans version', function() {
             var spy = spyOn(semver, 'satisfies').andReturn(true);
             runs(function() {
-                installPromise(install('android', temp, 'engineplugin', plugins_dir, {}));
+                installPromise(install('android', temp, engineplugin, plugins_dir, {}));
             });
             waitsFor(function() { return done; }, 'install promise never resolved', 500);
             runs(function() {
@@ -155,7 +154,7 @@ describe('install', function() {
         it('should check custom engine version', function() {
             var spy = spyOn(semver, 'satisfies').andReturn(true);
             runs(function() {
-                installPromise(install('android', temp, 'engineplugin', plugins_dir, {}));
+                installPromise(install('android', temp, engineplugin, plugins_dir, {}));
             });
             waitsFor(function() { return done; }, 'install promise never resolved', 500);
             runs(function() {
@@ -165,7 +164,7 @@ describe('install', function() {
         it('should check custom engine version that supports multiple platforms', function() {
             var spy = spyOn(semver, 'satisfies').andReturn(true);
             runs(function() {
-                installPromise(install('android', temp, 'engineplugin', plugins_dir, {}));
+                installPromise(install('android', temp, engineplugin, plugins_dir, {}));
             });
             waitsFor(function() { return done; }, 'install promise never resolved', 500);
             runs(function() {
@@ -175,7 +174,7 @@ describe('install', function() {
         it('should not check custom engine version that is not supported for platform', function() {
             var spy = spyOn(semver, 'satisfies').andReturn(true);
             runs(function() {
-                installPromise(install('blackberry10', temp, 'engineplugin', plugins_dir, {}));
+                installPromise(install('blackberry10', temp, engineplugin, plugins_dir, {}));
             });
             waitsFor(function() { return done; }, 'install promise never resolved', 500);
             runs(function() {
@@ -188,7 +187,7 @@ describe('install', function() {
             });
             waitsFor(function() { return done; }, 'install promise never resolved', 500);
             runs(function() {
-                expect(actions_push.calls.length).toEqual(4);
+                expect(actions_push.calls.length).toEqual(5);
                 expect(c_a).toHaveBeenCalledWith(jasmine.any(Function), [jasmine.any(Object), path.join(plugins_dir, dummyplugin), temp, dummy_id], jasmine.any(Function), [jasmine.any(Object), temp, dummy_id]);
                 expect(proc).toHaveBeenCalled();
             });
@@ -307,7 +306,7 @@ describe('install', function() {
                 cb(null, '0.0.1\n', '');
             });
             runs(function() {
-                installPromise(install('android', temp, 'engineplugin', plugins_dir, {}));
+                installPromise(install('android', temp, engineplugin, plugins_dir, {}));
             });
             waitsFor(function(){ return done; }, 'install promise never resolved', 500);
             runs(function() {

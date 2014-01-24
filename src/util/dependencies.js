@@ -24,8 +24,7 @@ module.exports = {
             if (context == 'remove' && !fs.existsSync(xmlPath)) {
                 return; // dependency may have been forcefully removed
             }
-
-            var xml = xml_helpers.parseElementtreeSync(xmlPath);
+            var xml = xml_helpers.parseElementtreeSync(xmlPath);                                                            
             var deps = xml.findall('dependency');
             deps && deps.forEach(function(dep) {
                 var id = dep.attrib.id;
@@ -41,10 +40,13 @@ module.exports = {
 
     // Returns a list of top-level plugins which are (transitively) dependent on the given plugin.
     dependents: function(plugin_id, plugins_dir, platform) {
-        var dependency_info = module.exports.generate_dependency_info(plugins_dir, platform);
-        var graph = dependency_info.graph;
+        if(typeof plugins_dir == 'object')
+            var depsInfo = plugins_dir;
+        else
+            var depsInfo = module.exports.generate_dependency_info(plugins_dir, platform);
 
-        var tlps = dependency_info.top_level_plugins;
+        var graph = depsInfo.graph;
+        var tlps = depsInfo.top_level_plugins;
         var dependents = tlps.filter(function(tlp) {
             return tlp != plugin_id && graph.getChain(tlp).indexOf(plugin_id) >= 0;
         });

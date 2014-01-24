@@ -21,7 +21,7 @@ var path = require('path')
   , fs   = require('fs')
   , glob = require('glob')
   , xcode = require('xcode')
-  , plist = require('plist')
+  , plist = require('plist-with-patches')
   , shell = require('shelljs');
 
 module.exports = {
@@ -113,6 +113,27 @@ module.exports = {
                 destFile = path.resolve(project.resources_dir, path.basename(src));
             project.xcode.removeResourceFile(path.join('Resources', path.basename(src)));
             shell.rm('-rf', destFile);
+        }
+    },
+    "framework":{ // CB-5238 custom frameworks only
+        install:function(framework_el, plugin_dir, project_dir, plugin_id, project) {
+            var src = framework_el.attrib['src'],
+                custom = framework_el.attrib['custom'],
+                srcFile = path.resolve(plugin_dir, src),
+                targetDir = path.resolve(project.plugins_dir, plugin_id, path.basename(src));
+            if (!custom) throw new Error('cannot add non custom frameworks.');
+            if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <framework>');
+            if (fs.existsSync(targetDir)) throw new Error('target destination "' + targetDir + '" already exists');
+            shell.mkdir('-p', path.dirname(targetDir));
+            shell.cp('-R', srcFile, path.dirname(targetDir)); // frameworks are directories
+            var project_relative = path.relative(project_dir, targetDir);
+            project.xcode.addFramework(project_relative, {customFramework: true});
+        },
+        uninstall:function(framework_el, project_dir, plugin_id, project) {
+            var src = framework_el.attrib['src'],
+                targetDir = path.resolve(project.plugins_dir, plugin_id, path.basename(src));
+            project.xcode.removeFramework(targetDir, {customFramework: true});
+            shell.rm('-rf', targetDir);
         }
     },
     parseProjectFile:function(project_dir) {

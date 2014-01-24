@@ -27,7 +27,7 @@ var path = require('path')
     , Q = require('q')
     , plugman = require('./plugman');
 
-var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry10', 'wp7', 'wp8' , 'windows8', 'firefoxos' ]
+var known_opts = { 'platform' : [ 'ios', 'android', 'amazon-fireos', 'blackberry10', 'wp7', 'wp8' , 'windows8', 'firefoxos' ]
         , 'project' : path
         , 'plugin' : [String, path, url]
         , 'version' : Boolean
@@ -38,6 +38,7 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'blackberry10', 'wp7', 'wp8'
         , 'link': Boolean
         , 'variable' : Array
         , 'www': path
+        , 'searchpath' : [path, Array]
 }, shortHands = { 'var' : ['--variable'], 'v': ['--version'], 'h': ['--help'] };
 
 var cli_opts = nopt(known_opts, shortHands);

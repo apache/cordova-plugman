@@ -4,6 +4,7 @@ var uninstall = require('../src/uninstall'),
     dependencies = require('../src/util/dependencies'),
     xml_helpers = require('../src/util/xml-helpers'),
     plugins = require('../src/util/plugins.js'),
+    events  = require('../src/events'),   
     plugman = require('../plugman'),
     fs      = require('fs'),
     os      = require('osenv'),
@@ -73,7 +74,7 @@ describe('uninstallPlatform', function() {
             });
             waitsFor(function() { return done; }, 'promise never resolved', 500);
             runs(function() {
-                expect(actions_push.calls.length).toEqual(4);
+                expect(actions_push.calls.length).toEqual(5);
                 expect(c_a).toHaveBeenCalledWith(jasmine.any(Function), [jasmine.any(Object), temp, dummy_id], jasmine.any(Function), [jasmine.any(Object), path.join(plugins_dir, dummyplugin), temp, dummy_id]);
                 expect(proc).toHaveBeenCalled();
             });
@@ -82,7 +83,7 @@ describe('uninstallPlatform', function() {
         describe('with dependencies', function() {
             var parseET, emit, danglers, dependents;
             beforeEach(function() {
-                emit = spyOn(plugman, 'emit');
+                emit = spyOn(events, 'emit');
                 parseET = spyOn(xml_helpers, 'parseElementtreeSync').andReturn({
                     _root:{
                         attrib:{}
@@ -97,6 +98,7 @@ describe('uninstallPlatform', function() {
                 // TODO: this is a terrible way to do conditional mocking, i am sorry.
                 // if you have a better idea on how to mock out this recursive function, plz patch it
                 var counter = 0;
+
                 gen_deps.andCallFake(function() {
                     var obj;
                     if (counter === 0) {
@@ -189,7 +191,7 @@ describe('uninstallPlugin', function() {
         describe('with dependencies', function() {
             var parseET, emit;
             beforeEach(function() {
-                emit = spyOn(plugman, 'emit');
+                emit = spyOn(events, 'emit');
                 var counter = 0;
                 parseET = spyOn(xml_helpers, 'parseElementtreeSync').andCallFake(function(p) {
                     return {
@@ -281,7 +283,7 @@ describe('uninstall', function() {
             });
             waitsFor(function() { return done; }, 'promise never resolved', 500);
             runs(function() {
-                expect(actions_push.calls.length).toEqual(4);
+                expect(actions_push.calls.length).toEqual(5);
                 expect(c_a).toHaveBeenCalledWith(jasmine.any(Function), [jasmine.any(Object), temp, dummy_id], jasmine.any(Function), [jasmine.any(Object), path.join(plugins_dir, dummyplugin), temp, dummy_id]);
                 expect(proc).toHaveBeenCalled();
             });
