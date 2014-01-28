@@ -19,17 +19,15 @@
 
 var platform_modules = require('./platforms'),
     path            = require('path'),
-    app             = require('./app'),
     config_changes  = require('./util/config-changes'),
     xml_helpers     = require('./util/xml-helpers'),
     wp7             = require('./platforms/wp7'),
     wp8             = require('./platforms/wp8'),
     windows8        = require('./platforms/windows8'),
     fs              = require('fs'),
-    glob            = require('glob'),
     shell           = require('shelljs'),
     util            = require('util'),
-    plugman         = require('../plugman'),
+    events          = require('../plugman'),
     et              = require('elementtree');
 
 // Called on --prepare.
@@ -46,36 +44,33 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
     // - For each js-module (general first, then platform) build up an object storing the path and any clobbers, merges and runs for it.
     // - Write this object into www/cordova_plugins.json.
     // - Cordova.js contains code to load them at runtime from that file.
-    require('../plugman').emit('log', 'Preparing ' + platform + ' project');
+    events.emit('log', 'Preparing ' + platform + ' project');
     var platform_json = config_changes.get_platform_json(plugins_dir, platform);
     var wwwDir = www_dir || platform_modules[platform].www_dir(project_dir);
-
-    var appPaths = app.getPaths(path.join(wwwDir, '..'));
-    var jsDir = path.join(wwwDir, appPaths['www.js']);
 
     // Check if there are any plugins queued for uninstallation, and if so, remove any of their plugin web assets loaded in
     // via <js-module> elements
     var plugins_to_uninstall = platform_json.prepare_queue.uninstalled;
     if (plugins_to_uninstall && plugins_to_uninstall.length) {
-        var plugins_www = path.join(jsDir, 'plugins');
+        var plugins_www = path.join(wwwDir, 'plugins');
         if (fs.existsSync(plugins_www)) {
             plugins_to_uninstall.forEach(function(plug) {
                 var id = plug.id;
                 var plugin_modules = path.join(plugins_www, id);
                 if (fs.existsSync(plugin_modules)) {
-                    require('../plugman').emit('verbose', 'Removing plugins directory from www "'+plugin_modules+'"');
+                    events.emit('verbose', 'Removing plugins directory from www "'+plugin_modules+'"');
                     shell.rm('-rf', plugin_modules);
                 }
             });
         }
     }
 
-    require('../plugman').emit('verbose', 'Processing configuration changes for plugins.');
+    events.emit('verbose', 'Processing configuration changes for plugins.');
     config_changes.process(plugins_dir, project_dir, platform);
 
     // for windows phone plaform we need to add all www resources to the .csproj file
     // first we need to remove them all to prevent duplicates
-    var wp_csproj, file, fpath;
+    var wp_csproj;
     if(platform == 'wp7' || platform == 'wp8') {
         wp_csproj = (platform == wp7? wp7.parseProjectFile(project_dir) : wp8.parseProjectFile(project_dir));
         var item_groups = wp_csproj.xml.findall('ItemGroup');
@@ -83,9 +78,8 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
             var group = item_groups[i];
             var files = group.findall('Content');
             for (var j = 0, k = files.length; j < k; j++) {
-                file = files[j];
-                fpath = file.attrib.Include;
-                if (fpath.indexOf(appPaths['www.js'] + "\\plugins") != -1 || fpath.Include == appPaths['www.js'] + "\\cordova_plugins.js") {
+                var file = files[j];
+                if (file.attrib.Include.substr(0,11) == "www\\plugins" || file.attrib.Include == "www\\cordova_plugins.js") {
                     // remove file reference
                     group.remove(0, file);
                     // remove ItemGroup if empty
@@ -104,9 +98,8 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
             var group = item_groups[i];
             var files = group.findall('Content');
             for (var j = 0, k = files.length; j < k; j++) {
-                file = files[j];
-                fpath = file.attrib.Include;
-                if (fpath.indexOf(appPaths['www.js'] + "\\plugins") != -1  || fpath == appPaths['www.js'] + "\\cordova_plugins.js") {
+                var file = files[j];
+                if (file.attrib.Include.substr(0,11) == "www\\plugins" || file.attrib.Include == "www\\cordova_plugins.js") {
                     // remove file reference
                     group.remove(0, file);
                     // remove ItemGroup if empty
@@ -117,44 +110,38 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
                 }
             }
         }
-
     }
 
-    platform_json = config_changes.get_platform_json(plugins_dir, platform);
-    // This array holds all the metadata for each module and ends up in cordova_plugins.js
+    // This array holds all the metadata for each module and ends up in cordova_plugins.json
     var plugins = Object.keys(platform_json.installed_plugins).concat(Object.keys(platform_json.dependent_plugins));
     var moduleObjects = [];
     var pluginMetadata = {};
-    require('../plugman').emit('verbose', 'Iterating over installed plugins:', plugins);
+    events.emit('verbose', 'Iterating over installed plugins:', plugins);
 
     plugins && plugins.forEach(function(plugin) {
+										
+		
         var pluginDir = path.join(plugins_dir, plugin);
+        if( fs.statSync(pluginDir).isDirectory() ){
 
-        if( !fs.existsSync(pluginDir) ) {
-            plugman.emit('log', 'Could not find plugin in '+ pluginDir);
-            return;
-        }
-
-        // Do we need statSync()
-        if(fs.statSync(pluginDir).isDirectory()){
-            var xml = xml_helpers.parseElementtreeSync(path.join(pluginDir, 'plugin.xml'));
+            var xml = xml_helpers.parseElementtreeSync( path.join(pluginDir, 'plugin.xml'));
             var plugin_id = xml.getroot().attrib.id;
 
             // pluginMetadata is a mapping from plugin IDs to versions.
             pluginMetadata[plugin_id] = xml.getroot().attrib.version;
-    
+
             // add the plugins dir to the platform's www.
-            var platformPluginsDir = path.join(jsDir, 'plugins');
+            var platformPluginsDir = path.join(wwwDir, 'plugins');
             // XXX this should not be here if there are no js-module. It leaves an empty plugins/ directory
             shell.mkdir('-p', platformPluginsDir);
-    
+
             var generalModules = xml.findall('./js-module');
             var platformTag = xml.find(util.format('./platform[@name="%s"]', platform));
     
             generalModules = generalModules || [];
             var platformModules = platformTag ? platformTag.findall('./js-module') : [];
             var allModules = generalModules.concat(platformModules);
-    
+
             allModules.forEach(function(module) {
                 // Copy the plugin's files into the www directory.
                 // NB: We can't always use path.* functions here, because they will use platform slashes.
@@ -164,9 +151,8 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
                 var fsDirname = path.join.apply(path, pathParts.slice(0, -1));
                 var fsDir = path.join(platformPluginsDir, plugin_id, fsDirname);
                 shell.mkdir('-p', fsDir);
-    
+ 
                 // Read in the file, prepend the cordova.define, and write it back out.
-                // Why is the module name not just the plugin ID?
                 var moduleName = plugin_id + '.';
                 if (module.attrib.name) {
                     moduleName += module.attrib.name;
@@ -180,16 +166,15 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
                 scriptContent = 'cordova.define("' + moduleName + '", function(require, exports, module) { ' + scriptContent + '\n});\n';
                 fs.writeFileSync(path.join(platformPluginsDir, plugin_id, fsPath), scriptContent, 'utf-8');
                 if(platform == 'wp7' || platform == 'wp8' || platform == "windows8") {
-                    wp_csproj.addSourceFile(path.join(appPaths['www.js'], 'plugins', plugin_id, fsPath));
+                    wp_csproj.addSourceFile(path.join('www', 'plugins', plugin_id, fsPath));
                 }
-    
-                // TODO: allow bundling directly scriptContent.. config option?
+
                 // Prepare the object for cordova_plugins.json.
                 var obj = {
                     file: ['plugins', plugin_id, module.attrib.src].join('/'),
                     id: moduleName
                 };
- 
+
                 // Loop over the children of the js-module tag, collecting clobbers, merges and runs.
                 module.getchildren().forEach(function(child) {
                     if (child.tag.toLowerCase() == 'clobbers') {
@@ -206,7 +191,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
                         obj.runs = true;
                     }
                 });
-    
+
                 // Add it to the list of module objects bound for cordova_plugins.json
                 moduleObjects.push(obj);
             });
@@ -222,11 +207,11 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
     final_contents += '// BOTTOM OF METADATA\n';
     final_contents += '});'; // Close cordova.define.
 
-    require('../plugman').emit('verbose', 'Writing out cordova_plugins.js...');
-    fs.writeFileSync(path.join(jsDir, 'cordova_plugins.js'), final_contents, 'utf-8');
+    events.emit('verbose', 'Writing out cordova_plugins.js...');
+    fs.writeFileSync(path.join(wwwDir, 'cordova_plugins.js'), final_contents, 'utf-8');
 
     if(platform == 'wp7' || platform == 'wp8' || platform == "windows8") {
-        wp_csproj.addSourceFile(path.join(appPaths['www.js'], 'cordova_plugins.js'));
+        wp_csproj.addSourceFile(path.join('www', 'cordova_plugins.js'));
         wp_csproj.write();
     }
 };

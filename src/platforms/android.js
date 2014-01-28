@@ -17,10 +17,10 @@
  *
 */
 
-var fs = require('fs')  // use existsSync in 0.6.x
+var fs = require('fs')
    , path = require('path')
    , common = require('./common')
-   , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'));
+   , xml_helpers = require('../util/xml-helpers');
 
 module.exports = {
     www_dir:function(project_dir) {

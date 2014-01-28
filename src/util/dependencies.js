@@ -1,34 +1,44 @@
 var dep_graph = require('dep-graph'),
     path = require('path'),
-    fs = require('fs'),
     config_changes = require('./config-changes'),
     underscore = require('underscore'),
-    xml_helpers = require('./xml-helpers');
+    xml_helpers = require('./xml-helpers'),
+    package;
 
-module.exports = {
-    generate_dependency_info:function(plugins_dir, platform, context) {
+module.exports = package = {
+
+    resolvePath: function(plugin_id, plugins_dir)
+    {
+        return path.join(plugins_dir, plugin_id);
+    },
+
+    resolveConfig: function(plugin_id, plugins_dir)
+    {
+        return path.join(plugins_dir, plugin_id, 'plugin.xml');
+    },
+
+    generate_dependency_info:function(plugins_dir, platform) {
         var json = config_changes.get_platform_json(plugins_dir, platform);
+
+        // TODO: store whole dependency tree in plugins/[platform].json
+        // in case plugins are forcefully removed...
         var tlps = [];
         var graph = new dep_graph();
-        Object.keys(json.installed_plugins).forEach(function(tlp) {
-            tlps.push(tlp);
-            var xml = xml_helpers.parseElementtreeSync(path.join(plugins_dir, tlp, 'plugin.xml'));
+        Object.keys(json.installed_plugins).forEach(function(plugin_id) {
+            tlps.push(plugin_id);
+
+            var xml = xml_helpers.parseElementtreeSync( package.resolveConfig(plugin_id, plugins_dir) );
             var deps = xml.findall('dependency');
+
             deps && deps.forEach(function(dep) {
-                var id = dep.attrib.id;
-                graph.add(tlp, id);
+                graph.add(plugin_id, dep.attrib.id);
             });
         });
-        Object.keys(json.dependent_plugins).forEach(function(plug) {
-            var xmlPath = path.join(plugins_dir, plug, 'plugin.xml');
-            if (context == 'remove' && !fs.existsSync(xmlPath)) {
-                return; // dependency may have been forcefully removed
-            }
-            var xml = xml_helpers.parseElementtreeSync(xmlPath);                                                            
+        Object.keys(json.dependent_plugins).forEach(function(plugin_id) {
+            var xml = xml_helpers.parseElementtreeSync( package.resolveConfig(plugin_id, plugins_dir) );
             var deps = xml.findall('dependency');
             deps && deps.forEach(function(dep) {
-                var id = dep.attrib.id;
-                graph.add(plug, id);
+                graph.add(plugin_id, dep.attrib.id);
             });
         });
 
@@ -43,7 +53,7 @@ module.exports = {
         if(typeof plugins_dir == 'object')
             var depsInfo = plugins_dir;
         else
-            var depsInfo = module.exports.generate_dependency_info(plugins_dir, platform);
+            var depsInfo = package.generate_dependency_info(plugins_dir, platform);
 
         var graph = depsInfo.graph;
         var tlps = depsInfo.top_level_plugins;
@@ -57,11 +67,15 @@ module.exports = {
     // Returns a list of plugins which the given plugin depends on, for which it is the only dependent.
     // In other words, if the given plugin were deleted, these dangling dependencies should be deleted too.
     danglers: function(plugin_id, plugins_dir, platform) {
-        var dependency_info = module.exports.generate_dependency_info(plugins_dir, platform);
-        var graph = dependency_info.graph;
+        if(typeof plugins_dir == 'object')
+            var depsInfo = plugins_dir;
+        else
+            var depsInfo = package.generate_dependency_info(plugins_dir, platform);
+
+        var graph = depsInfo.graph;
         var dependencies = graph.getChain(plugin_id);
 
-        var tlps = dependency_info.top_level_plugins;
+        var tlps = depsInfo.top_level_plugins;
         var diff_arr = [];
         tlps.forEach(function(tlp) {
             if (tlp != plugin_id) {

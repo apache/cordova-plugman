@@ -10,65 +10,86 @@ var path = require('path'),
     underscore = require('underscore'),
     Q = require('q'),
     plugins = require('./util/plugins'),
-    events = require('./events');
-    platform_modules = require('./platforms');
+    events = require('./events'),
+    platform_modules = require('./platforms'),
+    plugman = require('../plugman');
 
 // possible options: cli_variables, www_dir
 // Returns a promise.
 module.exports = function(platform, project_dir, id, plugins_dir, options) {
+    options = options || {};
+    options.is_top_level = true;
+    plugins_dir = plugins_dir || path.join(project_dir, 'cordova', 'plugins');
+
+    // Allow path to file to grab an ID
+    var xml_path = path.join(id, 'plugin.xml');
+    if ( fs.existsSync(xml_path) ) {
+        var plugin_et  = xml_helpers.parseElementtreeSync(xml_path),
+        id = plugin_et._root.attrib['id'];
+    }
+
     return module.exports.uninstallPlatform(platform, project_dir, id, plugins_dir, options)
-    .then(function(uninstalled) {
+    .then(function() {
         return module.exports.uninstallPlugin(id, plugins_dir, options);
     });
 }
 
 // Returns a promise.
 module.exports.uninstallPlatform = function(platform, project_dir, id, plugins_dir, options) {
+    options = options || {};
+    options.is_top_level = true;
+    plugins_dir = plugins_dir || path.join(project_dir, 'cordova', 'plugins');
+
     if (!platform_modules[platform]) {
         return Q.reject(new Error(platform + " not supported."));
     }
 
     var plugin_dir = path.join(plugins_dir, id);
-
     if (!fs.existsSync(plugin_dir)) {
         return Q.reject(new Error('Plugin "' + id + '" not found. Already uninstalled?'));
     }
 
     var current_stack = new action_stack();
 
-    options.is_top_level = true;
-    return runUninstall(current_stack, platform, project_dir, plugin_dir, plugins_dir, options);
+    return runUninstallPlatform(current_stack, platform, project_dir, plugin_dir, plugins_dir, options);
 };
 
 // Returns a promise.
 module.exports.uninstallPlugin = function(id, plugins_dir, options) {
+    options = options || {};
+
     var plugin_dir = path.join(plugins_dir, id);
-    var quoteId = "'" + id + "'";
+
+//console.log("uninstallPlugin() -- " + plugin_dir);
 
     // If already removed, skip.
-    if (!fs.existsSync(plugin_dir)) {
+    if (!fs.existsSync(plugin_dir)) {			 
+//console.log("NOT EXISTS "+ plugin_dir);
+
         return Q();
     }
-    var xml_path     = path.join(plugin_dir, 'plugin.xml')
-      , plugin_et    = xml_helpers.parseElementtreeSync(xml_path);
+    var xml_path  = path.join(plugin_dir, 'plugin.xml')
+      , plugin_et = xml_helpers.parseElementtreeSync(xml_path);
 
-    events.emit('log', 'Deleting ' + quoteId);
-    options = options || {};
+    events.emit('log', 'Deleting "'+ id +'"');
 
     var doDelete = function(id) {
         var plugin_dir = path.join(plugins_dir, id);
-        if (!fs.existsSync(plugin_dir)) return;
+        if ( !fs.existsSync(plugin_dir) ) 
+            return;
+
         shell.rm('-rf', plugin_dir);
-        events.emit('verbose', quoteId + ' deleted.');
+        events.emit('verbose', '"'+ id +'" deleted.');
     };
 
     // We've now lost the metadata for the plugins that have been uninstalled, so we can't use that info.
     // Instead, we list all dependencies of the target plugin, and check the remaining metadata to see if
     // anything depends on them, or if they're listed as top-level.
     // If neither, they can be deleted.
+    var top_plugin_id = id;
     var toDelete = plugin_et.findall('dependency');
     toDelete = toDelete && toDelete.length ? toDelete.map(function(p) { return p.attrib.id; }) : [];
-    toDelete.push(id);
+    toDelete.push(top_plugin_id);
 
     // Okay, now we check if any of these are depended on, or top-level.
     // Find the installed platforms by whether they have a metadata file.
@@ -77,31 +98,35 @@ module.exports.uninstallPlugin = function(id, plugins_dir, options) {
     });
 
     var dependList = {};
-    platforms.forEach(function(platform) {
-        var depsInfo = dependencies.generate_dependency_info(plugins_dir, platform, 'remove');
+    platforms.forEach(function(platform) {				   
+        var depsInfo = dependencies.generate_dependency_info(plugins_dir, platform);
         var tlps = depsInfo.top_level_plugins,
-            deps;
+            deps, i;
 
         toDelete.forEach(function(plugin) {
-            if (tlps.indexOf(plugin) >= 0 ) {
-                dependList[plugin] = tlps.join(',');
-            } else if( (deps = dependencies.dependents(plugin, depsInfo)) && deps.length ) {
-                dependList[plugin] = deps.join(',');
+            deps = dependencies.dependents(plugin, depsInfo);
+            var i = deps.indexOf(top_plugin_id);
+            if(i >= 0)
+                 deps.splice(i, 1); // remove current/top-level plugin as blocking uninstall
+
+            if(deps.length) {
+                dependList[plugin] = deps.join(', ');
             }
         });
     });
+ 
+// console.log(dependList);
 
-    var forced = (options.indexOf('-f') + options.indexOf('--force') > -2);   
     var i, plugin_id, msg;
     for(i in toDelete) {
         plugin_id = toDelete[i];
 
         if( dependList[plugin_id] ) {
-            msg = quoteId + ' is required by ('+ dependList[plugin_id] + ')';
-            if(forced) {
+            msg = '"' + plugin_id + '" is required by ('+ dependList[plugin_id] + ')';
+            if(options.force) {
                 events.emit('log', msg +' but forcing removal.');
             } else {
-                events.emit('log', msg +' and cannot be removed (hint: use -f or --force)');
+                events.emit('warn', msg +' and cannot be removed (hint: use -f or --force)');
                 continue;
             }
         }
@@ -114,43 +139,46 @@ module.exports.uninstallPlugin = function(id, plugins_dir, options) {
 
 // possible options: cli_variables, www_dir, is_top_level
 // Returns a promise
-function runUninstall(actions, platform, project_dir, plugin_dir, plugins_dir, options) {
-    var xml_path     = path.join(plugin_dir, 'plugin.xml');
-    if (!fs.existsSync(xml_path)) {
-        // log warning?
-        return;
-    }
-    
-    var plugin_et    = xml_helpers.parseElementtreeSync(xml_path);
-    var plugin_id    = plugin_et._root.attrib['id'];
+function runUninstallPlatform(actions, platform, project_dir, plugin_dir, plugins_dir, options) {
     options = options || {};
 
-    var dependency_info = dependencies.generate_dependency_info(plugins_dir, platform, 'remove');
+    var xml_path     = path.join(plugin_dir, 'plugin.xml');
+    var plugin_et    = xml_helpers.parseElementtreeSync(xml_path);
+    var plugin_id    = plugin_et._root.attrib['id'];
+
+    // deps info can be passed recusively
+    var depsInfo = options.depsInfo || dependencies.generate_dependency_info(plugins_dir, platform, 'remove');
+
     // Check that this plugin has no dependents.
-    var dependents = dependencies.dependents(plugin_id, plugins_dir, platform);
+    var dependents = dependencies.dependents(plugin_id, depsInfo, platform);
+// console.log(dependents);
+
     if(options.is_top_level && dependents && dependents.length > 0) {
-        events.emit('verbose', 'Other top-level plugins (' + dependents.join(', ') + ') depend on ' + plugin_id + ', skipping uninstallation.');
-        return Q();
+        var msg = "The plugin '"+ plugin_id +"' is required by (" + dependents.join(', ') + ")";
+        if(options.force) {
+            events.emit("info", msg + " but forcing removal");	
+        } else {
+            return Q.reject( new Error(msg + ", skipping uninstallation.") );
+        }
     }
 
     // Check how many dangling dependencies this plugin has.
-    var dependency_info = dependencies.generate_dependency_info(plugins_dir, platform);
-    var deps = dependency_info.graph.getChain(plugin_id);
-    var danglers = dependencies.danglers(plugin_id, plugins_dir, platform);
+    var deps = depsInfo.graph.getChain(plugin_id);
+    var danglers = dependencies.danglers(plugin_id, depsInfo, platform);
 
-    var forced = options.cmd && (options.cmd.indexOf('-f') + options.cmd.indexOf('-force') > -2);   
     var promise;
     if (deps && deps.length && danglers && danglers.length) {
-        events.emit('log', 'Uninstalling ' + danglers.length + ' dangling dependent plugins.');
+        events.emit('log', 'Uninstalling ' + danglers.length + ' dependent plugins.');
         promise = Q.all(
             danglers.map(function(dangler) {
-                var dependent_path = path.join(plugins_dir, dangler);
-                var opts = {
-                    www_dir: options.www_dir,
-                    cli_variables: options.cli_variables,
-                    is_top_level: dependency_info.top_level_plugins.indexOf(dangler) > -1
-                };
-                return runUninstall(actions, platform, project_dir, dependent_path, plugins_dir, opts);
+                var dependent_path = dependencies.resolvePath(dangler, plugins_dir);
+
+                var opts = plugman.cloneOptions(options, { 
+                    is_top_level: depsInfo.top_level_plugins.indexOf(dangler) > -1,
+                    depsInfo: depsInfo
+                });
+
+                return runUninstallPlatform(actions, platform, project_dir, dependent_path, plugins_dir, opts);
             })
         );
     } else {
@@ -214,9 +242,8 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
         // WIN!
         events.emit('verbose', plugin_id + ' uninstalled from ' + platform + '.');
         // queue up the plugin so prepare can remove the config changes
-        config_changes.add_uninstalled_plugin_to_prepare_queue(plugins_dir, path.basename(plugin_dir), platform, is_top_level);
+        config_changes.add_uninstalled_plugin_to_prepare_queue(plugins_dir, plugin_id, platform, is_top_level);
         // call prepare after a successful uninstall
-        require('./../plugman').prepare(project_dir, platform, plugins_dir, www_dir);
+        plugman.prepare(project_dir, platform, plugins_dir, www_dir);
     });
 }
-
