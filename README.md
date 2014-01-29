@@ -30,6 +30,7 @@ You must have `git` on your PATH to be able to install plugins directly from rem
 * BlackBerry 10
 * Windows Phone (7+8)
 * Windows 8
+* Tizen
 
 ## Command Line Usage
     plugman help
