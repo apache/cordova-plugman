@@ -21,10 +21,9 @@
 # Cordova-plugman Release Notes
 
 ## 0.19.0 (Jan 30, 2014)
-* CB-5804: added repo & issues to plugman publish
+* CB-5804 Added repo & issue information into `plugman publish`
 * CB-5299 Cache pbxproj to avoid re-parsing it for each plugin.
 * Update node-xcode dependency to 0.6.6
-* Bump node-xcode dependency version
 
 ## 0.18.0 (Jan 15, 2014)
 * CB-5770 plugman prepare.js script content wrapping no longer allows ending parens/braces to be commented out from end of line comment
