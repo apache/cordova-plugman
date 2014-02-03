@@ -17,6 +17,7 @@
   },
   "engineStrict":true,
   "dependencies": {
+    "temp": "0.6.x",
     "nopt": "1.0.x",
     "glob": "3.2.x",
     "elementtree": "0.1.5",
