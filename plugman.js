@@ -19,7 +19,7 @@
 
 // copyright (c) 2013 Andrew Lunny, Adobe Systems
 
-var emitter = require('./src/events');
+var events = require('./src/events');
 
 function addProperty(o, symbol, modulePath, doWrap) {
     var val = null;
@@ -51,10 +51,14 @@ function addProperty(o, symbol, modulePath, doWrap) {
     });
 }
 
-plugman = emitter;
-plugman.on = emitter.addListener;
-plugman.off = emitter.removeListener;
-plugman.raw = {};
+plugman = {
+    on:                 function() { events.on.apply(events, arguments); },
+    off:                function() { events.removeListener.apply(events, arguments); },
+    removeAllListeners: function() { events.removeListeners.apply(events, arguments); },
+    emit:               function() { events.emit.apply(events, arguments); },
+    raw:                {}
+};
+
 plugman.cloneOptions = function(options, newOpt) {
 	var opt = {}, o;
 	for(o in options)

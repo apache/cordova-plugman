@@ -73,8 +73,10 @@ function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options)
 }
 
 function checkEngines(engines) {
+
     for(var i = 0; i < engines.length; i++) {
         var engine = engines[i];
+
         if(semver.satisfies(engine.currentVersion, engine.minVersion) || engine.currentVersion === null){
             // engine ok!
         }else{
@@ -277,7 +279,6 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
         }
 
         // Check for dependencies
-        var promise = [];
         var dependencies = plugin_et.findall('dependency') || [];
         dependencies = dependencies.concat(plugin_et.findall('./platform[@name="'+platform+'"]/dependency'));
         if(dependencies && dependencies.length)
