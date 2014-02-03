@@ -161,6 +161,11 @@
         </js-module>
     </platform>
 
+		<!-- tizen -->
+		<platform name="tizen">
+			<source-file src="src/tizen/dummer.js"/>
+		</platform>
+
     <!-- windows8 -->
     <platform name="windows8">
         <config-file target="config.xml" parent="/*">
