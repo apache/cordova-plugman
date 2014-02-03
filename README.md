@@ -29,6 +29,7 @@ You must have `git` on your PATH to be able to install plugins directly from rem
 * Android
 * BlackBerry 10
 * Windows Phone (7+8)
+* Windows 8
 
 ## Command Line Usage
     plugman help
