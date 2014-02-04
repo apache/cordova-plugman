@@ -41,6 +41,7 @@ var fs   = require('fs'),
     xml_helpers = require('./../util/xml-helpers'),
     ios_parser = require('./../platforms/ios'),
     platforms = require('./../platforms'),
+    events = require('./../events'),
     plist_helpers = require('./../util/plist-helpers');
 
 
@@ -254,7 +255,7 @@ function remove_plugin_changes(platform, project_dir, plugins_dir, plugin_name, 
                 Object.keys(config_munge[file]).forEach(function(key) {
                     if (global_munge[file][key] && plistObj) {
                         // TODO: REMOVE in 3.4 (https://issues.apache.org/jira/browse/CB-4456)
-                        require('../../plugman').emit('warn', 'DEPRECATION WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
+                        events.emit('warn', 'DEPRECATION WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
                         delete plistObj.Plugins[key];
                         // TODO: don't write out on every change, do it once.
                         fs.writeFileSync(plistfile, plist.build(plistObj));
@@ -384,7 +385,7 @@ function add_plugin_changes(platform, project_dir, plugins_dir, plugin_id, plugi
                 var key = selector;
                 if (!global_munge[file][key] && plistObj) {
                     // TODO: REMOVE in 3.4 (https://issues.apache.org/jira/browse/CB-4456)
-                    require('../../plugman').emit('warn', 'DEPRECATION WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
+                    events.emit('warn', 'DEPRECATION WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
                     // this key does not exist, so add it to plist
                     global_munge[file][key] = config_munge[file][key];
                     plistObj.Plugins[key] = config_munge[file][key];
