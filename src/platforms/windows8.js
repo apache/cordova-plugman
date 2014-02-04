@@ -20,8 +20,10 @@
 var common = require('./common'),
     path = require('path'),
     glob = require('glob'),
-    w8jsproj = require('../util/w8jsproj');
-    xml_helpers = require('../util/xml-helpers');
+    shell = require('shelljs'),
+    fs   = require('fs');
+var w8jsproj = require('../util/w8jsproj');
+var xml_helpers = require('../util/xml-helpers');
 
 
 module.exports = {
@@ -63,6 +65,50 @@ module.exports = {
             require('../../plugman').emit('verbose', 'resource-file is not supported for Windows 8');
         },
         uninstall:function(el, project_dir) {
+        }
+    },
+    "framework":{ // CB-5238 custom frameworks only
+        install:function(framework_el, plugin_dir, project_dir, plugin_id, project) {
+            // console.log("framework install called with framework_el:: " + framework_el);
+            // console.log("framework install called with plugin_dir:: " + plugin_dir );
+            // console.log("framework install called with project_dir:: " + project_dir);
+            // console.log("framework install called with plugin_id:: " + plugin_id);
+            // console.log("framework install called with project::" + project);
+
+            // console.log("project.plugins_dir " + project.plugins_dir);
+
+            // framework_el attributes : src, custom
+            var src = framework_el.attrib['src'];
+            console.log("src = " + src);
+
+            var custom = framework_el.attrib['custom'];
+
+            var srcFile = path.resolve(plugin_dir, src);
+
+            console.log("path.basename(src) = " + path.basename(src));
+
+            console.log("srcFile = " + srcFile);
+
+            var targetDir = path.resolve(project.plugins_dir, plugin_id, path.basename(src));
+
+            if (!custom) throw new Error('cannot add non custom frameworks.');
+            if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <framework>');
+            if (fs.existsSync(targetDir)) throw new Error('target destination "' + targetDir + '" already exists');
+            shell.mkdir('-p', path.dirname(targetDir));
+            shell.cp('-R', srcFile, path.dirname(targetDir)); // frameworks are directories
+            var project_relative = path.relative(project_dir, targetDir);
+            
+            console.log("project_relative = " + project_relative);
+            project.addProjectReference(project_relative);
+            //project.xcode.addFramework(project_relative, {customFramework: true});
+        },
+        uninstall:function(framework_el, project_dir, plugin_id, project) {
+            var src = framework_el.attrib['src'],
+                baseDir = path.resolve(project.plugins_dir, plugin_id),
+                targetDir = path.resolve(baseDir, path.basename(src));
+            project.removeProjectReference(targetDir);
+            shell.rm('-rf', baseDir);
+
         }
     }
 };

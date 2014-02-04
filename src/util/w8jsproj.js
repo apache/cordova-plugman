@@ -5,7 +5,9 @@
 
 var xml_helpers = require('./xml-helpers'),
     et = require('elementtree'),
-    fs = require('fs');
+    fs = require('fs'),
+    shell = require('shelljs'),
+    path = require('path');
 
 function jsproj(location) {
     require('../../plugman').emit('verbose','creating jsproj from project at : ' + location);
@@ -17,6 +19,7 @@ function jsproj(location) {
 jsproj.prototype = {
     location:null,
     xml:null,
+    plugins_dir:"Plugins",
     write:function() {
         fs.writeFileSync(this.location, this.xml.write({indent:4}), 'utf-8');
     },
@@ -29,6 +32,22 @@ jsproj.prototype = {
             content.attrib.Include = relative_path;
             item.append(content);
         this.xml.getroot().append(item);
+    },
+    addProjectReference:function(relative_path) {
+        require('../../plugman').emit('verbose','adding project reference to ' + relative_path);
+        // read the guid from the project
+
+        // could be a .csproj, or ???
+        var projectFullPath = shell.ls(path.join(relative_path,"*.*proj"));
+        var pluginProjectXML = xml_helpers.parseElementtreeSync(".\\" + projectFullPath);
+        var guidNode = pluginProjectXML.findall("PropertyGroup/ProjectGuid")[0];
+        var projectGuid = guidNode.text;
+        console.log("Project guid = " + projectGuid);
+
+
+    },
+    removeProjectReference:function(relative_path) {
+        require('../../plugman').emit('verbose','removing project reference to ' + relative_path);
     },
     removeSourceFile:function(relative_path) {
         relative_path = relative_path.split('/').join('\\');
