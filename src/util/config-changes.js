@@ -30,6 +30,8 @@
  * reference counts.
  */
 
+/* jshint node:true, sub:true, indent:4  */
+
 var fs   = require('fs'),
     path = require('path'),
     glob = require('glob'),
@@ -52,22 +54,28 @@ var keep_these_frameworks = [
     'AssetsLibrary.framework'
 ];
 
-module.exports = {
-add_installed_plugin_to_prepare_queue:function(plugins_dir, plugin, platform, vars, is_top_level) {
+var package = module.exports = {};
+
+package.add_installed_plugin_to_prepare_queue = add_installed_plugin_to_prepare_queue;
+function add_installed_plugin_to_prepare_queue(plugins_dir, plugin, platform, vars, is_top_level) {
     checkPlatform(platform);
     var config = module.exports.get_platform_json(plugins_dir, platform);
     config.prepare_queue.installed.push({'plugin':plugin, 'vars':vars, 'topLevel':is_top_level});
     module.exports.save_platform_json(config, plugins_dir, platform);
-},
-add_uninstalled_plugin_to_prepare_queue:function(plugins_dir, plugin, platform, is_top_level) {
+}
+
+package.add_uninstalled_plugin_to_prepare_queue = add_uninstalled_plugin_to_prepare_queue;
+function add_uninstalled_plugin_to_prepare_queue(plugins_dir, plugin, platform, is_top_level) {
     checkPlatform(platform);
 
     var plugin_xml = xml_helpers.parseElementtreeSync(path.join(plugins_dir, plugin, 'plugin.xml'));
     var config = module.exports.get_platform_json(plugins_dir, platform);
     config.prepare_queue.uninstalled.push({'plugin':plugin, 'id':plugin_xml._root.attrib['id'], 'topLevel':is_top_level});
     module.exports.save_platform_json(config, plugins_dir, platform);
-},
-get_platform_json:function(plugins_dir, platform) {
+}
+
+package.get_platform_json = get_platform_json;
+function get_platform_json(plugins_dir, platform) {
     checkPlatform(platform);
 
     var filepath = path.join(plugins_dir, platform + '.json');
@@ -83,14 +91,18 @@ get_platform_json:function(plugins_dir, platform) {
         fs.writeFileSync(filepath, JSON.stringify(config), 'utf-8');
         return config;
     }
-},
-save_platform_json:function(config, plugins_dir, platform) {
+}
+
+package.save_platform_json = save_platform_json;
+function save_platform_json(config, plugins_dir, platform) {
     checkPlatform(platform);
 
     var filepath = path.join(plugins_dir, platform + '.json');
     fs.writeFileSync(filepath, JSON.stringify(config), 'utf-8');
-},
-generate_plugin_config_munge:function(plugin_dir, platform, project_dir, vars) {
+}
+
+package.generate_plugin_config_munge = generate_plugin_config_munge;
+function generate_plugin_config_munge(plugin_dir, platform, project_dir, vars) {
     checkPlatform(platform);
 
     vars = vars || {};
@@ -129,19 +141,19 @@ generate_plugin_config_munge:function(plugin_dir, platform, project_dir, vars) {
         frameworks.forEach(function(f) {
             var custom = f.attrib['custom'];
             if(!custom) {
-              if (!munge['framework']) {
-                  munge['framework'] = {};
-              }
-              var file = f.attrib['src'];
-              var weak = f.attrib['weak'];
-              weak = (weak == undefined || weak == null || weak != 'true' ? 'false' : 'true');
-              if (!munge['framework'][file]) {
-                  munge['framework'][file] = {};
-              }
-              if (!munge['framework'][file][weak]) {
-                  munge['framework'][file][weak] = 0;
-              }
-              munge['framework'][file][weak] += 1;
+                if (!munge['framework']) {
+                    munge['framework'] = {};
+                }
+                var file = f.attrib['src'];
+                var weak = f.attrib['weak'];
+                weak = (weak === undefined || weak === null || weak != 'true' ? 'false' : 'true');
+                if (!munge['framework'][file]) {
+                    munge['framework'][file] = {};
+                }
+                if (!munge['framework'][file][weak]) {
+                    munge['framework'][file][weak] = 0;
+                }
+                munge['framework'][file][weak] += 1;
             }
         });
     }
@@ -160,10 +172,12 @@ generate_plugin_config_munge:function(plugin_dir, platform, project_dir, vars) {
             // 1. stringify each xml
             var stringified = (new et.ElementTree(xml)).write({xml_declaration:false});
             // interp vars
-            vars && Object.keys(vars).forEach(function(key) {
-                var regExp = new RegExp("\\$" + key, "g");
-                stringified = stringified.replace(regExp, vars[key]);
-            });
+            if (vars) {
+                Object.keys(vars).forEach(function(key) {
+                    var regExp = new RegExp("\\$" + key, "g");
+                    stringified = stringified.replace(regExp, vars[key]);
+                });
+            }
             // 2. add into munge
             if (!munge[target][parent][stringified]) {
                 munge[target][parent][stringified] = 0;
@@ -172,9 +186,11 @@ generate_plugin_config_munge:function(plugin_dir, platform, project_dir, vars) {
         });
     });
     return munge;
-},
+}
 
-remove_plugin_changes:function(platform, project_dir, plugins_dir, plugin_name, plugin_id, is_top_level, should_decrement) {
+
+package.remove_plugin_changes = remove_plugin_changes;
+function remove_plugin_changes(platform, project_dir, plugins_dir, plugin_name, plugin_id, is_top_level, should_decrement) {
     var platform_config = module.exports.get_platform_json(plugins_dir, platform);
     var plugin_dir = path.join(plugins_dir, plugin_name);
     var plugin_vars = (is_top_level ? platform_config.installed_plugins[plugin_id] : platform_config.dependent_plugins[plugin_id]);
@@ -282,15 +298,17 @@ remove_plugin_changes:function(platform, project_dir, plugins_dir, plugin_name, 
 
     // Remove from installed_plugins
     if (is_top_level) {
-        delete platform_config.installed_plugins[plugin_id]
+        delete platform_config.installed_plugins[plugin_id];
     } else {
-        delete platform_config.dependent_plugins[plugin_id]
+        delete platform_config.dependent_plugins[plugin_id];
     }
 
     // save
     module.exports.save_platform_json(platform_config, plugins_dir, platform);
-},
-add_plugin_changes:function(platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
+}
+
+package.add_plugin_changes = add_plugin_changes;
+function add_plugin_changes(platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
     var platform_config = module.exports.get_platform_json(plugins_dir, platform);
     var plugin_dir = path.join(plugins_dir, plugin_id);
 
@@ -422,10 +440,12 @@ add_plugin_changes:function(platform, project_dir, plugins_dir, plugin_id, plugi
     // save
     module.exports.save_platform_json(platform_config, plugins_dir, platform);
     if ( pbxproj && pbxproj.needs_write ){
-        pbxproj.write()
+        pbxproj.write();
     }
-},
-process:function(plugins_dir, project_dir, platform) {
+}
+
+package.process = process_all;
+function process_all(plugins_dir, project_dir, platform) {
     checkPlatform(platform);
 
     var platform_config = module.exports.get_platform_json(plugins_dir, platform);
@@ -449,7 +469,6 @@ process:function(plugins_dir, project_dir, platform) {
     // save
     module.exports.save_platform_json(platform_config, plugins_dir, platform);
 }
-};
 
 // determine if a plist file is binary
 function isBinaryPlist(filename) {
@@ -459,21 +478,23 @@ function isBinaryPlist(filename) {
     // binary plists start with a magic header, "bplist"
     return buf.substring(0, 6) === 'bplist';
 }
+
 function getIOSProjectname(project_dir){
-  var matches = glob.sync(path.join(project_dir, '*.xcodeproj'));
-  var iospath= project_dir;
-  if (matches.length) {
-      iospath = path.basename(matches[0],'.xcodeproj');
-  }
-  return iospath;
+    var matches = glob.sync(path.join(project_dir, '*.xcodeproj'));
+    var iospath= project_dir;
+    if (matches.length) {
+        iospath = path.basename(matches[0],'.xcodeproj');
+    }
+    return iospath;
 }
 
 // Some config-file target attributes are not qualified with a full leading directory, or contain wildcards. resolve to a real path in this function
 function resolveConfigFilePath(project_dir, platform, file) {
     var filepath = path.join(project_dir, file);
+    var matches;
     if (file.indexOf('*') > -1) {
         // handle wildcards in targets using glob.
-        var matches = glob.sync(path.join(project_dir, '**', file));
+        matches = glob.sync(path.join(project_dir, '**', file));
         if (matches.length) filepath = matches[0];
     } else {
         // special-case config.xml target that is just "config.xml". this should be resolved to the real location of the file.
@@ -486,7 +507,7 @@ function resolveConfigFilePath(project_dir, platform, file) {
             } else if (platform == 'android') {
                 filepath = path.join(project_dir, 'res', 'xml', 'config.xml');
             } else {
-                var matches = glob.sync(path.join(project_dir, '**', 'config.xml'));
+                matches = glob.sync(path.join(project_dir, '**', 'config.xml'));
                 if (matches.length) filepath = matches[0];
             }
         }
