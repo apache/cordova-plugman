@@ -30,6 +30,8 @@
  * reference counts.
  */
 
+/* jshint node:true, sub:true, indent:4  */
+
 var fs   = require('fs'),
     path = require('path'),
     glob = require('glob'),
@@ -139,19 +141,19 @@ function generate_plugin_config_munge(plugin_dir, platform, project_dir, vars) {
         frameworks.forEach(function(f) {
             var custom = f.attrib['custom'];
             if(!custom) {
-              if (!munge['framework']) {
-                  munge['framework'] = {};
-              }
-              var file = f.attrib['src'];
-              var weak = f.attrib['weak'];
-              weak = (weak == undefined || weak == null || weak != 'true' ? 'false' : 'true');
-              if (!munge['framework'][file]) {
-                  munge['framework'][file] = {};
-              }
-              if (!munge['framework'][file][weak]) {
-                  munge['framework'][file][weak] = 0;
-              }
-              munge['framework'][file][weak] += 1;
+                if (!munge['framework']) {
+                    munge['framework'] = {};
+                }
+                var file = f.attrib['src'];
+                var weak = f.attrib['weak'];
+                weak = (weak === undefined || weak === null || weak != 'true' ? 'false' : 'true');
+                if (!munge['framework'][file]) {
+                    munge['framework'][file] = {};
+                }
+                if (!munge['framework'][file][weak]) {
+                    munge['framework'][file][weak] = 0;
+                }
+                munge['framework'][file][weak] += 1;
             }
         });
     }
@@ -170,10 +172,12 @@ function generate_plugin_config_munge(plugin_dir, platform, project_dir, vars) {
             // 1. stringify each xml
             var stringified = (new et.ElementTree(xml)).write({xml_declaration:false});
             // interp vars
-            vars && Object.keys(vars).forEach(function(key) {
-                var regExp = new RegExp("\\$" + key, "g");
-                stringified = stringified.replace(regExp, vars[key]);
-            });
+            if (vars) {
+                Object.keys(vars).forEach(function(key) {
+                    var regExp = new RegExp("\\$" + key, "g");
+                    stringified = stringified.replace(regExp, vars[key]);
+                });
+            }
             // 2. add into munge
             if (!munge[target][parent][stringified]) {
                 munge[target][parent][stringified] = 0;
@@ -294,9 +298,9 @@ function remove_plugin_changes(platform, project_dir, plugins_dir, plugin_name, 
 
     // Remove from installed_plugins
     if (is_top_level) {
-        delete platform_config.installed_plugins[plugin_id]
+        delete platform_config.installed_plugins[plugin_id];
     } else {
-        delete platform_config.dependent_plugins[plugin_id]
+        delete platform_config.dependent_plugins[plugin_id];
     }
 
     // save
@@ -436,7 +440,7 @@ function add_plugin_changes(platform, project_dir, plugins_dir, plugin_id, plugi
     // save
     module.exports.save_platform_json(platform_config, plugins_dir, platform);
     if ( pbxproj && pbxproj.needs_write ){
-        pbxproj.write()
+        pbxproj.write();
     }
 }
 
@@ -476,20 +480,21 @@ function isBinaryPlist(filename) {
 }
 
 function getIOSProjectname(project_dir){
-  var matches = glob.sync(path.join(project_dir, '*.xcodeproj'));
-  var iospath= project_dir;
-  if (matches.length) {
-      iospath = path.basename(matches[0],'.xcodeproj');
-  }
-  return iospath;
+    var matches = glob.sync(path.join(project_dir, '*.xcodeproj'));
+    var iospath= project_dir;
+    if (matches.length) {
+        iospath = path.basename(matches[0],'.xcodeproj');
+    }
+    return iospath;
 }
 
 // Some config-file target attributes are not qualified with a full leading directory, or contain wildcards. resolve to a real path in this function
 function resolveConfigFilePath(project_dir, platform, file) {
     var filepath = path.join(project_dir, file);
+    var matches;
     if (file.indexOf('*') > -1) {
         // handle wildcards in targets using glob.
-        var matches = glob.sync(path.join(project_dir, '**', file));
+        matches = glob.sync(path.join(project_dir, '**', file));
         if (matches.length) filepath = matches[0];
     } else {
         // special-case config.xml target that is just "config.xml". this should be resolved to the real location of the file.
@@ -502,7 +507,7 @@ function resolveConfigFilePath(project_dir, platform, file) {
             } else if (platform == 'android') {
                 filepath = path.join(project_dir, 'res', 'xml', 'config.xml');
             } else {
-                var matches = glob.sync(path.join(project_dir, '**', 'config.xml'));
+                matches = glob.sync(path.join(project_dir, '**', 'config.xml'));
                 if (matches.length) filepath = matches[0];
             }
         }
