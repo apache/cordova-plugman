@@ -40,11 +40,9 @@ var fs   = require('fs'),
     et   = require('elementtree'),
     xml_helpers = require('./../util/xml-helpers'),
     ios_parser = require('./../platforms/ios'),
+    platforms = require('./../platforms'),
     plist_helpers = require('./../util/plist-helpers');
 
-function checkPlatform(platform) {
-    if (!(platform in require('./../platforms'))) throw new Error('platform "' + platform + '" not recognized.');
-}
 
 // These frameworks are required by cordova-ios by default. We should never add/remove them.
 var keep_these_frameworks = [
@@ -54,7 +52,38 @@ var keep_these_frameworks = [
     'AssetsLibrary.framework'
 ];
 
+
 var package = module.exports = {};
+
+package.process = process_all;
+function process_all(plugins_dir, project_dir, platform) {
+    checkPlatform(platform);
+
+    var platform_config = module.exports.get_platform_json(plugins_dir, platform);
+    // Uninstallation first
+    platform_config.prepare_queue.uninstalled.forEach(function(u) {
+        module.exports.remove_plugin_changes(platform, project_dir, plugins_dir, u.plugin, u.id, u.topLevel, true);
+    });
+
+    // Now handle installation
+    var cache = {};
+    platform_config.prepare_queue.installed.forEach(function(u) {
+        module.exports.add_plugin_changes(platform, project_dir, plugins_dir, u.plugin, u.vars, u.topLevel, true, cache);
+    });
+
+    platform_config = module.exports.get_platform_json(plugins_dir, platform);
+
+    // Empty out uninstalled queue.
+    platform_config.prepare_queue.uninstalled = [];
+    // Empty out installed queue.
+    platform_config.prepare_queue.installed = [];
+    // save
+    module.exports.save_platform_json(platform_config, plugins_dir, platform);
+}
+
+function checkPlatform(platform) {
+    if (!(platform in platforms)) throw new Error('platform "' + platform + '" not recognized.');
+}
 
 package.add_installed_plugin_to_prepare_queue = add_installed_plugin_to_prepare_queue;
 function add_installed_plugin_to_prepare_queue(plugins_dir, plugin, platform, vars, is_top_level) {
@@ -106,7 +135,7 @@ function generate_plugin_config_munge(plugin_dir, platform, project_dir, vars) {
     checkPlatform(platform);
 
     vars = vars || {};
-    var platform_handler = require('./../platforms')[platform];
+    var platform_handler = platforms[platform];
     // Add PACKAGE_NAME variable into vars
     if (!vars['PACKAGE_NAME']) {
         vars['PACKAGE_NAME'] = platform_handler.package_name(project_dir);
@@ -442,32 +471,6 @@ function add_plugin_changes(platform, project_dir, plugins_dir, plugin_id, plugi
     if ( pbxproj && pbxproj.needs_write ){
         pbxproj.write();
     }
-}
-
-package.process = process_all;
-function process_all(plugins_dir, project_dir, platform) {
-    checkPlatform(platform);
-
-    var platform_config = module.exports.get_platform_json(plugins_dir, platform);
-    // Uninstallation first
-    platform_config.prepare_queue.uninstalled.forEach(function(u) {
-        module.exports.remove_plugin_changes(platform, project_dir, plugins_dir, u.plugin, u.id, u.topLevel, true);
-    });
-
-    // Now handle installation
-    var cache = {};
-    platform_config.prepare_queue.installed.forEach(function(u) {
-        module.exports.add_plugin_changes(platform, project_dir, plugins_dir, u.plugin, u.vars, u.topLevel, true, cache);
-    });
-
-    platform_config = module.exports.get_platform_json(plugins_dir, platform);
-
-    // Empty out uninstalled queue.
-    platform_config.prepare_queue.uninstalled = [];
-    // Empty out installed queue.
-    platform_config.prepare_queue.installed = [];
-    // save
-    module.exports.save_platform_json(platform_config, plugins_dir, platform);
 }
 
 // determine if a plist file is binary
