@@ -38,6 +38,7 @@ var fs   = require('fs'),
     plist = require('plist-with-patches'),
     bplist = require('bplist-parser'),
     et   = require('elementtree'),
+    underscore = require('underscore'),
     xml_helpers = require('./../util/xml-helpers'),
     ios_parser = require('./../platforms/ios'),
     platforms = require('./../platforms'),
@@ -337,15 +338,23 @@ function remove_plugin_changes(platform, project_dir, plugins_dir, plugin_name, 
     module.exports.save_platform_json(platform_config, plugins_dir, platform);
 }
 
-package.add_plugin_changes = add_plugin_changes;
-function add_plugin_changes(platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
-    var platform_config = module.exports.get_platform_json(plugins_dir, platform);
-    var plugin_dir = path.join(plugins_dir, plugin_id);
+function PlatformMunger(platform, project_dir, plugins_dir) {
+    this.platform = platform;
+    this.project_dir = project_dir;
+    this.plugins_dir = plugins_dir;
+}
+
+PlatformMunger.prototype.apply_plugin_changes = apply_plugin_changes;
+
+function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment, cache) {
+    var self = this;
+    var platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
+    var plugin_dir = path.join(self.plugins_dir, plugin_id);
 
     plugin_id = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'), 'utf-8')._root.attrib['id'];
 
     // get config munge, aka how should this plugin change various config files
-    var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, platform, project_dir, plugin_vars);
+    var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, self.platform, self.project_dir, plugin_vars);
     // global munge looks at all plugins' changes to config files
     var global_munge = platform_config.config_munge;
 
@@ -354,9 +363,9 @@ function add_plugin_changes(platform, project_dir, plugins_dir, plugin_id, plugi
     cache = cache || {};
     var pbxproj = cache.pbxproj;
 
-    if (platform == 'ios') {
+    if (self.platform == 'ios') {
         if (config_munge['plugins-plist']) {
-            var plistfile = glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist'));
+            var plistfile = glob.sync(path.join(self.project_dir, '**', '{PhoneGap,Cordova}.plist'));
             if (plistfile.length > 0) {
                 plistfile = plistfile[0];
                 // determine if this is a binary or ascii plist and choose the parser
@@ -368,7 +377,7 @@ function add_plugin_changes(platform, project_dir, plugins_dir, plugin_id, plugi
         if (config_munge['framework']) {
             if (!pbxproj) {
                 // Note, parseProjectFile() is slow, ~250ms on MacBook Pro 2013.
-                cache.pbxproj = pbxproj = ios_parser.parseProjectFile(project_dir);
+                cache.pbxproj = pbxproj = ios_parser.parseProjectFile(self.project_dir);
             }
         }
     }
@@ -378,10 +387,10 @@ function add_plugin_changes(platform, project_dir, plugins_dir, plugin_id, plugi
         if (!global_munge[file]) {
             global_munge[file] = {};
         }
-        var is_framework = (platform == 'ios' && file == 'framework');
+        var is_framework = (self.platform == 'ios' && file == 'framework');
         Object.keys(config_munge[file]).forEach(function(selector) {
             // Handle plist files on ios.
-            if (file == 'plugins-plist' && platform == 'ios') {
+            if (file == 'plugins-plist' && self.platform == 'ios') {
                 var key = selector;
                 if (!global_munge[file][key] && plistObj) {
                     // TODO: REMOVE in 3.4 (https://issues.apache.org/jira/browse/CB-4456)
@@ -416,42 +425,7 @@ function add_plugin_changes(platform, project_dir, plugins_dir, plugin_id, plugi
                             }
                         } else {
                             // this xml child is new, graft it (only if config file exists)
-                            // config file may be in a place not exactly specified in the target
-                            var filepath = resolveConfigFilePath(project_dir, platform, file);
-
-                            if (fs.existsSync(filepath)) {
-
-                                // look at ext and do proper config change based on file type
-                                var ext = path.extname(filepath);
-                                // Windows8 uses an appxmanifest, and wp8 will likely use
-                                // the same in a future release
-                                // TODO: consider proper xml file detection, via <?xml version='1.0' encoding='utf-8'?>
-                                if (ext == '.xml' || ext == '.appxmanifest') {
-                                    var xml_to_graft = [et.XML(xml_child)];
-                                    // TODO: could parse the filepath once per unique target instead of on every change
-                                    var doc = xml_helpers.parseElementtreeSync(filepath);
-                                    if (xml_helpers.graftXML(doc, xml_to_graft, selector)) {
-                                        // were good, write out the file!
-                                        fs.writeFileSync(filepath, doc.write({indent: 4}), 'utf-8');
-                                    } else {
-                                        // uh oh
-                                        throw new Error('grafting xml at selector "' + selector + '" from "' + filepath + '" during config install went bad :(');
-                                    }
-                                } else {
-                                    // plist file
-                                    var pl = (isBinaryPlist(filepath) ? bplist : plist);
-                                    // TODO: could parse the filepath once per unique target instead of on every change
-                                    var plistObj = pl.parseFileSync(filepath);
-                                    if (plist_helpers.graftPLIST(plistObj, xml_child, selector)) {
-                                        var regExp = new RegExp("<string>[ \t\r\n]+?</string>", "g");
-                                        fs.writeFileSync(filepath, plist.build(plistObj).replace(regExp, "<string></string>"));
-                                    } else {
-                                        throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
-                                    }
-                                }
-                            } else {
-                                // TODO: ignore if file doesnt exist?
-                            }
+                            self.graft_child(file, xml_child, selector);
                         }
                     }
                 });
@@ -468,11 +442,68 @@ function add_plugin_changes(platform, project_dir, plugins_dir, plugin_id, plugi
     }
 
     // save
-    module.exports.save_platform_json(platform_config, plugins_dir, platform);
+    module.exports.save_platform_json(platform_config, self.plugins_dir, self.platform);
     if ( pbxproj && pbxproj.needs_write ){
         pbxproj.write();
     }
 }
+
+// Graft a child node if the corresponding config file exists.
+PlatformMunger.prototype.graft_child = graft_child;
+function graft_child(file, xml_child, selector) {
+    var self = this;
+    // config file may be in a place not exactly specified in the target
+    var filepath = resolveConfigFilePath(self.project_dir, self.platform, file);
+
+    if (fs.existsSync(filepath)) {
+
+        // look at ext and do proper config change based on file type
+        var ext = path.extname(filepath);
+        // Windows8 uses an appxmanifest, and wp8 will likely use
+        // the same in a future release
+        // TODO: consider proper xml file detection, via <?xml version='1.0' encoding='utf-8'?>
+        if (ext == '.xml' || ext == '.appxmanifest') {
+            var xml_to_graft = [et.XML(xml_child)];
+            // TODO: could parse the filepath once per unique target instead of on every change
+            var doc = xml_helpers.parseElementtreeSync(filepath);
+            if (xml_helpers.graftXML(doc, xml_to_graft, selector)) {
+                // were good, write out the file!
+                fs.writeFileSync(filepath, doc.write({indent: 4}), 'utf-8');
+            } else {
+                // uh oh
+                throw new Error('grafting xml at selector "' + selector + '" from "' + filepath + '" during config install went bad :(');
+            }
+        } else {
+            // plist file
+            var pl = (isBinaryPlist(filepath) ? bplist : plist);
+            // TODO: could parse the filepath once per unique target instead of on every change
+            var plistObj = pl.parseFileSync(filepath);
+            if (plist_helpers.graftPLIST(plistObj, xml_child, selector)) {
+                var regExp = new RegExp("<string>[ \t\r\n]+?</string>", "g");
+                fs.writeFileSync(filepath, plist.build(plistObj).replace(regExp, "<string></string>"));
+            } else {
+                throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
+            }
+        }
+    }
+}
+
+function ConfigKeeper() {
+    this._cached = {};
+}
+
+ConfigKeeper.prototype.get = ConfigKeeper_get;
+function ConfigKeeper_get(project_dir, platform, file) {
+    var self = this;
+}
+
+/////////////////////////// END
+
+package.add_plugin_changes = function (platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
+    var munger = new PlatformMunger(platform, project_dir, plugins_dir);
+    munger.apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment, cache);
+};
+
 
 // determine if a plist file is binary
 function isBinaryPlist(filename) {
