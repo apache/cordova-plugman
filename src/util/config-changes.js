@@ -342,10 +342,10 @@ function PlatformMunger(platform, project_dir, plugins_dir) {
     this.platform = platform;
     this.project_dir = project_dir;
     this.plugins_dir = plugins_dir;
+    this.config_keeper = new ConfigKeeper();
 }
 
 PlatformMunger.prototype.apply_plugin_changes = apply_plugin_changes;
-
 function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment, cache) {
     var self = this;
     var platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
@@ -425,7 +425,10 @@ function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_incre
                             }
                         } else {
                             // this xml child is new, graft it (only if config file exists)
-                            self.graft_child(file, xml_child, selector);
+                            var config_file = self.config_keeper.get(self.project_dir, self.platform, file);
+                            if (config_file.exists) {
+                                config_file.graft_child(selector, xml_child);
+                            }
                         }
                     }
                 });
@@ -446,46 +449,7 @@ function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_incre
     if ( pbxproj && pbxproj.needs_write ){
         pbxproj.write();
     }
-}
-
-// Graft a child node if the corresponding config file exists.
-PlatformMunger.prototype.graft_child = graft_child;
-function graft_child(file, xml_child, selector) {
-    var self = this;
-    // config file may be in a place not exactly specified in the target
-    var filepath = resolveConfigFilePath(self.project_dir, self.platform, file);
-
-    if (fs.existsSync(filepath)) {
-
-        // look at ext and do proper config change based on file type
-        var ext = path.extname(filepath);
-        // Windows8 uses an appxmanifest, and wp8 will likely use
-        // the same in a future release
-        // TODO: consider proper xml file detection, via <?xml version='1.0' encoding='utf-8'?>
-        if (ext == '.xml' || ext == '.appxmanifest') {
-            var xml_to_graft = [et.XML(xml_child)];
-            // TODO: could parse the filepath once per unique target instead of on every change
-            var doc = xml_helpers.parseElementtreeSync(filepath);
-            if (xml_helpers.graftXML(doc, xml_to_graft, selector)) {
-                // were good, write out the file!
-                fs.writeFileSync(filepath, doc.write({indent: 4}), 'utf-8');
-            } else {
-                // uh oh
-                throw new Error('grafting xml at selector "' + selector + '" from "' + filepath + '" during config install went bad :(');
-            }
-        } else {
-            // plist file
-            var pl = (isBinaryPlist(filepath) ? bplist : plist);
-            // TODO: could parse the filepath once per unique target instead of on every change
-            var plistObj = pl.parseFileSync(filepath);
-            if (plist_helpers.graftPLIST(plistObj, xml_child, selector)) {
-                var regExp = new RegExp("<string>[ \t\r\n]+?</string>", "g");
-                fs.writeFileSync(filepath, plist.build(plistObj).replace(regExp, "<string></string>"));
-            } else {
-                throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
-            }
-        }
-    }
+    self.config_keeper.save_all();
 }
 
 function ConfigKeeper() {
@@ -495,9 +459,111 @@ function ConfigKeeper() {
 ConfigKeeper.prototype.get = ConfigKeeper_get;
 function ConfigKeeper_get(project_dir, platform, file) {
     var self = this;
+    var fake_path = path.join(project_dir, platform, file);
+    if (self._cached[fake_path]) {
+        return self._cached[fake_path];
+    }
+    // File was not cached, need to load.
+    var config_file = new ConfigFile(project_dir, platform, file);
+    self._cached[fake_path] = config_file;
+    return config_file;
 }
 
-/////////////////////////// END
+ConfigKeeper.prototype.save_all = ConfigKeeper_save_all;
+function ConfigKeeper_save_all() {
+    var self = this;
+    var keys = Object.keys(this._cached);
+    keys.forEach(function (fake_path) {
+        var config_file = self._cached[fake_path];
+        if (config_file.is_changed) config_file.save();
+    });
+}
+
+function ConfigFile(project_dir, platform, file_tag) {
+    this.project_dir = project_dir;
+    this.platform = platform;
+    this.file_tag = file_tag;
+    //this.filepath = resolveConfigFilePath(project_dir, platform, file_tag);
+    this.load();
+    // type (xml, plist, csproj??)
+    // filepath
+    // data
+    // raw?
+    // stat_on_last_read
+    this.is_changed = false;
+    // graft_child()
+    // save()
+    // save_if_changed()
+    // reload() ?
+}
+
+
+// GRAFT
+ConfigFile.prototype.graft_child = ConfigFile_graft_child;
+function ConfigFile_graft_child(selector, xml_child) {
+    var self = this;
+    var filepath = self.filepath;
+    var result;
+    if (self.type === 'xml') {
+        var xml_to_graft = [et.XML(xml_child)];
+        result = xml_helpers.graftXML(self.data, xml_to_graft, selector);
+        if ( !result) {
+            throw new Error('grafting xml at selector "' + selector + '" from "' + filepath + '" during config install went bad :(');
+        }
+    } else {
+        // plist file
+        var pl = (isBinaryPlist(filepath) ? bplist : plist);
+        result = plist_helpers.graftPLIST(self.data, xml_child, selector);
+        if ( !result ) {
+            throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
+        }
+    }
+    self.is_changed = true;
+}
+
+
+//// SAVE
+ConfigFile.prototype.save = ConfigFile_save;
+function ConfigFile_save() {
+    var self = this;
+    if (self.type === 'xml') {
+        fs.writeFileSync(self.filepath, self.data.write({indent: 4}), 'utf-8');
+    } else {
+        // plist
+        var regExp = new RegExp("<string>[ \t\r\n]+?</string>", "g");
+        fs.writeFileSync(self.filepath, plist.build(self.data).replace(regExp, "<string></string>"));
+    }
+}
+
+
+//// LOAD
+ConfigFile.prototype.load = ConfigFile_load;
+function ConfigFile_load() {
+    var self = this;
+
+    // config file may be in a place not exactly specified in the target
+    var filepath = self.filepath = resolveConfigFilePath(self.project_dir, self.platform, self.file_tag);
+
+    if (!fs.existsSync(filepath)) {
+        self.exists = false;
+        return;
+    }
+    self.exists = true;
+    var ext = path.extname(filepath);
+    // Windows8 uses an appxmanifest, and wp8 will likely use
+    // the same in a future release
+    if (ext == '.xml' || ext == '.appxmanifest') {
+        self.type = 'xml';
+        self.data = xml_helpers.parseElementtreeSync(filepath);
+    } else {
+        // plist file
+        self.type = 'plist';
+        var pl = (isBinaryPlist(filepath) ? bplist : plist);
+        self.data = pl.parseFileSync(filepath);
+    }
+}
+
+/////////////////////////// END 
 
 package.add_plugin_changes = function (platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
     var munger = new PlatformMunger(platform, project_dir, plugins_dir);
