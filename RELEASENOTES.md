@@ -20,7 +20,12 @@
 -->
 # Cordova-plugman Release Notes
 
-### 0.18.0 (Jan 15, 2014)
+## 0.19.0 (Jan 30, 2014)
+* CB-5804 Added repo & issue information into `plugman publish`
+* CB-5299 Cache pbxproj to avoid re-parsing it for each plugin.
+* Update node-xcode dependency to 0.6.6
+
+## 0.18.0 (Jan 15, 2014)
 * CB-5770 plugman prepare.js script content wrapping no longer allows ending parens/braces to be commented out from end of line comment
 * CB-4871 Reduced package size significantly.
 * CB-5720 Allow <resource-file> on Android

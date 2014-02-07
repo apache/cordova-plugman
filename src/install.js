@@ -137,8 +137,8 @@ function callEngineScripts(engines) {
                 if(!isWindows) { // not required on Windows
                     fs.chmodSync(engine.scriptSrc, '755');
                 }
-
-                child_process.exec(engine.scriptSrc, function(error, stdout, stderr) {								
+                var d = Q.defer();
+                child_process.exec('"' + engine.scriptSrc + '"', function(error, stdout, stderr) {
                     if (error) {
                         events.emit('verbose', 'Cordova project '+ engine.scriptSrc +' script failed, continuing anyways.');
                         engine.currentVersion = null;
