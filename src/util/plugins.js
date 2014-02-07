@@ -84,7 +84,7 @@ module.exports = {
         });
     },
 
-    // List the directories in the path, ignoring any files, .svn, etc.
+    // List the directories in the path, ignoring any files and some directories used by revision control systems.
     findPlugins:function(plugins_dir) {
         var plugins = [],
             stats;
@@ -92,7 +92,7 @@ module.exports = {
         if (fs.existsSync(plugins_dir)) {
             plugins = fs.readdirSync(plugins_dir).filter(function (fileName) {
                stats = fs.statSync(path.join(plugins_dir, fileName));
-               return fileName != '.svn' && fileName != 'CVS' && stats.isDirectory();
+               return fileName != '.svn' && fileName != 'CVS' && fileName != '.git' && stats.isDirectory();
             });
         }
 
