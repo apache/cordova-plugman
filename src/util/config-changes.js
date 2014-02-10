@@ -220,21 +220,32 @@ function generate_plugin_config_munge(plugin_dir, platform, project_dir, vars) {
 }
 
 
-package.remove_plugin_changes = remove_plugin_changes;
-function remove_plugin_changes(platform, project_dir, plugins_dir, plugin_name, plugin_id, is_top_level, should_decrement) {
-    var platform_config = module.exports.get_platform_json(plugins_dir, platform);
-    var plugin_dir = path.join(plugins_dir, plugin_name);
+// Objects of the PlatformMunger class can deal with config file of a single porject.
+function PlatformMunger(platform, project_dir, plugins_dir) {
+    this.platform = platform;
+    this.project_dir = project_dir;
+    this.plugins_dir = plugins_dir;
+    this.config_keeper = new ConfigKeeper();
+}
+
+
+//package.remove_plugin_changes = remove_plugin_changes;
+PlatformMunger.prototype.unmerge_plugin_changes = unmerge_plugin_changes;
+function unmerge_plugin_changes(plugin_name, plugin_id, is_top_level, should_decrement) {
+    var self = this;
+    var platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
+    var plugin_dir = path.join(self.plugins_dir, plugin_name);
     var plugin_vars = (is_top_level ? platform_config.installed_plugins[plugin_id] : platform_config.dependent_plugins[plugin_id]);
 
     // get config munge, aka how did this plugin change various config files
-    var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, platform, project_dir, plugin_vars);
+    var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, self.platform, self.project_dir, plugin_vars);
     // global munge looks at all plugins' changes to config files
     var global_munge = platform_config.config_munge;
 
     var plistObj, pbxproj;
-    if (platform == 'ios') {
+    if (self.platform == 'ios') {
         if (global_munge['plugins-plist'] && config_munge['plugins-plist']) {
-            var plistfile = glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist'));
+            var plistfile = glob.sync(path.join(self.project_dir, '**', '{PhoneGap,Cordova}.plist'));
             if (plistfile.length > 0) {
                 plistfile = plistfile[0];
                 // determine if this is a binary or ascii plist and choose the parser
@@ -244,13 +255,13 @@ function remove_plugin_changes(platform, project_dir, plugins_dir, plugin_name, 
             }
         }
         if (global_munge['framework'] && config_munge['framework']) {
-            pbxproj = ios_parser.parseProjectFile(project_dir);
+            pbxproj = ios_parser.parseProjectFile(self.project_dir);
         }
     }
 
     // Traverse config munge and decrement global munge
     Object.keys(config_munge).forEach(function(file) {
-        if (file == 'plugins-plist' && platform == 'ios') {
+        if (file == 'plugins-plist' && self.platform == 'ios') {
             // Handle plist files in ios
             if (global_munge[file]) {
                 Object.keys(config_munge[file]).forEach(function(key) {
@@ -266,7 +277,7 @@ function remove_plugin_changes(platform, project_dir, plugins_dir, plugin_name, 
             }
         } else if (global_munge[file]) {
             // Handle arbitrary XML/pbxproj changes
-            var is_framework = (platform == 'ios' && file == 'framework');
+            var is_framework = (self.platform == 'ios' && file == 'framework');
             Object.keys(config_munge[file]).forEach(function(selector) {
                 if (global_munge[file][selector]) {
                     Object.keys(config_munge[file][selector]).forEach(function(xml_child) {
@@ -285,36 +296,9 @@ function remove_plugin_changes(platform, project_dir, plugins_dir, plugin_name, 
                                     }
                                 } else {
                                     // this xml child is no longer necessary, prune it
-                                    // config.xml referenced in ios config changes refer to the project's config.xml, which we need to glob for.
-                                    var filepath = resolveConfigFilePath(project_dir, platform, file);
-                                    if (fs.existsSync(filepath)) {
-
-                                        // look at ext and do proper config change based on file type
-                                        var ext = path.extname(filepath);
-                                        // Windows8 uses an appxmanifest, and wp8 will likely use
-                                        // the same in a future release
-                                        // TODO: consider proper xml file detection, via <?xml version='1.0' encoding='utf-8'?>
-                                        if (ext == '.xml' || ext == '.appxmanifest') {
-                                            var xml_to_prune = [et.XML(xml_child)];
-                                            var doc = xml_helpers.parseElementtreeSync(filepath);
-                                            if (xml_helpers.pruneXML(doc, xml_to_prune, selector)) {
-                                                // were good, write out the file!
-                                                // TODO: don't write out on every change, do it once.
-                                                fs.writeFileSync(filepath, doc.write({indent: 4}), 'utf-8');
-                                            } else {
-                                                // uh oh
-                                                throw new Error('pruning xml at selector "' + selector + '" from "' + filepath + '" during config uninstall went bad :(');
-                                            }
-                                        } else {
-                                            // plist file
-                                            var pl = (isBinaryPlist(filepath) ? bplist : plist);
-                                            var plistObj = pl.parseFileSync(filepath);
-                                            if (plist_helpers.prunePLIST(plistObj, xml_child, selector)) {
-                                                fs.writeFileSync(filepath, plist.build(plistObj));
-                                            } else {
-                                                throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
-                                            }
-                                        }
+                                    var config_file = self.config_keeper.get(self.project_dir, self.platform, file);
+                                    if (config_file.exists) {
+                                        config_file.prune_child(selector, xml_child);
                                     }
                                 }
                                 delete global_munge[file][selector][xml_child];
@@ -335,15 +319,10 @@ function remove_plugin_changes(platform, project_dir, plugins_dir, plugin_name, 
     }
 
     // save
-    module.exports.save_platform_json(platform_config, plugins_dir, platform);
+    module.exports.save_platform_json(platform_config, self.plugins_dir, self.platform);
+    self.config_keeper.save_all();
 }
 
-function PlatformMunger(platform, project_dir, plugins_dir) {
-    this.platform = platform;
-    this.project_dir = project_dir;
-    this.plugins_dir = plugins_dir;
-    this.config_keeper = new ConfigKeeper();
-}
 
 PlatformMunger.prototype.apply_plugin_changes = apply_plugin_changes;
 function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment, cache) {
@@ -497,7 +476,6 @@ function ConfigFile(project_dir, platform, file_tag) {
     // reload() ?
 }
 
-
 // GRAFT
 ConfigFile.prototype.graft_child = ConfigFile_graft_child;
 function ConfigFile_graft_child(selector, xml_child) {
@@ -512,7 +490,6 @@ function ConfigFile_graft_child(selector, xml_child) {
         }
     } else {
         // plist file
-        var pl = (isBinaryPlist(filepath) ? bplist : plist);
         result = plist_helpers.graftPLIST(self.data, xml_child, selector);
         if ( !result ) {
             throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
@@ -520,6 +497,27 @@ function ConfigFile_graft_child(selector, xml_child) {
     }
     self.is_changed = true;
 }
+
+// PRUNE
+ConfigFile.prototype.prune_child = ConfigFile_prune_child;
+function ConfigFile_prune_child(selector, xml_child) {
+    var self = this;
+    var filepath = self.filepath;
+    var result;
+    if (self.type === 'xml') {
+        var xml_to_graft = [et.XML(xml_child)];
+        result = xml_helpers.pruneXML(self.data, xml_to_graft, selector);
+    } else {
+        // plist file
+        result = plist_helpers.prunePLIST(self.data, xml_child, selector);
+    }
+    if ( !result) {
+        var err_msg = 'Pruning at selector "' + selector + '" from "' + filepath + '" went bad.';
+        throw new Error(err_msg);
+    }
+    self.is_changed = true;
+}
+
 
 
 //// SAVE
@@ -558,8 +556,12 @@ function ConfigFile_load() {
     } else {
         // plist file
         self.type = 'plist';
-        var pl = (isBinaryPlist(filepath) ? bplist : plist);
-        self.data = pl.parseFileSync(filepath);
+        // TODO: isBinaryPlist() reads the file and then parse re-reads it again.
+        //       We always write out text plist, not bianray.
+        //       Do we still need to support binary plist?
+        //       If yes, use plist.parseStringSync() and read the file once.
+        self.plist_module = (isBinaryPlist(filepath) ? bplist : plist);
+        self.data = self.plist_module.parseFileSync(filepath);
     }
 }
 
@@ -568,6 +570,11 @@ function ConfigFile_load() {
 package.add_plugin_changes = function (platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
     var munger = new PlatformMunger(platform, project_dir, plugins_dir);
     munger.apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment, cache);
+};
+
+package.remove_plugin_changes = function (platform, project_dir, plugins_dir, plugin_name, plugin_id, is_top_level, should_decrement) {
+    var munger = new PlatformMunger(platform, project_dir, plugins_dir);
+    munger.unmerge_plugin_changes(plugin_name, plugin_id, is_top_level, should_decrement);
 };
 
 
