@@ -107,21 +107,13 @@ function doPlatformBase( docDir, platformName, pluginName, pluginID, pluginVersi
                 extension: "m"
             }
         );
-
-        baseFiles.push(
-            {
-                file: fs.readFileSync( docDir + "base.h", "utf-8" )
-                    .replace( /%pluginName%/g, pluginName ),
-                extension: "h"
-            }
-        );
         break;
     }
 
     shell.mkdir( '-p', 'src/' + platformName );
 
     for( i; i < baseFiles.length; i++ ) {
-        fs.writeFileSync( 'src/' + platformName + '/CDV' + pluginName + '.' + baseFiles[ i ].extension, baseFiles[ i ].file, 'utf-8' );
+        fs.writeFileSync( 'src/' + platformName + '/' + pluginName + '.' + baseFiles[ i ].extension, baseFiles[ i ].file, 'utf-8' );
     }
 
 }

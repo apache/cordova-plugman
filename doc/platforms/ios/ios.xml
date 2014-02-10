@@ -1,12 +1,9 @@
 <platform name="ios">
     <config-file target="config.xml" parent="/*">
         <feature name="%pluginName%">
-            <param name="ios-package" value="CDV%pluginName%" />
+            <param name="ios-package" value="%pluginName%" />
         </feature>
     </config-file>
 
-    <header-file src="src/ios/CDV%pluginName%.h" />
     <source-file src="src/ios/CDV%pluginName%.m" />
-
-    <framework src="MobileCoreServices.framework" />
 </platform>

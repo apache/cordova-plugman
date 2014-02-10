@@ -1,7 +1,13 @@
 /********* CDV%pluginName%.m Cordova Plugin Implementation *******/
 
-#import "CDV%pluginName%.h"
 #import <Cordova/CDV.h>
+
+@interface CDV%pluginName% : CDVPlugin {
+  // Member variables go here.
+}
+
+- (void)coolMethod:(CDVInvokedUrlCommand*)command;
+@end
 
 @implementation CDV%pluginName%
 

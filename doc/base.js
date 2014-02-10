@@ -1,19 +1,5 @@
-var cordova = require('cordova'),
-    exec = require('cordova/exec');
+var exec = require('cordova/exec');
 
-var %pluginName% = function() {
-        this.options = {};
+exports.coolMethod = function(arg0, success, error) {
+    exec(success, error, "%pluginName%", "coolMethod", [arg0]);
 };
-
-%pluginName%.prototype = {
-    /*
-        Add your plugin methods here
-    */
-    coolMethod: function( args, success, error ) {
-        cordova.exec( success, error, "%pluginName%", "coolMethod", args );
-    }
-};
-
-var %pluginName%Instance = new %pluginName%();
-
-module.exports = %pluginName%Instance;

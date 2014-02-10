@@ -69,13 +69,13 @@ module.exports = function create( name, id, version, pluginPath, options ) {
     jsMod.set( 'name', name );
 
     clobber = et.Element( 'clobbers' );
-    clobber.set( 'target', 'cordova.' + name );
+    clobber.set( 'target', 'cordova.plugins.' + name );
     jsMod.append( clobber );
 
     root.append( jsMod );
 
     //Write out the plugin.xml file
-    fs.writeFileSync( cwd + "plugin.xml", new et.ElementTree( root ).write( "plugin.xml", {indent: 4} ), 'utf-8' );
+    fs.writeFileSync( cwd + "plugin.xml", new et.ElementTree( root ).write( {indent: 4} ), 'utf-8' );
 
     return Q();
 };

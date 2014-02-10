@@ -8,5 +8,5 @@
         <!--add permissions -->
     </config-file>
 
-    <source-file src="src/android/CDV%pluginName%.java" target-dir="src/%packageName%/%pluginName%" />
+    <source-file src="src/android/%pluginName%.java" target-dir="src/%packageName%/%pluginName%" />
 </platform>
