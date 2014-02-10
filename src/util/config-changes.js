@@ -320,7 +320,6 @@ function unmerge_plugin_changes(plugin_name, plugin_id, is_top_level, should_dec
 
     // save
     module.exports.save_platform_json(platform_config, self.plugins_dir, self.platform);
-    self.config_keeper.save_all();
 }
 
 
@@ -428,7 +427,6 @@ function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_incre
     if ( pbxproj && pbxproj.needs_write ){
         pbxproj.write();
     }
-    self.config_keeper.save_all();
 }
 
 function ConfigKeeper() {
@@ -451,8 +449,7 @@ function ConfigKeeper_get(project_dir, platform, file) {
 ConfigKeeper.prototype.save_all = ConfigKeeper_save_all;
 function ConfigKeeper_save_all() {
     var self = this;
-    var keys = Object.keys(this._cached);
-    keys.forEach(function (fake_path) {
+    Object.keys(self._cached).forEach(function (fake_path) {
         var config_file = self._cached[fake_path];
         if (config_file.is_changed) config_file.save();
     });
@@ -570,11 +567,13 @@ function ConfigFile_load() {
 package.add_plugin_changes = function (platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
     var munger = new PlatformMunger(platform, project_dir, plugins_dir);
     munger.apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment, cache);
+    munger.config_keeper.save_all();
 };
 
 package.remove_plugin_changes = function (platform, project_dir, plugins_dir, plugin_name, plugin_id, is_top_level, should_decrement) {
     var munger = new PlatformMunger(platform, project_dir, plugins_dir);
     munger.unmerge_plugin_changes(plugin_name, plugin_id, is_top_level, should_decrement);
+    munger.config_keeper.save_all();
 };
 
 
