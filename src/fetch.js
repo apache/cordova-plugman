@@ -15,7 +15,7 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
     // Ensure the containing directory exists.
     shell.mkdir('-p', plugins_dir);
 
-//console.log(" FETCH "+ plugin_src);
+//console.log(" FETCH "+ plugin_src + " " + plugins_dir); 
 
     options = options || {};
     options.subdir = options.subdir || '.';
@@ -75,7 +75,7 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
             linkable = true,
             plugin_dir = path.resolve(plugin_src, options.subdir);
 
-        if (fs.existsSync(plugin_dir)) {
+        if ( fs.existsSync(plugin_dir) ) {
             p = Q(plugin_dir);
         } else {
             // If there is no such local path, it's a plugin id.
@@ -95,7 +95,7 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
 
         return p.then(
             function(dir) { 
-//console.log("**COPY "+ dir + " to "+ plugins_dir);
+// console.log("**COPY "+ dir + " to "+ plugins_dir + " ");
                 return copyPlugin(dir, plugins_dir, options.link && linkable); 
             }
         ).then(

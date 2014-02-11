@@ -7,6 +7,7 @@ var install = require('../src/install'),
     platforms = require('../src/platforms/common'),
     common  = require('./common'),
     fs      = require('fs'),
+    os      = require('os'),
     path    = require('path'),
     shell   = require('shelljs'),
     child_process = require('child_process'),
@@ -16,7 +17,7 @@ var install = require('../src/install'),
     spec    = __dirname,	
     done    = false,
     srcProject = path.join(spec, 'projects', 'android_install'),
-    project = path.join(spec, 'projects', 'android_install.test'),
+    project = path.join(os.tmpdir(), 'plugman-test', 'android_install'),
 
     plugins_dir = path.join(spec, 'plugins'),
     plugins_install_dir = path.join(project, 'cordova', 'plugins'),	
@@ -107,7 +108,6 @@ describe('install', function() {
 
         fetchSpy = spyOn(plugman.raw, 'fetch').andReturn( Q( plugins['EnginePlugin'] ) );
         chmod = spyOn(fs, 'chmodSync');
-        exists = spyOn(fs, 'existsSync');
         fsWrite = spyOn(fs, 'writeFileSync').andReturn(true);
         cp = spyOn(shell, 'cp').andReturn(true);
         rm = spyOn(shell, 'rm').andReturn(true);
@@ -135,7 +135,7 @@ describe('install', function() {
 
         it('should call fetch if provided plugin cannot be resolved locally', function() {
             fetchSpy.andReturn( Q( plugins['DummyPlugin'] ) );
-            exists.andReturn(false);
+            spyOn(install, 'existsPlugin').andReturn(false);
 
             runs(function() {
                 installPromise(install('android', project, 'CLEANYOURSHORTS' ));
@@ -201,20 +201,27 @@ describe('install', function() {
         });
         it('should check platform sdk version if specified', function() {
             var spy = spyOn(semver, 'satisfies').andReturn(true);
+            fetchSpy.andReturn( Q( plugins['EnginePluginAndroid'] ) );
             exec.andCallFake(function(cmd, cb) {
                 cb(null, '18\n');
             });
-            fetchSpy.andReturn( Q( plugins['EnginePluginAndroid'] ) );
-                        
+
             runs(function() {
                 installPromise( install('android', project, 'EnginePluginAndroid') );
             });
             waitsFor(function() { return done; }, 'install promise never resolved', 200);
             runs(function() {
-                expect(spy).toHaveBeenCalledWith('18.0.0','>=18');
+                // <engine name="cordova" VERSION=">=3.0.0"/>
+                // <engine name="cordova-android" VERSION=">=3.1.0"/>
+                // <engine name="android-sdk" VERSION=">=18"/>
+
+                expect(spy.calls.length).toBe(3);
+                expect(spy.calls[0].args).toEqual([ '18.0.0', '>=3.0.0' ]);
+                expect(spy.calls[1].args).toEqual([ '18.0.0', '>=3.1.0' ]);
+                expect(spy.calls[2].args).toEqual([ '18.0.0','>=18' ]);
             });
         });
-        it('should check plugmans version', function() {
+        it('should check engine versions', function() {
             var spy = spyOn(semver, 'satisfies').andReturn(true);
             fetchSpy.andReturn( Q( plugins['EnginePlugin'] ) );
 
@@ -223,28 +230,18 @@ describe('install', function() {
             });
             waitsFor(function() { return done; }, 'install promise never resolved', 200);
             runs(function() {
-                expect(spy).toHaveBeenCalledWith('','>=0.10.0');
-            });
-        });
-        it('should check custom engine version', function() {
-            var spy = spyOn(semver, 'satisfies').andReturn(true);
-            
-            runs(function() {
-                installPromise( install('android', project, plugins['EnginePlugin']) );
-            });
-            waitsFor(function() { return done; }, 'install promise never resolved', 200);
-            runs(function() {
-                expect(spy).toHaveBeenCalledWith('','>=1.0.0');
-            });
-        });
-        it('should check custom engine version that supports multiple platforms', function() {
-            var spy = spyOn(semver, 'satisfies').andReturn(true);
-            runs(function() {
-                installPromise( install('android', project, plugins['EnginePlugin']) );
-            });
-            waitsFor(function() { return done; }, 'install promise never resolved', 200);
-            runs(function() {
-                expect(spy).toHaveBeenCalledWith('','>=3.0.0');
+                // <engine name="cordova" version=">=2.3.0"/>
+                // <engine name="cordova-plugman" version=">=0.10.0" />
+                // <engine name="mega-fun-plugin" version=">=1.0.0" scriptSrc="megaFunVersion" platform="*" />
+                // <engine name="mega-boring-plugin" version=">=3.0.0" scriptSrc="megaBoringVersion" platform="ios|android" />
+
+                // cordova-plugman --> same as node version???
+
+                expect(spy.calls.length).toBe(4);
+                expect(spy.calls[0].args).toEqual([ '', '>=2.3.0' ]);
+                expect(spy.calls[1].args).toEqual([ process.version, '>=0.10.0' ]);
+                expect(spy.calls[2].args).toEqual([ '', '>=1.0.0' ]);
+                expect(spy.calls[3].args).toEqual([ '', '>=3.0.0' ]);
             });
         });
         it('should not check custom engine version that is not supported for platform', function() {
@@ -260,7 +257,7 @@ describe('install', function() {
 
         describe('with dependencies', function() {
             it('should fetch any dependent plugins if missing', function() {
-                exists.andReturn(false);
+                spyOn(install, 'existsPlugin').andReturn(false);
                 fetchSpy.andCallFake(function(id, dir) {
                     if(id == plugins['A'])
                         return Q(id); // full path to plugin
@@ -286,7 +283,7 @@ describe('install', function() {
                 });
             });
             it('should try to fetch any dependent plugins from registry when url is not defined', function() {
-                exists.andReturn(false);
+                spyOn(install, 'existsPlugin').andReturn(false);
                 fetchSpy.andCallFake(function(id, dir) {
                     if(id == plugins['A'])
                         return Q(id); // full path to plugin
@@ -294,7 +291,7 @@ describe('install', function() {
                     return Q( path.join(plugins_dir, 'dependencies', id) ); 
                 });
                 exec.andCallFake(function(cmd, cb) {
-                    cb(null, '9.0.0\n');
+                    cb(null, '9.0.0\n', '');
                 });	
 
                 // Plugin A depends on C & D
@@ -331,7 +328,7 @@ describe('install', function() {
             });
         });
         it('should throw if git is not found on the path and a remote url is requested', function() {
-            exists.andReturn(false);
+            spyOn(install, 'existsPlugin').andReturn(false);
             var which_spy = spyOn(shell, 'which').andReturn(null);
             runs(function() {
                 installPromise( install('android', project, 'https://git-wip-us.apache.org/repos/asf/cordova-plugin-camera.git') );
@@ -372,7 +369,7 @@ describe('end', function() {
         }
 
         promise.then( 
-            
+
         ).then(finish).fail(finish);
 
         waitsFor(function() { return done; }, 'promise never resolved', 500);

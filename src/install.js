@@ -49,13 +49,17 @@ module.exports = function installPlugin(platform, project_dir, id, plugins_dir, 
     return possiblyFetch(current_stack, platform, project_dir, id, plugins_dir, options);
 };
 
+// mainly for testing
+module.exports.existsPlugin = function(id, plugins_dir) {
+    return fs.existsSync( path.join(plugins_dir, id) );
+}
+
 // possible options: subdir, cli_variables, www_dir, git_ref, is_top_level
 // Returns a promise.
 function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options) {
-    var plugin_install_dir = path.join(plugins_dir, id);
 
     // Check that the plugin has already been fetched.
-    if ( !fs.existsSync(plugin_install_dir) ) {
+    if ( !module.exports.existsPlugin(id, plugins_dir) ) {
 
         var opts = plugman.cloneOptions(options, {
             link: false, 
@@ -68,11 +72,15 @@ function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options)
             return runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, options);
         });
     } else {
+        var plugin_install_dir = path.join(plugins_dir, id);
+
         return runInstall(actions, platform, project_dir, plugin_install_dir, plugins_dir, options);
     }
 }
 
 function checkEngines(engines) {
+
+//console.log(engines);
 
     for(var i = 0; i < engines.length; i++) {
         var engine = engines[i];
@@ -131,36 +139,37 @@ function callEngineScripts(engines) {
     return Q.all(
         engines.map(function(engine){
             // CB-5192; on Windows scriptSrc doesn't have file extension so we shouldn't check whether the script exists
-            var d = Q.defer();
-            if(isWindows || fs.existsSync(engine.scriptSrc)) {
 
+            var scriptPath = engine.scriptSrc ? '"' + engine.scriptSrc + '"' : null;		
+
+            if(scriptPath && (isWindows || fs.existsSync(engine.scriptSrc)) ) {
+
+                var d = Q.defer();
                 if(!isWindows) { // not required on Windows
                     fs.chmodSync(engine.scriptSrc, '755');
                 }
-                var d = Q.defer();
-                child_process.exec('"' + engine.scriptSrc + '"', function(error, stdout, stderr) {
+                child_process.exec(scriptPath, function(error, stdout, stderr) {
                     if (error) {
-                        events.emit('verbose', 'Cordova project '+ engine.scriptSrc +' script failed, continuing anyways.');
+                        events.emit('warn', engine.name +' version check failed ('+ scriptPath +'), continuing anyways.');
                         engine.currentVersion = null;
-                        d.resolve(engine); // Yes, resolve. We're trying to continue despite the error.
                     } else {
-                        var version = cleanVersionOutput(stdout, engine.name);
-
-                        //events.emit('verbose', 'Cordova project '+ version);
-                        engine.currentVersion = version;
-                        d.resolve(engine);
+                        engine.currentVersion = cleanVersionOutput(stdout, engine.name);
                     }
+
+                    d.resolve(engine);
                 });
-                
-            } else if(engine.currentVersion) {
-                engine.currentVersion = cleanVersionOutput(engine.currentVersion, engine.name)
-            
-                d.resolve(engine); 
+                return d.promise;
+
             } else {
-                events.emit('verbose', 'Cordova project '+ engine.scriptSrc +' not detected (lacks a '+ engine.scriptSrc +' script), continuing.');
-                d.resolve(null);
+
+                if(engine.currentVersion) {
+                    engine.currentVersion = cleanVersionOutput(engine.currentVersion, engine.name)
+                } else {
+                    events.emit('warn', engine.name +' version not detected (lacks script '+ scriptPath +' ), continuing.');
+                }
+
+                return Q(engine);
             }
-            return d.promise;
         })
     );
 }
@@ -211,6 +220,7 @@ var platformConfig = {};
 // possible options: cli_variables, www_dir, is_top_level
 // Returns a promise.
 var runInstall = module.exports.runInstall = function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, options) {
+
 //console.log("RUN INSTALL "+ plugin_dir);
 
     var xml_path     = path.join(plugin_dir, 'plugin.xml'),
@@ -226,7 +236,7 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
 
     var platform_config = config_changes.get_platform_json(plugins_dir, platform);
 
-//console.log("runInstall() from  "+ plugin_dir + " INTO "+ plugins_dir);
+// console.log("runInstall() from  "+ plugin_dir + " INTO "+ plugins_dir);
 
     // check if platform has plugin installed already.
     var is_installed = false;
@@ -256,6 +266,8 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
         top_plugin_id: plugin_id,
         top_plugin_dir: plugin_dir
     }
+
+//console.log(theEngines);
 
     return callEngineScripts(theEngines)
     .then(checkEngines)
@@ -307,10 +319,6 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
 function installDependencies(install, dependencies, options) {
     events.emit('verbose', 'Dependencies detected, iterating through them...');
 
-    var result = Q(true),
-        i, 
-        depXml;
-
     var top_plugins = path.join(install.top_plugin_dir, '..');
 
 //console.log(install);
@@ -347,12 +355,10 @@ function installDependencies(install, dependencies, options) {
                 return installDependency(dep, install, options);
             });
         });
-    }, Q());
+    }, Q(true));
 }
 
 function tryFetchDependency(dep, install) {
-
-    //dep.url = '.';
 
     // Handle relative dependency paths by expanding and resolving them.
     // The easy case of relative paths is to have a URL of '.' and a different subdir.
@@ -401,10 +407,10 @@ function tryFetchDependency(dep, install) {
 
     // Test relative to parent folder 
     if( dep.url && isRelativePath(dep.url) ) {
-        var relativePath = path.resolve(install.top_plugin_dir, '../' + dep.url);
+        var top_plugins = install.top_plugin_dir + '/../';
 
-        if( fs.existsSync(relativePath) ) {
-           dep.url = relativePath;
+        if( module.exports.existsPlugin(dep.url, top_plugins) ) {
+           dep.url = path.resolve(top_plugins, dep.url);
         }
     }
 
@@ -417,15 +423,15 @@ function tryFetchDependency(dep, install) {
 }
 
 function installDependency(dep, install, options) {
-    dep.install_dir = path.join(install.plugins_dir, dep.id);
 
-    if (fs.existsSync(dep.install_dir)) {
+    if ( module.exports.existsPlugin(dep.id, install.plugins_dir) ) {
         events.emit('verbose', 'Dependent plugin "' + dep.id + '" already fetched, using that version.');
-
         var opts = plugman.cloneOptions(options, {
             cli_variables: install.filtered_variables, 
             is_top_level: false
         });
+
+        dep.install_dir = path.join(install.plugins_dir, dep.id);
 
        return runInstall(install.actions, install.platform, install.project_dir, dep.install_dir, install.plugins_dir, opts);
 
