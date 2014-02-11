@@ -12,6 +12,7 @@ var configChanges = require('../../src/util/config-changes'),
     path    = require('path'),
     plist = require('plist-with-patches'),
     shell   = require('shelljs'),
+    xcode = require('xcode'),
     temp    = path.join(os.tmpdir(), 'plugman'),
     dummyplugin = path.join(__dirname, '..', 'plugins', 'DummyPlugin'),
     cbplugin = path.join(__dirname, '..', 'plugins', 'ChildBrowser'),
@@ -297,17 +298,7 @@ describe('config-changes module', function() {
                 beforeEach(function() {
                     shell.cp('-rf', ios_config_xml, temp);
                     shell.cp('-rf', cbplugin, plugins_dir);
-                    xcode_add = jasmine.createSpy();
-                    xcode_rm = jasmine.createSpy();
-                    spyOn(ios_parser, 'parseProjectFile').andReturn({
-                        xcode:{
-                            addFramework:xcode_add,
-                            removeFramework:xcode_rm,
-                            writeSync:function(){}
-                        },
-                        pbx:path.join(temp, 'pbxpath'),
-                        write: function() {}
-                    });
+                    xcode_add = spyOn(xcode.project.prototype, 'addFramework').andCallThrough();
                 });
                 it('should call into xcode.addFramework if plugin has <framework> file defined and is ios',function() {
                     configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'ChildBrowser', 'ios', {});
