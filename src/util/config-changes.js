@@ -37,6 +37,7 @@ var fs   = require('fs'),
     glob = require('glob'),
     plist = require('plist-with-patches'),
     bplist = require('bplist-parser'),
+    xcode = require('xcode'),
     et   = require('elementtree'),
     underscore = require('underscore'),
     xml_helpers = require('./../util/xml-helpers'),
@@ -230,13 +231,6 @@ function unmerge_plugin_changes(plugin_name, plugin_id, is_top_level, should_dec
     // global munge looks at all plugins' changes to config files
     var global_munge = platform_config.config_munge;
 
-    var plistObj, pbxproj;
-    if (self.platform == 'ios') {
-        if (global_munge['framework'] && config_munge['framework']) {
-            pbxproj = ios_parser.parseProjectFile(self.project_dir);
-        }
-    }
-
     // Traverse config munge and decrement global munge
     Object.keys(config_munge).forEach(function(file) {
         if (file == 'plugins-plist' && self.platform == 'ios') {
@@ -262,9 +256,9 @@ function unmerge_plugin_changes(plugin_name, plugin_id, is_top_level, should_dec
                                     // this is a .framework reference in ios files
                                     // We also need to keep some frameworks core to cordova-ios
                                     if (keep_these_frameworks.indexOf(selector) == -1) {
-                                        pbxproj.xcode.removeFramework(selector); // in this case the 2nd-level key is the src attrib of <framework> els
-                                        // TODO: dont write on every loop eh
-                                        fs.writeFileSync(pbxproj.pbx, pbxproj.xcode.writeSync());
+                                        var pbxproj = self.config_keeper.get(self.project_dir, self.platform, file);
+                                        pbxproj.data.removeFramework(selector); // in this case the 2nd-level key is the src attrib of <framework> els
+                                        pbxproj.is_changed = true;
                                     }
                                 } else {
                                     // this xml child is no longer necessary, prune it
@@ -296,7 +290,7 @@ function unmerge_plugin_changes(plugin_name, plugin_id, is_top_level, should_dec
 
 
 PlatformMunger.prototype.apply_plugin_changes = apply_plugin_changes;
-function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment, cache) {
+function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment) {
     var self = this;
     var platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
     var plugin_dir = path.join(self.plugins_dir, plugin_id);
@@ -307,20 +301,6 @@ function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_incre
     var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, self.platform, self.project_dir, plugin_vars);
     // global munge looks at all plugins' changes to config files
     var global_munge = platform_config.config_munge;
-
-    var plistObj;
-    // Cache some slow stuff for reuse with multiple plugins.
-    cache = cache || {};
-    var pbxproj = cache.pbxproj;
-
-    if (self.platform == 'ios') {
-        if (config_munge['framework']) {
-            if (!pbxproj) {
-                // Note, parseProjectFile() is slow, ~250ms on MacBook Pro 2013.
-                cache.pbxproj = pbxproj = ios_parser.parseProjectFile(self.project_dir);
-            }
-        }
-    }
 
     // Traverse config munge and decrement global munge
     Object.keys(config_munge).forEach(function(file) {
@@ -356,8 +336,9 @@ function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_incre
                         if (keep_these_frameworks.indexOf(src) == -1) {
                             // xml_child in this case is whether the framework should use weak or not
                             var is_weak = {weak: (xml_child === 'true')};
-                            pbxproj.xcode.addFramework(src, is_weak);
-                            pbxproj.needs_write = true;
+                            var pbxproj = self.config_keeper.get(self.project_dir, self.platform, file);
+                            pbxproj.data.addFramework(src, is_weak);
+                            pbxproj.is_changed = true;
                         }
                     } else {
                         // this xml child is new, graft it (only if config file exists)
@@ -381,9 +362,6 @@ function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_incre
 
     // save
     module.exports.save_platform_json(platform_config, self.plugins_dir, self.platform);
-    if ( pbxproj && pbxproj.needs_write ){
-        pbxproj.write();
-    }
 }
 
 function ConfigKeeper() {
@@ -480,11 +458,14 @@ function ConfigFile_save() {
     var self = this;
     if (self.type === 'xml') {
         fs.writeFileSync(self.filepath, self.data.write({indent: 4}), 'utf-8');
+    } else if (self.type === 'pbxproj') {
+        fs.writeFileSync(self.filepath, self.data.writeSync());
     } else {
         // plist
         var regExp = new RegExp("<string>[ \t\r\n]+?</string>", "g");
         fs.writeFileSync(self.filepath, plist.build(self.data).replace(regExp, "<string></string>"));
     }
+    self.is_changed = false;
 }
 
 
@@ -507,6 +488,10 @@ function ConfigFile_load() {
     if (ext == '.xml' || ext == '.appxmanifest') {
         self.type = 'xml';
         self.data = xml_helpers.parseElementtreeSync(filepath);
+    } else if (ext == '.pbxproj') {
+        self.type = 'pbxproj';
+        self.data = xcode.project(filepath);
+        self.data.parseSync();
     } else {
         // plist file
         self.type = 'plist';
@@ -545,36 +530,53 @@ function isBinaryPlist(filename) {
 
 function getIOSProjectname(project_dir){
     var matches = glob.sync(path.join(project_dir, '*.xcodeproj'));
-    var iospath= project_dir;
+    var iospath= project_dir; // TODO: Do we ever want to return project dir here? I wont work in resolveConfigFilePath().
     if (matches.length) {
         iospath = path.basename(matches[0],'.xcodeproj');
     }
     return iospath;
 }
 
-// Some config-file target attributes are not qualified with a full leading directory, or contain wildcards. resolve to a real path in this function
+// Some config-file target attributes are not qualified with a full leading directory, or contain wildcards.
+// Resolve to a real path in this function.
+// TODO: some globs are very slow, try to get rid of as many of them as possible.
 function resolveConfigFilePath(project_dir, platform, file) {
     var filepath = path.join(project_dir, file);
     var matches;
+
+    // .pbxproj file
+    if (file === 'framework') {
+        var project_files = glob.sync(path.join(project_dir, '*.xcodeproj', 'project.pbxproj'));
+        if (project_files.length === 0) {
+            throw new Error("does not appear to be an xcode project (no xcode project file)");
+        }
+        filepath = project_files[0];
+        return filepath;
+    }
+
     if (file.indexOf('*') > -1) {
         // handle wildcards in targets using glob.
         matches = glob.sync(path.join(project_dir, '**', file));
         if (matches.length) filepath = matches[0];
-    } else {
-        // special-case config.xml target that is just "config.xml". this should be resolved to the real location of the file.
-        if (file == 'config.xml') {
-            if (platform == 'ubuntu') {
-                filepath = path.join(project_dir, 'config.xml');
-            } else if (platform == 'ios') {
-                var iospath = getIOSProjectname(project_dir);
-                filepath = path.join(project_dir,iospath, 'config.xml');
-            } else if (platform == 'android') {
-                filepath = path.join(project_dir, 'res', 'xml', 'config.xml');
-            } else {
-                matches = glob.sync(path.join(project_dir, '**', 'config.xml'));
-                if (matches.length) filepath = matches[0];
-            }
-        }
+        return filepath;
     }
+
+    // special-case config.xml target that is just "config.xml". this should be resolved to the real location of the file.
+    if (file == 'config.xml') {
+        if (platform == 'ubuntu') {
+            filepath = path.join(project_dir, 'config.xml');
+        } else if (platform == 'ios') {
+            var iospath = getIOSProjectname(project_dir);
+            filepath = path.join(project_dir,iospath, 'config.xml');
+        } else if (platform == 'android') {
+            filepath = path.join(project_dir, 'res', 'xml', 'config.xml');
+        } else {
+            matches = glob.sync(path.join(project_dir, '**', 'config.xml'));
+            if (matches.length) filepath = matches[0];
+        }
+        return filepath;
+    }
+
+    // None of the special cases matched, returning project_dir/file.
     return filepath;
 }
