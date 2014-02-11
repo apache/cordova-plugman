@@ -1,3 +1,6 @@
+/* jshint node:true, sub:true, indent:4  */
+/* global jasmine, describe, beforeEach, afterEach, it, spyOn, expect */
+
 var configChanges = require('../../src/util/config-changes'),
     xml_helpers = require('../../src/util/xml-helpers'),
     ios_parser = require('../../src/platforms/ios'),
@@ -205,11 +208,6 @@ describe('config-changes module', function() {
                 var expected_xml = '<cfbundleid>com.example.friendstring</cfbundleid>';
                 expect(munge['config.xml']['/widget'][expected_xml]).toBeDefined();
             });
-            it('should special case plugins-plist elements into own property', function() {
-                var munge = configChanges.generate_plugin_config_munge(dummyplugin, 'ios', temp, {});
-                expect(munge['plugins-plist']).toBeDefined();
-                expect(munge['plugins-plist']['com.phonegap.plugins.dummyplugin']).toEqual('DummyPluginCommand');
-            });
             it('should special case framework elements for ios', function() {
                 var munge = configChanges.generate_plugin_config_munge(cbplugin, 'ios', temp, {});
                 expect(munge['framework']).toBeDefined();
@@ -320,31 +318,6 @@ describe('config-changes module', function() {
                     expect(xcode_add).not.toHaveBeenCalledWith('Custom.framework');
                 });
             });
-            describe('of <plugins-plist> elements', function() {
-                it('should only be used in an applicably old cordova-ios projects', function() {
-                    shell.cp('-rf', ios_plist_project, temp);
-                    shell.cp('-rf', dummyplugin, plugins_dir);
-                    var cfg = configChanges.get_platform_json(plugins_dir, 'ios');
-                    cfg.prepare_queue.installed = [{'plugin':'DummyPlugin', 'vars':{}}];
-                    configChanges.save_platform_json(cfg, plugins_dir, 'ios');
-
-                    var spy = spyOn(plist, 'parseFileSync').andReturn({Plugins:{}});
-                    configChanges.process(plugins_dir, temp, 'ios');
-                    expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'PhoneGap.plist').replace(/\\/g, '/'));
-                });
-                it('should provide a deprecation warning message when used', function() {
-                    shell.cp('-rf', ios_plist_project, temp);
-                    shell.cp('-rf', dummyplugin, plugins_dir);
-                    var cfg = configChanges.get_platform_json(plugins_dir, 'ios');
-                    cfg.prepare_queue.installed = [{'plugin':'DummyPlugin', 'vars':{}}];
-                    configChanges.save_platform_json(cfg, plugins_dir, 'ios');
-
-                    spyOn(plist, 'parseFileSync').andReturn({Plugins:{}});
-                    var spy = spyOn(events, 'emit');
-                    configChanges.process(plugins_dir, temp, 'ios');
-                    expect(spy).toHaveBeenCalledWith('warn', 'DEPRECATION WARNING: Plugin "com.phonegap.plugins.dummyplugin" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
-                });
-            });
             it('should resolve wildcard config-file targets to the project, if applicable', function() {
                 shell.cp('-rf', ios_config_xml, temp);
                 shell.cp('-rf', cbplugin, plugins_dir);
@@ -361,7 +334,7 @@ describe('config-changes module', function() {
 
                 configChanges.process(plugins_dir, temp, 'android');
 
-                cfg = configChanges.get_platform_json(plugins_dir, 'android');
+                var cfg = configChanges.get_platform_json(plugins_dir, 'android');
                 expect(cfg.prepare_queue.installed.length).toEqual(0);
                 expect(cfg.installed_plugins['com.adobe.vars']).toBeDefined();
                 expect(cfg.installed_plugins['com.adobe.vars']['API_KEY']).toEqual('hi');
@@ -455,33 +428,6 @@ describe('config-changes module', function() {
                 var cfg = configChanges.get_platform_json(plugins_dir, 'android');
                 expect(cfg.prepare_queue.uninstalled.length).toEqual(0);
                 expect(cfg.installed_plugins['com.adobe.vars']).not.toBeDefined();
-            });
-            it('should only parse + remove plist plugin entries in applicably old ios projects', function() {
-                shell.cp('-rf', ios_plist_project, temp);
-                // install plugin
-                configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'DummyPlugin', 'ios', {});
-                configChanges.process(plugins_dir, temp, 'ios');
-                // set up an uninstall
-                configChanges.add_uninstalled_plugin_to_prepare_queue(plugins_dir, 'DummyPlugin', 'ios');
-
-                ios_parser.purgeProjectFileCache(temp);
-                var spy = spyOn(plist, 'parseFileSync').andReturn({Plugins:{}});
-                configChanges.process(plugins_dir, temp, 'ios');
-                expect(spy).toHaveBeenCalledWith(path.join(temp, 'SampleApp', 'PhoneGap.plist').replace(/\\/g, '/'));
-            });
-            it('should provide a deprecation warning message when used', function() {
-                shell.cp('-rf', ios_plist_project, temp);
-                // install plugin
-                configChanges.add_installed_plugin_to_prepare_queue(plugins_dir, 'DummyPlugin', 'ios', {});
-                configChanges.process(plugins_dir, temp, 'ios');
-                // set up an uninstall
-                configChanges.add_uninstalled_plugin_to_prepare_queue(plugins_dir, 'DummyPlugin', 'ios');
-
-                ios_parser.purgeProjectFileCache(temp);
-                spyOn(plist, 'parseFileSync').andReturn({Plugins:{}});
-                var spy = spyOn(events, 'emit');
-                configChanges.process(plugins_dir, temp, 'ios');
-                expect(spy).toHaveBeenCalledWith('warn', 'DEPRECATION WARNING: Plugin "com.phonegap.plugins.dummyplugin" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
             });
             it('should save changes to global config munge after completing an uninstall', function() {
                 shell.cp('-rf', android_two_project, temp);
