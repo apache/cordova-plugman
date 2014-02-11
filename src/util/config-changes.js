@@ -397,8 +397,8 @@ function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_incre
                             // Only add the framework if it's not a cordova-ios core framework
                             if (keep_these_frameworks.indexOf(src) == -1) {
                                 // xml_child in this case is whether the framework should use weak or not
-                                var opt = {weak: (xml_child != 'true' ? false : true)};
-                                pbxproj.xcode.addFramework(src, opt);
+                                var is_weak = {weak: (xml_child === 'true')};
+                                pbxproj.xcode.addFramework(src, is_weak);
                                 pbxproj.needs_write = true;
                             }
                         } else {
@@ -539,7 +539,7 @@ function ConfigFile_load() {
     // config file may be in a place not exactly specified in the target
     var filepath = self.filepath = resolveConfigFilePath(self.project_dir, self.platform, self.file_tag);
 
-    if (!fs.existsSync(filepath)) {
+    if ( !filepath || !fs.existsSync(filepath) ) {
         self.exists = false;
         return;
     }
@@ -599,7 +599,11 @@ function getIOSProjectname(project_dir){
 function resolveConfigFilePath(project_dir, platform, file) {
     var filepath = path.join(project_dir, file);
     var matches;
-    if (file.indexOf('*') > -1) {
+    if ( file === 'plugins-plist') {
+        var plistfile = glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist'));
+        if (plistfile.length === 0) return undefined;
+        else return plistfile[0];
+    } else if (file.indexOf('*') > -1) {
         // handle wildcards in targets using glob.
         matches = glob.sync(path.join(project_dir, '**', file));
         if (matches.length) filepath = matches[0];
