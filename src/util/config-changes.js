@@ -37,12 +37,14 @@ var fs   = require('fs'),
     plist = require('plist-with-patches'),
     bplist = require('bplist-parser'),
     et = require('elementtree'),
-    xml_helpers = require('./../util/xml-helpers'),
-    ios_parser = require('./../platforms/ios'),
-    plist_helpers = require('./../util/plist-helpers');
+    bplist = require('bplist-parser'),
+    xml_helpers = require('./xml-helpers'),
+    plist_helpers = require('./plist-helpers'),
+    ios_parser = require('../platforms/ios'),
+    events = require('../events');
 
 function checkPlatform(platform) {
-    if (!(platform in require('./../platforms'))) throw new Error('platform "' + platform + '" not recognized.');
+    if (!(platform in require('../platforms'))) throw new Error('platform "' + platform + '" not recognized.');
 }
 
 // These frameworks are required by cordova-ios by default. We should never add/remove them.
@@ -226,7 +228,7 @@ module.exports = {
                     Object.keys(config_munge[file]).forEach(function(key) {
                         if (global_munge[file][key] && plistObj) {
                             // TODO: REMOVE in 3.4 (https://issues.apache.org/jira/browse/CB-4456)
-                            require('../../plugman').emit('warn', 'DEPRECATION WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
+                            events.emit('warn', 'DEPRECATION WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
                             delete plistObj.Plugins[key];
                             // TODO: don't write out on every change, do it once.
                             fs.writeFileSync(plistfile, plist.build(plistObj));
@@ -312,6 +314,10 @@ module.exports = {
         var platform_config = module.exports.get_platform_json(plugins_dir, platform);
         var plugin_dir = path.join(plugins_dir, plugin_id);
 
+        // TODO: remove this, plugin_id should already be resolved
+        // avoid fs here, this is needed for tests in config-changes.spec
+        plugin_id = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'), 'utf-8')._root.attrib['id'];
+
         // get config munge, aka how should this plugin change various config files
         var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, platform, project_dir, plugin_vars);
         // global munge looks at all plugins' changes to config files
@@ -353,7 +359,7 @@ module.exports = {
                     var key = selector;
                     if (!global_munge[file][key] && plistObj) {
                         // TODO: REMOVE in 3.4 (https://issues.apache.org/jira/browse/CB-4456)
-                        require('../../plugman').emit('warn', 'DEPRECATION WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
+                        events.emit('warn', 'DEPRECATION WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
                         // this key does not exist, so add it to plist
                         global_munge[file][key] = config_munge[file][key];
                         plistObj.Plugins[key] = config_munge[file][key];

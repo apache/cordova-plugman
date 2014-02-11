@@ -75,18 +75,14 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
             linkable = true,
             plugin_dir = path.resolve(plugin_src, options.subdir);
 
-
-//console.log("EXISTS "+ plugin_dir);
-
         if (fs.existsSync(plugin_dir)) {
-//console.log("YES "+ plugin_dir);
-            
             p = Q(plugin_dir);
         } else {
             // If there is no such local path, it's a plugin id.
             // First look for it in the local search path (if provided).
             var local_dir = findLocalPlugin(plugin_src, options.searchpath);
             if (local_dir) {
+                plugin_dir = local_dir;
                 p = Q(local_dir);
                 events.emit('log', 'Found plugin "' + plugin_src + '" at: ' + local_dir);
             } else {
@@ -104,6 +100,11 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
             }
         ).then(
             function(dir) { return checkID(options.expected_id, dir); }
+        ).then(
+            function(dir) {
+                // if copied, return original directory path
+                return plugin_dir ? plugin_dir : dir;
+            }
         );
     }
 };

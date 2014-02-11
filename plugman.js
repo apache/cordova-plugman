@@ -52,10 +52,10 @@ function addProperty(o, symbol, modulePath, doWrap) {
 }
 
 plugman = {
-    on:                 function() { events.on.apply(events, arguments); },
-    off:                function() { events.removeListener.apply(events, arguments); },
-    removeAllListeners: function() { events.removeListeners.apply(events, arguments); },
-    emit:               function() { events.emit.apply(events, arguments); },
+    on:                 events.on.bind(events),
+    off:                events.removeListener.bind(events),
+    removeAllListeners: events.removeAllListeners.bind(events),
+    emit:               events.emit.bind(events),
     raw:                {}
 };
 

@@ -4,6 +4,7 @@ var configChanges = require('../../src/util/config-changes'),
     fs      = require('fs'),
     os      = require('osenv'),
     plugman = require('../../plugman'),
+    events  = require('../../src/events'),
     et      = require('elementtree'),
     path    = require('path'),
     plist = require('plist-with-patches'),
@@ -19,7 +20,11 @@ var configChanges = require('../../src/util/config-changes'),
     android_two_no_perms_project = path.join(__dirname, '..', 'projects', 'android_two_no_perms', '*'),
     ios_plist_project = path.join(__dirname, '..', 'projects', 'ios-plist', '*'),
     ios_config_xml = path.join(__dirname, '..', 'projects', 'ios-config-xml', '*'),
-    plugins_dir = path.join(temp, 'cordova', 'plugins');
+    plugins_dir = path.join(temp, 'cordova', 'plugins'),
+    pluginIds = {
+        'DummyPlugin' : 'com.phonegap.plugins.dummyplugin',
+        'VariablePlugin': 'com.adobe.vars'
+    };
 
 // TODO: dont do fs so much
 
@@ -338,7 +343,7 @@ describe('config-changes module', function() {
                     configChanges.save_platform_json(cfg, plugins_dir, 'ios');
 
                     spyOn(plist, 'parseFileSync').andReturn({Plugins:{}});
-                    var spy = spyOn(plugman, 'emit');
+                    var spy = spyOn(events, 'emit');
                     configChanges.process(plugins_dir, temp, 'ios');
                     expect(spy).toHaveBeenCalledWith('warn', 'DEPRECATION WARNING: Plugin "com.phonegap.plugins.dummyplugin" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
                 });
@@ -475,7 +480,7 @@ describe('config-changes module', function() {
                 configChanges.add_uninstalled_plugin_to_prepare_queue(plugins_dir, 'DummyPlugin', 'ios');
 
                 spyOn(plist, 'parseFileSync').andReturn({Plugins:{}});
-                var spy = spyOn(plugman, 'emit');
+                var spy = spyOn(events, 'emit');
                 configChanges.process(plugins_dir, temp, 'ios');
                 expect(spy).toHaveBeenCalledWith('warn', 'DEPRECATION WARNING: Plugin "com.phonegap.plugins.dummyplugin" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
             });

@@ -2,7 +2,9 @@ var install = require('../src/install'),
     actions = require('../src/util/action-stack'),
     config_changes = require('../src/util/config-changes'),
     xml_helpers = require('../src/util/xml-helpers'),
+    events  = require('../src/events'),
     plugman = require('../plugman'),
+    platforms = require('../src/platforms/common'),
     common  = require('./common'),
     fs      = require('fs'),
     path    = require('path'),
@@ -49,11 +51,9 @@ describe('start', function() {
         shell.rm('-rf', project);
         shell.cp('-R', path.join(srcProject, '*'), project);
 
-        
-
         done = false;
         promise = Q()
-        .then(
+         .then(
             function(){ return install('android', project, plugins['DummyPlugin']) }
         ).then(
             function(){ 
@@ -67,7 +67,7 @@ describe('start', function() {
             function(){ return install('android', project, plugins['EnginePlugin']) }
         ).then(
             function(){
-                emit = spyOn(plugman, 'emit');
+                emit = spyOn(events, 'emit');
                 return install('android', project, plugins['ChildBrowser']) 
             }
         ).then(
@@ -84,10 +84,8 @@ describe('start', function() {
                     if(emit.calls[i].args[0] === 'results')
                         results['emit_results'].push(emit.calls[i].args[1]);
                 }
-                
-                console.log(results['emit_results']);
-                
-                plugman.emit("verbose", "***** DONE START *****");
+
+                events.emit("verbose", "***** DONE START *****");
             }
         );
         waitsFor(function() { return done; }, 'promise never resolved', 500);		
@@ -105,6 +103,7 @@ describe('install', function() {
         });
         spyOn(fs, 'mkdirSync').andReturn(true);
         spyOn(shell, 'mkdir').andReturn(true);
+        spyOn(platforms, 'copyFile').andReturn(true);
 
         fetchSpy = spyOn(plugman.raw, 'fetch').andReturn( Q( plugins['EnginePlugin'] ) );
         chmod = spyOn(fs, 'chmodSync');
@@ -131,7 +130,6 @@ describe('install', function() {
         });
         it('should interpolate variables into <info> tags', function() {
             // VariableBrowser
-
             expect(results['emit_results'][2]).toBe('Remember that your api key is batman!');
         });
 
@@ -161,7 +159,7 @@ describe('install', function() {
         it('should check version if plugin has engine tag', function(){
             var satisfies = spyOn(semver, 'satisfies').andReturn(true);
             exec.andCallFake(function(cmd, cb) {
-                cb(null, '2.5.0\n', '');
+                cb(null, '2.5.0\n');
             });
 
             runs(function() {
@@ -189,7 +187,7 @@ describe('install', function() {
         it('should check specific platform version over cordova version if specified', function() {
             var spy = spyOn(semver, 'satisfies').andReturn(true);
             exec.andCallFake(function(cmd, cb) {
-                cb(null, '3.1.0\n', '');
+                cb(null, '3.1.0\n');
             });
             fetchSpy.andReturn( Q( plugins['EnginePluginAndroid'] ) );
 
@@ -204,7 +202,7 @@ describe('install', function() {
         it('should check platform sdk version if specified', function() {
             var spy = spyOn(semver, 'satisfies').andReturn(true);
             exec.andCallFake(function(cmd, cb) {
-                cb(null, '18\n', '');
+                cb(null, '18\n');
             });
             fetchSpy.andReturn( Q( plugins['EnginePluginAndroid'] ) );
                         
@@ -262,32 +260,52 @@ describe('install', function() {
 
         describe('with dependencies', function() {
             it('should fetch any dependent plugins if missing', function() {
-                fetchSpy.andCallFake(function(id, dir, opts) {
-                    return Q( path.join(dir, id) );
+                exists.andReturn(false);
+                fetchSpy.andCallFake(function(id, dir) {
+                    if(id == plugins['A'])
+                        return Q(id); // full path to plugin
+
+                    return Q( path.join(plugins_dir, 'dependencies', id) ); 
                 });
+
+                exec.andCallFake(function(cmd, cb) {
+                    cb(null, '9.0.0\n');
+                });				
+                
                 runs(function() {
-                    exists.andReturn(false);		  
                     installPromise( install('android', project, plugins['A']) );
                 });
                 waitsFor(function() { return done; }, 'install promise never resolved', 200);
                 runs(function() {
+                     expect(fetchSpy.calls.length).toEqual(3);
+                     expect(fetchSpy.calls[0].args[0]).toEqual(plugins['A']);
 
-                    expect(fetchSpy).toHaveBeenCalledWith('C', plugins_dir, { link: false, subdir: undefined, git_ref: undefined, client: 'plugman', expected_id: 'C' });
-                    expect(fetchSpy.calls.length).toEqual(3);
+                     // Deps read from XML file... 
+                     expect(fetchSpy.calls[1].args[0]).toEqual('C');
+                     expect(fetchSpy.calls[2].args[0]).toEqual('D');
                 });
             });
             it('should try to fetch any dependent plugins from registry when url is not defined', function() {
+                exists.andReturn(false);
                 fetchSpy.andCallFake(function(id, dir) {
-                    return Q(path.join(dir,id));
+                    if(id == plugins['A'])
+                        return Q(id); // full path to plugin
+
+                    return Q( path.join(plugins_dir, 'dependencies', id) ); 
                 });
+                exec.andCallFake(function(cmd, cb) {
+                    cb(null, '9.0.0\n');
+                });	
+
                 // Plugin A depends on C & D
                 runs(function() {
-                    exists.andReturn(false);
                     installPromise( install('android', project, plugins['A']) );
                 });
                 waitsFor(function() { return done; }, 'promise never resolved', 200);
                 runs(function() {
-                    expect(fetchSpy.calls.length).toEqual(2);
+                    // TODO: this is same test as above? Need test other dependency with url=?		
+                              
+                     expect(fetchSpy.calls.length).toEqual(3);
                 });
             });
         });
@@ -326,7 +344,7 @@ describe('install', function() {
         it('should throw if plugin version is less than the minimum requirement', function(){
             var spy = spyOn(semver, 'satisfies').andReturn(false);
             exec.andCallFake(function(cmd, cb) {
-                cb(null, '0.0.1\n', '');
+                cb(null, '0.0.1\n');
             });
             runs(function() {
                 installPromise( install('android', project, plugins['EnginePlugin']) );
@@ -347,7 +365,7 @@ describe('end', function() {
         done = false;
         var finish = function(err){
             if(err)
-                plugman.emit('error', err);
+                events.emit('error', err);
 
             shell.rm('-rf', project);
             done = true;	

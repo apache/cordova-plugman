@@ -254,7 +254,7 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
         project_dir: project_dir,
         plugins_dir: plugins_dir,
         top_plugin_id: plugin_id,
-        top_plugin_dir:  plugin_dir
+        top_plugin_dir: plugin_dir
     }
 
     return callEngineScripts(theEngines)
@@ -298,8 +298,8 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
         return handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plugins_dir, install_plugin_dir, filtered_variables, options.www_dir, options.is_top_level);
 
     }).fail(function (error) {
+         events.emit('warn', "Failed to install '"+plugin_id+"':"+ error.stack);
 
-         events.emit('warn', "Failed to install '"+plugin_id+"':"+ error);
          return Q(false);
     });
 }
@@ -307,32 +307,50 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
 function installDependencies(install, dependencies, options) {
     events.emit('verbose', 'Dependencies detected, iterating through them...');
 
-    Q.all( dependencies.map(function(depXml){
-        var dep = {
-            id: depXml.attrib.id,
-            subdir: depXml.attrib.subdir,
-            url: depXml.attrib.url || '',
-            git_ref: depXml.attrib.commit
-        }
+    var result = Q(true),
+        i, 
+        depXml;
 
-        if (dep.subdir) {
-            dep.subdir = path.join.apply(null, dep.subdir.split('/'));
-        }
+    var top_plugins = path.join(install.top_plugin_dir, '..');
 
-        return tryFetchDependency(dep, install)
-        .then( function(url){		
-            dep.url = url;
-            return installDependency(dep, install, options);
+//console.log(install);
+
+    // Add directory of top-level plugin to search path
+    options.searchpath = options.searchpath || [];
+    if( top_plugins != install.plugins_dir && options.searchpath.indexOf(top_plugins) == -1 )
+        options.searchpath.push(top_plugins);
+
+//console.log(options);
+
+    // Search for dependency by Id is:
+    // a) Look for {$top_plugins}/{$depId} directory
+    // b) Scan the top level plugin directory {$top_plugins} for matching id (searchpath)
+    // c) Fetch from registry
+
+    return dependencies.reduce(function(soFar, depXml) {
+        return soFar.then(function() {
+                   
+            var dep = {
+                id: depXml.attrib.id,
+                subdir: depXml.attrib.subdir,
+                url: depXml.attrib.url || '',
+                git_ref: depXml.attrib.commit
+            }
+
+            if (dep.subdir) {
+                dep.subdir = path.join(dep.subdir.split('/'));
+            }
+
+            return tryFetchDependency(dep, install)
+            .then( function(url){		
+                dep.url = url;
+                return installDependency(dep, install, options);
+            });
         });
-
-    }));
+    }, Q());
 }
 
 function tryFetchDependency(dep, install) {
-    var isRelativePath = function(path) {
-        var absolute = (path[0] === '/' || path[0] === '\\' || path.indexOf(':') > 0 );
-        return !absolute;
-    };
 
     //dep.url = '.';
 
@@ -384,8 +402,9 @@ function tryFetchDependency(dep, install) {
     // Test relative to parent folder 
     if( dep.url && isRelativePath(dep.url) ) {
         var relativePath = path.resolve(install.top_plugin_dir, '../' + dep.url);
+
         if( fs.existsSync(relativePath) ) {
-            dep.url = relativePath;
+           dep.url = relativePath;
         }
     }
 
@@ -418,10 +437,12 @@ function installDependency(dep, install, options) {
             is_top_level: false,
             subdir: dep.subdir,
             git_ref: dep.git_ref,
-            expected_id: dep.plugin_id
+            expected_id: dep.id
         });
 
-        return possiblyFetch(install.actions, install.platform, install.project_dir, dep.url, install.plugins_dir, opts);
+        var dep_src = dep.url.length ? dep.url : dep.id;
+
+        return possiblyFetch(install.actions, install.platform, install.project_dir, dep_src, install.plugins_dir, opts);
     };
 }
 
@@ -500,3 +521,12 @@ function interp_vars(vars, text) {
     });
     return text;
 }
+
+function isAbsolutePath(path) {
+    return path && (path[0] === '/' || path[0] === '\\' || path.indexOf(':\\') > 0 );
+}
+
+function isRelativePath(path) {
+    return !isAbsolutePath();	
+}
+
