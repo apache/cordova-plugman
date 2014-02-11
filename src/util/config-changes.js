@@ -154,18 +154,6 @@ function generate_plugin_config_munge(plugin_dir, platform, project_dir, vars) {
         // add platform-specific config changes if they exist
         changes = changes.concat(platformTag.findall('config-file'));
 
-        // note down plugins-plist munges in special section of munge obj
-        var plugins_plist = platformTag.findall('plugins-plist');
-        plugins_plist.forEach(function(pl) {
-            if (!munge['plugins-plist']) {
-                munge['plugins-plist'] = {};
-            }
-            var key = pl.attrib['key'];
-            var value = pl.attrib['string'];
-            if (!munge['plugins-plist'][key]) {
-                munge['plugins-plist'][key] = value;
-            }
-        });
         // note down pbxproj framework munges in special section of munge obj
         // CB-5238 this is only for systems frameworks
         var frameworks = platformTag.findall('framework');
@@ -244,16 +232,6 @@ function unmerge_plugin_changes(plugin_name, plugin_id, is_top_level, should_dec
 
     var plistObj, pbxproj;
     if (self.platform == 'ios') {
-        if (global_munge['plugins-plist'] && config_munge['plugins-plist']) {
-            var plistfile = glob.sync(path.join(self.project_dir, '**', '{PhoneGap,Cordova}.plist'));
-            if (plistfile.length > 0) {
-                plistfile = plistfile[0];
-                // determine if this is a binary or ascii plist and choose the parser
-                // this is temporary until binary support is added to node-plist
-                var pl = (isBinaryPlist(plistfile) ? bplist : plist);
-                plistObj = pl.parseFileSync(plistfile);
-            }
-        }
         if (global_munge['framework'] && config_munge['framework']) {
             pbxproj = ios_parser.parseProjectFile(self.project_dir);
         }
@@ -262,19 +240,13 @@ function unmerge_plugin_changes(plugin_name, plugin_id, is_top_level, should_dec
     // Traverse config munge and decrement global munge
     Object.keys(config_munge).forEach(function(file) {
         if (file == 'plugins-plist' && self.platform == 'ios') {
-            // Handle plist files in ios
-            if (global_munge[file]) {
-                Object.keys(config_munge[file]).forEach(function(key) {
-                    if (global_munge[file][key] && plistObj) {
-                        // TODO: REMOVE in 3.4 (https://issues.apache.org/jira/browse/CB-4456)
-                        events.emit('warn', 'DEPRECATION WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
-                        delete plistObj.Plugins[key];
-                        // TODO: don't write out on every change, do it once.
-                        fs.writeFileSync(plistfile, plist.build(plistObj));
-                        delete global_munge[file][key];
-                    }
-                });
-            }
+            // TODO: remove this check and <plugins-plist> sections in spec/plugins/../plugin.xml files.
+            events.emit(
+                    'warn',
+                    'WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), ' +
+                    'which are no longer supported. Support has been removed as of Cordova 3.4.'
+            );
+            return;
         } else if (global_munge[file]) {
             // Handle arbitrary XML/pbxproj changes
             var is_framework = (self.platform == 'ios' && file == 'framework');
@@ -342,16 +314,6 @@ function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_incre
     var pbxproj = cache.pbxproj;
 
     if (self.platform == 'ios') {
-        if (config_munge['plugins-plist']) {
-            var plistfile = glob.sync(path.join(self.project_dir, '**', '{PhoneGap,Cordova}.plist'));
-            if (plistfile.length > 0) {
-                plistfile = plistfile[0];
-                // determine if this is a binary or ascii plist and choose the parser
-                // this is temporary until binary support is added to node-plist
-                var pl = (isBinaryPlist(plistfile) ? bplist : plist);
-                plistObj = pl.parseFileSync(plistfile);
-            }
-        }
         if (config_munge['framework']) {
             if (!pbxproj) {
                 // Note, parseProjectFile() is slow, ~250ms on MacBook Pro 2013.
@@ -369,48 +331,43 @@ function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_incre
         Object.keys(config_munge[file]).forEach(function(selector) {
             // Handle plist files on ios.
             if (file == 'plugins-plist' && self.platform == 'ios') {
-                var key = selector;
-                if (!global_munge[file][key] && plistObj) {
-                    // TODO: REMOVE in 3.4 (https://issues.apache.org/jira/browse/CB-4456)
-                    events.emit('warn', 'DEPRECATION WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
-                    // this key does not exist, so add it to plist
-                    global_munge[file][key] = config_munge[file][key];
-                    plistObj.Plugins[key] = config_munge[file][key];
-                    // TODO: dont write on every loop eh
-                    fs.writeFileSync(plistfile, plist.build(plistObj));
+                events.emit(
+                    'warn',
+                    'WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), ' +
+                    'which are no longer supported. Support has been removed as of Cordova 3.4.'
+                );
+                return;
+            }
+            // Handle arbitrary XML OR pbxproj framework stuff
+            if (!global_munge[file][selector]) {
+                global_munge[file][selector] = {};
+            }
+            Object.keys(config_munge[file][selector]).forEach(function(xml_child) {
+                if (!global_munge[file][selector][xml_child]) {
+                    global_munge[file][selector][xml_child] = 0;
                 }
-            } else {
-                // Handle arbitrary XML OR pbxproj framework stuff
-                if (!global_munge[file][selector]) {
-                    global_munge[file][selector] = {};
+                if (should_increment) {
+                    global_munge[file][selector][xml_child] += 1;
                 }
-                Object.keys(config_munge[file][selector]).forEach(function(xml_child) {
-                    if (!global_munge[file][selector][xml_child]) {
-                        global_munge[file][selector][xml_child] = 0;
-                    }
-                    if (should_increment) {
-                        global_munge[file][selector][xml_child] += 1;
-                    }
-                    if (global_munge[file][selector][xml_child] == 1) {
-                        if (is_framework) {
-                            var src = selector; // 2nd-level leaves are src path
-                            // Only add the framework if it's not a cordova-ios core framework
-                            if (keep_these_frameworks.indexOf(src) == -1) {
-                                // xml_child in this case is whether the framework should use weak or not
-                                var opt = {weak: (xml_child != 'true' ? false : true)};
-                                pbxproj.xcode.addFramework(src, opt);
-                                pbxproj.needs_write = true;
-                            }
-                        } else {
-                            // this xml child is new, graft it (only if config file exists)
-                            var config_file = self.config_keeper.get(self.project_dir, self.platform, file);
-                            if (config_file.exists) {
-                                config_file.graft_child(selector, xml_child);
-                            }
+                if (global_munge[file][selector][xml_child] == 1) {
+                    if (is_framework) {
+                        var src = selector; // 2nd-level leaves are src path
+                        // Only add the framework if it's not a cordova-ios core framework
+                        if (keep_these_frameworks.indexOf(src) == -1) {
+                            // xml_child in this case is whether the framework should use weak or not
+                            var is_weak = {weak: (xml_child === 'true')};
+                            pbxproj.xcode.addFramework(src, is_weak);
+                            pbxproj.needs_write = true;
+                        }
+                    } else {
+                        // this xml child is new, graft it (only if config file exists)
+                        var config_file = self.config_keeper.get(self.project_dir, self.platform, file);
+                        if (config_file.exists) {
+                            config_file.graft_child(selector, xml_child);
                         }
                     }
-                });
-            }
+                }
+            });
         });
     });
     platform_config.config_munge = global_munge;
@@ -539,7 +496,7 @@ function ConfigFile_load() {
     // config file may be in a place not exactly specified in the target
     var filepath = self.filepath = resolveConfigFilePath(self.project_dir, self.platform, self.file_tag);
 
-    if (!fs.existsSync(filepath)) {
+    if ( !filepath || !fs.existsSync(filepath) ) {
         self.exists = false;
         return;
     }
