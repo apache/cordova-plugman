@@ -7,5 +7,6 @@ module.exports = {
     'wp8': require('./platforms/wp8'),
     'windows8' : require('./platforms/windows8'),
     'firefoxos': require('./platforms/firefoxos'),
-    'ubuntu': require('./platforms/ubuntu')
+    'ubuntu': require('./platforms/ubuntu'),
+    'tizen': require('./platforms/tizen')
 };
