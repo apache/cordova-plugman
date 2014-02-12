@@ -107,8 +107,6 @@ function cleanVersionOutput(version, name){
         // some platform still lists dev branches as just dev, set to null and continue
         if(out=="dev"){
             out = null;
-        }else{
-            out = out.substr(0, dev_index-1);
         }
         events.emit('verbose', name+' has been detected as using a development branch. Attemping to install anyways.');
     }

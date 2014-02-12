@@ -258,11 +258,11 @@ describe('install', function() {
                 // <engine name="mega-fun-plugin" version=">=1.0.0" scriptSrc="megaFunVersion" platform="*" />
                 // <engine name="mega-boring-plugin" version=">=3.0.0" scriptSrc="megaBoringVersion" platform="ios|android" />
 
-                // cordova-plugman --> same as node version???
+				var plugmanVersion = require('../package.json').version;
 
                 expect(spy.calls.length).toBe(4);
                 expect(spy.calls[0].args).toEqual([ '', '>=2.3.0' ]);
-                expect(spy.calls[1].args).toEqual([ process.version, '>=0.10.0' ]);
+                expect(spy.calls[1].args).toEqual([ plugmanVersion, '>=0.10.0' ]);
                 expect(spy.calls[2].args).toEqual([ '', '>=1.0.0' ]);
                 expect(spy.calls[3].args).toEqual([ '', '>=3.0.0' ]);
             });
