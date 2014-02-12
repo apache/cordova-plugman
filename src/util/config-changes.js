@@ -58,6 +58,26 @@ var keep_these_frameworks = [
 
 var package = module.exports = {};
 
+
+/******************************************************************************
+Adapters to keep the current refactoring effort to within this file
+******************************************************************************/
+package.add_plugin_changes = function (platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
+    // TODO: Treat separately the case of should_increment = false, it's only used by cordova cli for "cordova prepare"
+    var munger = new PlatformMunger(platform, project_dir, plugins_dir);
+    munger.apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment, cache);
+    munger.config_keeper.save_all();
+};
+
+package.remove_plugin_changes = function (platform, project_dir, plugins_dir, plugin_name, plugin_id, is_top_level, should_decrement) {
+    var munger = new PlatformMunger(platform, project_dir, plugins_dir);
+    munger.unmerge_plugin_changes(plugin_name, plugin_id, is_top_level, should_decrement);
+    munger.config_keeper.save_all();
+};
+/******************************************************************************/
+
+
+
 package.process = process_all;
 function process_all(plugins_dir, project_dir, platform) {
     checkPlatform(platform);
@@ -84,9 +104,7 @@ function process_all(plugins_dir, project_dir, platform) {
     module.exports.save_platform_json(platform_config, plugins_dir, platform);
 }
 
-function checkPlatform(platform) {
-    if (!(platform in platforms)) throw new Error('platform "' + platform + '" not recognized.');
-}
+
 
 package.add_installed_plugin_to_prepare_queue = add_installed_plugin_to_prepare_queue;
 function add_installed_plugin_to_prepare_queue(plugins_dir, plugin, platform, vars, is_top_level) {
@@ -104,33 +122,6 @@ function add_uninstalled_plugin_to_prepare_queue(plugins_dir, plugin, platform, 
     var config = module.exports.get_platform_json(plugins_dir, platform);
     config.prepare_queue.uninstalled.push({'plugin':plugin, 'id':plugin_xml._root.attrib['id'], 'topLevel':is_top_level});
     module.exports.save_platform_json(config, plugins_dir, platform);
-}
-
-package.get_platform_json = get_platform_json;
-function get_platform_json(plugins_dir, platform) {
-    checkPlatform(platform);
-
-    var filepath = path.join(plugins_dir, platform + '.json');
-    if (fs.existsSync(filepath)) {
-        return JSON.parse(fs.readFileSync(filepath, 'utf-8'));
-    } else {
-        var config = {
-            prepare_queue:{installed:[], uninstalled:[]},
-            config_munge:{},
-            installed_plugins:{},
-            dependent_plugins:{}
-        };
-        fs.writeFileSync(filepath, JSON.stringify(config), 'utf-8');
-        return config;
-    }
-}
-
-package.save_platform_json = save_platform_json;
-function save_platform_json(config, plugins_dir, platform) {
-    checkPlatform(platform);
-
-    var filepath = path.join(plugins_dir, platform + '.json');
-    fs.writeFileSync(filepath, JSON.stringify(config), 'utf-8');
 }
 
 package.generate_plugin_config_munge = generate_plugin_config_munge;
@@ -208,6 +199,17 @@ function generate_plugin_config_munge(plugin_dir, platform, project_dir, vars) {
     return munge;
 }
 
+/// ^^^^^^^^ NO MANS LAND ^^^^^^^
+
+
+
+
+
+/********************************************************
+* PlatformMunger class
+*
+* Can deal with config file of a single porject.
+********************************************************/
 
 // Objects of the PlatformMunger class can deal with config file of a single porject.
 function PlatformMunger(platform, project_dir, plugins_dir) {
@@ -215,6 +217,45 @@ function PlatformMunger(platform, project_dir, plugins_dir) {
     this.project_dir = project_dir;
     this.plugins_dir = plugins_dir;
     this.config_keeper = new ConfigKeeper();
+}
+
+// Deal with a single file munge.
+// Theoretically, since files are independent several of those can run in parallel.
+PlatformMunger.prototype.apply_file_munge = PlatformMunger_apply_file_munge;
+function PlatformMunger_apply_file_munge(file, munge, remove) {
+    var self = this;
+    var xml_child;
+
+    if ( file === 'framework' && self.platform === 'ios' ) {
+        // ios pbxproj file
+        var pbxproj = self.config_keeper.get(self.project_dir, self.platform, 'framework');
+        for (var src in munge) {
+            for (xml_child in munge[src]) {
+                // Only add the framework if it's not a cordova-ios core framework
+                if (keep_these_frameworks.indexOf(src) == -1) {
+                    // xml_child in this case is whether the framework should use weak or not
+                    if (remove) {
+                        pbxproj.data.removeFramework(src);
+                    } else {
+                        pbxproj.data.addFramework(src, {weak: (xml_child === 'true')});
+                    }
+                    pbxproj.is_changed = true;
+                }
+            }
+        }
+    } else {
+        // all other types of files
+        for (var selector in munge) {
+            for (xml_child in munge[selector]) {
+                // this xml child is new, graft it (only if config file exists)
+                var config_file = self.config_keeper.get(self.project_dir, self.platform, file);
+                if (config_file.exists) {
+                    if (remove) config_file.prune_child(selector, xml_child);
+                    else config_file.graft_child(selector, xml_child);
+                }
+            }
+        }
+    }
 }
 
 
@@ -256,126 +297,6 @@ function unmerge_plugin_changes(plugin_name, plugin_id, is_top_level, should_dec
 }
 
 
-PlatformMunger.prototype.apply_file_munge = PlatformMunger_apply_file_munge;
-function PlatformMunger_apply_file_munge(file, munge, remove) {
-    var self = this;
-    var xml_child;
-
-    if ( file === 'framework' && self.platform === 'ios' ) {
-        // ios pbxproj file
-        var pbxproj = self.config_keeper.get(self.project_dir, self.platform, 'framework');
-        for (var src in munge) {
-            for (xml_child in munge[src]) {
-                // Only add the framework if it's not a cordova-ios core framework
-                if (keep_these_frameworks.indexOf(src) == -1) {
-                    // xml_child in this case is whether the framework should use weak or not
-                    if (remove) {
-                        pbxproj.data.removeFramework(src);
-                    } else {
-                        pbxproj.data.addFramework(src, {weak: (xml_child === 'true')});
-                    }
-                    pbxproj.is_changed = true;
-                }
-            }
-        }
-    } else {
-        // all other types of files
-        for (var selector in munge) {
-            for (xml_child in munge[selector]) {
-                // this xml child is new, graft it (only if config file exists)
-                var config_file = self.config_keeper.get(self.project_dir, self.platform, file);
-                if (config_file.exists) {
-                    if (remove) config_file.prune_child(selector, xml_child);
-                    else config_file.graft_child(selector, xml_child);
-                }
-            }
-        }
-    }
-}
-
-
-
-// TODO: unused func
-function get_deep(obj, keys /* or key1, key2, key3 */) {
-    if ( !underscore.isArray(keys) ) {
-        keys = Array.prototype.slice.call(arguments, 1);
-    }
-    if (typeof(obj) === 'undefined') {
-        return obj;
-    } else if (keys.length === 1) {
-        return obj[keys[0]];
-    }
-    else {
-        return get_deep(obj[keys[0]], keys.slice(1));
-    }
-}
-
-
-// TODO: document the func and maybe move it where appropriate
-function deep_add(obj, val, keys /* or key1, key2 .... */ ) {
-    if ( !underscore.isArray(keys) ) {
-        keys = Array.prototype.slice.call(arguments, 2);
-    }
-    var k = keys[0];
-
-    if (keys.length == 1) {
-        obj[k] = obj[k] || 0;
-        obj[k] += val;
-        return obj[k];
-    } else {
-        obj[k] = obj[k] || {};
-        return deep_add(obj[k], val, keys.slice(1));
-    }
-}
-
-
-// TODO: document
-function increment_munge(base, munge) {
-    var diff = {};
-
-    for (var file in munge) {
-        for (var selector in munge[file]) {
-            for (var xml_child in munge[file][selector]) {
-                var val = munge[file][selector][xml_child];
-                // if node not in base, add it to diff and base
-                // else increment it's value in base without adding to diff
-                var new_val = deep_add(base, val, [file, selector, xml_child]);
-                if ( val == new_val ) {
-                    deep_add(diff, val, file, selector, xml_child);
-                }
-            }
-        }
-    }
-    return diff;
-}
-
-
-function decrement_munge(base, munge) {
-    var zeroed = {};
-
-    for (var file in munge) {
-        for (var selector in munge[file]) {
-            for (var xml_child in munge[file][selector]) {
-                var val = munge[file][selector][xml_child];
-                // if node not in base, add it to diff and base
-                // else increment it's value in base without adding to diff
-                var new_val = deep_add(base, -val, [file, selector, xml_child]);
-                if ( new_val <= 0) {
-                    deep_add(zeroed, val, file, selector, xml_child);
-                    delete base[file][selector][xml_child];
-                }
-            }
-        }
-    }
-    return zeroed;
-}
-
-// For better readability where used
-function clone_munge(munge) {
-    return increment_munge({}, munge)
-}
-
-
 PlatformMunger.prototype.apply_plugin_changes = apply_plugin_changes;
 function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment) {
     var self = this;
@@ -414,8 +335,16 @@ function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_incre
     // save
     module.exports.save_platform_json(platform_config, self.plugins_dir, self.platform);
 }
+/**** END of PlatformMunger ****/
 
 
+
+/********************************************************
+* ConfigKeeper class
+*
+* Used to load and store config files to avoid reparsing
+* and writing them out multiple times.
+********************************************************/
 function ConfigKeeper() {
     this._cached = {};
 }
@@ -442,86 +371,51 @@ function ConfigKeeper_save_all() {
     });
 }
 
+/**** TODO move save/get_platform_json those to be part of ConfigKeeper ****/
+
+package.get_platform_json = get_platform_json;
+function get_platform_json(plugins_dir, platform) {
+    checkPlatform(platform);
+
+    var filepath = path.join(plugins_dir, platform + '.json');
+    if (fs.existsSync(filepath)) {
+        return JSON.parse(fs.readFileSync(filepath, 'utf-8'));
+    } else {
+        var config = {
+            prepare_queue:{installed:[], uninstalled:[]},
+            config_munge:{},
+            installed_plugins:{},
+            dependent_plugins:{}
+        };
+        fs.writeFileSync(filepath, JSON.stringify(config), 'utf-8');
+        return config;
+    }
+}
+
+package.save_platform_json = save_platform_json;
+function save_platform_json(config, plugins_dir, platform) {
+    checkPlatform(platform);
+
+    var filepath = path.join(plugins_dir, platform + '.json');
+    fs.writeFileSync(filepath, JSON.stringify(config), 'utf-8');
+}
+
+/**** END of ConfigKeeper ****/
+
+
+/********************************************************
+* ConfigFile class
+********************************************************/
 function ConfigFile(project_dir, platform, file_tag) {
     this.project_dir = project_dir;
     this.platform = platform;
     this.file_tag = file_tag;
-    //this.filepath = resolveConfigFilePath(project_dir, platform, file_tag);
+
     this.load();
-    // type (xml, plist, csproj??)
-    // filepath
-    // data
-    // raw?
-    // stat_on_last_read
     this.is_changed = false;
-    // graft_child()
-    // save()
-    // save_if_changed()
-    // reload() ?
 }
 
-// GRAFT
-ConfigFile.prototype.graft_child = ConfigFile_graft_child;
-function ConfigFile_graft_child(selector, xml_child) {
-    var self = this;
-    var filepath = self.filepath;
-    var result;
-    if (self.type === 'xml') {
-        var xml_to_graft = [et.XML(xml_child)];
-        result = xml_helpers.graftXML(self.data, xml_to_graft, selector);
-        if ( !result) {
-            throw new Error('grafting xml at selector "' + selector + '" from "' + filepath + '" during config install went bad :(');
-        }
-    } else {
-        // plist file
-        result = plist_helpers.graftPLIST(self.data, xml_child, selector);
-        if ( !result ) {
-            throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
-        }
-    }
-    self.is_changed = true;
-}
-
-// PRUNE
-ConfigFile.prototype.prune_child = ConfigFile_prune_child;
-function ConfigFile_prune_child(selector, xml_child) {
-    var self = this;
-    var filepath = self.filepath;
-    var result;
-    if (self.type === 'xml') {
-        var xml_to_graft = [et.XML(xml_child)];
-        result = xml_helpers.pruneXML(self.data, xml_to_graft, selector);
-    } else {
-        // plist file
-        result = plist_helpers.prunePLIST(self.data, xml_child, selector);
-    }
-    if ( !result) {
-        var err_msg = 'Pruning at selector "' + selector + '" from "' + filepath + '" went bad.';
-        throw new Error(err_msg);
-    }
-    self.is_changed = true;
-}
-
-
-
-//// SAVE
-ConfigFile.prototype.save = ConfigFile_save;
-function ConfigFile_save() {
-    var self = this;
-    if (self.type === 'xml') {
-        fs.writeFileSync(self.filepath, self.data.write({indent: 4}), 'utf-8');
-    } else if (self.type === 'pbxproj') {
-        fs.writeFileSync(self.filepath, self.data.writeSync());
-    } else {
-        // plist
-        var regExp = new RegExp("<string>[ \t\r\n]+?</string>", "g");
-        fs.writeFileSync(self.filepath, plist.build(self.data).replace(regExp, "<string></string>"));
-    }
-    self.is_changed = false;
-}
-
-
-//// LOAD
+// ConfigFile.load()
 ConfigFile.prototype.load = ConfigFile_load;
 function ConfigFile_load() {
     var self = this;
@@ -556,21 +450,74 @@ function ConfigFile_load() {
     }
 }
 
-/////////////////////////// END 
+// ConfigFile.save()
+ConfigFile.prototype.save = ConfigFile_save;
+function ConfigFile_save() {
+    var self = this;
+    if (self.type === 'xml') {
+        fs.writeFileSync(self.filepath, self.data.write({indent: 4}), 'utf-8');
+    } else if (self.type === 'pbxproj') {
+        fs.writeFileSync(self.filepath, self.data.writeSync());
+    } else {
+        // plist
+        var regExp = new RegExp("<string>[ \t\r\n]+?</string>", "g");
+        fs.writeFileSync(self.filepath, plist.build(self.data).replace(regExp, "<string></string>"));
+    }
+    self.is_changed = false;
+}
 
-package.add_plugin_changes = function (platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
-    // TODO: Treat separately the case of should_increment = false, it's only used by cordova cli for "cordova prepare"
-    var munger = new PlatformMunger(platform, project_dir, plugins_dir);
-    munger.apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment, cache);
-    munger.config_keeper.save_all();
-};
+// ConfigFile.graft_child()
+ConfigFile.prototype.graft_child = ConfigFile_graft_child;
+function ConfigFile_graft_child(selector, xml_child) {
+    var self = this;
+    var filepath = self.filepath;
+    var result;
+    if (self.type === 'xml') {
+        var xml_to_graft = [et.XML(xml_child)];
+        result = xml_helpers.graftXML(self.data, xml_to_graft, selector);
+        if ( !result) {
+            throw new Error('grafting xml at selector "' + selector + '" from "' + filepath + '" during config install went bad :(');
+        }
+    } else {
+        // plist file
+        result = plist_helpers.graftPLIST(self.data, xml_child, selector);
+        if ( !result ) {
+            throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
+        }
+    }
+    self.is_changed = true;
+}
 
-package.remove_plugin_changes = function (platform, project_dir, plugins_dir, plugin_name, plugin_id, is_top_level, should_decrement) {
-    var munger = new PlatformMunger(platform, project_dir, plugins_dir);
-    munger.unmerge_plugin_changes(plugin_name, plugin_id, is_top_level, should_decrement);
-    munger.config_keeper.save_all();
-};
+// ConfigFile.prune_child()
+ConfigFile.prototype.prune_child = ConfigFile_prune_child;
+function ConfigFile_prune_child(selector, xml_child) {
+    var self = this;
+    var filepath = self.filepath;
+    var result;
+    if (self.type === 'xml') {
+        var xml_to_graft = [et.XML(xml_child)];
+        result = xml_helpers.pruneXML(self.data, xml_to_graft, selector);
+    } else {
+        // plist file
+        result = plist_helpers.prunePLIST(self.data, xml_child, selector);
+    }
+    if ( !result) {
+        var err_msg = 'Pruning at selector "' + selector + '" from "' + filepath + '" went bad.';
+        throw new Error(err_msg);
+    }
+    self.is_changed = true;
+}
+/**** END of ConfigFile ****/
 
+
+/********************************************************
+* Utility functions
+********************************************************/
+
+// Check if we know such platform
+function checkPlatform(platform) {
+    if (!(platform in platforms)) throw new Error('platform "' + platform + '" not recognized.');
+}
 
 // determine if a plist file is binary
 function isBinaryPlist(filename) {
@@ -581,6 +528,8 @@ function isBinaryPlist(filename) {
     return buf.substring(0, 6) === 'bplist';
 }
 
+// Find out the real name of an iOS project
+// TODO: glob is slow, need a better way or caching, or avoid using.
 function getIOSProjectname(project_dir){
     var matches = glob.sync(path.join(project_dir, '*.xcodeproj'));
     var iospath= project_dir; // TODO: Do we ever want to return project dir here? I wont work in resolveConfigFilePath().
@@ -632,4 +581,79 @@ function resolveConfigFilePath(project_dir, platform, file) {
 
     // None of the special cases matched, returning project_dir/file.
     return filepath;
+}
+
+
+/********************************************************
+* Munge object manipulations functions
+********************************************************/
+
+// Increment obj[key1][key2]...[keyN] by val. If it
+// didn't exist, set it to val.
+function deep_add(obj, val, keys /* or key1, key2 .... */ ) {
+    if ( !underscore.isArray(keys) ) {
+        keys = Array.prototype.slice.call(arguments, 2);
+    }
+    var k = keys[0];
+
+    if (keys.length == 1) {
+        obj[k] = obj[k] || 0;
+        obj[k] += val;
+        return obj[k];
+    } else {
+        obj[k] = obj[k] || {};
+        return deep_add(obj[k], val, keys.slice(1));
+    }
+}
+
+// All values from munge are added to base as
+// base[file][selector][child] += base[file][selector][child]
+// Returns a munge object containing values that exist in munge
+// but not in base.
+function increment_munge(base, munge) {
+    var diff = {};
+
+    for (var file in munge) {
+        for (var selector in munge[file]) {
+            for (var xml_child in munge[file][selector]) {
+                var val = munge[file][selector][xml_child];
+                // if node not in base, add it to diff and base
+                // else increment it's value in base without adding to diff
+                var new_val = deep_add(base, val, [file, selector, xml_child]);
+                if ( val == new_val ) {
+                    deep_add(diff, val, file, selector, xml_child);
+                }
+            }
+        }
+    }
+    return diff;
+}
+
+// Update the base munge object as
+// base[file][selector][child] -= base[file][selector][child]
+// nodes that reached zero value are removed from base and the
+// returned munge object.
+function decrement_munge(base, munge) {
+    var zeroed = {};
+
+    for (var file in munge) {
+        for (var selector in munge[file]) {
+            for (var xml_child in munge[file][selector]) {
+                var val = munge[file][selector][xml_child];
+                // if node not in base, add it to diff and base
+                // else increment it's value in base without adding to diff
+                var new_val = deep_add(base, -val, [file, selector, xml_child]);
+                if ( new_val <= 0) {
+                    deep_add(zeroed, val, file, selector, xml_child);
+                    delete base[file][selector][xml_child];
+                }
+            }
+        }
+    }
+    return zeroed;
+}
+
+// For better readability where used
+function clone_munge(munge) {
+    return increment_munge({}, munge)
 }
