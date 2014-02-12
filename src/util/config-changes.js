@@ -218,7 +218,6 @@ function PlatformMunger(platform, project_dir, plugins_dir) {
 }
 
 
-//package.remove_plugin_changes = remove_plugin_changes;
 PlatformMunger.prototype.unmerge_plugin_changes = unmerge_plugin_changes;
 function unmerge_plugin_changes(plugin_name, plugin_id, is_top_level, should_decrement) {
     var self = this;
@@ -230,52 +229,20 @@ function unmerge_plugin_changes(plugin_name, plugin_id, is_top_level, should_dec
     var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, self.platform, self.project_dir, plugin_vars);
     // global munge looks at all plugins' changes to config files
     var global_munge = platform_config.config_munge;
+    var munge = decrement_munge(global_munge, config_munge);
 
-    // Traverse config munge and decrement global munge
-    Object.keys(config_munge).forEach(function(file) {
+    for (var file in munge) {
         if (file == 'plugins-plist' && self.platform == 'ios') {
             // TODO: remove this check and <plugins-plist> sections in spec/plugins/../plugin.xml files.
             events.emit(
-                    'warn',
-                    'WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), ' +
-                    'which are no longer supported. Support has been removed as of Cordova 3.4.'
+                'warn',
+                'WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), ' +
+                'which are no longer supported. Support has been removed as of Cordova 3.4.'
             );
-            return;
-        } else if (global_munge[file]) {
-            // Handle arbitrary XML/pbxproj changes
-            var is_framework = (self.platform == 'ios' && file == 'framework');
-            Object.keys(config_munge[file]).forEach(function(selector) {
-                if (global_munge[file][selector]) {
-                    Object.keys(config_munge[file][selector]).forEach(function(xml_child) {
-                        if (global_munge[file][selector][xml_child]) {
-                            if (should_decrement) {
-                                global_munge[file][selector][xml_child] -= 1;
-                            }
-                            if (global_munge[file][selector][xml_child] === 0) {
-                                if (is_framework) {
-                                    // this is a .framework reference in ios files
-                                    // We also need to keep some frameworks core to cordova-ios
-                                    if (keep_these_frameworks.indexOf(selector) == -1) {
-                                        var pbxproj = self.config_keeper.get(self.project_dir, self.platform, file);
-                                        pbxproj.data.removeFramework(selector); // in this case the 2nd-level key is the src attrib of <framework> els
-                                        pbxproj.is_changed = true;
-                                    }
-                                } else {
-                                    // this xml child is no longer necessary, prune it
-                                    var config_file = self.config_keeper.get(self.project_dir, self.platform, file);
-                                    if (config_file.exists) {
-                                        config_file.prune_child(selector, xml_child);
-                                    }
-                                }
-                                delete global_munge[file][selector][xml_child];
-                            }
-                        }
-                    });
-                }
-            });
+            continue;
         }
-    });
-    platform_config.config_munge = global_munge;
+        self.apply_file_munge(file, munge[file], /* remove = */ true);
+    }
 
     // Remove from installed_plugins
     if (is_top_level) {
@@ -289,12 +256,132 @@ function unmerge_plugin_changes(plugin_name, plugin_id, is_top_level, should_dec
 }
 
 
+PlatformMunger.prototype.apply_file_munge = PlatformMunger_apply_file_munge;
+function PlatformMunger_apply_file_munge(file, munge, remove) {
+    var self = this;
+    var xml_child;
+
+    if ( file === 'framework' && self.platform === 'ios' ) {
+        // ios pbxproj file
+        var pbxproj = self.config_keeper.get(self.project_dir, self.platform, 'framework');
+        for (var src in munge) {
+            for (xml_child in munge[src]) {
+                // Only add the framework if it's not a cordova-ios core framework
+                if (keep_these_frameworks.indexOf(src) == -1) {
+                    // xml_child in this case is whether the framework should use weak or not
+                    if (remove) {
+                        pbxproj.data.removeFramework(src);
+                    } else {
+                        pbxproj.data.addFramework(src, {weak: (xml_child === 'true')});
+                    }
+                    pbxproj.is_changed = true;
+                }
+            }
+        }
+    } else {
+        // all other types of files
+        for (var selector in munge) {
+            for (xml_child in munge[selector]) {
+                // this xml child is new, graft it (only if config file exists)
+                var config_file = self.config_keeper.get(self.project_dir, self.platform, file);
+                if (config_file.exists) {
+                    if (remove) config_file.prune_child(selector, xml_child);
+                    else config_file.graft_child(selector, xml_child);
+                }
+            }
+        }
+    }
+}
+
+
+
+// TODO: unused func
+function get_deep(obj, keys /* or key1, key2, key3 */) {
+    if ( !underscore.isArray(keys) ) {
+        keys = Array.prototype.slice.call(arguments, 1);
+    }
+    if (typeof(obj) === 'undefined') {
+        return obj;
+    } else if (keys.length === 1) {
+        return obj[keys[0]];
+    }
+    else {
+        return get_deep(obj[keys[0]], keys.slice(1));
+    }
+}
+
+
+// TODO: document the func and maybe move it where appropriate
+function deep_add(obj, val, keys /* or key1, key2 .... */ ) {
+    if ( !underscore.isArray(keys) ) {
+        keys = Array.prototype.slice.call(arguments, 2);
+    }
+    var k = keys[0];
+
+    if (keys.length == 1) {
+        obj[k] = obj[k] || 0;
+        obj[k] += val;
+        return obj[k];
+    } else {
+        obj[k] = obj[k] || {};
+        return deep_add(obj[k], val, keys.slice(1));
+    }
+}
+
+
+// TODO: document
+function increment_munge(base, munge) {
+    var diff = {};
+
+    for (var file in munge) {
+        for (var selector in munge[file]) {
+            for (var xml_child in munge[file][selector]) {
+                var val = munge[file][selector][xml_child];
+                // if node not in base, add it to diff and base
+                // else increment it's value in base without adding to diff
+                var new_val = deep_add(base, val, [file, selector, xml_child]);
+                if ( val == new_val ) {
+                    deep_add(diff, val, file, selector, xml_child);
+                }
+            }
+        }
+    }
+    return diff;
+}
+
+
+function decrement_munge(base, munge) {
+    var zeroed = {};
+
+    for (var file in munge) {
+        for (var selector in munge[file]) {
+            for (var xml_child in munge[file][selector]) {
+                var val = munge[file][selector][xml_child];
+                // if node not in base, add it to diff and base
+                // else increment it's value in base without adding to diff
+                var new_val = deep_add(base, -val, [file, selector, xml_child]);
+                if ( new_val <= 0) {
+                    deep_add(zeroed, val, file, selector, xml_child);
+                    delete base[file][selector][xml_child];
+                }
+            }
+        }
+    }
+    return zeroed;
+}
+
+// For better readability where used
+function clone_munge(munge) {
+    return increment_munge({}, munge)
+}
+
+
 PlatformMunger.prototype.apply_plugin_changes = apply_plugin_changes;
 function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment) {
     var self = this;
     var platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
     var plugin_dir = path.join(self.plugins_dir, plugin_id);
-
+    debugger;
     plugin_id = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'), 'utf-8')._root.attrib['id'];
 
     // get config munge, aka how should this plugin change various config files
@@ -302,56 +389,20 @@ function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_incre
     // global munge looks at all plugins' changes to config files
     var global_munge = platform_config.config_munge;
 
-    // Traverse config munge and decrement global munge
-    Object.keys(config_munge).forEach(function(file) {
-        if (!global_munge[file]) {
-            global_munge[file] = {};
+    var munge = increment_munge(global_munge, config_munge);
+    for (var file in munge) {
+        // TODO: remove this warning some time after 3.4 is out.
+        if (file == 'plugins-plist' && self.platform == 'ios') {
+            events.emit(
+                'warn',
+                'WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), ' +
+                'which are no longer supported. Support has been removed as of Cordova 3.4.'
+            );
+            continue;
         }
-        var is_framework = (self.platform == 'ios' && file == 'framework');
-        Object.keys(config_munge[file]).forEach(function(selector) {
-            // Handle plist files on ios.
-            if (file == 'plugins-plist' && self.platform == 'ios') {
-                events.emit(
-                    'warn',
-                    'WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), ' +
-                    'which are no longer supported. Support has been removed as of Cordova 3.4.'
-                );
-                return;
-            }
-            // Handle arbitrary XML OR pbxproj framework stuff
-            if (!global_munge[file][selector]) {
-                global_munge[file][selector] = {};
-            }
-            Object.keys(config_munge[file][selector]).forEach(function(xml_child) {
-                if (!global_munge[file][selector][xml_child]) {
-                    global_munge[file][selector][xml_child] = 0;
-                }
-                if (should_increment) {
-                    global_munge[file][selector][xml_child] += 1;
-                }
-                if (global_munge[file][selector][xml_child] == 1) {
-                    if (is_framework) {
-                        var src = selector; // 2nd-level leaves are src path
-                        // Only add the framework if it's not a cordova-ios core framework
-                        if (keep_these_frameworks.indexOf(src) == -1) {
-                            // xml_child in this case is whether the framework should use weak or not
-                            var is_weak = {weak: (xml_child === 'true')};
-                            var pbxproj = self.config_keeper.get(self.project_dir, self.platform, file);
-                            pbxproj.data.addFramework(src, is_weak);
-                            pbxproj.is_changed = true;
-                        }
-                    } else {
-                        // this xml child is new, graft it (only if config file exists)
-                        var config_file = self.config_keeper.get(self.project_dir, self.platform, file);
-                        if (config_file.exists) {
-                            config_file.graft_child(selector, xml_child);
-                        }
-                    }
-                }
-            });
-        });
-    });
-    platform_config.config_munge = global_munge;
+        // TODO: This is mostly file IO and can run in parallel since each file is independent.
+        self.apply_file_munge(file, munge[file]);
+    }
 
     // Move to installed_plugins if it is a top-level plugin
     if (is_top_level) {
@@ -363,6 +414,7 @@ function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_incre
     // save
     module.exports.save_platform_json(platform_config, self.plugins_dir, self.platform);
 }
+
 
 function ConfigKeeper() {
     this._cached = {};
@@ -507,6 +559,7 @@ function ConfigFile_load() {
 /////////////////////////// END 
 
 package.add_plugin_changes = function (platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
+    // TODO: Treat separately the case of should_increment = false, it's only used by cordova cli for "cordova prepare"
     var munger = new PlatformMunger(platform, project_dir, plugins_dir);
     munger.apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment, cache);
     munger.config_keeper.save_all();
