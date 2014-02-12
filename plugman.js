@@ -59,18 +59,6 @@ plugman = {
     raw:                {}
 };
 
-plugman.cloneOptions = function(options, newOpt) {
-	var opt = {}, o;
-	for(o in options)
-		opt[o] = options[o];
-
-	newOpt = newOpt || {};
-	for(o in newOpt)
-		opt[o] = newOpt[o];
-
-	return opt;
-};
-
 addProperty(plugman, 'help', './src/help');
 addProperty(plugman, 'install', './src/install', true);
 addProperty(plugman, 'uninstall', './src/uninstall', true);

@@ -8,6 +8,7 @@ var path = require('path'),
     Q = require('q'),
     platform_modules = require('./platforms'),
     os = require('os'),
+    underscore = require('underscore'),
     events = require('./events'),
     plugman = require('../plugman'),
     isWindows = (os.platform() === 'win32');
@@ -61,7 +62,7 @@ function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options)
     // Check that the plugin has already been fetched.
     if ( !fs.existsSync(plugin_src_dir) ) {
 
-        var opts = plugman.cloneOptions(options, {
+        var opts = underscore.extend({}, options, {
             link: false, 
             client: 'plugman'
         });
@@ -429,7 +430,7 @@ function installDependency(dep, install, options) {
 
     if ( fs.existsSync(dep.install_dir) ) {
         events.emit('verbose', 'Dependent plugin "' + dep.id + '" already fetched, using that version.');
-        var opts = plugman.cloneOptions(options, {
+        var opts = underscore.extend({}, options, {
             cli_variables: install.filtered_variables, 
             is_top_level: false
         });
@@ -439,7 +440,7 @@ function installDependency(dep, install, options) {
     } else {
         events.emit('verbose', 'Dependent plugin "' + dep.id + '" not fetched, retrieving then installing.');
 
-        var opts = plugman.cloneOptions(options, {
+        var opts = underscore.extend({}, options, {
             cli_variables: install.filtered_variables, 
             is_top_level: false,
             subdir: dep.subdir,

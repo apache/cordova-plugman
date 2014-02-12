@@ -10,6 +10,7 @@ var path = require('path'),
     underscore = require('underscore'),
     Q = require('q'),
     plugins = require('./util/plugins'),
+    underscore = require('underscore'),
     events = require('./events'),
     platform_modules = require('./platforms'),
     plugman = require('../plugman');
@@ -173,7 +174,7 @@ function runUninstallPlatform(actions, platform, project_dir, plugin_dir, plugin
             danglers.map(function(dangler) {
                 var dependent_path = dependencies.resolvePath(dangler, plugins_dir);
 
-                var opts = plugman.cloneOptions(options, { 
+                var opts = underscore.extend({}, options, { 
                     is_top_level: depsInfo.top_level_plugins.indexOf(dangler) > -1,
                     depsInfo: depsInfo
                 });
