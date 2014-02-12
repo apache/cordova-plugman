@@ -12,7 +12,6 @@ var install = require('../src/install'),
     shell   = require('shelljs'),
     child_process = require('child_process'),
     semver  = require('semver'),
-    temp    = __dirname,
     Q = require('q'),
     spec    = __dirname,	
     done    = false,
@@ -36,6 +35,30 @@ var install = require('../src/install'),
 
 function installPromise(f) {
   f.then(function() { done = true; }, function(err) { done = err; });
+}
+
+var existsSync = fs.existsSync;
+
+// Mocked functions for tests
+var fake = {
+    'existsSync' : {
+        'noPlugins' : function(path){
+            // fake installed plugin directories as 'not found'
+            if( path.slice(-5) !== '.json' && path.indexOf(plugins_install_dir) >= 0) {
+                return false;
+            }
+
+            return existsSync(path);
+        }
+    },
+    'fetch' : {
+        'dependencies' : function(id, dir) {
+            if(id == plugins['A'])
+                return Q(id); // full path to plugin
+
+            return Q( path.join(plugins_dir, 'dependencies', id) ); 
+        }
+    }
 }
 
 describe('start', function() {	
@@ -94,7 +117,7 @@ describe('start', function() {
 });
 
 describe('install', function() {
-    var exists, chmod, chmod, exec, proc, add_to_queue, prepare, actions_push, c_a, mkdir, cp, rm, fetchSpy;
+    var chmod, exec, proc, add_to_queue, prepare, actions_push, c_a, mkdir, cp, rm, fetchSpy, emit;
 
     beforeEach(function() {
         prepare = spyOn(plugman, 'prepare').andReturn( Q(true) );
@@ -107,7 +130,7 @@ describe('install', function() {
         spyOn(platforms, 'copyFile').andReturn(true);
 
         fetchSpy = spyOn(plugman.raw, 'fetch').andReturn( Q( plugins['EnginePlugin'] ) );
-        chmod = spyOn(fs, 'chmodSync');
+        chmod = spyOn(fs, 'chmodSync').andReturn(true);
         fsWrite = spyOn(fs, 'writeFileSync').andReturn(true);
         cp = spyOn(shell, 'cp').andReturn(true);
         rm = spyOn(shell, 'rm').andReturn(true);
@@ -135,7 +158,7 @@ describe('install', function() {
 
         it('should call fetch if provided plugin cannot be resolved locally', function() {
             fetchSpy.andReturn( Q( plugins['DummyPlugin'] ) );
-            spyOn(install, 'existsPlugin').andReturn(false);
+            spyOn(fs, 'existsSync').andCallFake( fake['existsSync']['noPlugins'] );
 
             runs(function() {
                 installPromise(install('android', project, 'CLEANYOURSHORTS' ));
@@ -256,43 +279,41 @@ describe('install', function() {
         });
 
         describe('with dependencies', function() {
-            it('should fetch any dependent plugins if missing', function() {
-                spyOn(install, 'existsPlugin').andReturn(false);
-                fetchSpy.andCallFake(function(id, dir) {
-                    if(id == plugins['A'])
-                        return Q(id); // full path to plugin
-
-                    return Q( path.join(plugins_dir, 'dependencies', id) ); 
-                });
+            it('should install any dependent plugins if missing', function() {
+                spyOn(fs, 'existsSync').andCallFake( fake['existsSync']['noPlugins'] );
+                fetchSpy.andCallFake( fake['fetch']['dependencies'] );
+                emit = spyOn(events, 'emit');
 
                 exec.andCallFake(function(cmd, cb) {
                     cb(null, '9.0.0\n');
-                });				
-                
+                });
+
                 runs(function() {
                     installPromise( install('android', project, plugins['A']) );
                 });
                 waitsFor(function() { return done; }, 'install promise never resolved', 200);
-                runs(function() {
-                     expect(fetchSpy.calls.length).toEqual(3);
-                     expect(fetchSpy.calls[0].args[0]).toEqual(plugins['A']);
+                runs(function() {							  
+                    // Look for 'Installing plugin ...' in events
+                    var install = [], i;
+                    for(i in emit.argsForCall) {
+                        if(emit.argsForCall[i][1].substr(0, 10) === 'Installing')
+                            install.push(emit.argsForCall[i][1]);
+                    }
 
-                     // Deps read from XML file... 
-                     expect(fetchSpy.calls[1].args[0]).toEqual('C');
-                     expect(fetchSpy.calls[2].args[0]).toEqual('D');
+                    expect(install).toEqual([
+                        "Installing plugin C",
+                        "Installing plugin D",
+                        "Installing plugin A"
+                    ]);
                 });
             });
-            it('should try to fetch any dependent plugins from registry when url is not defined', function() {
-                spyOn(install, 'existsPlugin').andReturn(false);
-                fetchSpy.andCallFake(function(id, dir) {
-                    if(id == plugins['A'])
-                        return Q(id); // full path to plugin
+            it('should install any dependent plugins from registry when url is not defined', function() {
+                spyOn(fs, 'existsSync').andCallFake( fake['existsSync']['noPlugins'] );
+                fetchSpy.andCallFake( fake['fetch']['dependencies'] );
 
-                    return Q( path.join(plugins_dir, 'dependencies', id) ); 
-                });
                 exec.andCallFake(function(cmd, cb) {
                     cb(null, '9.0.0\n', '');
-                });	
+                });
 
                 // Plugin A depends on C & D
                 runs(function() {
@@ -300,9 +321,18 @@ describe('install', function() {
                 });
                 waitsFor(function() { return done; }, 'promise never resolved', 200);
                 runs(function() {
-                    // TODO: this is same test as above? Need test other dependency with url=?		
-                              
-                     expect(fetchSpy.calls.length).toEqual(3);
+                    // TODO: this is same test as above? Need test other dependency with url=?
+                    var install = [], i;
+                    for(i in emit.argsForCall) {
+                        if(emit.argsForCall[i][1].substr(0, 10) === 'Installing')
+                            install.push(emit.argsForCall[i][1]);
+                    }
+
+                    expect(install).toEqual([
+                        "Installing plugin C",
+                        "Installing plugin D",
+                        "Installing plugin A"
+                    ]);;
                 });
             });
         });
@@ -311,7 +341,7 @@ describe('install', function() {
     xdescribe('failure', function() {
         it('should throw if platform is unrecognized', function() {
             runs(function() {
-                installPromise( install('atari', temp, 'SomePlugin') );
+                installPromise( install('atari', project, 'SomePlugin') );
             });
             waitsFor(function() { return done; }, 'install promise never resolved', 200);
             runs(function() {
@@ -328,7 +358,7 @@ describe('install', function() {
             });
         });
         it('should throw if git is not found on the path and a remote url is requested', function() {
-            spyOn(install, 'existsPlugin').andReturn(false);
+            spyOn(fs, 'existsSync').andCallFake( fake['existsSync']['noPlugins'] );
             var which_spy = spyOn(shell, 'which').andReturn(null);
             runs(function() {
                 installPromise( install('android', project, 'https://git-wip-us.apache.org/repos/asf/cordova-plugin-camera.git') );
