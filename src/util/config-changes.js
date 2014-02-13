@@ -30,7 +30,7 @@
  * reference counts.
  */
 
-/* jshint node:true, sub:true, indent:4  */
+/* jshint node:true, sub:true, unused:true, indent:4  */
 
 var fs   = require('fs'),
     path = require('path'),
@@ -41,7 +41,6 @@ var fs   = require('fs'),
     et   = require('elementtree'),
     underscore = require('underscore'),
     xml_helpers = require('./../util/xml-helpers'),
-    ios_parser = require('./../platforms/ios'),
     platforms = require('./../platforms'),
     events = require('./../events'),
     plist_helpers = require('./../util/plist-helpers');
@@ -66,20 +65,20 @@ Adapters to keep the current refactoring effort to within this file
 package.add_plugin_changes = function(platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
     var munger = new PlatformMunger(platform, project_dir, plugins_dir);
     munger.add_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment, cache);
-    munger.config_keeper.save_all();
+    munger.save_all();
 };
 
 package.remove_plugin_changes = function(platform, project_dir, plugins_dir, plugin_name, plugin_id, is_top_level, should_decrement) {
     // TODO: should_decrement paramenter is never used, remove it here and wherever called
     var munger = new PlatformMunger(platform, project_dir, plugins_dir);
     munger.remove_plugin_changes(plugin_name, plugin_id, is_top_level);
-    munger.config_keeper.save_all();
+    munger.save_all();
 };
 
 package.process = function(plugins_dir, project_dir, platform) {
     var munger = new PlatformMunger(platform, project_dir, plugins_dir);
     munger.process();
-    munger.config_keeper.save_all();
+    munger.save_all();
 };
 
 /******************************************************************************/
@@ -117,6 +116,12 @@ function PlatformMunger(platform, project_dir, plugins_dir) {
     this.plugins_dir = plugins_dir;
     this.platform_handler = platforms[platform];
     this.config_keeper = new ConfigKeeper();
+}
+
+// Write out all unsaved files.
+PlatformMunger.prototype.save_all = PlatformMunger_save_all;
+function PlatformMunger_save_all() {
+    this.config_keeper.save_all();
 }
 
 // Deal with a single file munge.
@@ -231,7 +236,6 @@ function add_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increme
             );
             continue;
         }
-        // TODO: This is mostly file IO and can run in parallel since each file is independent.
         self.apply_file_munge(file, munge[file]);
     }
 
@@ -245,6 +249,32 @@ function add_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increme
     // save
     module.exports.save_platform_json(platform_config, self.plugins_dir, self.platform);
 }
+
+
+// Load the global munge from platform json and apply all of it.
+// Used by cordova prepare to re-generate some config file from platform
+// defaults and the global munge.
+PlatformMunger.prototype.reapply_global_munge = reapply_global_munge ;
+function reapply_global_munge () {
+    var self = this;
+
+    var platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
+    var global_munge = platform_config.config_munge;
+    for (var file in global_munge) {
+        // TODO: remove this warning some time after 3.4 is out.
+        if (file == 'plugins-plist' && self.platform == 'ios') {
+            events.emit(
+                'warn',
+                'WARNING: One of your plugins uses <plugins-plist> element(s), ' +
+                'which are no longer supported. Support has been removed as of Cordova 3.4.'
+            );
+            continue;
+        }
+        // TODO: This is mostly file IO and can run in parallel since each file is independent.
+        self.apply_file_munge(file, global_munge[file]);
+    }
+}
+
 
 // generate_plugin_config_munge
 PlatformMunger.prototype.generate_plugin_config_munge = generate_plugin_config_munge;
@@ -319,6 +349,7 @@ function generate_plugin_config_munge(plugin_dir, vars) {
     });
     return munge;
 }
+
 
 // Go over the prepare queue an apply the config munges for all plugins
 // that have been (un)installed.
