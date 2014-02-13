@@ -65,14 +65,14 @@ Adapters to keep the current refactoring effort to within this file
 ******************************************************************************/
 package.add_plugin_changes = function(platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
     var munger = new PlatformMunger(platform, project_dir, plugins_dir);
-    munger.apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment, cache);
+    munger.add_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment, cache);
     munger.config_keeper.save_all();
 };
 
 package.remove_plugin_changes = function(platform, project_dir, plugins_dir, plugin_name, plugin_id, is_top_level, should_decrement) {
     // TODO: should_decrement paramenter is never used, remove it here and wherever called
     var munger = new PlatformMunger(platform, project_dir, plugins_dir);
-    munger.unmerge_plugin_changes(plugin_name, plugin_id, is_top_level);
+    munger.remove_plugin_changes(plugin_name, plugin_id, is_top_level);
     munger.config_keeper.save_all();
 };
 
@@ -159,8 +159,8 @@ function PlatformMunger_apply_file_munge(file, munge, remove) {
 }
 
 
-PlatformMunger.prototype.unmerge_plugin_changes = unmerge_plugin_changes;
-function unmerge_plugin_changes(plugin_name, plugin_id, is_top_level) {
+PlatformMunger.prototype.remove_plugin_changes = remove_plugin_changes;
+function remove_plugin_changes(plugin_name, plugin_id, is_top_level) {
     var self = this;
     var platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
     var plugin_dir = path.join(self.plugins_dir, plugin_name);
@@ -197,8 +197,8 @@ function unmerge_plugin_changes(plugin_name, plugin_id, is_top_level) {
 }
 
 
-PlatformMunger.prototype.apply_plugin_changes = apply_plugin_changes;
-function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment) {
+PlatformMunger.prototype.add_plugin_changes = add_plugin_changes;
+function add_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment) {
     var self = this;
     var platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
     var plugin_dir = path.join(self.plugins_dir, plugin_id);
@@ -330,12 +330,12 @@ function PlatformMunger_process() {
 
     // Uninstallation first
     platform_config.prepare_queue.uninstalled.forEach(function(u) {
-        self.unmerge_plugin_changes(u.plugin, u.id, u.topLevel);
+        self.remove_plugin_changes(u.plugin, u.id, u.topLevel);
     });
 
     // Now handle installation
     platform_config.prepare_queue.installed.forEach(function(u) {
-        self.apply_plugin_changes(u.plugin, u.vars, u.topLevel, true);
+        self.add_plugin_changes(u.plugin, u.vars, u.topLevel, true);
     });
 
     platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
