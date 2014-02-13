@@ -58,52 +58,31 @@ var keep_these_frameworks = [
 
 var package = module.exports = {};
 
+package.PlatformMunger = PlatformMunger;
 
 /******************************************************************************
 Adapters to keep the current refactoring effort to within this file
 ******************************************************************************/
-package.add_plugin_changes = function (platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
-    // TODO: Treat separately the case of should_increment = false, it's only used by cordova cli for "cordova prepare"
+package.add_plugin_changes = function(platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
     var munger = new PlatformMunger(platform, project_dir, plugins_dir);
     munger.apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment, cache);
     munger.config_keeper.save_all();
 };
 
-package.remove_plugin_changes = function (platform, project_dir, plugins_dir, plugin_name, plugin_id, is_top_level, should_decrement) {
+package.remove_plugin_changes = function(platform, project_dir, plugins_dir, plugin_name, plugin_id, is_top_level, should_decrement) {
+    // TODO: should_decrement paramenter is never used, remove it here and wherever called
     var munger = new PlatformMunger(platform, project_dir, plugins_dir);
-    munger.unmerge_plugin_changes(plugin_name, plugin_id, is_top_level, should_decrement);
+    munger.unmerge_plugin_changes(plugin_name, plugin_id, is_top_level);
     munger.config_keeper.save_all();
 };
+
+package.process = function(plugins_dir, project_dir, platform) {
+    var munger = new PlatformMunger(platform, project_dir, plugins_dir);
+    munger.process();
+    munger.config_keeper.save_all();
+};
+
 /******************************************************************************/
-
-
-
-package.process = process_all;
-function process_all(plugins_dir, project_dir, platform) {
-    checkPlatform(platform);
-
-    var platform_config = module.exports.get_platform_json(plugins_dir, platform);
-    // Uninstallation first
-    platform_config.prepare_queue.uninstalled.forEach(function(u) {
-        module.exports.remove_plugin_changes(platform, project_dir, plugins_dir, u.plugin, u.id, u.topLevel, true);
-    });
-
-    // Now handle installation
-    var cache = {};
-    platform_config.prepare_queue.installed.forEach(function(u) {
-        module.exports.add_plugin_changes(platform, project_dir, plugins_dir, u.plugin, u.vars, u.topLevel, true, cache);
-    });
-
-    platform_config = module.exports.get_platform_json(plugins_dir, platform);
-
-    // Empty out uninstalled queue.
-    platform_config.prepare_queue.uninstalled = [];
-    // Empty out installed queue.
-    platform_config.prepare_queue.installed = [];
-    // save
-    module.exports.save_platform_json(platform_config, plugins_dir, platform);
-}
-
 
 
 package.add_installed_plugin_to_prepare_queue = add_installed_plugin_to_prepare_queue;
@@ -124,98 +103,19 @@ function add_uninstalled_plugin_to_prepare_queue(plugins_dir, plugin, platform, 
     module.exports.save_platform_json(config, plugins_dir, platform);
 }
 
-package.generate_plugin_config_munge = generate_plugin_config_munge;
-function generate_plugin_config_munge(plugin_dir, platform, project_dir, vars) {
-    checkPlatform(platform);
 
-    vars = vars || {};
-    var platform_handler = platforms[platform];
-    // Add PACKAGE_NAME variable into vars
-    if (!vars['PACKAGE_NAME']) {
-        vars['PACKAGE_NAME'] = platform_handler.package_name(project_dir);
-    }
-
-    var munge = {};
-    var plugin_xml = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'));
-
-    var platformTag = plugin_xml.find('platform[@name="' + platform + '"]');
-    var changes = [];
-    // add platform-agnostic config changes
-    changes = changes.concat(plugin_xml.findall('config-file'));
-    if (platformTag) {
-        // add platform-specific config changes if they exist
-        changes = changes.concat(platformTag.findall('config-file'));
-
-        // note down pbxproj framework munges in special section of munge obj
-        // CB-5238 this is only for systems frameworks
-        var frameworks = platformTag.findall('framework');
-        frameworks.forEach(function(f) {
-            var custom = f.attrib['custom'];
-            if(!custom) {
-                if (!munge['framework']) {
-                    munge['framework'] = {};
-                }
-                var file = f.attrib['src'];
-                var weak = f.attrib['weak'];
-                weak = (weak === undefined || weak === null || weak != 'true' ? 'false' : 'true');
-                if (!munge['framework'][file]) {
-                    munge['framework'][file] = {};
-                }
-                if (!munge['framework'][file][weak]) {
-                    munge['framework'][file][weak] = 0;
-                }
-                munge['framework'][file][weak] += 1;
-            }
-        });
-    }
-
-    changes.forEach(function(change) {
-        var target = change.attrib['target'];
-        var parent = change.attrib['parent'];
-        if (!munge[target]) {
-            munge[target] = {};
-        }
-        if (!munge[target][parent]) {
-            munge[target][parent] = {};
-        }
-        var xmls = change.getchildren();
-        xmls.forEach(function(xml) {
-            // 1. stringify each xml
-            var stringified = (new et.ElementTree(xml)).write({xml_declaration:false});
-            // interp vars
-            if (vars) {
-                Object.keys(vars).forEach(function(key) {
-                    var regExp = new RegExp("\\$" + key, "g");
-                    stringified = stringified.replace(regExp, vars[key]);
-                });
-            }
-            // 2. add into munge
-            if (!munge[target][parent][stringified]) {
-                munge[target][parent][stringified] = 0;
-            }
-            munge[target][parent][stringified] += 1;
-        });
-    });
-    return munge;
-}
-
-/// ^^^^^^^^ NO MANS LAND ^^^^^^^
-
-
-
-
-
-/********************************************************
+/******************************************************************************
 * PlatformMunger class
 *
 * Can deal with config file of a single porject.
-********************************************************/
+******************************************************************************/
 
-// Objects of the PlatformMunger class can deal with config file of a single porject.
 function PlatformMunger(platform, project_dir, plugins_dir) {
+    checkPlatform(platform);
     this.platform = platform;
     this.project_dir = project_dir;
     this.plugins_dir = plugins_dir;
+    this.platform_handler = platforms[platform];
     this.config_keeper = new ConfigKeeper();
 }
 
@@ -260,14 +160,14 @@ function PlatformMunger_apply_file_munge(file, munge, remove) {
 
 
 PlatformMunger.prototype.unmerge_plugin_changes = unmerge_plugin_changes;
-function unmerge_plugin_changes(plugin_name, plugin_id, is_top_level, should_decrement) {
+function unmerge_plugin_changes(plugin_name, plugin_id, is_top_level) {
     var self = this;
     var platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
     var plugin_dir = path.join(self.plugins_dir, plugin_name);
     var plugin_vars = (is_top_level ? platform_config.installed_plugins[plugin_id] : platform_config.dependent_plugins[plugin_id]);
 
     // get config munge, aka how did this plugin change various config files
-    var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, self.platform, self.project_dir, plugin_vars);
+    var config_munge = self.generate_plugin_config_munge(plugin_dir, plugin_vars);
     // global munge looks at all plugins' changes to config files
     var global_munge = platform_config.config_munge;
     var munge = decrement_munge(global_munge, config_munge);
@@ -302,15 +202,25 @@ function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_incre
     var self = this;
     var platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
     var plugin_dir = path.join(self.plugins_dir, plugin_id);
-    debugger;
+
     plugin_id = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'), 'utf-8')._root.attrib['id'];
 
     // get config munge, aka how should this plugin change various config files
-    var config_munge = module.exports.generate_plugin_config_munge(plugin_dir, self.platform, self.project_dir, plugin_vars);
+    var config_munge = self.generate_plugin_config_munge(plugin_dir, plugin_vars);
     // global munge looks at all plugins' changes to config files
-    var global_munge = platform_config.config_munge;
 
-    var munge = increment_munge(global_munge, config_munge);
+    // TODO: The should_increment param is only used by cordova-cli and is going away soon.
+    // If should_increment is set to false, avoid modifying the global_munge (use clone)
+    // and apply the entire config_munge because it's already a proper subset of the global_munge.
+    var munge, global_munge;
+    if (should_increment) {
+        global_munge = platform_config.config_munge;
+        munge = increment_munge(global_munge, config_munge);
+    } else {
+        global_munge = clone_munge(platform_config.config_munge);
+        munge = config_munge;
+    }
+
     for (var file in munge) {
         // TODO: remove this warning some time after 3.4 is out.
         if (file == 'plugins-plist' && self.platform == 'ios') {
@@ -335,16 +245,119 @@ function apply_plugin_changes(plugin_id, plugin_vars, is_top_level, should_incre
     // save
     module.exports.save_platform_json(platform_config, self.plugins_dir, self.platform);
 }
+
+// generate_plugin_config_munge
+PlatformMunger.prototype.generate_plugin_config_munge = generate_plugin_config_munge;
+function generate_plugin_config_munge(plugin_dir, vars) {
+    var self = this;
+
+    vars = vars || {};
+    // Add PACKAGE_NAME variable into vars
+    if (!vars['PACKAGE_NAME']) {
+        vars['PACKAGE_NAME'] = self.platform_handler.package_name(self.project_dir);
+    }
+
+    var munge = {};
+    var plugin_xml = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'));
+
+    var platformTag = plugin_xml.find('platform[@name="' + self.platform + '"]');
+    var changes = [];
+    // add platform-agnostic config changes
+    changes = changes.concat(plugin_xml.findall('config-file'));
+    if (platformTag) {
+        // add platform-specific config changes if they exist
+        changes = changes.concat(platformTag.findall('config-file'));
+
+        // note down pbxproj framework munges in special section of munge obj
+        // CB-5238 this is only for systems frameworks
+        var frameworks = platformTag.findall('framework');
+        frameworks.forEach(function(f) {
+            var custom = f.attrib['custom'];
+            if(!custom) {
+                if (!munge['framework']) {
+                    munge['framework'] = {};
+                }
+                var file = f.attrib['src'];
+                var weak = ('true' == f.attrib['weak']);
+                if (!munge['framework'][file]) {
+                    munge['framework'][file] = {};
+                }
+                if (!munge['framework'][file][weak]) {
+                    munge['framework'][file][weak] = 0;
+                }
+                munge['framework'][file][weak] += 1;
+            }
+        });
+    }
+
+    changes.forEach(function(change) {
+        var target = change.attrib['target'];
+        var parent = change.attrib['parent'];
+        if (!munge[target]) {
+            munge[target] = {};
+        }
+        if (!munge[target][parent]) {
+            munge[target][parent] = {};
+        }
+        var xmls = change.getchildren();
+        xmls.forEach(function(xml) {
+            // 1. stringify each xml
+            var stringified = (new et.ElementTree(xml)).write({xml_declaration:false});
+            // interp vars
+            if (vars) {
+                Object.keys(vars).forEach(function(key) {
+                    var regExp = new RegExp("\\$" + key, "g");
+                    stringified = stringified.replace(regExp, vars[key]);
+                });
+            }
+            // 2. add into munge
+            if (!munge[target][parent][stringified]) {
+                munge[target][parent][stringified] = 0;
+            }
+            munge[target][parent][stringified] += 1;
+        });
+    });
+    return munge;
+}
+
+// Go over the prepare queue an apply the config munges for all plugins
+// that have been (un)installed.
+PlatformMunger.prototype.process = PlatformMunger_process;
+function PlatformMunger_process() {
+    var self = this;
+
+    var platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
+
+    // Uninstallation first
+    platform_config.prepare_queue.uninstalled.forEach(function(u) {
+        self.unmerge_plugin_changes(u.plugin, u.id, u.topLevel);
+    });
+
+    // Now handle installation
+    platform_config.prepare_queue.installed.forEach(function(u) {
+        self.apply_plugin_changes(u.plugin, u.vars, u.topLevel, true);
+    });
+
+    platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
+
+    // Empty out uninstalled queue.
+    platform_config.prepare_queue.uninstalled = [];
+    // Empty out installed queue.
+    platform_config.prepare_queue.installed = [];
+    // save
+    module.exports.save_platform_json(platform_config, self.plugins_dir, self.platform);
+}
+
 /**** END of PlatformMunger ****/
 
 
 
-/********************************************************
+/******************************************************************************
 * ConfigKeeper class
 *
 * Used to load and store config files to avoid reparsing
 * and writing them out multiple times.
-********************************************************/
+******************************************************************************/
 function ConfigKeeper() {
     this._cached = {};
 }
@@ -371,8 +384,10 @@ function ConfigKeeper_save_all() {
     });
 }
 
-/**** TODO move save/get_platform_json those to be part of ConfigKeeper ****/
-
+// TODO: move save/get_platform_json those to be part of ConfigKeeper
+// But they are used in many places in plugman and cordova-cli
+// and can save the file bypassing the ConfigKeeper's cache.
+// Must change in all those places as well.
 package.get_platform_json = get_platform_json;
 function get_platform_json(plugins_dir, platform) {
     checkPlatform(platform);
@@ -403,9 +418,9 @@ function save_platform_json(config, plugins_dir, platform) {
 /**** END of ConfigKeeper ****/
 
 
-/********************************************************
+/******************************************************************************
 * ConfigFile class
-********************************************************/
+******************************************************************************/
 function ConfigFile(project_dir, platform, file_tag) {
     this.project_dir = project_dir;
     this.platform = platform;
@@ -510,9 +525,9 @@ function ConfigFile_prune_child(selector, xml_child) {
 /**** END of ConfigFile ****/
 
 
-/********************************************************
+/******************************************************************************
 * Utility functions
-********************************************************/
+******************************************************************************/
 
 // Check if we know such platform
 function checkPlatform(platform) {
@@ -584,9 +599,9 @@ function resolveConfigFilePath(project_dir, platform, file) {
 }
 
 
-/********************************************************
+/******************************************************************************
 * Munge object manipulations functions
-********************************************************/
+******************************************************************************/
 
 // Increment obj[key1][key2]...[keyN] by val. If it
 // didn't exist, set it to val.
@@ -655,5 +670,5 @@ function decrement_munge(base, munge) {
 
 // For better readability where used
 function clone_munge(munge) {
-    return increment_munge({}, munge)
+    return increment_munge({}, munge);
 }
