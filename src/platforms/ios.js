@@ -72,9 +72,9 @@ module.exports = {
                 project.xcode.removeFromLibrarySearchPaths({path:project_ref});
             }
             shell.rm('-rf', destFile);
-            
+
             if(fs.existsSync(targetDir) && fs.readdirSync(targetDir).length>0){
-                shell.rm('-rf', targetDir); 
+                shell.rm('-rf', targetDir);
             }
         }
     },
@@ -97,7 +97,7 @@ module.exports = {
             project.xcode.removeHeaderFile(path.join('Plugins', path.relative(project.plugins_dir, destFile)));
             shell.rm('-rf', destFile);
             if(fs.existsSync(targetDir) && fs.readdirSync(targetDir).length>0){
-                shell.rm('-rf', targetDir); 
+                shell.rm('-rf', targetDir);
             }
         }
     },
@@ -140,13 +140,17 @@ module.exports = {
         }
     },
     parseProjectFile:function(project_dir) {
+        // TODO: With ConfigKeeper introduced in config-changes.js
+        // there is now double caching of iOS project files.
+        // Remove the cache here when install can handle
+        // a list of plugins at once.
         if (cachedProjectFiles[project_dir]) {
             return cachedProjectFiles[project_dir];
         }
         // grab and parse pbxproj
         // we don't want CordovaLib's xcode project
         var project_files = glob.sync(path.join(project_dir, '*.xcodeproj', 'project.pbxproj'));
-        
+
         if (project_files.length === 0) {
             throw new Error("does not appear to be an xcode project (no xcode project file)");
         }
@@ -155,7 +159,7 @@ module.exports = {
         xcodeproj.parseSync();
 
         // grab and parse plist file or config.xml
-        var config_files = (glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist')).length == 0 ? 
+        var config_files = (glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist')).length == 0 ?
                             glob.sync(path.join(project_dir, '**', 'config.xml')) :
                             glob.sync(path.join(project_dir, '**', '{PhoneGap,Cordova}.plist'))
                            );
