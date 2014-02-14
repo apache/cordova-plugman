@@ -69,7 +69,7 @@ package.add_plugin_changes = function(platform, project_dir, plugins_dir, plugin
 };
 
 package.remove_plugin_changes = function(platform, project_dir, plugins_dir, plugin_name, plugin_id, is_top_level, should_decrement) {
-    // TODO: should_decrement paramenter is never used, remove it here and wherever called
+    // TODO: should_decrement parameter is never used, remove it here and wherever called
     var munger = new PlatformMunger(platform, project_dir, plugins_dir);
     munger.remove_plugin_changes(plugin_name, plugin_id, is_top_level);
     munger.save_all();
@@ -80,7 +80,6 @@ package.process = function(plugins_dir, project_dir, platform) {
     munger.process();
     munger.save_all();
 };
-
 /******************************************************************************/
 
 
@@ -106,9 +105,9 @@ function add_uninstalled_plugin_to_prepare_queue(plugins_dir, plugin, platform, 
 /******************************************************************************
 * PlatformMunger class
 *
-* Can deal with config file of a single porject.
+* Can deal with config file of a single project.
+* Parsed config files are cached in a ConfigKeeper object.
 ******************************************************************************/
-
 function PlatformMunger(platform, project_dir, plugins_dir) {
     checkPlatform(platform);
     this.platform = platform;
@@ -124,8 +123,8 @@ function PlatformMunger_save_all() {
     this.config_keeper.save_all();
 }
 
-// Deal with a single file munge.
-// Theoretically, since files are independent several of those can run in parallel.
+// Apply a munge object to a single config file.
+// The remove parameter tells whether to add the change or remove it.
 PlatformMunger.prototype.apply_file_munge = PlatformMunger_apply_file_munge;
 function PlatformMunger_apply_file_munge(file, munge, remove) {
     var self = this;
@@ -277,6 +276,7 @@ function reapply_global_munge () {
 
 
 // generate_plugin_config_munge
+// Generate the munge object from plugin.xml + vars
 PlatformMunger.prototype.generate_plugin_config_munge = generate_plugin_config_munge;
 function generate_plugin_config_munge(plugin_dir, vars) {
     var self = this;
@@ -351,8 +351,8 @@ function generate_plugin_config_munge(plugin_dir, vars) {
 }
 
 
-// Go over the prepare queue an apply the config munges for all plugins
-// that have been (un)installed.
+// Go over the prepare queue an apply the config munges for each plugin
+// that has been (un)installed.
 PlatformMunger.prototype.process = PlatformMunger_process;
 function PlatformMunger_process() {
     var self = this;
@@ -371,23 +371,24 @@ function PlatformMunger_process() {
 
     platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
 
-    // Empty out uninstalled queue.
+    // Empty out installed/ uninstalled queues.
     platform_config.prepare_queue.uninstalled = [];
-    // Empty out installed queue.
     platform_config.prepare_queue.installed = [];
-    // save
+    // save platform json
     module.exports.save_platform_json(platform_config, self.plugins_dir, self.platform);
 }
-
 /**** END of PlatformMunger ****/
-
 
 
 /******************************************************************************
 * ConfigKeeper class
 *
-* Used to load and store config files to avoid reparsing
-* and writing them out multiple times.
+* Used to load and store config files to avoid re-parsing and writing them out
+* multiple times.
+*
+* The config files are referred to by a fake path constructed as
+* project_dir/platform/file
+* where file is the name used for the file in config munges.
 ******************************************************************************/
 function ConfigKeeper() {
     this._cached = {};
@@ -414,11 +415,11 @@ function ConfigKeeper_save_all() {
         if (config_file.is_changed) config_file.save();
     });
 }
+/**** END of ConfigKeeper ****/
 
-// TODO: move save/get_platform_json those to be part of ConfigKeeper
-// But they are used in many places in plugman and cordova-cli
-// and can save the file bypassing the ConfigKeeper's cache.
-// Must change in all those places as well.
+// TODO: move save/get_platform_json to be part of ConfigKeeper or ConfigFile
+// For now they are used in many places in plugman and cordova-cli and can
+// save the file bypassing the ConfigKeeper's cache.
 package.get_platform_json = get_platform_json;
 function get_platform_json(plugins_dir, platform) {
     checkPlatform(platform);
@@ -451,6 +452,12 @@ function save_platform_json(config, plugins_dir, platform) {
 
 /******************************************************************************
 * ConfigFile class
+*
+* Can load and keep various types of config files. Provides some functionality
+* specific to some file types such as grafting XML children.
+*
+* TODO: Consider moving it out to a separate file and maybe partially with
+* overrides in platform handlers.
 ******************************************************************************/
 function ConfigFile(project_dir, platform, file_tag) {
     this.project_dir = project_dir;
@@ -488,7 +495,7 @@ function ConfigFile_load() {
         // plist file
         self.type = 'plist';
         // TODO: isBinaryPlist() reads the file and then parse re-reads it again.
-        //       We always write out text plist, not bianray.
+        //       We always write out text plist, not binaray.
         //       Do we still need to support binary plist?
         //       If yes, use plist.parseStringSync() and read the file once.
         self.plist_module = (isBinaryPlist(filepath) ? bplist : plist);
@@ -677,8 +684,8 @@ function increment_munge(base, munge) {
 
 // Update the base munge object as
 // base[file][selector][child] -= base[file][selector][child]
-// nodes that reached zero value are removed from base and the
-// returned munge object.
+// nodes that reached zero value are removed from base and the returned munge
+// object.
 function decrement_munge(base, munge) {
     var zeroed = {};
 
