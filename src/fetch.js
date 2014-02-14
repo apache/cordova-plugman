@@ -6,8 +6,9 @@ var shell   = require('shelljs'),
     metadata = require('./util/metadata'),
     path    = require('path'),
     Q       = require('q'),
+    events  = require('../plugman'),
     registry = require('./registry/registry');
-// XXX: leave the require('../plugman') because jasmine shits itself if you declare it up top
+
 // possible options: link, subdir, git_ref, client, expected_id
 // Returns a promise.
 module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
@@ -42,7 +43,7 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
 
     // If it looks like a network URL, git clone it.
     if ( uri.protocol && uri.protocol != 'file:' && !plugin_src.match(/^\w+:\\/)) {
-        require('../plugman').emit('log', 'Fetching plugin "' + plugin_src + '" via git clone');
+        events.emit('log', 'Fetching plugin "' + plugin_src + '" via git clone');
         if (options.link) {
             return Q.reject(new Error('--link is not supported for git URLs'));
         } else {
@@ -56,13 +57,11 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
             };
 
             return plugins.clonePluginGitRepo(plugin_src, plugins_dir, options.subdir, options.git_ref)
-            .then(function(dir) {
-                return checkID(options.expected_id, dir);
-            })
-            .then(function(dir) {
-                metadata.save_fetch_metadata(dir, data);
-                return dir;
-            });
+            .then(
+                function(dir) { return checkID(options.expected_id, dir); }
+            ).then(
+                function(dir) { metadata.save_fetch_metadata(dir, data); return dir; }
+            );
         }
     } else {
         // If it's not a network URL, it's either a local path or a plugin ID.
@@ -72,39 +71,46 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
 
         var p,  // The Q promise to be returned.
             linkable = true,
-            plugin_dir = path.join(plugin_src, options.subdir);
+            plugin_dir = path.resolve(plugin_src, options.subdir);
 
-        if (fs.existsSync(plugin_dir)) {
+        if ( fs.existsSync(plugin_dir) ) {
             p = Q(plugin_dir);
         } else {
             // If there is no such local path, it's a plugin id.
             // First look for it in the local search path (if provided).
             var local_dir = findLocalPlugin(plugin_src, options.searchpath);
             if (local_dir) {
+                plugin_dir = local_dir;
                 p = Q(local_dir);
-                require('../plugman').emit('log', 'Found plugin "' + plugin_src + '" at: ' + local_dir);
+                events.emit('log', 'Found plugin "' + plugin_src + '" at: ' + local_dir);
             } else {
                 // If not found in local search path, fetch from the registry.
                 linkable = false;
-                require('../plugman').emit('log', 'Fetching plugin "' + plugin_src + '" via plugin registry');
+                plugin_dir = null;
+                events.emit('log', 'Fetching plugin "' + plugin_src + '" via plugin registry');
                 p = registry.fetch([plugin_src], options.client);
             }
         }
 
-        return p
-        .then(function(dir) {
-                return copyPlugin(dir, plugins_dir, options.link && linkable);
-            })
-        .then(function(dir) {
-                return checkID(options.expected_id, dir);
-            });
+        return p.then(
+            function(dir) { 
+                return copyPlugin(dir, plugins_dir, options.link && linkable); 
+            }
+        ).then(
+            function(dir) { return checkID(options.expected_id, dir); }
+        ).then(
+            function(dir) {
+                // if copied, return original directory path
+                return plugin_dir ? plugin_dir : dir;
+            }
+        );
     }
 };
 
 
 function readId(dir) {
     var xml_path = path.join(dir, 'plugin.xml');
-    require('../plugman').emit('verbose', 'Fetch is reading plugin.xml from location "' + xml_path + '"...');
+    events.emit('verbose', 'Fetch is reading plugin.xml from location "' + xml_path + '"...');
     var et = xml_helpers.parseElementtreeSync(path.join(dir, 'plugin.xml'));
     var plugin_id = et.getroot().attrib.id;
     return plugin_id;
@@ -134,7 +140,7 @@ function findLocalPlugin(plugin_id, searchpath) {
                 }
             }
             catch(err) {
-                require('../plugman').emit('verbose', 'Error while trying to read plugin.xml from ' + plugin_path);
+                events.emit('verbose', 'Error while trying to read plugin.xml from ' + plugin_path);
             }
         }
     }
@@ -148,11 +154,11 @@ function copyPlugin(plugin_dir, plugins_dir, link) {
     var dest = path.join(plugins_dir, plugin_id);
     shell.rm('-rf', dest);
     if (link) {
-        require('../plugman').emit('verbose', 'Symlinking from location "' + plugin_dir + '" to location "' + dest + '"');
+        events.emit('verbose', 'Symlinking from location "' + plugin_dir + '" to location "' + dest + '"');
         fs.symlinkSync(plugin_dir, dest, 'dir');
     } else {
         shell.mkdir('-p', dest);
-        require('../plugman').emit('verbose', 'Copying from location "' + plugin_dir + '" to location "' + dest + '"');
+        events.emit('verbose', 'Copying from location "' + plugin_dir + '" to location "' + dest + '"');
         shell.cp('-R', path.join(plugin_dir, '*') , dest);
     }
 
@@ -163,5 +169,7 @@ function copyPlugin(plugin_dir, plugins_dir, link) {
         }
     };
     metadata.save_fetch_metadata(dest, data);
-    return dest;
+    return plugin_dir;
 }
+
+module.exports.copyPlugin = copyPlugin;

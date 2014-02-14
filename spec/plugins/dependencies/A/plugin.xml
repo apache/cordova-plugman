@@ -33,7 +33,11 @@
     <config-file target="config.xml" parent="/*">
         <access origin="build.phonegap.com" />
     </config-file>
-	
+
+    <engines>
+        <engine name="cordova" version=">=1.0.0"/>
+    </engines>
+
     <!-- android -->
     <platform name="android">
         <config-file target="res/xml/config.xml" parent="plugins">

@@ -41,19 +41,28 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'amazon-fireos', 'blackberry
         , 'searchpath' : [path, Array]
 }, shortHands = { 'var' : ['--variable'], 'v': ['--version'], 'h': ['--help'] };
 
-var cli_opts = nopt(known_opts, shortHands);
+var nopt = nopt(known_opts, shortHands);
 
-var cmd = cli_opts.argv.remain.shift();
-
-// Without these arguments, the commands will fail and print the usage anyway.
-if (cli_opts.plugins_dir || cli_opts.project) {
-    cli_opts.plugins_dir = typeof cli_opts.plugins_dir == 'string' ?
-        cli_opts.plugins_dir :
-        path.join(cli_opts.project, 'cordova', 'plugins');
+// TODO: get from cordova-lib
+var command = {
+    flags: {},
+    arguments: [],
+    remain: nopt.argv.remain
+};
+for (var opt in nopt) {
+    if (opt !== 'argv')
+        command.flags[opt] = nopt[opt];
+}
+var parsedArgs = nopt.argv.cooked;
+for(var i in parsedArgs) {
+    if(parsedArgs[i].substr(0, 1) !== '-')
+        command.arguments.push(parsedArgs[i]);
 }
 
+var options = command.flags;
+
 process.on('uncaughtException', function(error) {
-    if (cli_opts.debug) {
+    if (options.debug) {
         console.error(error.stack);
     } else {
         console.error(error.message);
@@ -62,11 +71,11 @@ process.on('uncaughtException', function(error) {
 });
 
 // Set up appropriate logging based on events
-if (cli_opts.debug) {
+if (options.debug) {
     plugman.on('verbose', console.log);
 }
 
-if (!cli_opts.silent) {
+if (!options.silent) {
     plugman.on('log', console.log);
     plugman.on('warn', console.warn);
     plugman.on('results', console.log);
@@ -74,12 +83,14 @@ if (!cli_opts.silent) {
 
 plugman.on('error', console.error);
 
-if (cli_opts.version) {
+var cmd = command.arguments[0] || '';
+
+if (options.version) {
     console.log(package.version);
-} else if (cli_opts.help) {
+} else if (options.help) {
     console.log(plugman.help());
 } else if (plugman.commands[cmd]) {
-    var result = plugman.commands[cmd](cli_opts);
+    var result = plugman.commands[cmd](command);
     if (result && Q.isPromise(result)) {
         result.done();
     }

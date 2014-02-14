@@ -17,10 +17,10 @@
  *
 */
 
-var fs = require('fs')  // use existsSync in 0.6.x
+var fs = require('fs')
    , path = require('path')
    , common = require('./common')
-   , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'));
+   , xml_helpers = require('../util/xml-helpers');
 
 module.exports = {
     www_dir:function(project_dir) {
@@ -59,12 +59,12 @@ module.exports = {
     "resource-file":{
         install:function(el, plugin_dir, project_dir) {
             var src = el.attrib.src;
-            var target = el.attrib.target;
+            var target = path.join(el.attrib.target);
             require('../../plugman').emit('verbose', 'Copying resource file ' + src + ' to ' + target);
             common.copyFile(plugin_dir, src, project_dir, target);
         },
         uninstall:function(el, project_dir) {
-            var target = el.attrib.target;
+            var target = path.join(el.attrib.target);
             common.removeFile(project_dir, target);
         }
     }

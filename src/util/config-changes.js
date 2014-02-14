@@ -33,15 +33,18 @@
 var fs   = require('fs'),
     path = require('path'),
     glob = require('glob'),
+    shell = require('shelljs'),
     plist = require('plist-with-patches'),
     bplist = require('bplist-parser'),
-    et   = require('elementtree'),
-    xml_helpers = require('./../util/xml-helpers'),
-    ios_parser = require('./../platforms/ios'),
-    plist_helpers = require('./../util/plist-helpers');
+    et = require('elementtree'),
+    bplist = require('bplist-parser'),
+    xml_helpers = require('./xml-helpers'),
+    plist_helpers = require('./plist-helpers'),
+    ios_parser = require('../platforms/ios'),
+    events = require('../events');
 
 function checkPlatform(platform) {
-    if (!(platform in require('./../platforms'))) throw new Error('platform "' + platform + '" not recognized.');
+    if (!(platform in require('../platforms'))) throw new Error('platform "' + platform + '" not recognized.');
 }
 
 // These frameworks are required by cordova-ios by default. We should never add/remove them.
@@ -55,10 +58,12 @@ var keep_these_frameworks = [
 module.exports = {
     add_installed_plugin_to_prepare_queue:function(plugins_dir, plugin, platform, vars, is_top_level) {
         checkPlatform(platform);
+
         var config = module.exports.get_platform_json(plugins_dir, platform);
         config.prepare_queue.installed.push({'plugin':plugin, 'vars':vars, 'topLevel':is_top_level});
         module.exports.save_platform_json(config, plugins_dir, platform);
     },
+
     add_uninstalled_plugin_to_prepare_queue:function(plugins_dir, plugin, platform, is_top_level) {
         checkPlatform(platform);
 
@@ -67,29 +72,37 @@ module.exports = {
         config.prepare_queue.uninstalled.push({'plugin':plugin, 'id':plugin_xml._root.attrib['id'], 'topLevel':is_top_level});
         module.exports.save_platform_json(config, plugins_dir, platform);
     },
+
     get_platform_json:function(plugins_dir, platform) {
         checkPlatform(platform);
 
-        var filepath = path.join(plugins_dir, platform + '.json');
+        var filepath = path.join(plugins_dir, platform + '.json'),
+            config;
+
         if (fs.existsSync(filepath)) {
-            return JSON.parse(fs.readFileSync(filepath, 'utf-8'));
+            config = JSON.parse(fs.readFileSync(filepath, 'utf-8'));
         } else {
-            var config = {
+            config = {
                 prepare_queue:{installed:[], uninstalled:[]},
                 config_munge:{},
                 installed_plugins:{},
                 dependent_plugins:{}
             };
+            shell.mkdir('-p', path.dirname(filepath));
             fs.writeFileSync(filepath, JSON.stringify(config), 'utf-8');
-            return config;
         }
+
+        return config;
     },
+
     save_platform_json:function(config, plugins_dir, platform) {
         checkPlatform(platform);
 
         var filepath = path.join(plugins_dir, platform + '.json');
+
         fs.writeFileSync(filepath, JSON.stringify(config), 'utf-8');
     },
+
     generate_plugin_config_munge:function(plugin_dir, platform, project_dir, vars) {
         checkPlatform(platform);
 
@@ -209,7 +222,7 @@ module.exports = {
                     Object.keys(config_munge[file]).forEach(function(key) {
                         if (global_munge[file][key] && plistObj) {
                             // TODO: REMOVE in 3.4 (https://issues.apache.org/jira/browse/CB-4456)
-                            require('../../plugman').emit('warn', 'DEPRECATION WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
+                            events.emit('warn', 'DEPRECATION WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
                             delete plistObj.Plugins[key];
                             // TODO: don't write out on every change, do it once.
                             fs.writeFileSync(plistfile, plist.build(plistObj));
@@ -290,10 +303,13 @@ module.exports = {
         // save
         module.exports.save_platform_json(platform_config, plugins_dir, platform);
     },
+
     add_plugin_changes:function(platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
         var platform_config = module.exports.get_platform_json(plugins_dir, platform);
         var plugin_dir = path.join(plugins_dir, plugin_id);
 
+        // TODO: remove this, plugin_id should already be resolved
+        // avoid fs here, this is needed for tests in config-changes.spec
         plugin_id = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'), 'utf-8')._root.attrib['id'];
 
         // get config munge, aka how should this plugin change various config files
@@ -337,7 +353,7 @@ module.exports = {
                     var key = selector;
                     if (!global_munge[file][key] && plistObj) {
                         // TODO: REMOVE in 3.4 (https://issues.apache.org/jira/browse/CB-4456)
-                        require('../../plugman').emit('warn', 'DEPRECATION WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
+                        events.emit('warn', 'DEPRECATION WARNING: Plugin "' + plugin_id + '" uses <plugins-plist> element(s), which are now deprecated. Support will be removed in Cordova 3.4.');
                         // this key does not exist, so add it to plist
                         global_munge[file][key] = config_munge[file][key];
                         plistObj.Plugins[key] = config_munge[file][key];
@@ -425,6 +441,7 @@ module.exports = {
             pbxproj.write()
         }
     },
+
     process:function(plugins_dir, project_dir, platform) {
         checkPlatform(platform);
 

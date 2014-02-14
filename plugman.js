@@ -19,7 +19,7 @@
 
 // copyright (c) 2013 Andrew Lunny, Adobe Systems
 
-var emitter = require('./src/events');
+var events = require('./src/events');
 
 function addProperty(o, symbol, modulePath, doWrap) {
     var val = null;
@@ -52,12 +52,13 @@ function addProperty(o, symbol, modulePath, doWrap) {
 }
 
 plugman = {
-    on:                 emitter.addListener,
-    off:                emitter.removeListener,
-    removeAllListeners: emitter.removeAllListeners,
-    emit:               emitter.emit,
+    on:                 events.on.bind(events),
+    off:                events.removeListener.bind(events),
+    removeAllListeners: events.removeAllListeners.bind(events),
+    emit:               events.emit.bind(events),
     raw:                {}
 };
+
 addProperty(plugman, 'help', './src/help');
 addProperty(plugman, 'install', './src/install', true);
 addProperty(plugman, 'uninstall', './src/uninstall', true);
@@ -75,50 +76,55 @@ addProperty(plugman, 'platform', './src/platform_operation', true);
 addProperty(plugman, 'config_changes', './src/util/config-changes');
 
 plugman.commands =  {
-    'config'   : function(cli_opts) {
-        plugman.config(cli_opts.argv.remain, function(err) {
+    'config'   : function(command) {
+        plugman.config(command.remain, function(err) {
             if (err) throw err;
             else console.log('done');
         });
     },
-    'owner'   : function(cli_opts) {
-        plugman.owner(cli_opts.argv.remain);
+    'owner'   : function(command) {
+        plugman.owner(command.remain);
     },
-    'install'  : function(cli_opts) {
-        if(!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
+    'install'  : function(command) {
+        var options = checkOptions(command.flag);
+
+        if(!options.platform || !options.project || !options.plugin) {
             return console.log(plugman.help());
         }
         var cli_variables = {}
-        if (cli_opts.variable) {
-            cli_opts.variable.forEach(function (variable) {
+        if (options.variable) {
+            options.variable.forEach(function (variable) {
                     var tokens = variable.split('=');
                     var key = tokens.shift().toUpperCase();
                     if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
                     });
         }
-        var opts = {
-            subdir: '.',
-            cli_variables: cli_variables,
-            www_dir: cli_opts.www,
-            searchpath: cli_opts.searchpath
-        };
-        return plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, cli_opts.plugins_dir, opts);
+
+        options.subdir = '.'; 
+        options.cli_variables = cli_variables;
+        options.www_dir = options.www;
+
+        return plugman.install(options.platform, options.project, options.plugin, options.plugins_dir, options);
     },
-    'uninstall': function(cli_opts) {
-        if(!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
+    'uninstall': function(command) {
+        var options = command.flag;
+
+        if(!options.platform || !options.project || !options.plugin) {
             return console.log(plugman.help());
         }
-        return plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, cli_opts.plugins_dir, { www_dir: cli_opts.www });
+        options.www_dir = options.www;
+
+        return plugman.uninstall(options.platform, options.project, options.plugin, options.plugins_dir, options);
     },
-    'adduser'  : function(cli_opts) {
+    'adduser'  : function(command) {
         plugman.adduser(function(err) {
             if (err) throw err;
             else console.log('user added');
         });
     },
 
-    'search'   : function(cli_opts) {
-        plugman.search(cli_opts.argv.remain, function(err, plugins) {
+    'search'   : function(command) {
+        plugman.search(command.remain, function(err, plugins) {
             if (err) throw err;
             else {
                 for(var plugin in plugins) {
@@ -127,8 +133,8 @@ plugman.commands =  {
             }
         });
     },
-    'info'     : function(cli_opts) {
-        plugman.info(cli_opts.argv.remain, function(err, plugin_info) {
+    'info'     : function(command) {
+        plugman.info(command.remain, function(err, plugin_info) {
             if (err) throw err;
             else {
                 console.log('name:', plugin_info.name);
@@ -142,8 +148,8 @@ plugman.commands =  {
         });
     },
 
-    'publish'  : function(cli_opts) {
-        var plugin_path = cli_opts.argv.remain;
+    'publish'  : function(command) {
+        var plugin_path = command.remain;
         if(!plugin_path) {
             return console.log(plugman.help());
         }
@@ -153,8 +159,8 @@ plugman.commands =  {
         });
     },
 
-    'unpublish': function(cli_opts) {
-        var plugin = cli_opts.argv.remain;
+    'unpublish': function(command) {
+        var plugin = command.remain;
         if(!plugin) {
             return console.log(plugman.help());
         }
