@@ -92,9 +92,6 @@ module.exports = {
             fs.writeFileSync(filepath, JSON.stringify(config), 'utf-8');
         }
 
-//console.log("***** get_platform_json() "+ filepath);
-//console.log(config);
-
         return config;
     },
 
@@ -102,9 +99,6 @@ module.exports = {
         checkPlatform(platform);
 
         var filepath = path.join(plugins_dir, platform + '.json');
-
-//console.log("*** save_platform_json() " + filepath);
-//console.log(config);
 
         fs.writeFileSync(filepath, JSON.stringify(config), 'utf-8');
     },

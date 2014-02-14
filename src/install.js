@@ -103,7 +103,7 @@ function cleanVersionOutput(version, name){
         out = out.substr(0, rc_index) + '-' + out.substr(rc_index);
     }
 
-    // strip out the -dev and put a warning about using the dev branch
+    // put a warning about using the dev branch
     if (dev_index > -1) {
         // some platform still lists dev branches as just dev, set to null and continue
         if(out=="dev"){
@@ -219,8 +219,6 @@ var platformConfig = {};
 // Returns a promise.
 var runInstall = module.exports.runInstall = function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, options) {
 
-//console.log("RUN INSTALL "+ plugin_dir);
-
     var xml_path     = path.join(plugin_dir, 'plugin.xml'),
         filtered_variables = {}, key;
 
@@ -233,8 +231,6 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
     events.emit('log', 'Starting installation of ' + desc +' for ' + platform);
 
     var platform_config = config_changes.get_platform_json(plugins_dir, platform);
-
-// console.log("runInstall() from  "+ plugin_dir + " INTO "+ plugins_dir);
 
     // check if platform has plugin installed already.
     var is_installed = false;
@@ -319,14 +315,10 @@ function installDependencies(install, dependencies, options) {
 
     var top_plugins = path.join(install.top_plugin_dir, '..');
 
-//console.log(install);
-
     // Add directory of top-level plugin to search path
     options.searchpath = options.searchpath || [];
     if( top_plugins != install.plugins_dir && options.searchpath.indexOf(top_plugins) == -1 )
         options.searchpath.push(top_plugins);
-
-//console.log(options);
 
     // Search for dependency by Id is:
     // a) Look for {$top_plugins}/{$depId} directory
@@ -456,7 +448,7 @@ function installDependency(dep, install, options) {
 
 function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_dir, filtered_variables, www_dir, is_top_level) {
 
-    // @tests - important this events is checked in unit tests
+    // @tests - important this event is checked spec/install.spec.js
     events.emit('verbose', 'Installing plugin ' + plugin_id);
     var handler = platform_modules[platform];
     www_dir = www_dir || handler.www_dir(project_dir);

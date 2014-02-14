@@ -61,14 +61,11 @@ module.exports.uninstallPlugin = function(id, plugins_dir, options) {
 
     var plugin_dir = path.join(plugins_dir, id);
 
-//console.log("uninstallPlugin() -- " + plugin_dir);
-
     // If already removed, skip.
-    if (!fs.existsSync(plugin_dir)) {			 
-//console.log("NOT EXISTS "+ plugin_dir);
-
+    if (!fs.existsSync(plugin_dir)) {
         return Q();
     }
+
     var xml_path  = path.join(plugin_dir, 'plugin.xml')
       , plugin_et = xml_helpers.parseElementtreeSync(xml_path);
 
@@ -115,8 +112,6 @@ module.exports.uninstallPlugin = function(id, plugins_dir, options) {
             }
         });
     });
- 
-// console.log(dependList);
 
     var i, plugin_id, msg;
     for(i in toDelete) {
@@ -152,7 +147,6 @@ function runUninstallPlatform(actions, platform, project_dir, plugin_dir, plugin
 
     // Check that this plugin has no dependents.
     var dependents = dependencies.dependents(plugin_id, depsInfo, platform);
-// console.log(dependents);
 
     if(options.is_top_level && dependents && dependents.length > 0) {
         var msg = "The plugin '"+ plugin_id +"' is required by (" + dependents.join(', ') + ")";
@@ -169,6 +163,8 @@ function runUninstallPlatform(actions, platform, project_dir, plugin_dir, plugin
 
     var promise;
     if (deps && deps.length && danglers && danglers.length) {
+        
+        // @tests - important this event is checked spec/uninstall.spec.js
         events.emit('log', 'Uninstalling ' + danglers.length + ' dependent plugins.');
         promise = Q.all(
             danglers.map(function(dangler) {

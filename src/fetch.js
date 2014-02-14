@@ -15,8 +15,6 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
     // Ensure the containing directory exists.
     shell.mkdir('-p', plugins_dir);
 
-//console.log(" FETCH "+ plugin_src + " " + plugins_dir); 
-
     options = options || {};
     options.subdir = options.subdir || '.';
     options.searchpath = options.searchpath || [];
@@ -95,7 +93,6 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
 
         return p.then(
             function(dir) { 
-// console.log("**COPY "+ dir + " to "+ plugins_dir + " ");
                 return copyPlugin(dir, plugins_dir, options.link && linkable); 
             }
         ).then(
