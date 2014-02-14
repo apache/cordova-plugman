@@ -86,7 +86,7 @@ plugman.on('error', console.error);
 var cmd = command.arguments[0] || '';
 
 if (options.version) {
-    console.log(package.name + ' version ' + package.version);
+    console.log(package.version);
 } else if (options.help) {
     console.log(plugman.help());
 } else if (plugman.commands[cmd]) {

@@ -82,21 +82,6 @@ module.exports = {
             require('../../plugman').emit('verbose', 'Plugin "' + plugin_id + '" fetched.');
             return plugin_dir;
         });
-    },
-
-    // List the directories in the path, ignoring any files, .svn, etc.
-    findPlugins:function(plugins_dir) {
-        var plugins = [],
-            stats;
-
-        if (fs.existsSync(plugins_dir)) {
-            plugins = fs.readdirSync(plugins_dir).filter(function (fileName) {
-               stats = fs.statSync(path.join(plugins_dir, fileName));
-               return fileName != '.svn' && fileName != 'CVS' && stats.isDirectory();
-            });
-        }
-
-        return plugins;
     }
 };
 
