@@ -86,6 +86,7 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
             } else {
                 // If not found in local search path, fetch from the registry.
                 linkable = false;
+                plugin_dir = null;
                 events.emit('log', 'Fetching plugin "' + plugin_src + '" via plugin registry');
                 p = registry.fetch([plugin_src], options.client);
             }
@@ -168,7 +169,7 @@ function copyPlugin(plugin_dir, plugins_dir, link) {
         }
     };
     metadata.save_fetch_metadata(dest, data);
-    return dest;
+    return plugin_dir;
 }
 
 module.exports.copyPlugin = copyPlugin;
