@@ -49,18 +49,14 @@ jsproj.prototype = {
 
         this.xml.getroot().append(item);
     },
+    
     removeReference:function(relPath) {
         var item = new et.Element('ItemGroup');
         var extName = path.extname(relPath);
         var includeText = path.basename(relPath,extName);
-
-
         // <ItemGroup>
         //   <Reference Include="WindowsRuntimeComponent1">
-
         var item_groups = this.xml.findall('ItemGroup/Reference[@Include="' + includeText + '"]/..');
-
-        console.log("item_groups.length = " + item_groups.length);
 
         if(item_groups.length > 0 ) {
             this.xml.getroot().remove(0, item_groups[0]);
