@@ -1,6 +1,7 @@
 var xml_helpers = require('./xml-helpers'),
     et = require('elementtree'),
-    fs = require('fs');
+    fs = require('fs'),
+    path = require('path');
 
 function csproj(location) {
     this.location = location;
@@ -12,6 +13,43 @@ csproj.prototype = {
     write:function() {
         fs.writeFileSync(this.location, this.xml.write({indent:4}), 'utf-8');
     },
+    
+    addReference:function(relPath) {
+        var item = new et.Element('ItemGroup');
+        var extName = path.extname(relPath);
+
+        var elem = new et.Element('Reference');
+        // add dll file name
+        elem.attrib.Include = path.basename(relPath, extName);
+        // add hint path with full path
+        var hint_path = new et.Element('HintPath');
+        hint_path.text = relPath;
+        elem.append(hint_path);
+
+        if(extName == ".winmd") {
+            var mdFileTag = new et.Element("IsWinMDFile");
+                mdFileTag.text = "true";
+            elem.append(mdFileTag);
+        }
+
+        item.append(elem);
+        
+        this.xml.getroot().append(item);
+    },
+    
+    removeReference:function(relPath) {
+        var item = new et.Element('ItemGroup');
+        var extName = path.extname(relPath);
+        var includeText = path.basename(relPath,extName);
+        // <ItemGroup>
+        //   <Reference Include="WindowsRuntimeComponent1">
+        var item_groups = this.xml.findall('ItemGroup/Reference[@Include="' + includeText + '"]/..');
+
+        if(item_groups.length > 0 ) {
+            this.xml.getroot().remove(0, item_groups[0]);
+        }
+    },
+
     addSourceFile:function(relative_path) {
         relative_path = relative_path.split('/').join('\\');
         // make ItemGroup to hold file.
@@ -70,6 +108,7 @@ csproj.prototype = {
         }
         this.xml.getroot().append(item);
     },
+
     removeSourceFile:function(relative_path) {
         relative_path = relative_path.split('/').join('\\');
         var item_groups = this.xml.findall('ItemGroup');

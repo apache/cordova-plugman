@@ -15,24 +15,6 @@ function jsproj(location) {
     return this;
 }
 
-function getBinaryResource(relPath,bIsDLL) {
-    var elem = new et.Element('Reference');
-    // add dll file name
-    elem.attrib.Include = path.basename(relPath, bIsDLL ? '.dll' : ".winmd");
-    // add hint path with full path
-    var hint_path = new et.Element('HintPath');
-        hint_path.text = relPath;
-    elem.append(hint_path);
-
-    if(!bIsDLL) {
-        var mdFileTag = new et.Element("IsWinMDFile");
-            mdFileTag.text = "true";
-        elem.append(mdFileTag);
-    }
-
-    return elem;
-}
-
 jsproj.prototype = {
     location:null,
     xml:null,
@@ -41,16 +23,34 @@ jsproj.prototype = {
     },
 
     addReference:function(relPath) {
+        require('../../plugman').emit('verbose','addReference::' + relPath);
+
         var item = new et.Element('ItemGroup');
         var extName = path.extname(relPath);
 
-        item.append(getBinaryResource(relPath,extName == ".dll"));
-        
+        var elem = new et.Element('Reference');
+        // add file name
+        elem.attrib.Include = path.basename(relPath, extName);
 
+        // add hint path with full path
+        var hint_path = new et.Element('HintPath');
+            hint_path.text = relPath;
+
+        elem.append(hint_path);
+
+        if(extName == ".winmd") {
+            var mdFileTag = new et.Element("IsWinMDFile");
+                mdFileTag.text = "true";
+            elem.append(mdFileTag);
+        }
+
+        item.append(elem);
         this.xml.getroot().append(item);
     },
     
     removeReference:function(relPath) {
+        require('../../plugman').emit('verbose','removeReference::' + relPath);
+
         var item = new et.Element('ItemGroup');
         var extName = path.extname(relPath);
         var includeText = path.basename(relPath,extName);
@@ -64,7 +64,6 @@ jsproj.prototype = {
     },
 
     addSourceFile:function(relative_path) {
-        console.log("addSourceFile::" + relative_path);
 
         relative_path = relative_path.split('/').join('\\');
         // make ItemGroup to hold file.
@@ -78,9 +77,11 @@ jsproj.prototype = {
     },
 
     removeSourceFile:function(relative_path) {
-        console.log("removeSourceFile::" + relative_path);
 
+        // path.normalize(relative_path);// ??
         relative_path = relative_path.split('/').join('\\');
+
+        // var oneStep = this.xml.findall('ItemGroup/Content[@Include="' + relative_path + '""]/..');
 
         var item_groups = this.xml.findall('ItemGroup');
         for (var i = 0, l = item_groups.length; i < l; i++) {
@@ -99,23 +100,6 @@ jsproj.prototype = {
                     return true;
                 }
             }
-
-            // for removing .dll reference
-            // var references = group.findall('Reference');
-            // for (var j = 0, k = references.length; j < k; j++) {
-            //     var reference = references[j];
-            //     var dll_name = path.basename(relative_path, '.dll');
-            //     if(reference.attrib.Include == dll_name) {
-            //         // remove file reference
-            //         group.remove(0, reference);
-            //          // remove ItemGroup if empty
-            //         var new_group = group.findall('Compile').concat(group.findall('Page')); // ??? -jm
-            //         if(new_group.length < 1) {
-            //             this.xml.getroot().remove(0, group);
-            //         }
-            //         return true;
-            //     }
-            // }
         }
         return false;
     }
