@@ -22,7 +22,8 @@ var path = require('path')
   , glob = require('glob')
   , xcode = require('xcode')
   , plist = require('plist-with-patches')
-  , shell = require('shelljs');
+  , shell = require('shelljs')
+  , cachedProjectFiles = {};
 
 module.exports = {
     www_dir:function(project_dir) {
@@ -44,13 +45,15 @@ module.exports = {
             if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <source-file>');
             if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
             var project_ref = path.join('Plugins', path.relative(project.plugins_dir, destFile));
-            project.xcode.addSourceFile(project_ref, has_flags ? {compilerFlags:source_el.attrib['compiler-flags']} : {});
+
             if (is_framework) {
                 var weak = source_el.attrib['weak'];
                 var opt = { weak: (weak == undefined || weak == null || weak != 'true' ? false : true ) };
                 var project_relative = path.join(path.basename(project.xcode_path), project_ref);
                 project.xcode.addFramework(project_relative, opt);
                 project.xcode.addToLibrarySearchPaths({path:project_ref});
+            } else {
+                project.xcode.addSourceFile(project_ref, has_flags ? {compilerFlags:source_el.attrib['compiler-flags']} : {});
             }
             shell.mkdir('-p', targetDir);
             shell.cp(srcFile, destFile);
@@ -137,6 +140,9 @@ module.exports = {
         }
     },
     parseProjectFile:function(project_dir) {
+        if (cachedProjectFiles[project_dir]) {
+            return cachedProjectFiles[project_dir];
+        }
         // grab and parse pbxproj
         // we don't want CordovaLib's xcode project
         var project_files = glob.sync(path.join(project_dir, '*.xcodeproj', 'project.pbxproj'));
@@ -168,7 +174,7 @@ module.exports = {
         var pluginsDir = path.resolve(xcode_dir, 'Plugins');
         var resourcesDir = path.resolve(xcode_dir, 'Resources');
 
-        return {
+        cachedProjectFiles[project_dir] = {
             plugins_dir:pluginsDir,
             resources_dir:resourcesDir,
             xcode:xcodeproj,
@@ -178,7 +184,13 @@ module.exports = {
                 fs.writeFileSync(pbxPath, xcodeproj.writeSync());
             }
         };
+
+        return cachedProjectFiles[project_dir];
+    },
+    purgeProjectFileCache:function(project_dir) {
+        delete cachedProjectFiles[project_dir];
     }
+
 };
 
 function getRelativeDir(file) {
