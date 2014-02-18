@@ -39,7 +39,6 @@ var fs   = require('fs'),
     bplist = require('bplist-parser'),
     xcode = require('xcode'),
     et   = require('elementtree'),
-    underscore = require('underscore'),
     xml_helpers = require('./../util/xml-helpers'),
     platforms = require('./../platforms'),
     events = require('./../events'),
@@ -55,27 +54,25 @@ var keep_these_frameworks = [
 ];
 
 
-var package = module.exports = {};
-
-package.PlatformMunger = PlatformMunger;
+exports.PlatformMunger = PlatformMunger;
 
 /******************************************************************************
 Adapters to keep the current refactoring effort to within this file
 ******************************************************************************/
-package.add_plugin_changes = function(platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
+exports.add_plugin_changes = function(platform, project_dir, plugins_dir, plugin_id, plugin_vars, is_top_level, should_increment, cache) {
     var munger = new PlatformMunger(platform, project_dir, plugins_dir);
     munger.add_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment, cache);
     munger.save_all();
 };
 
-package.remove_plugin_changes = function(platform, project_dir, plugins_dir, plugin_name, plugin_id, is_top_level, should_decrement) {
+exports.remove_plugin_changes = function(platform, project_dir, plugins_dir, plugin_name, plugin_id, is_top_level, should_decrement) {
     // TODO: should_decrement parameter is never used, remove it here and wherever called
     var munger = new PlatformMunger(platform, project_dir, plugins_dir);
     munger.remove_plugin_changes(plugin_name, plugin_id, is_top_level);
     munger.save_all();
 };
 
-package.process = function(plugins_dir, project_dir, platform) {
+exports.process = function(plugins_dir, project_dir, platform) {
     var munger = new PlatformMunger(platform, project_dir, plugins_dir);
     munger.process();
     munger.save_all();
@@ -83,22 +80,22 @@ package.process = function(plugins_dir, project_dir, platform) {
 /******************************************************************************/
 
 
-package.add_installed_plugin_to_prepare_queue = add_installed_plugin_to_prepare_queue;
+exports.add_installed_plugin_to_prepare_queue = add_installed_plugin_to_prepare_queue;
 function add_installed_plugin_to_prepare_queue(plugins_dir, plugin, platform, vars, is_top_level) {
     checkPlatform(platform);
-    var config = module.exports.get_platform_json(plugins_dir, platform);
+    var config = exports.get_platform_json(plugins_dir, platform);
     config.prepare_queue.installed.push({'plugin':plugin, 'vars':vars, 'topLevel':is_top_level});
-    module.exports.save_platform_json(config, plugins_dir, platform);
+    exports.save_platform_json(config, plugins_dir, platform);
 }
 
-package.add_uninstalled_plugin_to_prepare_queue = add_uninstalled_plugin_to_prepare_queue;
+exports.add_uninstalled_plugin_to_prepare_queue = add_uninstalled_plugin_to_prepare_queue;
 function add_uninstalled_plugin_to_prepare_queue(plugins_dir, plugin, platform, is_top_level) {
     checkPlatform(platform);
 
     var plugin_xml = xml_helpers.parseElementtreeSync(path.join(plugins_dir, plugin, 'plugin.xml'));
-    var config = module.exports.get_platform_json(plugins_dir, platform);
-    config.prepare_queue.uninstalled.push({'plugin':plugin, 'id':plugin_xml._root.attrib['id'], 'topLevel':is_top_level});
-    module.exports.save_platform_json(config, plugins_dir, platform);
+    var config = exports.get_platform_json(plugins_dir, platform);
+    config.prepare_queue.uninstalled.push({'plugin':plugin, 'id':plugin_xml.getroot().attrib['id'], 'topLevel':is_top_level});
+    exports.save_platform_json(config, plugins_dir, platform);
 }
 
 
@@ -166,7 +163,7 @@ function PlatformMunger_apply_file_munge(file, munge, remove) {
 PlatformMunger.prototype.remove_plugin_changes = remove_plugin_changes;
 function remove_plugin_changes(plugin_name, plugin_id, is_top_level) {
     var self = this;
-    var platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
+    var platform_config = exports.get_platform_json(self.plugins_dir, self.platform);
     var plugin_dir = path.join(self.plugins_dir, plugin_name);
     var plugin_vars = (is_top_level ? platform_config.installed_plugins[plugin_id] : platform_config.dependent_plugins[plugin_id]);
 
@@ -197,17 +194,18 @@ function remove_plugin_changes(plugin_name, plugin_id, is_top_level) {
     }
 
     // save
-    module.exports.save_platform_json(platform_config, self.plugins_dir, self.platform);
+    exports.save_platform_json(platform_config, self.plugins_dir, self.platform);
 }
 
 
 PlatformMunger.prototype.add_plugin_changes = add_plugin_changes;
 function add_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increment) {
     var self = this;
-    var platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
+    var platform_config = exports.get_platform_json(self.plugins_dir, self.platform);
     var plugin_dir = path.join(self.plugins_dir, plugin_id);
 
-    plugin_id = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'), 'utf-8')._root.attrib['id'];
+    var plugin_config = self.config_keeper.get(plugin_dir, '', 'plugin.xml');
+    plugin_id = plugin_config.data.getroot().attrib.id;
 
     // get config munge, aka how should this plugin change various config files
     var config_munge = self.generate_plugin_config_munge(plugin_dir, plugin_vars);
@@ -246,7 +244,7 @@ function add_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increme
     }
 
     // save
-    module.exports.save_platform_json(platform_config, self.plugins_dir, self.platform);
+    exports.save_platform_json(platform_config, self.plugins_dir, self.platform);
 }
 
 
@@ -257,7 +255,7 @@ PlatformMunger.prototype.reapply_global_munge = reapply_global_munge ;
 function reapply_global_munge () {
     var self = this;
 
-    var platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
+    var platform_config = exports.get_platform_json(self.plugins_dir, self.platform);
     var global_munge = platform_config.config_munge;
     for (var file in global_munge) {
         // TODO: remove this warning some time after 3.4 is out.
@@ -288,7 +286,8 @@ function generate_plugin_config_munge(plugin_dir, vars) {
     }
 
     var munge = {};
-    var plugin_xml = xml_helpers.parseElementtreeSync(path.join(plugin_dir, 'plugin.xml'));
+    var plugin_config = self.config_keeper.get(plugin_dir, '', 'plugin.xml');
+    var plugin_xml = plugin_config.data;
 
     var platformTag = plugin_xml.find('platform[@name="' + self.platform + '"]');
     var changes = [];
@@ -357,7 +356,7 @@ PlatformMunger.prototype.process = PlatformMunger_process;
 function PlatformMunger_process() {
     var self = this;
 
-    var platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
+    var platform_config = exports.get_platform_json(self.plugins_dir, self.platform);
 
     // Uninstallation first
     platform_config.prepare_queue.uninstalled.forEach(function(u) {
@@ -369,13 +368,13 @@ function PlatformMunger_process() {
         self.add_plugin_changes(u.plugin, u.vars, u.topLevel, true);
     });
 
-    platform_config = module.exports.get_platform_json(self.plugins_dir, self.platform);
+    platform_config = exports.get_platform_json(self.plugins_dir, self.platform);
 
     // Empty out installed/ uninstalled queues.
     platform_config.prepare_queue.uninstalled = [];
     platform_config.prepare_queue.installed = [];
     // save platform json
-    module.exports.save_platform_json(platform_config, self.plugins_dir, self.platform);
+    exports.save_platform_json(platform_config, self.plugins_dir, self.platform);
 }
 /**** END of PlatformMunger ****/
 
@@ -407,6 +406,7 @@ function ConfigKeeper_get(project_dir, platform, file) {
     return config_file;
 }
 
+
 ConfigKeeper.prototype.save_all = ConfigKeeper_save_all;
 function ConfigKeeper_save_all() {
     var self = this;
@@ -420,7 +420,7 @@ function ConfigKeeper_save_all() {
 // TODO: move save/get_platform_json to be part of ConfigKeeper or ConfigFile
 // For now they are used in many places in plugman and cordova-cli and can
 // save the file bypassing the ConfigKeeper's cache.
-package.get_platform_json = get_platform_json;
+exports.get_platform_json = get_platform_json;
 function get_platform_json(plugins_dir, platform) {
     checkPlatform(platform);
 
@@ -434,17 +434,15 @@ function get_platform_json(plugins_dir, platform) {
             installed_plugins:{},
             dependent_plugins:{}
         };
-        fs.writeFileSync(filepath, JSON.stringify(config), 'utf-8');
         return config;
     }
 }
 
-package.save_platform_json = save_platform_json;
+exports.save_platform_json = save_platform_json;
 function save_platform_json(config, plugins_dir, platform) {
     checkPlatform(platform);
-
     var filepath = path.join(plugins_dir, platform + '.json');
-    fs.writeFileSync(filepath, JSON.stringify(config), 'utf-8');
+    fs.writeFileSync(filepath, JSON.stringify(config, null, 4), 'utf-8');
 }
 
 /**** END of ConfigKeeper ****/
@@ -454,7 +452,11 @@ function save_platform_json(config, plugins_dir, platform) {
 * ConfigFile class
 *
 * Can load and keep various types of config files. Provides some functionality
-* specific to some file types such as grafting XML children.
+* specific to some file types such as grafting XML children. In most cases it
+* should be instantiated by ConfigKeeper.
+*
+* For plugin.xml files use as:
+* plugin_config = self.config_keeper.get(plugin_dir, '', 'plugin.xml');
 *
 * TODO: Consider moving it out to a separate file and maybe partially with
 * overrides in platform handlers.
@@ -463,9 +465,9 @@ function ConfigFile(project_dir, platform, file_tag) {
     this.project_dir = project_dir;
     this.platform = platform;
     this.file_tag = file_tag;
+    this.is_changed = false;
 
     this.load();
-    this.is_changed = false;
 }
 
 // ConfigFile.load()
@@ -582,30 +584,36 @@ function isBinaryPlist(filename) {
 }
 
 // Find out the real name of an iOS project
-// TODO: glob is slow, need a better way or caching, or avoid using.
-function getIOSProjectname(project_dir){
+// TODO: glob is slow, need a better way or caching, or avoid using more than once.
+function getIOSProjectname(project_dir) {
     var matches = glob.sync(path.join(project_dir, '*.xcodeproj'));
-    var iospath= project_dir; // TODO: Do we ever want to return project dir here? I wont work in resolveConfigFilePath().
-    if (matches.length) {
+    var iospath;
+    if (matches.length === 1) {
         iospath = path.basename(matches[0],'.xcodeproj');
+    } else {
+        var msg;
+        if (matches.length === 0) {
+            msg = 'Does not appear to be an xcode project, no xcode project file in ' + project_dir;
+        }
+        else {
+            msg = 'There are multiple *.xcodeproj dirs in ' + project_dir;
+        }
+        throw new Error(msg);
     }
     return iospath;
 }
 
 // Some config-file target attributes are not qualified with a full leading directory, or contain wildcards.
 // Resolve to a real path in this function.
-// TODO: some globs are very slow, try to get rid of as many of them as possible.
+// TODO: getIOSProjectname is slow because of glob, try to avoid calling it several times per project.
 function resolveConfigFilePath(project_dir, platform, file) {
     var filepath = path.join(project_dir, file);
     var matches;
 
     // .pbxproj file
     if (file === 'framework') {
-        var project_files = glob.sync(path.join(project_dir, '*.xcodeproj', 'project.pbxproj'));
-        if (project_files.length === 0) {
-            throw new Error("does not appear to be an xcode project (no xcode project file)");
-        }
-        filepath = project_files[0];
+        var proj_name = getIOSProjectname(project_dir);
+        filepath = path.join(project_dir, proj_name + '.xcodeproj', 'project.pbxproj');
         return filepath;
     }
 
@@ -616,7 +624,8 @@ function resolveConfigFilePath(project_dir, platform, file) {
         return filepath;
     }
 
-    // special-case config.xml target that is just "config.xml". this should be resolved to the real location of the file.
+    // special-case config.xml target that is just "config.xml". This should be resolved to the real location of the file.
+    // TODO: move the logic that contains the locations of config.xml from cordova CLI into plugman.
     if (file == 'config.xml') {
         if (platform == 'ubuntu') {
             filepath = path.join(project_dir, 'config.xml');
@@ -644,7 +653,7 @@ function resolveConfigFilePath(project_dir, platform, file) {
 // Increment obj[key1][key2]...[keyN] by val. If it
 // didn't exist, set it to val.
 function deep_add(obj, val, keys /* or key1, key2 .... */ ) {
-    if ( !underscore.isArray(keys) ) {
+    if ( !Array.isArray(keys) ) {
         keys = Array.prototype.slice.call(arguments, 2);
     }
     var k = keys[0];

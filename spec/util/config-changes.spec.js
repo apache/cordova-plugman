@@ -107,15 +107,13 @@ describe('config-changes module', function() {
     });
 
     describe('get_platform_json method', function() {
-        it('should write out and return an empty config json file if it doesn\'t exist', function() {
+        it('should return an empty config json object if file doesn\'t exist', function() {
             var filepath = path.join(plugins_dir, 'android.json');
             var cfg = configChanges.get_platform_json(plugins_dir, 'android');
             expect(cfg).toBeDefined();
             expect(cfg.prepare_queue).toBeDefined();
             expect(cfg.config_munge).toBeDefined();
             expect(cfg.installed_plugins).toBeDefined();
-            expect(fs.existsSync(filepath)).toBe(true);
-            expect(fs.readFileSync(filepath, 'utf-8')).toEqual(JSON.stringify(cfg));
         });
         it('should return the json file if it exists', function() {
             var filepath = path.join(plugins_dir, 'android.json');
@@ -132,7 +130,7 @@ describe('config-changes module', function() {
             var cfg = {poop:true};
             configChanges.save_platform_json(cfg, plugins_dir, 'android');
             expect(fs.existsSync(filepath)).toBe(true);
-            expect(fs.readFileSync(filepath, 'utf-8')).toEqual(JSON.stringify(cfg));
+            expect(JSON.parse(fs.readFileSync(filepath, 'utf-8'))).toEqual(cfg);
         });
     });
 
