@@ -266,7 +266,7 @@ describe('ios project handler', function() {
                 var frameworks = copyArray(valid_custom_frameworks);
                 var spy = spyOn(proj_files.xcode, 'addFramework');
                 ios['framework'].install(frameworks[0], dummyplugin, temp, dummy_id, proj_files);
-                expect(spy).toHaveBeenCalledWith('SampleApp/Plugins/com.phonegap.plugins.dummyplugin/Custom.framework', {customFramework:true});
+                expect(spy).toHaveBeenCalledWith(path.normalize('SampleApp/Plugins/com.phonegap.plugins.dummyplugin/Custom.framework'), {customFramework:true});
             });
             it('should cp the file to the right target location', function() {
                 var frameworks = copyArray(valid_custom_frameworks);
