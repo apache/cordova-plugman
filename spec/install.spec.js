@@ -86,8 +86,11 @@ describe('install', function() {
                 },
                 dependent_plugins:{}
             });
-            install('android', temp, dummyplugin, plugins_dir, {});
-            expect(spy).toHaveBeenCalledWith('results', 'Plugin "'+dummy_id+'" already installed, \'sall good.');
+            installPromise(install('android', temp, dummyplugin, plugins_dir, {}));
+            waitsFor(function() { return done; }, 'install promise never resolved', 500);
+            runs(function() {
+                expect(spy).toHaveBeenCalledWith('results', 'Plugin "'+dummy_id+'" already installed on android.');
+            });
         });
         it('should check version if plugin has engine tag', function(){
             var spy = spyOn(semver, 'satisfies').andReturn(true);
