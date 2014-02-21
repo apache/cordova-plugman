@@ -24,6 +24,7 @@ var platformTag = plugin_et.find('./platform[@name="android"]');
 var dummy_id = plugin_et._root.attrib['id'];
 var valid_source = platformTag.findall('./source-file'),
     valid_libs = platformTag.findall('./lib-file'),
+    valid_resources = platformTag.findall('./resource-file'),
     assets = plugin_et.findall('./asset'),
     configChanges = platformTag.findall('./config-file');
 
@@ -74,6 +75,14 @@ describe('android project handler', function() {
                 expect(s).toHaveBeenCalledWith(dummyplugin, 'src/android/TestLib.jar', temp, path.join('libs', 'TestLib.jar'));
             });
         });
+        describe('of <resource-file> elements', function() {
+            it("should copy files", function () {
+                var s = spyOn(common, 'copyFile');
+
+                android['resource-file'].install(valid_resources[0], dummyplugin, temp);
+                expect(s).toHaveBeenCalledWith(dummyplugin, 'android-resource.xml', temp, path.join('res', 'xml', 'dummy.xml'));
+            });
+        });
         describe('of <source-file> elements', function() {
             beforeEach(function() {
                 shell.cp('-rf', android_one_project, temp);
@@ -121,6 +130,14 @@ describe('android project handler', function() {
                 android['lib-file'].install(valid_libs[0], dummyplugin, temp);
                 android['lib-file'].uninstall(valid_libs[0], temp, dummy_id);
                 expect(s).toHaveBeenCalledWith(temp, path.join('libs', 'TestLib.jar'));
+            });
+        });
+        describe('of <resource-file> elements', function(done) {
+            it('should remove files', function () {
+                var s = spyOn(common, 'removeFile');
+                android['resource-file'].install(valid_resources[0], dummyplugin, temp);
+                android['resource-file'].uninstall(valid_resources[0], temp, dummy_id);
+                expect(s).toHaveBeenCalledWith(temp, path.join('res', 'xml', 'dummy.xml'));
             });
         });
         describe('of <source-file> elements', function() {

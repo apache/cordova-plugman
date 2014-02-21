@@ -55,9 +55,39 @@ module.exports = {
     },  
     "resource-file":{
         install:function(el, plugin_dir, project_dir) {
-          require('../../plugman').emit('verbose', 'resource-file is not supported on this platform');
+            require('../../plugman').emit('verbose', 'resource-file is not supported for Windows Phone 8');
         },
         uninstall:function(el, project_dir) {
+        }
+    },
+    "framework":{
+        install:function(el, plugin_dir, project_dir, plugin_id, project_file) {
+            require('../../plugman').emit('verbose', 'wp8 framework install :: ' + plugin_id  );
+            
+            var src = el.attrib['src'];
+            var dest = src; // if !isCustom, we will just add a reference to the file in place
+            var isCustom = el.attrib.custom == "true";
+
+            if(isCustom) {
+                dest = path.join('plugins', plugin_id, path.basename(src));
+                common.copyFile(plugin_dir, src, project_dir, dest);
+            }
+
+            project_file.addReference(dest);
+
+        },
+        uninstall:function(el, project_dir, plugin_id, project_file) {
+            require('../../plugman').emit('verbose', 'wp8 framework uninstall :: ' + plugin_id  );
+
+            var src = el.attrib['src'];
+            var isCustom = el.attrib.custom == "true";
+
+            if(isCustom) {
+                var dest = path.join('plugins', plugin_id);
+                common.removeFile(project_dir, dest);
+            }
+
+            project_file.removeReference(src);            
         }
     }
 };

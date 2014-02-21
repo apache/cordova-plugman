@@ -1,6 +1,7 @@
 var xml_helpers = require('./xml-helpers'),
     et = require('elementtree'),
-    fs = require('fs');
+    fs = require('fs'),
+    path = require('path');
 
 function csproj(location) {
     this.location = location;
@@ -12,20 +13,62 @@ csproj.prototype = {
     write:function() {
         fs.writeFileSync(this.location, this.xml.write({indent:4}), 'utf-8');
     },
+    
+    addReference:function(relPath) {
+        var item = new et.Element('ItemGroup');
+        var extName = path.extname(relPath);
+
+        var elem = new et.Element('Reference');
+        // add dll file name
+        elem.attrib.Include = path.basename(relPath, extName);
+        // add hint path with full path
+        var hint_path = new et.Element('HintPath');
+        hint_path.text = relPath;
+        elem.append(hint_path);
+
+        if(extName == ".winmd") {
+            var mdFileTag = new et.Element("IsWinMDFile");
+                mdFileTag.text = "true";
+            elem.append(mdFileTag);
+        }
+
+        item.append(elem);
+        
+        this.xml.getroot().append(item);
+    },
+    
+    removeReference:function(relPath) {
+        var item = new et.Element('ItemGroup');
+        var extName = path.extname(relPath);
+        var includeText = path.basename(relPath,extName);
+        // <ItemGroup>
+        //   <Reference Include="WindowsRuntimeComponent1">
+        var item_groups = this.xml.findall('ItemGroup/Reference[@Include="' + includeText + '"]/..');
+
+        if(item_groups.length > 0 ) {
+            this.xml.getroot().remove(0, item_groups[0]);
+        }
+    },
+
     addSourceFile:function(relative_path) {
         relative_path = relative_path.split('/').join('\\');
         // make ItemGroup to hold file.
         var item = new et.Element('ItemGroup');
+
+        var extName = path.extname(relative_path);
         // check if it's a .xaml page
-        if(relative_path.indexOf('.xaml', relative_path.length - 5) > -1) {
+        if(extName == ".xaml") {
             var page = new et.Element('Page');
             var sub_type = new et.Element('SubType');
+                
             sub_type.text = "Designer";
             page.append(sub_type);
             page.attrib.Include = relative_path;
+
             var gen = new et.Element('Generator');
             gen.text = "MSBuild:Compile";
             page.append(gen);
+
             var item_groups = this.xml.findall('ItemGroup');
             if(item_groups.length == 0) {
                 item.append(page);
@@ -33,43 +76,27 @@ csproj.prototype = {
                 item_groups[0].append(page);
             }
         }
-        // check if it's a .xaml.cs page that would depend on a .xaml of the same name
-        else if (relative_path.indexOf('.xaml.cs', relative_path.length - 8) > -1) {
+        else if (extName == ".cs") {
             var compile = new et.Element('Compile');
             compile.attrib.Include = relative_path;
-            var dep = new et.Element('DependentUpon');
-            var parts = relative_path.split('\\');
-            var xaml_file = parts[parts.length - 1].substr(0, parts[parts.length - 1].length - 3);
-            dep.text = xaml_file;
-            compile.append(dep);
+            // check if it's a .xaml.cs page that would depend on a .xaml of the same name
+            if (relative_path.indexOf('.xaml.cs', relative_path.length - 8) > -1) {
+                var dep = new et.Element('DependentUpon');
+                var parts = relative_path.split('\\');
+                var xaml_file = parts[parts.length - 1].substr(0, parts[parts.length - 1].length - 3); // Benn, really !?
+                dep.text = xaml_file;
+                compile.append(dep);
+            }
             item.append(compile);
         }
-        // check if it's a .dll that we should add as a reference.
-        else if (relative_path.indexOf('.dll', relative_path.length - 4) > -1) {
-            var compile = new et.Element('Reference');
-            // add dll name
-            var parts = relative_path.split('\\');
-            var dll_name = parts[parts.length - 1].substr(0, parts[parts.length - 1].length - 4);
-            compile.attrib.Include = dll_name;
-            // add hint path with full path
-            var hint_path = new et.Element('HintPath');
-            hint_path.text = relative_path;
-            compile.append(hint_path);
-            item.append(compile);
-        }
-        // otherwise add it normally
-        else if (relative_path.indexOf('.cs', relative_path.length - 3) > -1) {
-            var compile = new et.Element('Compile');
-            compile.attrib.Include = relative_path;
-            item.append(compile);
-        }
-        else {
+        else { // otherwise add it normally
             var compile = new et.Element('Content');
             compile.attrib.Include = relative_path;
             item.append(compile);
         }
         this.xml.getroot().append(item);
     },
+
     removeSourceFile:function(relative_path) {
         relative_path = relative_path.split('/').join('\\');
         var item_groups = this.xml.findall('ItemGroup');
@@ -83,23 +110,6 @@ csproj.prototype = {
                     group.remove(0, file);
                     // remove ItemGroup if empty
                     var new_group = group.findall('Compile').concat(group.findall('Page')).concat(group.findall('Content'));
-                    if(new_group.length < 1) {
-                        this.xml.getroot().remove(0, group);
-                    }
-                    return true;
-                }
-            }
-            // for removing .dll reference
-            var references = group.findall('Reference');
-            for (var j = 0, k = references.length; j < k; j++) {
-                var reference = references[j];
-                var parts = relative_path.split('\\');
-                var dll_name = parts[parts.length - 1].substr(0, parts[parts.length - 1].length - 4);
-                if(reference.attrib.Include == dll_name) {
-                    // remove file reference
-                    group.remove(0, reference);
-                     // remove ItemGroup if empty
-                    var new_group = group.findall('Compile').concat(group.findall('Page'));
                     if(new_group.length < 1) {
                         this.xml.getroot().remove(0, group);
                     }

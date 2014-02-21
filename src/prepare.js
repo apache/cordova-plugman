@@ -44,7 +44,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
     // - For each js-module (general first, then platform) build up an object storing the path and any clobbers, merges and runs for it.
     // - Write this object into www/cordova_plugins.json.
     // - Cordova.js contains code to load them at runtime from that file.
-    require('../plugman').emit('log', 'Preparing ' + platform + ' project');
+    require('../plugman').emit('verbose', 'Preparing ' + platform + ' project');
     var platform_json = config_changes.get_platform_json(plugins_dir, platform);
     var wwwDir = www_dir || platform_modules[platform].www_dir(project_dir);
 
@@ -163,7 +163,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
     
                 var fsPath = path.join.apply(path, pathParts);
                 var scriptContent = fs.readFileSync(path.join(pluginDir, fsPath), 'utf-8');
-                scriptContent = 'cordova.define("' + moduleName + '", function(require, exports, module) {' + scriptContent + '});\n';
+                scriptContent = 'cordova.define("' + moduleName + '", function(require, exports, module) { ' + scriptContent + '\n});\n';
                 fs.writeFileSync(path.join(platformPluginsDir, plugin_id, fsPath), scriptContent, 'utf-8');
                 if(platform == 'wp7' || platform == 'wp8' || platform == "windows8") {
                     wp_csproj.addSourceFile(path.join('www', 'plugins', plugin_id, fsPath));

@@ -7,7 +7,7 @@ var ios = require('../../src/platforms/ios'),
     os = require('osenv'),
     common = require('../../src/platforms/common'),
     xcode = require('xcode'),
-    plist = require('plist'),
+    plist = require('plist-with-patches'),
     bplist = require('bplist-parser'),
     temp = path.join(os.tmpdir(), 'plugman'),
     plugins_dir = path.join(temp, 'cordova', 'plugins'),
@@ -68,6 +68,7 @@ shell.mkdir('-p', temp);
 shell.cp('-rf', ios_config_xml_project, temp);
 var proj_files = ios.parseProjectFile(temp);
 shell.rm('-rf', temp);
+ios.purgeProjectFileCache(temp);
 
 function copyArray(arr) {
     return Array.prototype.slice.call(arr, 0);
@@ -80,6 +81,7 @@ describe('ios project handler', function() {
     });
     afterEach(function() {
         shell.rm('-rf', temp);
+        ios.purgeProjectFileCache(temp);
     });
 
     describe('www_dir method', function() {
@@ -264,7 +266,7 @@ describe('ios project handler', function() {
                 var frameworks = copyArray(valid_custom_frameworks);
                 var spy = spyOn(proj_files.xcode, 'addFramework');
                 ios['framework'].install(frameworks[0], dummyplugin, temp, dummy_id, proj_files);
-                expect(spy).toHaveBeenCalledWith('SampleApp/Plugins/com.phonegap.plugins.dummyplugin/Custom.framework', {customFramework:true});
+                expect(spy).toHaveBeenCalledWith(path.normalize('SampleApp/Plugins/com.phonegap.plugins.dummyplugin/Custom.framework'), {customFramework:true});
             });
             it('should cp the file to the right target location', function() {
                 var frameworks = copyArray(valid_custom_frameworks);
@@ -295,7 +297,7 @@ describe('ios project handler', function() {
             it('should rm the file from the right target location when element has no target-dir', function(){
                 var source = copyArray(valid_source).filter(function(s) { return s.attrib['target-dir'] == undefined});
                 shell.cp('-rf', ios_config_xml_project, temp);
-            
+
                 var spy = spyOn(shell, 'rm');
                 ios['source-file'].uninstall(source[0], temp, dummy_id, proj_files);
                 expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'SampleApp', 'Plugins', dummy_id, 'DummyPluginCommand.m'));

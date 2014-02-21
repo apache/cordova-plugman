@@ -58,9 +58,20 @@ module.exports = {
     },
     "resource-file":{
         install:function(el, plugin_dir, project_dir) {
+<<<<<<< HEAD
           require('../../plugman').emit('verbose', 'resource-file is not supported on this platform');
         },
         uninstall:function(el, project_dir) {
+=======
+            var src = el.attrib.src;
+            var target = el.attrib.target;
+            require('../../plugman').emit('verbose', 'Copying resource file ' + src + ' to ' + target);
+            common.copyFile(plugin_dir, src, project_dir, target);
+        },
+        uninstall:function(el, project_dir) {
+            var target = el.attrib.target;
+            common.removeFile(project_dir, target);
+>>>>>>> upstream/master
         }
     }
 };

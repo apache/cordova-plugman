@@ -29,7 +29,7 @@ var path = require('path')
 
 var known_opts = { 'platform' : [ 'ios', 'android', 'amazon-fireos', 'blackberry10', 'wp7', 'wp8' , 'windows8', 'firefoxos' ]
         , 'project' : path
-        , 'plugin' : [String, path, url]
+        , 'plugin' : [String, path, url, Array]
         , 'version' : Boolean
         , 'help' : Boolean
         , 'debug' : Boolean
@@ -38,6 +38,7 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'amazon-fireos', 'blackberry
         , 'link': Boolean
         , 'variable' : Array
         , 'www': path
+        , 'searchpath' : [path, Array]
 }, shortHands = { 'var' : ['--variable'], 'v': ['--version'], 'h': ['--help'] };
 
 var cli_opts = nopt(known_opts, shortHands);
@@ -74,7 +75,7 @@ if (!cli_opts.silent) {
 plugman.on('error', console.error);
 
 if (cli_opts.version) {
-    console.log(package.name + ' version ' + package.version);
+    console.log(package.version);
 } else if (cli_opts.help) {
     console.log(plugman.help());
 } else if (plugman.commands[cmd]) {

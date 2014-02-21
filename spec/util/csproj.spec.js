@@ -52,11 +52,6 @@ describe('csproj', function() {
                 expect(test_csproj.xml.getroot().find('.//Compile[@Include="src\\UI\\PageTest.xaml.cs"]')).toBeTruthy();
                 expect(test_csproj.xml.getroot().find('.//Compile[@Include="src\\UI\\PageTest.xaml.cs"]/DependentUpon').text).toEqual('PageTest.xaml');
             });
-            it('should properly add .dll references', function() {
-                test_csproj.addSourceFile(lib_test);
-                expect(test_csproj.xml.getroot().find('.//Reference[@Include="LibraryTest"]')).toBeTruthy();
-                expect(test_csproj.xml.getroot().find('.//Reference[@Include="LibraryTest"]/HintPath').text).toEqual('lib\\LibraryTest.dll');
-            });
             it('should properly add .cs files', function() {
                 test_csproj.addSourceFile(file_test);
                 expect(test_csproj.xml.getroot().find('.//Compile[@Include="src\\FileTest.cs"]')).toBeTruthy();
@@ -76,10 +71,6 @@ describe('csproj', function() {
             it('should properly remove .xaml.cs files', function() {
                 test_csproj.removeSourceFile(page_test_cs);
                 expect(test_csproj.xml.getroot().find('.//Compile[@Include="src\\UI\\PageTest.xaml.cs"]')).toBeFalsy();
-            });
-            it('should properly remove .dll references', function() {
-                test_csproj.removeSourceFile(lib_test);
-                expect(test_csproj.xml.getroot().find('.//Reference[@Include="LibraryTest"]')).toBeFalsy();
             });
             it('should properly remove .cs files', function() {
                 test_csproj.removeSourceFile(file_test);
