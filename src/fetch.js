@@ -10,10 +10,8 @@ var shell   = require('shelljs'),
     registry = require('./registry/registry');
 
 // possible options: link, subdir, git_ref, client, expected_id
-// Returns a promise.
+// Returns a promise with source directory of plugin.
 module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
-    // Ensure the containing directory exists.
-    shell.mkdir('-p', plugins_dir);
 
     options = options || {};
     options.subdir = options.subdir || '.';
@@ -46,23 +44,24 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
         events.emit('log', 'Fetching plugin "' + plugin_src + '" via git clone');
         if (options.link) {
             return Q.reject(new Error('--link is not supported for git URLs'));
-        } else {
-            var data = {
-                source: {
-                    type: 'git',
-                    url:  plugin_src,
-                    subdir: options.subdir,
-                    ref: options.git_ref
-                }
-            };
-
-            return plugins.clonePluginGitRepo(plugin_src, plugins_dir, options.subdir, options.git_ref)
-            .then(
-                function(dir) { return checkID(options.expected_id, dir); }
-            ).then(
-                function(dir) { metadata.save_fetch_metadata(dir, data); return dir; }
-            );
         }
+
+        var meta = {
+            source: {
+                type: 'git',
+                url:  plugin_src,
+                subdir: options.subdir,
+                ref: options.git_ref
+            }
+        };
+
+        return plugins.clonePluginGitRepo(plugin_src, plugins_dir, options.subdir, options.git_ref)
+        .then(
+            function(tmp_dir) { return checkID(options.expected_id, tmp_dir); }
+        ).then(
+            function(tmp_dir) { metadata.save_fetch_metadata(tmp_dir, meta); return tmp_dir; }
+        );
+
     } else {
         // If it's not a network URL, it's either a local path or a plugin ID.
 
@@ -70,61 +69,70 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
         // Use original plugin_src value instead.
 
         var p,  // The Q promise to be returned.
-            linkable = true,
-            plugin_dir = path.resolve(plugin_src, options.subdir);
+            local_dir = path.resolve(plugin_src, options.subdir),
+            meta = {
+                source: {
+                    type: 'local',
+                    path: '',
+                }
+            };
 
-        if ( fs.existsSync(plugin_dir) ) {
-            p = Q(plugin_dir);
+        if ( fs.existsSync(local_dir) ) {
+            p = Q(local_dir);
+            meta.source.path = local_dir;
+
         } else {
             // If there is no such local path, it's a plugin id.
             // First look for it in the local search path (if provided).
-            var local_dir = findLocalPlugin(plugin_src, options.searchpath);
+            local_dir = findLocalPlugin(plugin_src, options.searchpath);
             if (local_dir) {
-                plugin_dir = local_dir;
                 p = Q(local_dir);
                 events.emit('log', 'Found plugin "' + plugin_src + '" at: ' + local_dir);
+                meta.source.path = local_dir;
+
             } else {
+
+                if (options.link) {
+                    return Q.reject(new Error('--link is not supported for remote fetching '+ plugin_src));
+                }
+
+                meta = null;
+
                 // If not found in local search path, fetch from the registry.
-                linkable = false;
-                plugin_dir = null;
                 events.emit('log', 'Fetching plugin "' + plugin_src + '" via plugin registry');
                 p = registry.fetch([plugin_src], options.client);
             }
         }
 
         return p.then(
-            function(dir) { 
-                return copyPlugin(dir, plugins_dir, options.link && linkable); 
-            }
+            function(plugin_dir) { return checkID(options.expected_id, plugin_dir); }
         ).then(
-            function(dir) { return checkID(options.expected_id, dir); }
-        ).then(
-            function(dir) {
-                // if copied, return original directory path
-                return plugin_dir ? plugin_dir : dir;
+            function(plugin_dir) { 
+                if(meta) metadata.save_fetch_metadata(plugin_dir, meta); 
+                return plugin_dir; 
             }
         );
     }
 };
 
 
-function readId(dir) {
-    var xml_path = path.join(dir, 'plugin.xml');
+function readId(plugin_dir) {
+    var xml_path = path.join(plugin_dir, 'plugin.xml');
     events.emit('verbose', 'Fetch is reading plugin.xml from location "' + xml_path + '"...');
-    var et = xml_helpers.parseElementtreeSync(path.join(dir, 'plugin.xml'));
-    var plugin_id = et.getroot().attrib.id;
-    return plugin_id;
+    var et = xml_helpers.parseElementtreeSync(xml_path);
+
+    return et.getroot().attrib.id;
 }
 
 // Helper function for checking expected plugin IDs against reality.
-function checkID(expected_id, dir) {
-    if ( expected_id ) {
-        var id = readId(dir);
+function checkID(expected_id, plugin_dir) {
+    if (expected_id) {
+        var id = readId(plugin_dir);
         if (expected_id != id) {
             throw new Error('Expected fetched plugin to have ID "' + expected_id + '" but got "' + id + '".');
         }
     }
-    return dir;
+    return plugin_dir;
 }
 
 // Look for plugin in local search path.
@@ -146,30 +154,3 @@ function findLocalPlugin(plugin_id, searchpath) {
     }
     return null;
 }
-
-
-// Copy or link a plugin from plugin_dir to plugins_dir/plugin_id.
-function copyPlugin(plugin_dir, plugins_dir, link) {
-    var plugin_id = readId(plugin_dir);
-    var dest = path.join(plugins_dir, plugin_id);
-    shell.rm('-rf', dest);
-    if (link) {
-        events.emit('verbose', 'Symlinking from location "' + plugin_dir + '" to location "' + dest + '"');
-        fs.symlinkSync(plugin_dir, dest, 'dir');
-    } else {
-        shell.mkdir('-p', dest);
-        events.emit('verbose', 'Copying from location "' + plugin_dir + '" to location "' + dest + '"');
-        shell.cp('-R', path.join(plugin_dir, '*') , dest);
-    }
-
-    var data = {
-        source: {
-        type: 'local',
-              path: plugin_dir
-        }
-    };
-    metadata.save_fetch_metadata(dest, data);
-    return plugin_dir;
-}
-
-module.exports.copyPlugin = copyPlugin;

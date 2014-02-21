@@ -25,7 +25,8 @@ var http = require('http'),
     shell = require('shelljs'),
     child_process = require('child_process'),
     Q = require('q'),
-    xml_helpers = require('./xml-helpers');
+    xml_helpers = require('./xml-helpers'),
+    events = require('../events');
 
 module.exports = {
     searchAndReplace:require('./search-and-replace'),
@@ -36,13 +37,13 @@ module.exports = {
         if(!shell.which('git')) {
             return Q.reject(new Error('"git" command line tool is not installed: make sure it is accessible on your PATH.'));
         }
-        var tmp_dir = path.join(os.tmpdir(), 'plugman-tmp' +(new Date).valueOf());
-
+        var tmp_dir = path.join(os.tmpdir(), 'plugman-tmp', "" + (new Date).valueOf());
         shell.rm('-rf', tmp_dir);
 
         var cmd = util.format('git clone "%s" "%s"', plugin_git_url, tmp_dir);
-        require('../../plugman').emit('verbose', 'Fetching plugin via git-clone command: ' + cmd);
         var d = Q.defer();
+
+        events.emit('verbose', 'Fetching plugin via git-clone command: ' + cmd);
 
         child_process.exec(cmd, function(err, stdout, stderr) {
             if (err) {
@@ -51,8 +52,10 @@ module.exports = {
                 d.resolve();
             }
         });
+
         return d.promise.then(function() {
-            require('../../plugman').emit('verbose', 'Plugin "' + plugin_git_url + '" fetched.');
+            events.emit('verbose', 'Plugin "' + plugin_git_url + '" fetched.');
+
             // Check out the specified revision, if provided.
             if (git_ref) {
                 var cmd = util.format('git checkout "%s"', git_ref);
@@ -62,25 +65,22 @@ module.exports = {
                     else d2.resolve();
                 });
                 return d2.promise.then(function() {
-                    require('../../plugman').emit('log', 'Plugin "' + plugin_git_url + '" checked out to git ref "' + git_ref + '".');
+                    events.emit('log', 'Plugin "' + plugin_git_url + '" checked out to git ref "' + git_ref + '".');
                 });
             }
         }).then(function() {
             // Read the plugin.xml file and extract the plugin's ID.
             tmp_dir = path.join(tmp_dir, subdir);
+
             // TODO: what if plugin.xml does not exist?
+            // Move this check into fetch + log message?
             var xml_file = path.join(tmp_dir, 'plugin.xml');
             var xml = xml_helpers.parseElementtreeSync(xml_file);
             var plugin_id = xml.getroot().attrib.id;
 
-            // TODO: what if a plugin dependended on different subdirectories of the same plugin? this would fail.
-            // should probably copy over entire plugin git repo contents into plugins_dir and handle subdir seperately during install.
-            var plugin_dir = path.join(plugins_dir, plugin_id);
-            require('../../plugman').emit('verbose', 'Copying fetched plugin over "' + plugin_dir + '"...');
-            shell.cp('-R', path.join(tmp_dir, '*'), plugin_dir);
-
-            require('../../plugman').emit('verbose', 'Plugin "' + plugin_id + '" fetched.');
-            return plugin_dir;
+            // @tests - important this event is checked spec/util/plugins.spec.js
+            events.emit('verbose', 'Plugin "' + plugin_id + '" fetched into '+ tmp_dir +'.');
+            return tmp_dir;
         });
     }
 };

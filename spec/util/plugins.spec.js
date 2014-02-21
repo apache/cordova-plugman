@@ -25,6 +25,7 @@ var http   = require('http'),
     shell  = require('shelljs'),
     child_process = require('child_process'),
     plugins = require('../../src/util/plugins'),
+    events = require('../../src/events'),
     xml_helpers = require('../../src/util/xml-helpers');
 
 describe('plugins utility module', function(){
@@ -37,7 +38,6 @@ describe('plugins utility module', function(){
                 cb(null, 'git output');
             });
             spyOn(shell, 'which').andReturn(true);
-            cp_spy = spyOn(shell, 'cp');
             xml_spy = spyOn(xml_helpers, 'parseElementtreeSync').andReturn({
                 getroot:function() {
                     return {
@@ -49,7 +49,7 @@ describe('plugins utility module', function(){
         });
         it('should shell out to git clone with correct arguments', function(){
             var plugin_git_url = 'https://github.com/imhotep/ChildBrowser';
-            var callback = jasmine.createSpy();
+            var emit = spyOn(events, 'emit');
 
             runs(function() {
                 plugins.clonePluginGitRepo(plugin_git_url, temp, '.', undefined)
@@ -61,21 +61,36 @@ describe('plugins utility module', function(){
                 var git_clone_regex = new RegExp('^git clone "' + plugin_git_url + '" ".*"$', 'gi');
                 expect(execSpy.mostRecentCall.args[0]).toMatch(git_clone_regex);
 
-                expect(done).toMatch(new RegExp(path.sep + fake_id + '$'));
+                /* 
+                [ [ 'verbose',
+                    'Fetching plugin via git-clone command: git clone "https://github.com/imhotep/ChildBrowser" "..."' ],
+                  [ 'verbose',
+                    'Plugin "https://github.com/imhotep/ChildBrowser" fetched.' ],
+                  [ 'verbose',
+                    'Plugin "VillageDrunkard" fetched into ...' ] ]
+                */
+
+                // Creates subdir within temp directory
+                expect(done.substr(0, temp.length)).toEqual(temp);
+
+                // Expect plugin fetched message
+                expect(emit.mostRecentCall.args[1]).toMatch(new RegExp('Plugin "'+ fake_id + '" fetched'));
             });
         });
         it('should take into account subdirectory argument when copying over final repository into plugins+plugin_id directory', function() {
             var plugin_git_url = 'https://github.com/imhotep/ChildBrowser';
             var fake_subdir = 'TheBrainRecoilsInHorror';
+            var emit = spyOn(events, 'emit');
+            
             runs(function() {
                 plugins.clonePluginGitRepo(plugin_git_url, temp, fake_subdir)
                 .then(function(val) { done = val || true; }, function(err) { done = err; });
             });
             waitsFor(function() { return done; }, 'promise never resolved', 500);
             runs(function() {
-                var expected_subdir_cp_path = new RegExp(fake_subdir + '[\\\\\\/]\\*$', 'gi');
-                expect(cp_spy.mostRecentCall.args[1]).toMatch(expected_subdir_cp_path);
-                expect(cp_spy.mostRecentCall.args[2]).toEqual(path.join(temp, fake_id));
+                var paths = done.split(path.sep);
+
+                expect(paths.slice(-1)).toEqual(["TheBrainRecoilsInHorror"]);
             });
         });
     });

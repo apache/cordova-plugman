@@ -32,6 +32,7 @@ describe('fetch', function() {
             save_metadata = spyOn(metadata, 'save_fetch_metadata');
         });
 
+		/* MOVE to install()
         it('should copy locally-available plugin to plugins directory', function(done) {
             wrapper(fetch(test_plugin, temp), done, function() {
                 expect(cp).toHaveBeenCalledWith('-R', path.join(test_plugin, '*'), path.join(temp, 'id'));
@@ -44,11 +45,13 @@ describe('fetch', function() {
                 expect(cp).toHaveBeenCalledWith('-R', path.join(test_plugin_with_space, '*'), path.join(temp, 'id'));
             });
         });
+		
         it('should create a symlink if used with `link` param', function(done) {
             wrapper(fetch(test_plugin, temp, { link: true }), done, function() {
                 expect(sym).toHaveBeenCalledWith(test_plugin, path.join(temp, 'id'), 'dir');
             });
         });
+		*/
         it('should fail when the expected ID doesn\'t match', function(done) {
             fetch(test_plugin, temp, { expected_id: 'wrongID' })
             .then(function() {

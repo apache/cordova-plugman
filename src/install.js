@@ -9,6 +9,7 @@ var path = require('path'),
     platform_modules = require('./platforms'),
     os = require('os'),
     underscore = require('underscore'),
+    shell   = require('shelljs'),
     events = require('./events'),
     plugman = require('../plugman'),
     isWindows = (os.platform() === 'win32');
@@ -297,7 +298,7 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
     
             // may need to copy to destination...
             if ( !fs.existsSync(install_plugin_dir) ) {
-                require('./fetch').copyPlugin(plugin_dir, plugins_dir, false);
+                copyPlugin(plugin_dir, plugins_dir, options.link);
             }
 
             return handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plugins_dir, install_plugin_dir, filtered_variables, options.www_dir, options.is_top_level);
@@ -533,3 +534,28 @@ function isRelativePath(path) {
     return !isAbsolutePath();	
 }
 
+function readId(plugin_dir) {
+    var xml_path = path.join(plugin_dir, 'plugin.xml');
+    events.emit('verbose', 'Fetch is reading plugin.xml from location "' + xml_path + '"...');
+    var et = xml_helpers.parseElementtreeSync(xml_path);
+
+    return et.getroot().attrib.id;
+}
+
+// Copy or link a plugin from plugin_dir to plugins_dir/plugin_id.
+function copyPlugin(plugin_src_dir, plugins_dir, link) {
+    var plugin_id = readId(plugin_src_dir);
+    var dest = path.join(plugins_dir, plugin_id);
+    shell.rm('-rf', dest);
+
+    if (link) {
+        events.emit('verbose', 'Symlinking from location "' + plugin_src_dir + '" to location "' + dest + '"');
+        fs.symlinkSync(plugin_src_dir, dest, 'dir');
+    } else {
+        shell.mkdir('-p', dest);
+        events.emit('verbose', 'Copying from location "' + plugin_src_dir + '" to location "' + dest + '"');
+        shell.cp('-R', path.join(plugin_src_dir, '*') , dest);
+    }
+
+    return dest;
+}
