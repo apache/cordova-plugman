@@ -38,8 +38,13 @@ function generatePackageJsonFromPluginXml(plugin_path) {
         keywords = pluginElm.findtext('keywords'),
         repo = pluginElm.findtext('repo'),
         issue = pluginElm.findtext('issue'),
-        engines = pluginElm.findall('engines/engine');
+        engines = pluginElm.findall('engines/engine'),
+        platformsElm = pluginElm.findall('platform'),
+        platforms = [];
 
+    platformsElm.forEach(function(plat){
+        platforms.push(plat.attrib.name);
+    })
     if(!version) return Q.reject(new Error('`version` required'));
 
     package_json.version = version;
@@ -57,6 +62,7 @@ function generatePackageJsonFromPluginXml(plugin_path) {
     if(repo)         package_json.repo         = repo;
     if(issue)        package_json.issue        = issue;
     if(keywords)     package_json.keywords     = keywords.split(',');
+    if(platforms)    package_json.platforms    = platforms;
 
     // adding engines
     if(engines) {
