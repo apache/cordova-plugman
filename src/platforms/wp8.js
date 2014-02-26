@@ -54,10 +54,10 @@ module.exports = {
         }
     },  
     "resource-file":{
-        install:function(el, plugin_dir, project_dir) {
+        install:function(el, plugin_dir, project_dir, plugin_id, project_file) {
             require('../../plugman').emit('verbose', 'resource-file is not supported for Windows Phone 8');
         },
-        uninstall:function(el, project_dir) {
+        uninstall:function(el, project_dir, plugin_id, project_file) {
         }
     },
     "framework":{
@@ -87,7 +87,7 @@ module.exports = {
                 common.removeFile(project_dir, dest);
             }
 
-            project_file.removeReference(src);            
+            project_file.removeReference(src);
         }
     }
 };

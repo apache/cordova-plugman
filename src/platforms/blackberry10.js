@@ -52,13 +52,13 @@ module.exports = {
         }
     },
     "lib-file":{
-        install:function(lib_el, plugin_dir, project_dir) {
+        install:function(lib_el, plugin_dir, project_dir, plugin_id) {
             var src = lib_el.attrib.src;
             var arch = lib_el.attrib.arch;
             var dest = path.join("native", arch, "plugins", "jnext", path.basename(src));
             common.copyFile(plugin_dir, src, project_dir, dest);
         },
-        uninstall:function(lib_el, project_dir) {
+        uninstall:function(lib_el, project_dir, plugin_id) {
             var src = lib_el.attrib.src;
             var arch = lib_el.attrib.arch;
             var dest = path.join("native", arch, "plugins", "jnext", path.basename(src));
@@ -66,10 +66,10 @@ module.exports = {
         }
     },
     "resource-file":{
-        install:function(el, plugin_dir, project_dir) {
+        install:function(el, plugin_dir, project_dir, plugin_id) {
             require('../../plugman').emit('verbose', 'resource-file is not supported for blackberry');
         },
-        uninstall:function(el, project_dir) {
+        uninstall:function(el, project_dir, plugin_id) {
         }
     }
 };

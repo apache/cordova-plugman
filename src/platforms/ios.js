@@ -102,7 +102,7 @@ module.exports = {
         }
     },
     "resource-file":{
-        install:function(resource_el, plugin_dir, project_dir, project) {
+        install:function(resource_el, plugin_dir, project_dir, plugin_id, project) {
             var src = resource_el.attrib['src'],
                 srcFile = path.resolve(plugin_dir, src),
                 destFile = path.resolve(project.resources_dir, path.basename(src));
@@ -111,7 +111,7 @@ module.exports = {
             project.xcode.addResourceFile(path.join('Resources', path.basename(src)));
             shell.cp('-R', srcFile, project.resources_dir);
         },
-        uninstall:function(resource_el, project_dir, project) {
+        uninstall:function(resource_el, project_dir, plugin_id, project) {
             var src = resource_el.attrib['src'],
                 destFile = path.resolve(project.resources_dir, path.basename(src));
             project.xcode.removeResourceFile(path.join('Resources', path.basename(src)));

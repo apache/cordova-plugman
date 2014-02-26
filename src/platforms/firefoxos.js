@@ -36,10 +36,10 @@ module.exports = {
         }
     },
     "resource-file":{
-        install:function(el, plugin_dir, project_dir) {
+        install:function(el, plugin_dir, project_dir, plugin_id) {
             require('../../plugman').emit('verbose', 'resource-file is not supported for Firefox OS');
         },
-        uninstall:function(el, project_dir) {
+        uninstall:function(el, project_dir, plugin_id) {
         }
     }
 };

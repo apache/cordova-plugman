@@ -45,25 +45,25 @@ module.exports = {
         }
     },
     "lib-file":{
-        install:function(lib_el, plugin_dir, project_dir) {
+        install:function(lib_el, plugin_dir, project_dir, plugin_id) {
             var src = lib_el.attrib.src;
             var dest = path.join("libs", path.basename(src));
             common.copyFile(plugin_dir, src, project_dir, dest);
         },
-        uninstall:function(lib_el, project_dir) {
+        uninstall:function(lib_el, project_dir, plugin_id) {
             var src = lib_el.attrib.src;
             var dest = path.join("libs", path.basename(src));
             common.removeFile(project_dir, dest);
         }
     },
     "resource-file":{
-        install:function(el, plugin_dir, project_dir) {
+        install:function(el, plugin_dir, project_dir, plugin_id) {
             var src = el.attrib.src;
             var target = el.attrib.target;
             require('../../plugman').emit('verbose', 'Copying resource file ' + src + ' to ' + target);
             common.copyFile(plugin_dir, src, project_dir, target);
         },
-        uninstall:function(el, project_dir) {
+        uninstall:function(el, project_dir, plugin_id) {
             var target = el.attrib.target;
             common.removeFile(project_dir, target);
         }

@@ -59,14 +59,14 @@ module.exports = {
         }
     },
     "resource-file":{
-        install:function(el, plugin_dir, project_dir) {
+        install:function(el, plugin_dir, project_dir, plugin_id, project_file) {
             require('../../plugman').emit('verbose', 'resource-file is not supported for Windows 8');
         },
-        uninstall:function(el, project_dir) {
+        uninstall:function(el, project_dir, plugin_id, project_file) {
         }
     },
     "lib-file": {
-        install:function(el, plugin_dir, project_dir, project_file) { // note, params are slightly different
+        install:function(el, plugin_dir, project_dir, plugin_id, project_file) { 
             var inc  = el.attrib['Include'];
             project_file.addSDKRef(inc);
         },
