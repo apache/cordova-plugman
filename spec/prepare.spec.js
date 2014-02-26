@@ -1,5 +1,6 @@
 var platforms = require('../src/platforms'),
     prepare = require('../src/prepare'),
+    common  = require('../src/platforms/common');
     fs      = require('fs'),
     os      = require('osenv'),
     path    = require('path'),
@@ -48,14 +49,18 @@ describe('prepare', function() {
         expect(write).toHaveBeenCalledWith(js, jasmine.any(String), 'utf-8');
     });
     describe('handling of js-modules', function() {
-        var read, child_one;
+        var read, child_one, copySpy;
         beforeEach(function() {
             child_one = jasmine.createSpy('getchildren').andReturn([]);
             read = spyOn(fs, 'readFileSync').andReturn('JAVASCRIPT!');
-            platform_json.andReturn({installed_plugins:{plugin_one:'',plugin_two:''},dependent_plugins:{},prepare_queue:{uninstalled:[]}});
+            copySpy = spyOn(common, 'copyFile');
+            platform_json.andReturn({
+                installed_plugins: {plugin_one: '', plugin_two: ''},
+                dependent_plugins: {}, prepare_queue: {uninstalled:[]}
+            });
             findall.andReturn([
-                {attrib:{src:'somedir', name:'NAME'}, getchildren:child_one},
-                {attrib:{src:'someotherdir', name:'NAME'}, getchildren:child_one}
+                {attrib:{src:'somedir', name:'NAME', target:'sometarget'}, getchildren:child_one},
+                {attrib:{src:'someotherdir', name:'NAME', target:'someothertarget'}, getchildren:child_one}
             ]);
         });
         it('should create a plugins directory in an application\'s www directory', function() {

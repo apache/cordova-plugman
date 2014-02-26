@@ -22,6 +22,7 @@ module.exports = function(platform, project_dir, id, plugins_dir, options) {
 
 // Returns a promise.
 module.exports.uninstallPlatform = function(platform, project_dir, id, plugins_dir, options) {
+    options = options || {};
     if (!platform_modules[platform]) {
         return Q.reject(new Error(platform + " not supported."));
     }
@@ -164,8 +165,8 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
         resourceFiles && resourceFiles.forEach(function(resource) {
             actions.push(actions.createAction(handler["resource-file"].uninstall, [resource, project_dir], handler["resource-file"].install, [resource, plugin_dir, project_dir]));
         });
-        
-        // CB-5238 custom frameworks only 
+
+        // CB-5238 custom frameworks only
         frameworkFiles && frameworkFiles.forEach(function(framework) {
             actions.push(actions.createAction(handler["framework"].uninstall, [framework, project_dir, plugin_id], handler["framework"].install, [framework, plugin_dir, project_dir]));
         });
