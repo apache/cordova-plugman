@@ -21,8 +21,29 @@ jsproj.prototype = {
     write:function() {
         fs.writeFileSync(this.location, this.xml.write({indent:4}), 'utf-8');
     },
+    // add/remove the item group for SDKReference
+    // example :
+    // <ItemGroup><SDKReference Include="Microsoft.VCLibs, version=12.0" /></ItemGroup>
+    addSDKRef:function(incText) {
+        console.log("addSDKRef :: " + incText);
+        var item_group = new et.Element('ItemGroup');
+        var elem = new et.Element('SDKReference');
+        elem.attrib.Include = incText;
 
-    addReference:function(relPath) {
+        item_group.append(elem);
+        this.xml.getroot().append(item_group);
+    },
+
+    removeSDKRef:function(incText) {
+        console.log("removeSDKRef :: " + incText);
+        var item_groups = this.xml.findall('ItemGroup/SDKReference[@Include="' + incText + '"]/..');
+        if(item_groups.length > 0 ) {
+            this.xml.getroot().remove(0, item_groups[0]);
+        }
+    },
+
+    addReference:function(relPath,src) {
+
         require('../../plugman').emit('verbose','addReference::' + relPath);
 
         var item = new et.Element('ItemGroup');

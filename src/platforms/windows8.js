@@ -65,6 +65,18 @@ module.exports = {
         uninstall:function(el, project_dir) {
         }
     },
+    "lib-file": {
+        install:function(el, plugin_dir, project_dir, project_file) { // note, params are slightly different
+            var inc  = el.attrib['Include'];
+            project_file.addSDKRef(inc);
+        },
+        uninstall:function(el, project_dir, plugin_id, project_file) {
+            require('../../plugman').emit('verbose', 'windows8 lib-file uninstall :: ' + plugin_id);
+            var inc = el.attrib['Include'];
+            project_file.removeSDKRef(inc);
+        }
+    },
+
     "framework": {
         install:function(el, plugin_dir, project_dir, plugin_id, project_file) {
             require('../../plugman').emit('verbose', 'windows8 framework install :: ' + plugin_id);
@@ -72,13 +84,12 @@ module.exports = {
             var src = el.attrib['src'];
             var dest = src; // if !isCustom, we will just add a reference to the file in place
             var isCustom = el.attrib.custom == "true";
-
             if(isCustom) {
                 dest = path.join('plugins', plugin_id, path.basename(src));
                 common.copyFile(plugin_dir, src, project_dir, dest);
             }
 
-            project_file.addReference(dest);
+            project_file.addReference(dest,src);
 
         },
         uninstall:function(el, project_dir, plugin_id, project_file) {
