@@ -214,6 +214,7 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
       , filtered_variables = {};
     var name         = plugin_et.findall('name').text;
     var plugin_id    = plugin_et.getroot().attrib['id'];
+    options = options || {};
 
 
     if (isPluginInstalled(plugins_dir, platform, plugin_id)) {
@@ -367,46 +368,41 @@ function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plu
 
         // queue up native stuff
         sourceFiles && sourceFiles.forEach(function(item) {
-            actions.push(actions.createAction(handler["source-file"].install, 
-                                              [item, plugin_dir, project_dir, plugin_id], 
-                                              handler["source-file"].uninstall, 
+            actions.push(actions.createAction(handler["source-file"].install,
+                                              [item, plugin_dir, project_dir, plugin_id],
+                                              handler["source-file"].uninstall,
                                               [item, project_dir, plugin_id]));
         });
 
         headerFiles && headerFiles.forEach(function(item) {
-            actions.push(actions.createAction(handler["header-file"].install, 
-                                             [item, plugin_dir, project_dir, plugin_id], 
-                                             handler["header-file"].uninstall, 
+            actions.push(actions.createAction(handler["header-file"].install,
+                                             [item, plugin_dir, project_dir, plugin_id],
+                                             handler["header-file"].uninstall,
                                              [item, project_dir, plugin_id]));
         });
 
         resourceFiles && resourceFiles.forEach(function(item) {
-            actions.push(actions.createAction(handler["resource-file"].install, 
-                                              [item, plugin_dir, project_dir, plugin_id], 
-                                              handler["resource-file"].uninstall, 
+            actions.push(actions.createAction(handler["resource-file"].install,
+                                              [item, plugin_dir, project_dir, plugin_id],
+                                              handler["resource-file"].uninstall,
                                               [item, project_dir, plugin_id]));
         });
         // CB-5238 custom frameworks only
         frameworkFiles && frameworkFiles.forEach(function(item) {
-            actions.push(actions.createAction(handler["framework"].install, 
-                                             [item, plugin_dir, project_dir, plugin_id], 
-                                             handler["framework"].uninstall, 
+            actions.push(actions.createAction(handler["framework"].install,
+                                             [item, plugin_dir, project_dir, plugin_id],
+                                             handler["framework"].uninstall,
                                              [item, project_dir, plugin_id]));
         });
 
         libFiles && libFiles.forEach(function(item) {
-            actions.push(actions.createAction(handler["lib-file"].install, 
-                                                [item, plugin_dir, project_dir, plugin_id],  
-                                                handler["lib-file"].uninstall, 
+            actions.push(actions.createAction(handler["lib-file"].install,
+                                                [item, plugin_dir, project_dir, plugin_id],
+                                                handler["lib-file"].uninstall,
                                                 [item, project_dir, plugin_id]));
+
         });
     }
-
-    // queue up asset installation
-    var common = require('./platforms/common');
-    assets && assets.forEach(function(asset) {
-        actions.push(actions.createAction(common.asset.install, [asset, plugin_dir, www_dir], common.asset.uninstall, [asset, www_dir, plugin_id]));
-    });
 
     // run through the action stack
     return actions.process(platform, project_dir)

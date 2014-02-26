@@ -20,7 +20,8 @@
 var common = require('./common'),
     path = require('path'),
     glob = require('glob'),
-    w8jsproj = require('../util/w8jsproj');
+    fs = require('fs'),
+    w8jsproj = require('../util/w8jsproj'),
     xml_helpers = require('../util/xml-helpers');
 
 
@@ -45,13 +46,15 @@ module.exports = {
         install:function(source_el, plugin_dir, project_dir, plugin_id, project_file) {
             var targetDir = source_el.attrib['target-dir'] || '';
             var dest = path.join('www', 'plugins', plugin_id, targetDir, path.basename(source_el.attrib['src']));
+            var target_path = common.resolveTargetPath(project_dir, dest);
+            if (fs.existsSync(target_path)) throw new Error('"' + target_path + '" already exists!');
             common.copyFile(plugin_dir, source_el.attrib['src'], project_dir, dest);
             // add reference to this file to jsproj.
             project_file.addSourceFile(dest);
         },
         uninstall:function(source_el, project_dir, plugin_id, project_file) {
             var dest = path.join('www', 'plugins', plugin_id,
-                                 source_el.attrib['target-dir'] ? source_el.attrib['target-dir'] : '', 
+                                 source_el.attrib['target-dir'] ? source_el.attrib['target-dir'] : '',
                                  path.basename(source_el.attrib['src']));
             common.removeFile(project_dir, dest);
             // remove reference to this file from csproj.

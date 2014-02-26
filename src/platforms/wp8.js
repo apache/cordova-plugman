@@ -20,7 +20,8 @@
 var common = require('./common'),
     path = require('path'),
     glob = require('glob'),
-    csproj = require('../util/csproj');
+    fs = require('fs'),
+    csproj = require('../util/csproj'),
     xml_helpers = require('../util/xml-helpers');
 
 module.exports = {
@@ -42,6 +43,8 @@ module.exports = {
     "source-file":{
         install:function(source_el, plugin_dir, project_dir, plugin_id, project_file) {
             var dest = path.join('Plugins', plugin_id, source_el.attrib['target-dir'] ? source_el.attrib['target-dir'] : '', path.basename(source_el.attrib['src']));
+            var target_path = common.resolveTargetPath(project_dir, dest);
+            if (fs.existsSync(target_path)) throw new Error('"' + target_path + '" already exists!');
             common.copyFile(plugin_dir, source_el.attrib['src'], project_dir, dest);
             // add reference to this file to csproj.
             project_file.addSourceFile(dest);
@@ -72,7 +75,7 @@ module.exports = {
     "framework":{
         install:function(el, plugin_dir, project_dir, plugin_id, project_file) {
             require('../../plugman').emit('verbose', 'wp8 framework install :: ' + plugin_id  );
-            
+
             var src = el.attrib['src'];
             var dest = src; // if !isCustom, we will just add a reference to the file in place
             var isCustom = el.attrib.custom == "true";
