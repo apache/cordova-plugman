@@ -190,7 +190,7 @@ describe('install', function() {
             });
             waitsFor(function() { return done; }, 'install promise never resolved', 500);
             runs(function() {
-                expect(actions_push.calls.length).toEqual(5);
+                expect(actions_push.calls.length).toEqual(3);
                 expect(c_a).toHaveBeenCalledWith(jasmine.any(Function), [jasmine.any(Object), path.join(plugins_dir, dummyplugin), temp, dummy_id], jasmine.any(Function), [jasmine.any(Object), temp, dummy_id]);
                 expect(proc).toHaveBeenCalled();
             });

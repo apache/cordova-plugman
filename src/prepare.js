@@ -17,6 +17,8 @@
     under the License.
 */
 
+/* jshint node:true */
+
 var platform_modules = require('./platforms'),
     path            = require('path'),
     config_changes  = require('./util/config-changes'),
@@ -24,6 +26,7 @@ var platform_modules = require('./platforms'),
     wp7             = require('./platforms/wp7'),
     wp8             = require('./platforms/wp8'),
     windows8        = require('./platforms/windows8'),
+    common          = require('./platforms/common');
     fs              = require('fs'),
     shell           = require('shelljs'),
     util            = require('util'),
@@ -124,25 +127,33 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
         var pluginDir = path.join(plugins_dir, plugin);
         if(fs.statSync(pluginDir).isDirectory()){
             var xml = xml_helpers.parseElementtreeSync(path.join(pluginDir, 'plugin.xml'));
-    
+
             var plugin_id = xml.getroot().attrib.id;
 
             // pluginMetadata is a mapping from plugin IDs to versions.
             pluginMetadata[plugin_id] = xml.getroot().attrib.version;
-    
+
             // add the plugins dir to the platform's www.
             var platformPluginsDir = path.join(wwwDir, 'plugins');
             // XXX this should not be here if there are no js-module. It leaves an empty plugins/ directory
             shell.mkdir('-p', platformPluginsDir);
-    
-            var generalModules = xml.findall('./js-module');
+
+            var jsModules = xml.findall('./js-module');
+            var assets = xml.findall('asset');
             var platformTag = xml.find(util.format('./platform[@name="%s"]', platform));
-    
-            generalModules = generalModules || [];
-            var platformModules = platformTag ? platformTag.findall('./js-module') : [];
-            var allModules = generalModules.concat(platformModules);
-    
-            allModules.forEach(function(module) {
+
+            if (platformTag) {
+                assets = assets.concat(platformTag.findall('./asset'));
+                jsModules = jsModules.concat(platformTag.findall('./js-module'));
+            }
+
+            // Copy www assets described in <asset> tags.
+            assets = assets || [];
+            assets.forEach(function(asset) {
+                common.asset.install(asset, pluginDir, wwwDir);
+            });
+
+            jsModules.forEach(function(module) {
                 // Copy the plugin's files into the www directory.
                 // NB: We can't always use path.* functions here, because they will use platform slashes.
                 // But the path in the plugin.xml and in the cordova_plugins.js should be always forward slashes.
@@ -151,7 +162,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
                 var fsDirname = path.join.apply(path, pathParts.slice(0, -1));
                 var fsDir = path.join(platformPluginsDir, plugin_id, fsDirname);
                 shell.mkdir('-p', fsDir);
-    
+
                 // Read in the file, prepend the cordova.define, and write it back out.
                 var moduleName = plugin_id + '.';
                 if (module.attrib.name) {
@@ -160,7 +171,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
                     var result = module.attrib.src.match(/([^\/]+)\.js/);
                     moduleName += result[1];
                 }
-    
+
                 var fsPath = path.join.apply(path, pathParts);
                 var scriptContent = fs.readFileSync(path.join(pluginDir, fsPath), 'utf-8');
                 scriptContent = 'cordova.define("' + moduleName + '", function(require, exports, module) { ' + scriptContent + '\n});\n';
@@ -168,13 +179,13 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
                 if(platform == 'wp7' || platform == 'wp8' || platform == "windows8") {
                     wp_csproj.addSourceFile(path.join('www', 'plugins', plugin_id, fsPath));
                 }
-    
+
                 // Prepare the object for cordova_plugins.json.
                 var obj = {
                     file: ['plugins', plugin_id, module.attrib.src].join('/'),
                     id: moduleName
                 };
-    
+
                 // Loop over the children of the js-module tag, collecting clobbers, merges and runs.
                 module.getchildren().forEach(function(child) {
                     if (child.tag.toLowerCase() == 'clobbers') {
@@ -191,7 +202,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
                         obj.runs = true;
                     }
                 });
-    
+
                 // Add it to the list of module objects bound for cordova_plugins.json
                 moduleObjects.push(obj);
             });
