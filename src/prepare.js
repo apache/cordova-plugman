@@ -124,9 +124,10 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
     require('../plugman').emit('verbose', 'Iterating over installed plugins:', plugins);
 
     plugins && plugins.forEach(function(plugin) {
-        var pluginDir = path.join(plugins_dir, plugin);
-        if(fs.statSync(pluginDir).isDirectory()){
-            var xml = xml_helpers.parseElementtreeSync(path.join(pluginDir, 'plugin.xml'));
+        var pluginDir = path.join(plugins_dir, plugin),
+            pluginXML = path.join(pluginDir, 'plugin.xml');
+        if(fs.existsSync(pluginXML)){
+            var xml = xml_helpers.parseElementtreeSync(pluginXML);
 
             var plugin_id = xml.getroot().attrib.id;
 
