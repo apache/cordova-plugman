@@ -225,7 +225,7 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
         }
         return Q();
     }
-    require('../plugman').emit('log', 'Installing "' + plugin_id + '" for ' + platform);
+    require('../plugman').emit('log', 'Installing ' + plugin_id + ' (' + platform + ')');
 
     var plugin_basename = path.basename(plugin_dir);
 
