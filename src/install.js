@@ -1,6 +1,7 @@
 var path = require('path'),
     fs   = require('fs'),
     action_stack = require('./util/action-stack'),
+    dep_graph = require('dep-graph'),
     child_process = require('child_process'),
     semver = require('semver'),
     config_changes = require('./util/config-changes'),
@@ -208,13 +209,14 @@ function isPluginInstalled(plugins_dir, platform, plugin_id) {
 
 // possible options: cli_variables, www_dir, is_top_level
 // Returns a promise.
-var runInstall = module.exports.runInstall = function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, options) {
+var runInstall = module.exports.runInstall = function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, options, graph) {
     var xml_path     = path.join(plugin_dir, 'plugin.xml')
       , plugin_et    = xml_helpers.parseElementtreeSync(xml_path)
       , filtered_variables = {};
     var name         = plugin_et.findall('name').text;
     var plugin_id    = plugin_et.getroot().attrib['id'];
 
+    graph = graph || new dep_graph();
 
     if (isPluginInstalled(plugins_dir, platform, plugin_id)) {
         if (options.is_top_level) {
@@ -254,7 +256,11 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
         if (dependencies && dependencies.length) {
             require('../plugman').emit('verbose', 'Dependencies detected, iterating through them...');
             var dep_plugin_id, dep_subdir, dep_git_ref;
-            return dependencies.reduce(function(soFar, dep) {
+            return dependencies.reduce(function (soFar, dep) {
+
+                // We build the dependency graph only to be able to detect cycles, getChain will throw an error if it detects one
+                graph.add(plugin_id, dep.attrib.id);
+                graph.getChain(plugin_id);
                 return soFar.then(function() {
                     dep_plugin_id = dep.attrib.id;
                     dep_subdir = dep.attrib.subdir;
@@ -314,7 +320,7 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
                             www_dir: options.www_dir,
                             is_top_level: false
                         };
-                        return runInstall(actions, platform, project_dir, dep_plugin_dir, plugins_dir, opts);
+                        return runInstall(actions, platform, project_dir, dep_plugin_dir, plugins_dir, opts, graph);
                     } else {
                         require('../plugman').emit('verbose', 'Dependent plugin "' + dep_plugin_id + '" not fetched, retrieving then installing.');
                         var opts = {
@@ -334,7 +340,7 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
 
                         return possiblyFetch(dep_url, plugins_dir, opts)
                         .then(function(plugin_dir) {
-                            return runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opts);
+                            return runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opts, graph);
                         });
                     }
                 });
