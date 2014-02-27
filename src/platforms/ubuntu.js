@@ -103,5 +103,21 @@ module.exports = {
             var dest = path.join(project_dir, "qml");
             shell.rm(path.join(dest, path.basename(source_el.attrib.src)));
         }
+    },
+    "framework": {
+        install:function(source_el, plugin_dir, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'framework.install is not supported for ubuntu');
+        },
+        uninstall:function(source_el, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'framework.uninstall is not supported for ubuntu');
+        }
+    },
+    "lib-file": {
+        install:function(source_el, plugin_dir, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'lib-file.install is not supported for ubuntu');
+        },
+        uninstall:function(source_el, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'lib-file.uninstall is not supported for ubuntu');
+        }
     }
 };

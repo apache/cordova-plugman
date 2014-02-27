@@ -51,6 +51,14 @@ module.exports = {
             });
         }
     },
+    "header-file": {
+        install:function(source_el, plugin_dir, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'header-file.install is not supported for blackberry');
+        },
+        uninstall:function(source_el, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'header-file.uninstall is not supported for blackberry');
+        }
+    },
     "lib-file":{
         install:function(lib_el, plugin_dir, project_dir, plugin_id) {
             var src = lib_el.attrib.src;
@@ -67,9 +75,18 @@ module.exports = {
     },
     "resource-file":{
         install:function(el, plugin_dir, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'resource-file is not supported for blackberry');
+            require('../../plugman').emit('verbose', 'resource-file.install is not supported for blackberry');
         },
         uninstall:function(el, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'resource-file.uninstall is not supported for blackberry');
+        }
+    },
+    "framework": {
+        install:function(source_el, plugin_dir, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'framework.install is not supported for blackberry');
+        },
+        uninstall:function(source_el, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'framework.uninstall is not supported for blackberry');
         }
     }
 };

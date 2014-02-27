@@ -52,12 +52,21 @@ module.exports = {
             // remove reference to this file from csproj.
             project_file.removeSourceFile(dest);
         }
-    },  
+    },
+    "header-file": {
+        install:function(source_el, plugin_dir, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'header-file.install is not supported for wp8');
+        },
+        uninstall:function(source_el, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'header-file.uninstall is not supported for wp8');
+        }
+    },
     "resource-file":{
         install:function(el, plugin_dir, project_dir, plugin_id, project_file) {
-            require('../../plugman').emit('verbose', 'resource-file is not supported for Windows Phone 8');
+            require('../../plugman').emit('verbose', 'resource-file.install is not supported for wp8');
         },
         uninstall:function(el, project_dir, plugin_id, project_file) {
+            require('../../plugman').emit('verbose', 'resource-file.uninstall is not supported for wp8');
         }
     },
     "framework":{
@@ -89,5 +98,13 @@ module.exports = {
 
             project_file.removeReference(src);
         }
-    }
+    },
+    "lib-file": {
+        install:function(source_el, plugin_dir, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'lib-file.install is not supported for wp8');
+        },
+        uninstall:function(source_el, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'lib-file.uninstall is not supported for wp8');
+        }
+    }    
 };

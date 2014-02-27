@@ -1,0 +1,57 @@
+Platform + Tag support
+
+<source-file/>
+<header-file/>
+<lib-file/>
+<resource-file/>
+<framework/>
+
+
+amazon-fireos :
+	<source-file/>
+	<lib-file/>
+	<resource-file/>
+
+android :
+	<source-file/>
+	<lib-file/>
+	<resource-file/>
+
+blackberry10 :
+	<source-file/>
+	<lib-file/>	
+	<!-- <resource-file/> is listed but outputs 'not supported' text -->
+
+firefoxos :
+	<source-file/>
+	<!-- <resource-file/> is listed but outputs 'not supported' text -->
+
+
+ios :
+	<source-file/>
+	<header-file/>
+	<resource-file/>
+	<framework/>
+
+ubuntu :
+	<source-file/>
+	<header-file/>
+	<resource-file/>
+
+windows8 :
+	<source-file/>
+	<!-- <resource-file/> is listed but outputs 'not supported' text -->
+	<lib-file/>
+	<framework/>
+
+wp7 :
+	<source-file/>
+	<!-- <resource-file/> is listed but outputs 'not supported' text -->
+
+wp8 :
+	<source-file/>
+	<!-- <resource-file/> is listed but outputs 'not supported' text -->
+	<framework/>
+
+
+

@@ -58,6 +58,14 @@ module.exports = {
             project_file.removeSourceFile(dest);
         }
     },
+    "header-file": {
+        install:function(source_el, plugin_dir, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'header-fileinstall is not supported for Windows 8');
+        },
+        uninstall:function(source_el, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'header-file.uninstall is not supported for Windows 8');
+        }
+    },
     "resource-file":{
         install:function(el, plugin_dir, project_dir, plugin_id, project_file) {
             require('../../plugman').emit('verbose', 'resource-file is not supported for Windows 8');
@@ -76,7 +84,6 @@ module.exports = {
             project_file.removeSDKRef(inc);
         }
     },
-
     "framework": {
         install:function(el, plugin_dir, project_dir, plugin_id, project_file) {
             require('../../plugman').emit('verbose', 'windows8 framework install :: ' + plugin_id);

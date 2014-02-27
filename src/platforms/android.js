@@ -44,6 +44,14 @@ module.exports = {
             common.deleteJava(project_dir, dest);
         }
     },
+    "header-file": {
+        install:function(source_el, plugin_dir, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'header-file.install is not supported for android');
+        },
+        uninstall:function(source_el, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'header-file.uninstall is not supported for android');
+        }
+    },
     "lib-file":{
         install:function(lib_el, plugin_dir, project_dir, plugin_id) {
             var src = lib_el.attrib.src;
@@ -66,6 +74,14 @@ module.exports = {
         uninstall:function(el, project_dir, plugin_id) {
             var target = el.attrib.target;
             common.removeFile(project_dir, path.normalize(target));
+        }
+    },
+    "framework": {
+        install:function(source_el, plugin_dir, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'framework.install is not supported for android');
+        },
+        uninstall:function(source_el, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'framework.uninstall is not supported for android');
         }
     }
 };

@@ -139,6 +139,14 @@ module.exports = {
             shell.rm('-rf', targetDir);
         }
     },
+    "lib-file": {
+        install:function(source_el, plugin_dir, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'lib-file.install is not supported for ios');
+        },
+        uninstall:function(source_el, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'lib-file.uninstall is not supported for ios');
+        }
+    },    
     parseProjectFile:function(project_dir) {
         // TODO: With ConfigKeeper introduced in config-changes.js
         // there is now double caching of iOS project files.
