@@ -1,6 +1,7 @@
 var dep_graph = require('dep-graph'),
     path = require('path'),
     fs = require('fs'),
+    plugman = require('../../plugman'),
     config_changes = require('./config-changes'),
     underscore = require('underscore'),
     xml_helpers = require('./xml-helpers');
@@ -22,6 +23,7 @@ module.exports = {
         Object.keys(json.dependent_plugins).forEach(function(plug) {
             var pluginXML = path.join(plugins_dir, plug, 'plugin.xml');
             if (!fs.existsSync(pluginXML)) {
+                plugman.emit('verbose', 'Could not find "' + pluginXML + '"');
                 return;
             }
             var xml = xml_helpers.parseElementtreeSync(pluginXML);
