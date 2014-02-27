@@ -20,6 +20,7 @@
 // copyright (c) 2013 Andrew Lunny, Adobe Systems
 
 var emitter = require('./src/events');
+var Q = require('q');
 
 function addProperty(o, symbol, modulePath, doWrap) {
     var val = null;
@@ -70,6 +71,8 @@ addProperty(plugman, 'publish', './src/publish', true);
 addProperty(plugman, 'unpublish', './src/unpublish', true);
 addProperty(plugman, 'search', './src/search', true);
 addProperty(plugman, 'info', './src/info', true);
+addProperty(plugman, 'create', './src/create', true);
+addProperty(plugman, 'platform', './src/platform_operation', true);
 addProperty(plugman, 'config_changes', './src/util/config-changes');
 
 plugman.commands =  {
@@ -100,13 +103,29 @@ plugman.commands =  {
             www_dir: cli_opts.www,
             searchpath: cli_opts.searchpath
         };
-        return plugman.install(cli_opts.platform, cli_opts.project, cli_opts.plugin, cli_opts.plugins_dir, opts);
+
+        var p = Q();
+        cli_opts.plugin.forEach(function (pluginSrc) {
+            p = p.then(function () {
+                return plugman.raw.install(cli_opts.platform, cli_opts.project, pluginSrc, cli_opts.plugins_dir, opts);
+            })
+        });
+        
+        return p;
     },
     'uninstall': function(cli_opts) {
         if(!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
             return console.log(plugman.help());
         }
-        return plugman.uninstall(cli_opts.platform, cli_opts.project, cli_opts.plugin, cli_opts.plugins_dir, { www_dir: cli_opts.www });
+
+        var p = Q();
+        cli_opts.plugin.forEach(function (pluginSrc) {
+            p = p.then(function () {
+                return plugman.raw.uninstall(cli_opts.platform, cli_opts.project, pluginSrc, cli_opts.plugins_dir, { www_dir: cli_opts.www });
+            });
+        });
+
+        return p;
     },
     'adduser'  : function(cli_opts) {
         plugman.adduser(function(err) {
@@ -160,6 +179,27 @@ plugman.commands =  {
             if (err) throw err;
             else console.log('Plugin unpublished');
         });
+    },
+    'create': function(cli_opts) {
+        if( !cli_opts.name || !cli_opts.plugin_id || !cli_opts.plugin_version) {
+            return console.log( plugman.help() );
+        }
+        var cli_variables = {};
+        if (cli_opts.variable) {
+            cli_opts.variable.forEach(function (variable) {
+                    var tokens = variable.split('=');
+                    var key = tokens.shift().toUpperCase();
+                    if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
+                    });
+        }
+        plugman.create( cli_opts.name, cli_opts.plugin_id, cli_opts.plugin_version, cli_opts.path || ".", cli_variables );
+    },
+    'platform': function(cli_opts) {
+        var operation = cli_opts.argv.remain[ 0 ] || "";
+        if( ( operation !== 'add' && operation !== 'remove' ) ||  !cli_opts.platform_name ) {
+            return console.log( plugman.help() );
+        }
+        plugman.platform( { operation: operation, platform_name: cli_opts.platform_name } );
     }
 };
 

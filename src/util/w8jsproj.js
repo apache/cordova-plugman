@@ -14,6 +14,7 @@ var WinCSharpProjectTypeGUID = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}";
 var WinVBnetProjectTypeGUID = "{F184B08F-C81C-45F6-A57F-5ABD9991F28F}";
 var WinCplusplusProjectTypeGUID = "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}";
 
+
 function jsproj(location) {
     require('../../plugman').emit('verbose','creating jsproj from project at : ' + location);
     this.location = location;
@@ -28,18 +29,89 @@ jsproj.prototype = {
     write:function() {
         fs.writeFileSync(this.location, this.xml.write({indent:4}), 'utf-8');
     },
+    // add/remove the item group for SDKReference
+    // example :
+    // <ItemGroup><SDKReference Include="Microsoft.VCLibs, version=12.0" /></ItemGroup>
+    addSDKRef:function(incText) {
+        console.log("addSDKRef :: " + incText);
+        var item_group = new et.Element('ItemGroup');
+        var elem = new et.Element('SDKReference');
+        elem.attrib.Include = incText;
+
+        item_group.append(elem);
+        this.xml.getroot().append(item_group);
+    },
+
+    removeSDKRef:function(incText) {
+        console.log("removeSDKRef :: " + incText);
+        var item_groups = this.xml.findall('ItemGroup/SDKReference[@Include="' + incText + '"]/..');
+        if(item_groups.length > 0 ) {
+            this.xml.getroot().remove(0, item_groups[0]);
+        }
+    },
+
+    addReference:function(relPath,src) {
+
+        require('../../plugman').emit('verbose','addReference::' + relPath);
+
+        var item = new et.Element('ItemGroup');
+        var extName = path.extname(relPath);
+
+        var elem = new et.Element('Reference');
+        // add file name
+        elem.attrib.Include = path.basename(relPath, extName);
+
+        // add hint path with full path
+        var hint_path = new et.Element('HintPath');
+            hint_path.text = relPath;
+
+        elem.append(hint_path);
+
+        if(extName == ".winmd") {
+            var mdFileTag = new et.Element("IsWinMDFile");
+                mdFileTag.text = "true";
+            elem.append(mdFileTag);
+        }
+
+        item.append(elem);
+        this.xml.getroot().append(item);
+    },
+    
+    removeReference:function(relPath) {
+        require('../../plugman').emit('verbose','removeReference::' + relPath);
+
+        var item = new et.Element('ItemGroup');
+        var extName = path.extname(relPath);
+        var includeText = path.basename(relPath,extName);
+        // <ItemGroup>
+        //   <Reference Include="WindowsRuntimeComponent1">
+        var item_groups = this.xml.findall('ItemGroup/Reference[@Include="' + includeText + '"]/..');
+
+        if(item_groups.length > 0 ) {
+            this.xml.getroot().remove(0, item_groups[0]);
+        }
+    },
+
     addSourceFile:function(relative_path) {
+
         relative_path = relative_path.split('/').join('\\');
         // make ItemGroup to hold file.
         var item = new et.Element('ItemGroup');
 
         var content = new et.Element('Content');
             content.attrib.Include = relative_path;
-            item.append(content);
+        item.append(content);
+
         this.xml.getroot().append(item);
     },
+
     removeSourceFile:function(relative_path) {
+
+        // path.normalize(relative_path);// ??
         relative_path = relative_path.split('/').join('\\');
+
+        // var oneStep = this.xml.findall('ItemGroup/Content[@Include="' + relative_path + '""]/..');
+
         var item_groups = this.xml.findall('ItemGroup');
         for (var i = 0, l = item_groups.length; i < l; i++) {
             var group = item_groups[i];

@@ -86,8 +86,11 @@ describe('install', function() {
                 },
                 dependent_plugins:{}
             });
-            install('android', temp, dummyplugin, plugins_dir, {});
-            expect(spy).toHaveBeenCalledWith('results', 'Plugin "'+dummy_id+'" already installed, \'sall good.');
+            installPromise(install('android', temp, dummyplugin, plugins_dir, {}));
+            waitsFor(function() { return done; }, 'install promise never resolved', 500);
+            runs(function() {
+                expect(spy).toHaveBeenCalledWith('results', 'Plugin "'+dummy_id+'" already installed on android.');
+            });
         });
         it('should check version if plugin has engine tag', function(){
             var spy = spyOn(semver, 'satisfies').andReturn(true);
@@ -187,7 +190,7 @@ describe('install', function() {
             });
             waitsFor(function() { return done; }, 'install promise never resolved', 500);
             runs(function() {
-                expect(actions_push.calls.length).toEqual(5);
+                expect(actions_push.calls.length).toEqual(3);
                 expect(c_a).toHaveBeenCalledWith(jasmine.any(Function), [jasmine.any(Object), path.join(plugins_dir, dummyplugin), temp, dummy_id], jasmine.any(Function), [jasmine.any(Object), temp, dummy_id]);
                 expect(proc).toHaveBeenCalled();
             });

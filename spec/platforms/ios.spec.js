@@ -68,6 +68,7 @@ shell.mkdir('-p', temp);
 shell.cp('-rf', ios_config_xml_project, temp);
 var proj_files = ios.parseProjectFile(temp);
 shell.rm('-rf', temp);
+ios.purgeProjectFileCache(temp);
 
 function copyArray(arr) {
     return Array.prototype.slice.call(arr, 0);
@@ -80,6 +81,7 @@ describe('ios project handler', function() {
     });
     afterEach(function() {
         shell.rm('-rf', temp);
+        ios.purgeProjectFileCache(temp);
     });
 
     describe('www_dir method', function() {
@@ -217,7 +219,7 @@ describe('ios project handler', function() {
             it('should throw if resource-file src cannot be found', function() {
                 var resources = copyArray(invalid_resources);
                 expect(function() {
-                    ios['resource-file'].install(resources[0], faultyplugin, temp, proj_files);
+                    ios['resource-file'].install(resources[0], faultyplugin, temp, "pluginid", proj_files);
                 }).toThrow('cannot find "' + path.resolve(faultyplugin, 'src/ios/IDontExist.bundle') + '" ios <resource-file>');
             });
             it('should throw if resource-file target already exists', function() {
@@ -226,19 +228,19 @@ describe('ios project handler', function() {
                 shell.mkdir('-p', path.dirname(target));
                 fs.writeFileSync(target, 'some bs', 'utf-8');
                 expect(function() {
-                    ios['resource-file'].install(resources[0], dummyplugin, temp, proj_files);
+                    ios['resource-file'].install(resources[0], dummyplugin, temp, "pluginid",proj_files);
                 }).toThrow('target destination "' + target + '" already exists');
             });
             it('should call into xcodeproj\'s addResourceFile', function() {
                 var resources = copyArray(valid_resources);
                 var spy = spyOn(proj_files.xcode, 'addResourceFile');
-                ios['resource-file'].install(resources[0], dummyplugin, temp, proj_files);
+                ios['resource-file'].install(resources[0], dummyplugin, temp, "pluginid", proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join('Resources', 'DummyPlugin.bundle'));
             });
             it('should cp the file to the right target location', function() {
                 var resources = copyArray(valid_resources);
                 var spy = spyOn(shell, 'cp');
-                ios['resource-file'].install(resources[0], dummyplugin, temp, proj_files);
+                ios['resource-file'].install(resources[0], dummyplugin, temp, "pluginid", proj_files);
                 expect(spy).toHaveBeenCalledWith('-R', path.join(dummyplugin, 'src', 'ios', 'DummyPlugin.bundle'), path.join(temp, 'SampleApp', 'Resources'));
             });
         });
@@ -264,7 +266,7 @@ describe('ios project handler', function() {
                 var frameworks = copyArray(valid_custom_frameworks);
                 var spy = spyOn(proj_files.xcode, 'addFramework');
                 ios['framework'].install(frameworks[0], dummyplugin, temp, dummy_id, proj_files);
-                expect(spy).toHaveBeenCalledWith('SampleApp/Plugins/com.phonegap.plugins.dummyplugin/Custom.framework', {customFramework:true});
+                expect(spy).toHaveBeenCalledWith(path.normalize('SampleApp/Plugins/com.phonegap.plugins.dummyplugin/Custom.framework'), {customFramework:true});
             });
             it('should cp the file to the right target location', function() {
                 var frameworks = copyArray(valid_custom_frameworks);
@@ -295,7 +297,7 @@ describe('ios project handler', function() {
             it('should rm the file from the right target location when element has no target-dir', function(){
                 var source = copyArray(valid_source).filter(function(s) { return s.attrib['target-dir'] == undefined});
                 shell.cp('-rf', ios_config_xml_project, temp);
-            
+
                 var spy = spyOn(shell, 'rm');
                 ios['source-file'].uninstall(source[0], temp, dummy_id, proj_files);
                 expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'SampleApp', 'Plugins', dummy_id, 'DummyPluginCommand.m'));
@@ -354,14 +356,14 @@ describe('ios project handler', function() {
                 var resources = copyArray(valid_resources);
                 var spy = spyOn(proj_files.xcode, 'removeResourceFile');
 
-                ios['resource-file'].uninstall(resources[0], temp, proj_files);
+                ios['resource-file'].uninstall(resources[0], temp, "pluginid", proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join('Resources', 'DummyPlugin.bundle'));
             });
             it('should rm the file from the right target location', function(){
                 var resources = copyArray(valid_resources);
                 var spy = spyOn(shell, 'rm');
 
-                ios['resource-file'].uninstall(resources[0], temp, proj_files);
+                ios['resource-file'].uninstall(resources[0], temp, "pluginid", proj_files);
                 expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'SampleApp', 'Resources', 'DummyPlugin.bundle'));
             });
         });

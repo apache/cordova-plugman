@@ -39,6 +39,8 @@ module.exports = {
             var target = source_el.attrib['target-dir'] || plugin_id;
             TARGETS.forEach(function(arch) {
                 var dest = path.join("native", arch, "chrome", "plugin", target, path.basename(src));
+                var target_path = common.resolveTargetPath(project_dir, dest);
+                if (fs.existsSync(target_path)) throw new Error('"' + target_path + '" already exists!');
                 common.copyFile(plugin_dir, src, project_dir, dest);
             });
         },
@@ -51,14 +53,22 @@ module.exports = {
             });
         }
     },
+    "header-file": {
+        install:function(source_el, plugin_dir, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'header-file.install is not supported for blackberry');
+        },
+        uninstall:function(source_el, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'header-file.uninstall is not supported for blackberry');
+        }
+    },
     "lib-file":{
-        install:function(lib_el, plugin_dir, project_dir) {
+        install:function(lib_el, plugin_dir, project_dir, plugin_id) {
             var src = lib_el.attrib.src;
             var arch = lib_el.attrib.arch;
             var dest = path.join("native", arch, "plugins", "jnext", path.basename(src));
             common.copyFile(plugin_dir, src, project_dir, dest);
         },
-        uninstall:function(lib_el, project_dir) {
+        uninstall:function(lib_el, project_dir, plugin_id) {
             var src = lib_el.attrib.src;
             var arch = lib_el.attrib.arch;
             var dest = path.join("native", arch, "plugins", "jnext", path.basename(src));
@@ -66,10 +76,19 @@ module.exports = {
         }
     },
     "resource-file":{
-        install:function(el, plugin_dir, project_dir) {
-            require('../../plugman').emit('verbose', 'resource-file is not supported for blackberry');
+        install:function(el, plugin_dir, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'resource-file.install is not supported for blackberry');
         },
-        uninstall:function(el, project_dir) {
+        uninstall:function(el, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'resource-file.uninstall is not supported for blackberry');
+        }
+    },
+    "framework": {
+        install:function(source_el, plugin_dir, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'framework.install is not supported for blackberry');
+        },
+        uninstall:function(source_el, project_dir, plugin_id) {
+            require('../../plugman').emit('verbose', 'framework.uninstall is not supported for blackberry');
         }
     }
 };

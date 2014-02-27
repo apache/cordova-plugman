@@ -39,24 +39,30 @@ module.exports = function installPlugin(platform, project_dir, id, plugins_dir, 
     }
     var current_stack = new action_stack();
     options.is_top_level = true;
-    return possiblyFetch(current_stack, platform, project_dir, id, plugins_dir, options);
+    return possiblyFetch(id, plugins_dir, options)
+    .then(function(plugin_dir) {
+        return runInstall(current_stack, platform, project_dir, plugin_dir, plugins_dir, options);
+    });
 };
 
 // possible options: subdir, cli_variables, www_dir, git_ref, is_top_level
 // Returns a promise.
-function possiblyFetch(actions, platform, project_dir, id, plugins_dir, options) {
+function possiblyFetch(id, plugins_dir, options) {
     var plugin_dir = path.join(plugins_dir, id);
 
     // Check that the plugin has already been fetched.
-    if (!fs.existsSync(plugin_dir)) {
-        // if plugin doesnt exist, use fetch to get it.
-        return require('../plugman').raw.fetch(id, plugins_dir, { link: false, subdir: options.subdir, git_ref: options.git_ref, client: 'plugman', expected_id: options.expected_id, searchpath: options.searchpath })
-        .then(function(plugin_dir) {
-            return runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, options);
-        });
-    } else {
-        return runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, options);
+    if (fs.existsSync(plugin_dir)) {
+        return Q(plugin_dir);
     }
+    var opts = {
+        link: false,
+        subdir: options.subdir,
+        git_ref: options.git_ref,
+        client: 'plugman',
+        expected_id: options.expected_id,
+        searchpath: options.searchpath
+    };
+    return require('../plugman').raw.fetch(id, plugins_dir, opts);
 }
 
 function checkEngines(engines) {
@@ -185,6 +191,21 @@ function getEngines(pluginElement, platform, project_dir, plugin_dir){
 }
 
 
+function isPluginInstalled(plugins_dir, platform, plugin_id) {
+    var platform_config = config_changes.get_platform_json(plugins_dir, platform);
+    for (var installed_plugin_id in platform_config.installed_plugins) {
+        if (installed_plugin_id == plugin_id) {
+            return true;
+        }
+    }
+    for (var installed_plugin_id in platform_config.dependent_plugins) {
+        if (installed_plugin_id == plugin_id) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // possible options: cli_variables, www_dir, is_top_level
 // Returns a promise.
 var runInstall = module.exports.runInstall = function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, options) {
@@ -193,26 +214,20 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
       , filtered_variables = {};
     var name         = plugin_et.findall('name').text;
     var plugin_id    = plugin_et.getroot().attrib['id'];
-    require('../plugman').emit('log', 'Starting installation of "' + plugin_id + '" for ' + platform);
+    options = options || {};
 
-    // check if platform has plugin installed already.
-    var platform_config = config_changes.get_platform_json(plugins_dir, platform);
-    var plugin_basename = path.basename(plugin_dir);
-    var is_installed = false;
-    Object.keys(platform_config.installed_plugins).forEach(function(installed_plugin_id) {
-        if (installed_plugin_id == plugin_id) {
-            is_installed = true;
+
+    if (isPluginInstalled(plugins_dir, platform, plugin_id)) {
+        if (options.is_top_level) {
+            require('../plugman').emit('results', 'Plugin "' + plugin_id + '" already installed on ' + platform + '.');
+        } else {
+            require('../plugman').emit('verbose', 'Dependent plugin "' + plugin_id + '" already installed on ' + platform + '.');
         }
-    });
-    Object.keys(platform_config.dependent_plugins).forEach(function(installed_plugin_id) {
-        if (installed_plugin_id == plugin_id) {
-            is_installed = true;
-        }
-    });
-    if (is_installed) {
-        require('../plugman').emit('results', 'Plugin "' + plugin_id + '" already installed, \'sall good.');
         return Q();
     }
+    require('../plugman').emit('log', 'Installing ' + plugin_id + ' (' + platform + ')');
+
+    var plugin_basename = path.basename(plugin_dir);
 
     var theEngines = getEngines(plugin_et, platform, project_dir, plugin_dir);
     return callEngineScripts(theEngines)
@@ -318,7 +333,10 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
                             dep_url = dep_plugin_id;
                         }
 
-                        return possiblyFetch(actions, platform, project_dir, dep_url, plugins_dir, opts);
+                        return possiblyFetch(dep_url, plugins_dir, opts)
+                        .then(function(plugin_dir) {
+                            return runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, opts);
+                        });
                     }
                 });
             }, Q())
@@ -339,40 +357,52 @@ function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plu
     var platformTag = plugin_et.find('./platform[@name="'+platform+'"]');
     var assets = plugin_et.findall('asset');
     if (platformTag) {
+
+
         var sourceFiles = platformTag.findall('./source-file'),
             headerFiles = platformTag.findall('./header-file'),
             resourceFiles = platformTag.findall('./resource-file'),
             frameworkFiles = platformTag.findall('./framework[@custom="true"]'), // CB-5238 adding only custom frameworks
-            libFiles = platformTag.findall('./lib-file');
-        assets = assets.concat(platformTag.findall('./asset'));
+            libFiles = platformTag.findall('./lib-file'),
+            assets = assets.concat(platformTag.findall('./asset'));
 
         // queue up native stuff
-        sourceFiles && sourceFiles.forEach(function(source) {
-            actions.push(actions.createAction(handler["source-file"].install, [source, plugin_dir, project_dir, plugin_id], handler["source-file"].uninstall, [source, project_dir, plugin_id]));
+        sourceFiles && sourceFiles.forEach(function(item) {
+            actions.push(actions.createAction(handler["source-file"].install,
+                                              [item, plugin_dir, project_dir, plugin_id],
+                                              handler["source-file"].uninstall,
+                                              [item, project_dir, plugin_id]));
         });
 
-        headerFiles && headerFiles.forEach(function(header) {
-            actions.push(actions.createAction(handler["header-file"].install, [header, plugin_dir, project_dir, plugin_id], handler["header-file"].uninstall, [header, project_dir, plugin_id]));
+        headerFiles && headerFiles.forEach(function(item) {
+            actions.push(actions.createAction(handler["header-file"].install,
+                                             [item, plugin_dir, project_dir, plugin_id],
+                                             handler["header-file"].uninstall,
+                                             [item, project_dir, plugin_id]));
         });
 
-        resourceFiles && resourceFiles.forEach(function(resource) {
-            actions.push(actions.createAction(handler["resource-file"].install, [resource, plugin_dir, project_dir], handler["resource-file"].uninstall, [resource, project_dir]));
+        resourceFiles && resourceFiles.forEach(function(item) {
+            actions.push(actions.createAction(handler["resource-file"].install,
+                                              [item, plugin_dir, project_dir, plugin_id],
+                                              handler["resource-file"].uninstall,
+                                              [item, project_dir, plugin_id]));
         });
         // CB-5238 custom frameworks only
-        frameworkFiles && frameworkFiles.forEach(function(framework) {
-            actions.push(actions.createAction(handler["framework"].install, [framework, plugin_dir, project_dir, plugin_id], handler["framework"].uninstall, [framework, project_dir]));
+        frameworkFiles && frameworkFiles.forEach(function(item) {
+            actions.push(actions.createAction(handler["framework"].install,
+                                             [item, plugin_dir, project_dir, plugin_id],
+                                             handler["framework"].uninstall,
+                                             [item, project_dir, plugin_id]));
         });
 
-        libFiles && libFiles.forEach(function(lib) {
-            actions.push(actions.createAction(handler["lib-file"].install, [lib, plugin_dir, project_dir], handler["lib-file"].uninstall, [lib, project_dir]));
+        libFiles && libFiles.forEach(function(item) {
+            actions.push(actions.createAction(handler["lib-file"].install,
+                                                [item, plugin_dir, project_dir, plugin_id],
+                                                handler["lib-file"].uninstall,
+                                                [item, project_dir, plugin_id]));
+
         });
     }
-
-    // queue up asset installation
-    var common = require('./platforms/common');
-    assets && assets.forEach(function(asset) {
-        actions.push(actions.createAction(common.asset.install, [asset, plugin_dir, www_dir], common.asset.uninstall, [asset, www_dir, plugin_id]));
-    });
 
     // run through the action stack
     return actions.process(platform, project_dir)
@@ -382,7 +412,7 @@ function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plu
         // call prepare after a successful install
         require('./../plugman').prepare(project_dir, platform, plugins_dir, www_dir);
 
-        require('../plugman').emit('log', plugin_id + ' installed on ' + platform + '.');
+        require('../plugman').emit('verbose', 'Install complete for ' + plugin_id + ' on ' + platform + '.');
         // WIN!
         // Log out plugin INFO element contents in case additional install steps are necessary
         var info = plugin_et.findall('./info');
