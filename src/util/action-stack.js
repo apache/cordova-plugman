@@ -61,7 +61,7 @@ ActionStack.prototype = {
                     try {
                         revert.apply(null, revert_params);
                     } catch(err) {
-                        require('../plugman').emit('warn', 'Error during reversion of action! We probably really messed up your project now, sorry! D:');
+                        require('../../plugman').emit('warn', 'Error during reversion of action! We probably really messed up your project now, sorry! D:');
                         issue += 'A reversion action failed: ' + err.message + '\n';
                     }
                 }
