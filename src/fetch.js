@@ -116,20 +116,30 @@ function checkID(expected_id, dir) {
     return dir;
 }
 
+var idCache = Object.create(null);
 // Look for plugin in local search path.
 function findLocalPlugin(plugin_id, searchpath) {
-    for(var i = 0; i < searchpath.length; i++){
-        var files = fs.readdirSync(searchpath[i]);
-        for (var j = 0; j < files.length; j++){
-            var plugin_path = path.join(searchpath[i], files[j]);
-            try {
-                var id = readId(plugin_path);
-                if (plugin_id === id) {
-                    return plugin_path;
-                }
+    function tryPath(p) {
+        if (!(p in idCache)) {
+            var id = null;
+            if (fs.existsSync(path.join(p, 'plugin.xml'))) {
+                id = readId(p);
             }
-            catch(err) {
-                require('../plugman').emit('verbose', 'Error while trying to read plugin.xml from ' + plugin_path);
+            idCache[p] = id;
+        }
+        return (plugin_id === idCache[p]);
+    }
+
+    for (var i = 0; i < searchpath.length; i++) {
+        // Allow search path to point right to a plugin.
+        if (tryPath(searchpath[i])) {
+            return searchpath[i];
+        }
+        var files = fs.readdirSync(searchpath[i]);
+        for (var j = 0; j < files.length; j++) {
+            var pluginPath = path.join(searchpath[i], files[j]);
+            if (tryPath(pluginPath)) {
+                return pluginPath;
             }
         }
     }
