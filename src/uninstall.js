@@ -163,7 +163,7 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
         });
 
         resourceFiles && resourceFiles.forEach(function(resource) {
-            actions.push(actions.createAction(handler["resource-file"].uninstall, [resource, project_dir], handler["resource-file"].install, [resource, plugin_dir, project_dir]));
+            actions.push(actions.createAction(handler["resource-file"].uninstall, [resource, project_dir, plugin_id], handler["resource-file"].install, [resource, plugin_dir, project_dir]));
         });
 
         // CB-5238 custom frameworks only
