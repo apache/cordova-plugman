@@ -47,7 +47,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
     // - For each js-module (general first, then platform) build up an object storing the path and any clobbers, merges and runs for it.
     // - Write this object into www/cordova_plugins.json.
     // - Cordova.js contains code to load them at runtime from that file.
-    require('../plugman').emit('verbose', 'Preparing ' + platform + ' project');
+    plugman.emit('verbose', 'Preparing ' + platform + ' project');
     var platform_json = config_changes.get_platform_json(plugins_dir, platform);
     var wwwDir = www_dir || platform_modules[platform].www_dir(project_dir);
 
@@ -61,14 +61,14 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
                 var id = plug.id;
                 var plugin_modules = path.join(plugins_www, id);
                 if (fs.existsSync(plugin_modules)) {
-                    require('../plugman').emit('verbose', 'Removing plugins directory from www "'+plugin_modules+'"');
+                    plugman.emit('verbose', 'There is no directory "'+plugin_modules+'"');
                     shell.rm('-rf', plugin_modules);
                 }
             });
         }
     }
 
-    require('../plugman').emit('verbose', 'Processing configuration changes for plugins.');
+    plugman.emit('verbose', 'Processing configuration changes for plugins.');
     config_changes.process(plugins_dir, project_dir, platform);
 
     // for windows phone plaform we need to add all www resources to the .csproj file
@@ -121,7 +121,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
     var plugins = Object.keys(platform_json.installed_plugins).concat(Object.keys(platform_json.dependent_plugins));
     var moduleObjects = [];
     var pluginMetadata = {};
-    require('../plugman').emit('verbose', 'Iterating over installed plugins:', plugins);
+    plugman.emit('verbose', 'Iterating over installed plugins:', plugins);
 
     plugins && plugins.forEach(function(plugin) {
         var pluginDir = path.join(plugins_dir, plugin),
@@ -219,7 +219,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
     final_contents += '// BOTTOM OF METADATA\n';
     final_contents += '});'; // Close cordova.define.
 
-    require('../plugman').emit('verbose', 'Writing out cordova_plugins.js...');
+    plugman.emit('verbose', 'Writing out cordova_plugins.js...');
     fs.writeFileSync(path.join(wwwDir, 'cordova_plugins.js'), final_contents, 'utf-8');
 
     if(platform == 'wp7' || platform == 'wp8' || platform == "windows8") {
