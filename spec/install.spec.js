@@ -270,6 +270,27 @@ describe('install', function() {
                     expect(s.calls.length).toEqual(2);
                 });
             });
+            it('should process all dependent plugins with alternate routes to the same plugin', function() {
+                // Plugin F depends on A, C, D and E
+                runs(function () {
+                    installPromise(install('android', temp, 'F', path.join(plugins_dir, 'dependencies'), {}));
+                });
+                waitsFor(function () { return done; }, 'install promise never resolved', 500);
+                runs(function () {
+
+                    // So process should be called 5 times
+                    expect(proc.calls.length).toEqual(5);
+                });
+            });
+            it('should throw if there is a cyclic dependency', function() {
+                runs(function () {
+                    installPromise(install('android', temp, 'G', path.join(plugins_dir, 'dependencies'), {}));
+                });
+                waitsFor(function () { return done; }, 'install promise never resolved', 500);
+                runs(function () {
+                    expect(done.message).toEqual('Cyclic dependency from G to H');
+                });
+            });
         });
     });
 
