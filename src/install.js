@@ -285,9 +285,9 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
             // Check for dependencies
             var dependencies = plugin_et.findall('dependency') || [];
             dependencies = dependencies.concat(plugin_et.findall('./platform[@name="'+platform+'"]/dependency'));
-            if(dependencies && dependencies.length)
+            if(dependencies && dependencies.length) {
                 return installDependencies(install, dependencies, options);
-
+            }
             return Q(true);
         }
     ).then(
@@ -304,7 +304,7 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
     ).fail(
         function (error) {
             events.emit('warn', "Failed to install '"+plugin_id+"':"+ error.stack);
-            return Q(false);
+            throw error;
         }
     );
 }

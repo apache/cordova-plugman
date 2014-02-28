@@ -36,7 +36,7 @@ var install = require('../src/install'),
     dummy_id = 'com.phonegap.plugins.dummyplugin';
 
 function installPromise(f) {
-  f.then(function() { done = true; }, function(err) { done = err; });
+  f.then(function(res) { done = true; }, function(err) { done = err; });
 }
 
 var existsSync = fs.existsSync;
@@ -259,7 +259,7 @@ describe('install', function() {
                 // <engine name="mega-fun-plugin" version=">=1.0.0" scriptSrc="megaFunVersion" platform="*" />
                 // <engine name="mega-boring-plugin" version=">=3.0.0" scriptSrc="megaBoringVersion" platform="ios|android" />
 
-				var plugmanVersion = require('../package.json').version;
+                var plugmanVersion = require('../package.json').version;
 
                 expect(spy.calls.length).toBe(4);
                 expect(spy.calls[0].args).toEqual([ '', '>=2.3.0' ]);
@@ -280,15 +280,17 @@ describe('install', function() {
         });
 
         describe('with dependencies', function() {
-            it('should install any dependent plugins if missing', function() {
+            var emit;
+            beforeEach(function() {
                 spyOn(fs, 'existsSync').andCallFake( fake['existsSync']['noPlugins'] );
                 fetchSpy.andCallFake( fake['fetch']['dependencies'] );
                 emit = spyOn(events, 'emit');
-
                 exec.andCallFake(function(cmd, cb) {
                     cb(null, '9.0.0\n');
                 });
-
+            });											   
+   
+            it('should install any dependent plugins if missing', function() {
                 runs(function() {
                     installPromise( install('android', project, plugins['A']) );
                 });
@@ -304,14 +306,8 @@ describe('install', function() {
                     ]);
                 });
             });
-            it('should install any dependent plugins from registry when url is not defined', function() {
-                spyOn(fs, 'existsSync').andCallFake( fake['existsSync']['noPlugins'] );
-                fetchSpy.andCallFake( fake['fetch']['dependencies'] );
-				emit = spyOn(events, 'emit');
-                exec.andCallFake(function(cmd, cb) {
-                    cb(null, '9.0.0\n', '');
-                });
 
+            it('should install any dependent plugins from registry when url is not defined', function() {
                 // Plugin A depends on C & D
                 runs(function() {
                     installPromise( install('android', project, plugins['A']) );
@@ -328,53 +324,39 @@ describe('install', function() {
                     ]);;
                 });
             });
+
+            it('should process all dependent plugins with alternate routes to the same plugin', function() {
+                // Plugin F depends on A, C, D and E
+                runs(function () {
+                    installPromise(install('android', project, plugins['F']));
+                });
+                waitsFor(function () { return done; }, 'install promise never resolved', 500);
+                runs(function () {
+                    var install = common.spy.getInstall(emit);
+    
+                    expect(install).toEqual([
+                        'Install start for "C" on android.',
+                        'Install start for "D" on android.',
+                        'Install start for "A" on android.',
+                        'Install start for "D" on android.',
+                        'Install start for "F" on android.'
+                    ]);
+                });
+            });
+
+            it('should throw if there is a cyclic dependency', function() {
+                runs(function () {
+                    installPromise( install('android', project, plugins['G']) );
+                });
+                waitsFor(function () { return done; }, 'install promise never resolved', 500);
+                runs(function () {
+                    var install = common.spy.getInstall(emit);
+       
+                    expect(done.message).toEqual('Cyclic dependency from G to H');
+                });
+            });				
         });
-		it('should process all dependent plugins with alternate routes to the same plugin', function() {
-			spyOn(fs, 'existsSync').andCallFake( fake['existsSync']['noPlugins'] );
-			fetchSpy.andCallFake( fake['fetch']['dependencies'] );
-			emit = spyOn(events, 'emit');
-			exec.andCallFake(function(cmd, cb) {
-				cb(null, '9.0.0\n', '');
-			});			
 
-			// Plugin F depends on A, C, D and E
-			runs(function () {
-				installPromise(install('android', project, plugins['F']));
-			});
-			waitsFor(function () { return done; }, 'install promise never resolved', 500);
-			runs(function () {
-				var install = common.spy.getInstall(emit);
-
-				expect(install).toEqual([
-					'Install start for "C" on android.',
-					'Install start for "D" on android.',
-					'Install start for "A" on android.',
-					'Install start for "D" on android.',
-					'Install start for "F" on android.'
-				]);
-			});
-		});
-		/*
-		it('should throw if there is a cyclic dependency', function() {
-			// TODO: group this into BeforeStart() for all dependency tests
-			spyOn(fs, 'existsSync').andCallFake( fake['existsSync']['noPlugins'] );
-			fetchSpy.andCallFake( fake['fetch']['dependencies'] );
-			emit = spyOn(events, 'emit');
-			exec.andCallFake(function(cmd, cb) {
-				cb(null, '9.0.0\n', '');
-			});
-
-			runs(function () {
-				installPromise(install('android', project, plugins['G']));
-			});
-			waitsFor(function () { return done; }, 'install promise never resolved', 500);
-			runs(function () {
-				var install = common.spy.getInstall(emit);
-				
-				console.log(install);		   
-				expect(done.message).toEqual('Cyclic dependency from G to H');
-			});
-		});*/		
     });
 
     xdescribe('failure', function() {
