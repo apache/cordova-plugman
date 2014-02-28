@@ -30,6 +30,7 @@ var platform_modules = require('./platforms'),
     fs              = require('fs'),
     shell           = require('shelljs'),
     util            = require('util'),
+    events          = require('./events'),
     plugman         = require('../plugman'),
     et              = require('elementtree');
 
@@ -47,7 +48,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
     // - For each js-module (general first, then platform) build up an object storing the path and any clobbers, merges and runs for it.
     // - Write this object into www/cordova_plugins.json.
     // - Cordova.js contains code to load them at runtime from that file.
-    plugman.emit('verbose', 'Preparing ' + platform + ' project');
+    events.emit('verbose', 'Preparing ' + platform + ' project');
     var platform_json = config_changes.get_platform_json(plugins_dir, platform);
     var wwwDir = www_dir || platform_modules[platform].www_dir(project_dir);
 
@@ -60,17 +61,15 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
             plugins_to_uninstall.forEach(function(plug) {
                 var id = plug.id;
                 var plugin_modules = path.join(plugins_www, id);
-                if (!fs.existsSync(plugin_modules)) {
-                    plugman.emit('verbose', 'There is no directory "'+plugin_modules+'"');
-                    return;
+                if (fs.existsSync(plugin_modules)) {
+                    events.emit('verbose', 'Removing plugins directory from www "'+plugin_modules+'"');
+                    shell.rm('-rf', plugin_modules);
                 }
-                plugman.emit('verbose', 'Removing plugins directory from www "'+plugin_modules+'"');
-                shell.rm('-rf', plugin_modules);
             });
         }
     }
 
-    plugman.emit('verbose', 'Processing configuration changes for plugins.');
+    events.emit('verbose', 'Processing configuration changes for plugins.');
     config_changes.process(plugins_dir, project_dir, platform);
 
     // for windows phone plaform we need to add all www resources to the .csproj file
@@ -123,7 +122,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
     var plugins = Object.keys(platform_json.installed_plugins).concat(Object.keys(platform_json.dependent_plugins));
     var moduleObjects = [];
     var pluginMetadata = {};
-    plugman.emit('verbose', 'Iterating over installed plugins:', plugins);
+    events.emit('verbose', 'Iterating over installed plugins:', plugins);
 
     plugins && plugins.forEach(function(plugin) {
         var pluginDir = path.join(plugins_dir, plugin),
@@ -155,7 +154,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
 
         // Copy www assets described in <asset> tags.
         assets = assets || [];
-        assets.forEach(function(asset) {
+        assets.forEach(function(asset) {					
             common.asset.install(asset, pluginDir, wwwDir);
         });
 
@@ -223,7 +222,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
     final_contents += '// BOTTOM OF METADATA\n';
     final_contents += '});'; // Close cordova.define.
 
-    plugman.emit('verbose', 'Writing out cordova_plugins.js...');
+    events.emit('verbose', 'Writing out cordova_plugins.js...');
     fs.writeFileSync(path.join(wwwDir, 'cordova_plugins.js'), final_contents, 'utf-8');
 
     if(platform == 'wp7' || platform == 'wp8' || platform == "windows8") {

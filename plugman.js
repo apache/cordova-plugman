@@ -19,7 +19,7 @@
 
 // copyright (c) 2013 Andrew Lunny, Adobe Systems
 
-var emitter = require('./src/events');
+var events = require('./src/events');
 var Q = require('q');
 
 function addProperty(o, symbol, modulePath, doWrap) {
@@ -53,12 +53,13 @@ function addProperty(o, symbol, modulePath, doWrap) {
 }
 
 plugman = {
-    on:                 emitter.addListener,
-    off:                emitter.removeListener,
-    removeAllListeners: emitter.removeAllListeners,
-    emit:               emitter.emit,
+    on:                 events.on.bind(events),
+    off:                events.removeListener.bind(events),
+    removeAllListeners: events.removeAllListeners.bind(events),
+    emit:               events.emit.bind(events),
     raw:                {}
 };
+
 addProperty(plugman, 'help', './src/help');
 addProperty(plugman, 'install', './src/install', true);
 addProperty(plugman, 'uninstall', './src/uninstall', true);

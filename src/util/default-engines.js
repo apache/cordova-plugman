@@ -3,10 +3,9 @@ var path = require('path');
 module.exports = function(project_dir){
     return {
         'cordova': 
-            { 'platform':'*', 'scriptSrc': path.join(project_dir,'cordova','version') },   
-        // no location needed for plugman as this should be the calling process
+            { 'platform':'*', 'scriptSrc': path.join(project_dir,'cordova','version') },
         'cordova-plugman': 
-            { 'platform':'*', 'currentVersion': process.version },
+            { 'platform':'*', 'currentVersion': require('../../package.json').version },
         'cordova-android': 
             { 'platform':'android', 'scriptSrc': path.join(project_dir,'cordova','version') },
         'cordova-ios': 

@@ -1,3 +1,2 @@
-var emitter = new (require('events').EventEmitter)();
 
-module.exports = emitter;
+module.exports = new (require('events').EventEmitter)();
