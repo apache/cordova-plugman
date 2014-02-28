@@ -117,48 +117,41 @@ module.exports = {
             project_file.removeReference(src);
         }
     },
-    "framework":{ // CB-5238 custom frameworks only
-        install:function(framework_el, plugin_dir, project_dir, plugin_id, project) {
-            // console.log("framework install called with framework_el:: " + framework_el);
-            // console.log("framework install called with plugin_dir:: " + plugin_dir );
-            // console.log("framework install called with project_dir:: " + project_dir);
-            // console.log("framework install called with plugin_id:: " + plugin_id);
-            // console.log("framework install called with project::" + project);
+    "framework": {
+        install:function(el, plugin_dir, project_dir, plugin_id, project_file) {
+            require('../../plugman').emit('verbose', 'windows8 framework install :: ' + plugin_id);
 
-            // console.log("project.plugins_dir " + project.plugins_dir);
+            var src = el.attrib['src'];
+            var dest = src; // if !isCustom, we will just add a reference to the file in place
+            var isCustom = el.attrib.custom == "true";
+            var type = el.attrib["type"];
 
-            // framework_el attributes : src, custom
-            var src = framework_el.attrib['src'];
-            console.log("src = " + src);
+            if(isCustom) {
+                dest = path.join('plugins', plugin_id, path.basename(src));
+                common.copyFile(plugin_dir, src, project_dir, dest);
+            }
 
-            var custom = framework_el.attrib['custom'];
+            if(type == "projectReference") {
 
-            var srcFile = path.resolve(plugin_dir, src);
+            }
+            else {
+                project_file.addReference(dest,src);
+            }
 
-            console.log("path.basename(src) = " + path.basename(src));
-
-            console.log("srcFile = " + srcFile);
-
-            var targetDir = path.resolve(project.plugins_dir, plugin_id, path.basename(src));
-
-            if (!custom) throw new Error('cannot add non custom frameworks.');
-            if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <framework>');
-            if (fs.existsSync(targetDir)) throw new Error('target destination "' + targetDir + '" already exists');
-            shell.mkdir('-p', path.dirname(targetDir));
-            shell.cp('-R', srcFile, path.dirname(targetDir)); // frameworks are directories
-            var project_relative = path.relative(project_dir, targetDir);
-            
-            console.log("project_relative = " + project_relative);
-            project.addProjectReference(project_relative);
-            //project.xcode.addFramework(project_relative, {customFramework: true});
         },
-        uninstall:function(framework_el, project_dir, plugin_id, project) {
-            var src = framework_el.attrib['src'],
-                baseDir = path.resolve(project.plugins_dir, plugin_id),
-                targetDir = path.resolve(baseDir, path.basename(src));
-            project.removeProjectReference(targetDir);
-            shell.rm('-rf', baseDir);
+        uninstall:function(el, project_dir, plugin_id, project_file) {
+            require('../../plugman').emit('verbose', 'windows8 framework uninstall :: ' + plugin_id  );
 
+            var src = el.attrib['src'];
+            var isCustom = el.attrib.custom == "true";
+
+            if(isCustom) {
+                var dest = path.join('plugins', plugin_id);//, path.basename(src));
+                common.removeFile(project_dir, dest);
+            }
+
+            project_file.removeReference(src);
         }
+
     }
 };
