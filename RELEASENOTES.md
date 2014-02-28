@@ -20,7 +20,14 @@
 -->
 # Cordova-plugman Release Notes
 
-### 0.20.0 (Feb 26, 2014)
+### 0.20.1 (Feb 28, 2014)
+* CB-6124 Make `cordova plugin remove` resilient to a missing plugin directory
+* CB-6028 Protect against cyclic dependencies in install
+* CB-6128 Treat windows c: absolute paths like file:
+* CB-6123 Fix crash in handleUninstall introduces by recent action-stack refactoring
+* CB-6122 Fix exception on uninstall due to incorrect require() path.
+
+### 0.20.0 (Feb 26, 2014) <-- Never released on npm due to CB-6123
 * CB-4886 Added "plugman create" command
 * CB-5885 Speed-up adding multiple plugins with plugman
 * CB-5647 Move <assets> copying from install to prepare
