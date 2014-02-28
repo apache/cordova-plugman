@@ -1,8 +1,9 @@
 var shell = require('shelljs'),
     path  = require('path'),
-    fs    = require('fs');
+    fs    = require('fs'),
+	common;
 
-module.exports = {
+module.exports = common = {
     // helper for resolving source paths from plugin.xml
     resolveSrcPath:function(plugin_dir, relative_path) {
         var full_path = path.resolve(plugin_dir, relative_path);
@@ -22,10 +23,18 @@ module.exports = {
 
         // XXX sheljs decides to create a directory when -R|-r is used which sucks. http://goo.gl/nbsjq
         if(fs.statSync(src).isDirectory()) {
-            shell.cp('-R', src+'/*', dest);
+            shell.cp('-Rf', src+'/*', dest);
         } else {
             shell.cp('-f', src, dest);
         }
+    },
+    // Same as copy file but throws error if target exists
+    copyNewFile:function(plugin_dir, src, project_dir, dest) {
+		var target_path = common.resolveTargetPath(project_dir, dest);
+        if (fs.existsSync(target_path)) 
+			throw new Error('"' + target_path + '" already exists!');
+
+        common.copyFile(plugin_dir, src, project_dir, dest);
     },
     // checks if file exists and then deletes. Error if doesn't exist
     removeFile:function(project_dir, src) {
@@ -41,7 +50,7 @@ module.exports = {
         var file = path.resolve(project_dir, destFile);
         if (!fs.existsSync(file)) return;
 
-        module.exports.removeFileF(file);
+        common.removeFileF(file);
 
         // check if directory is empty
         var curDir = path.dirname(file);
@@ -69,7 +78,7 @@ module.exports = {
                 throw new Error('<asset> tag without required "target" attribute');
             }
 
-            module.exports.copyFile(plugin_dir, src, www_dir, target);
+            common.copyFile(plugin_dir, src, www_dir, target);
         },
         uninstall:function(asset_el, www_dir, plugin_id) {
             var target = asset_el.attrib.target || asset_el.attrib.src;
@@ -78,8 +87,8 @@ module.exports = {
                 throw new Error('<asset> tag without required "target" attribute');
             }
 
-            module.exports.removeFile(www_dir, target);
-            module.exports.removeFileF(path.resolve(www_dir, 'plugins', plugin_id));
+            common.removeFile(www_dir, target);
+            common.removeFileF(path.resolve(www_dir, 'plugins', plugin_id));
         }
     }
 };

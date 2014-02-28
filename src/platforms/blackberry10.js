@@ -39,9 +39,8 @@ module.exports = {
             var target = source_el.attrib['target-dir'] || plugin_id;
             TARGETS.forEach(function(arch) {
                 var dest = path.join("native", arch, "chrome", "plugin", target, path.basename(src));
-                var target_path = common.resolveTargetPath(project_dir, dest);
-                if (fs.existsSync(target_path)) throw new Error('"' + target_path + '" already exists!');
-                common.copyFile(plugin_dir, src, project_dir, dest);
+
+                common.copyNewFile(plugin_dir, src, project_dir, dest);
             });
         },
         uninstall:function(source_el, project_dir, plugin_id) {
