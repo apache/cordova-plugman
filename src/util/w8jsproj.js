@@ -25,7 +25,6 @@ jsproj.prototype = {
     // example :
     // <ItemGroup><SDKReference Include="Microsoft.VCLibs, version=12.0" /></ItemGroup>
     addSDKRef:function(incText) {
-        console.log("addSDKRef :: " + incText);
         var item_group = new et.Element('ItemGroup');
         var elem = new et.Element('SDKReference');
         elem.attrib.Include = incText;
@@ -35,7 +34,6 @@ jsproj.prototype = {
     },
 
     removeSDKRef:function(incText) {
-        console.log("removeSDKRef :: " + incText);
         var item_groups = this.xml.findall('ItemGroup/SDKReference[@Include="' + incText + '"]/..');
         if(item_groups.length > 0 ) {
             this.xml.getroot().remove(0, item_groups[0]);
