@@ -41,7 +41,7 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
     }
 
     // If it looks like a network URL, git clone it.
-    if ( uri.protocol && uri.protocol != 'file:' && !plugin_src.match(/^\w+:\\/)) {
+    if ( uri.protocol && uri.protocol != 'file:' && uri.protocol != 'c:' && !plugin_src.match(/^\w+:\\/)) {
         require('../plugman').emit('log', 'Fetching plugin "' + plugin_src + '" via git clone');
         if (options.link) {
             return Q.reject(new Error('--link is not supported for git URLs'));
