@@ -129,7 +129,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
         var pluginDir = path.join(plugins_dir, plugin),
             pluginXML = path.join(pluginDir, 'plugin.xml');
         if (!fs.existsSync(pluginXML)) {
-            plugman.emit('verbose', 'Could not find "' + pluginXML + '"');
+            plugman.emit('warn', 'Missing file: ' + pluginXML);
             return;
         }
         var xml = xml_helpers.parseElementtreeSync(pluginXML);
