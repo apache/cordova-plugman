@@ -35,6 +35,7 @@ var path = require('path'),
 // possible options: subdir, cli_variables, www_dir
 // Returns a promise.
 module.exports = function installPlugin(platform, project_dir, id, plugins_dir, options) {
+    options = options || {};
     if (!platform_modules[platform]) {
         return Q.reject(new Error(platform + " not supported."));
     }
