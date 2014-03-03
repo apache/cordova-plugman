@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,6 +19,9 @@
 #
 -->
 # Cordova-plugman Release Notes
+
+### 0.20.2 (Mar 3, 2014)
+* CB-6151 Fix exception when adding a new platform to a CLI project
 
 ### 0.20.1 (Feb 28, 2014)
 * CB-6124 Make `cordova plugin remove` resilient to a missing plugin directory
