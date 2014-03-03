@@ -94,18 +94,17 @@ module.exports = {
 
             var src = el.attrib['src'];
             var dest = src; // if !isCustom, we will just add a reference to the file in place
-            var isCustom = el.attrib.custom == "true";
+            // technically it is not possible to get here without isCustom == true -jm
+            // var isCustom = el.attrib.custom == "true";
             var type = el.attrib["type"];
 
-            if(isCustom) {
-                dest = path.join('plugins', plugin_id, path.basename(src));
-                common.copyFile(plugin_dir, src, project_dir, dest);
-            }
-
             if(type == "projectReference") {
-
+                project_file.addProjectReference(path.join(plugin_dir,src));
             }
             else {
+                // if(isCustom) {}
+                dest = path.join('plugins', plugin_id, path.basename(src));
+                common.copyFile(plugin_dir, src, project_dir, dest);
                 project_file.addReference(dest,src);
             }
 
@@ -114,14 +113,19 @@ module.exports = {
             require('../../plugman').emit('verbose', 'windows8 framework uninstall :: ' + plugin_id  );
 
             var src = el.attrib['src'];
-            var isCustom = el.attrib.custom == "true";
+            // technically it is not possible to get here without isCustom == true -jm
+            // var isCustom = el.attrib.custom == "true"; 
+            var type = el.attrib["type"];
 
-            if(isCustom) {
-                var dest = path.join('plugins', plugin_id);//, path.basename(src));
-                common.removeFile(project_dir, dest);
+            if(type == "projectReference") {
+                project_file.removeProjectReference(path.join(plugin_dir,src));
             }
-
-            project_file.removeReference(src);
+            else {
+                // if(isCustom) {  }  
+                var targetPath = path.join('plugins', plugin_id);
+                common.removeFile(project_dir, targetPath);
+                project_file.removeReference(src);
+            }
         }
 
     }
