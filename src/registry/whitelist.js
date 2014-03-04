@@ -6,7 +6,7 @@ module.exports = [
     'org.apache.cordova.media',
     'org.apache.cordova.vibration',
     'org.apache.cordova.media-capture',
-    'org.apache.cordova.inappbrowser', 
+    'org.apache.cordova.inappbrowser',
     'org.apache.cordova.globalization',
     'org.apache.cordova.geolocation',
     'org.apache.cordova.dialogs',

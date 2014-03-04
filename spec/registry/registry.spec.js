@@ -8,6 +8,21 @@ var registry = require('../../src/registry/registry'),
     npm = require('npm');
 
 describe('registry', function() {
+    var done;
+    beforeEach(function() {
+        done = false;
+    });
+    function registryPromise(shouldSucceed, f) {
+        waitsFor(function() { return done; }, 'promise never resolved', 500);
+        return f.then(function() {
+          done = true;
+          expect(shouldSucceed).toBe(true);
+        }, function(err) {
+          done = err;
+          expect(shouldSucceed).toBe(false);
+        });
+    }
+
     describe('manifest', function() {
         var pluginDir, packageJson, tmp_plugin, tmp_plugin_xml, tmp_package_json;
         beforeEach(function() {
@@ -21,40 +36,35 @@ describe('registry', function() {
             shell.rm('-rf', tmp_plugin);
         });
         it('should generate a package.json from a plugin.xml', function() {
-            manifest.generatePackageJsonFromPluginXml(tmp_plugin);
-            expect(fs.existsSync(tmp_package_json));
-            var packageJson = JSON.parse(fs.readFileSync(tmp_package_json));
-            expect(packageJson.name).toEqual('com.cordova.engine');
-            expect(packageJson.version).toEqual('1.0.0');
-            expect(packageJson.engines).toEqual(
-                [ { name : 'cordova', version : '>=2.3.0' }, { name : 'cordova-plugman', version : '>=0.10.0' }, { name : 'mega-fun-plugin', version : '>=1.0.0' }, { name : 'mega-boring-plugin', version : '>=3.0.0' } ]
-            );
+            registryPromise(true, manifest.generatePackageJsonFromPluginXml(tmp_plugin).then(function() {
+                expect(fs.existsSync(tmp_package_json));
+                var packageJson = JSON.parse(fs.readFileSync(tmp_package_json));
+                expect(packageJson.name).toEqual('com.cordova.engine');
+                expect(packageJson.version).toEqual('1.0.0');
+                expect(packageJson.engines).toEqual(
+                    [ { name : 'cordova', version : '>=2.3.0' }, { name : 'cordova-plugman', version : '>=0.10.0' }, { name : 'mega-fun-plugin', version : '>=1.0.0' }, { name : 'mega-boring-plugin', version : '>=3.0.0' } ]);
+            }));
         });
         it('should raise an error if name does not follow com.domain.* format', function() {
             var xmlData = fs.readFileSync(tmp_plugin_xml).toString().replace('id="com.cordova.engine"', 'id="engine"');
             fs.writeFileSync(tmp_plugin_xml, xmlData);
-            manifest.generatePackageJsonFromPluginXml(tmp_plugin);
-            expect(!fs.existsSync(tmp_package_json));
+            registryPromise(false, manifest.generatePackageJsonFromPluginXml(tmp_plugin));
         });
-        it('should generate a package.json if name uses org.apache.cordova.* for a whitlisted plugin', function() {
+        it('should generate a package.json if name uses org.apache.cordova.* for a whitelisted plugin', function() {
             var xmlData = fs.readFileSync(tmp_plugin_xml).toString().replace('id="com.cordova.engine"', 'id="org.apache.cordova.camera"');
             fs.writeFileSync(tmp_plugin_xml, xmlData);
-            manifest.generatePackageJsonFromPluginXml(tmp_plugin);
-            expect(!fs.existsSync(tmp_package_json));
+            registryPromise(true, manifest.generatePackageJsonFromPluginXml(tmp_plugin).then(function() {
+                expect(!fs.existsSync(tmp_package_json));
+            }));
         });
-        it('should raise an error if name uses org.apache.cordova.* for a non-whitlisted plugin', function() {
+        it('should raise an error if name uses org.apache.cordova.* for a non-whitelisted plugin', function() {
             var xmlData = fs.readFileSync(tmp_plugin_xml).toString().replace('id="com.cordova.engine"', 'id="org.apache.cordova.myinvalidplugin"');
             fs.writeFileSync(tmp_plugin_xml, xmlData);
-            manifest.generatePackageJsonFromPluginXml(tmp_plugin);
-            expect(!fs.existsSync(tmp_package_json));
+            registryPromise(false, manifest.generatePackageJsonFromPluginXml(tmp_plugin));
         });
     });
     describe('actions', function() {
-        var done, fakeLoad, fakeNPMCommands;
-
-        function registryPromise(f) {
-            return f.then(function() { done = true; }, function(err) { done = err; });
-        }
+        var fakeLoad, fakeNPMCommands;
 
         beforeEach(function() {
             done = false;
@@ -83,67 +93,42 @@ describe('registry', function() {
         });
         it('should run config', function() {
             var params = ['set', 'registry', 'http://registry.cordova.io'];
-            runs(function() {
-                registryPromise(registry.config(params));
-            });
-            waitsFor(function() { return done; }, 'promise never resolved', 500);
-            runs(function() {
-                expect(done).toBe(true);
+            registryPromise(true, registry.config(params).then(function() {
                 expect(fakeLoad).toHaveBeenCalledWith(registry.settings, jasmine.any(Function));
                 expect(fakeNPMCommands.config).toHaveBeenCalledWith(params, jasmine.any(Function));
-            });
+            }));
         });
         it('should run adduser', function() {
-            runs(function() {
-                registryPromise(registry.adduser(null));
-            });
-            waitsFor(function() { return done; }, 'promise never resolved', 500);
-            runs(function() {
-                expect(done).toBe(true);
+            registryPromise(true, registry.adduser(null).then(function() {
                 expect(fakeLoad).toHaveBeenCalledWith(registry.settings, jasmine.any(Function));
                 expect(fakeNPMCommands.adduser).toHaveBeenCalledWith(null, jasmine.any(Function));
-            });
+            }));
         });
         it('should run publish', function() {
             var params = [__dirname + '/../plugins/DummyPlugin'];
             var spyGenerate = spyOn(manifest, 'generatePackageJsonFromPluginXml').andReturn(Q());
             var spyUnlink = spyOn(fs, 'unlink');
-            runs(function() {
-                registryPromise(registry.publish(params));
-            });
-            waitsFor(function() { return done; }, 'promise never resolved', 500);
-            runs(function() {
-                expect(done).toBe(true);
+            registryPromise(true, registry.publish(params).then(function() {
                 expect(fakeLoad).toHaveBeenCalledWith(registry.settings, jasmine.any(Function));
                 expect(spyGenerate).toHaveBeenCalledWith(params[0]);
                 expect(fakeNPMCommands.publish).toHaveBeenCalledWith(params, jasmine.any(Function));
                 expect(spyUnlink).toHaveBeenCalledWith(path.resolve(params[0], 'package.json'));
-            });
+            }));
         });
         it('should run unpublish', function() {
             var params = ['dummyplugin@0.6.0'];
-            runs(function() {
-                registryPromise(registry.unpublish(params));
-            });
-            waitsFor(function() { return done; }, 'promise never resolved', 500);
-            runs(function() {
-                expect(done).toBe(true);
+            registryPromise(true, registry.unpublish(params).then(function() {
                 expect(fakeLoad).toHaveBeenCalledWith(registry.settings, jasmine.any(Function));
                 expect(fakeNPMCommands.unpublish).toHaveBeenCalledWith(params, jasmine.any(Function));
                 expect(fakeNPMCommands.cache).toHaveBeenCalledWith(['clean'], jasmine.any(Function));
-            });
+            }));
         });
         it('should run search', function() {
             var params = ['dummyplugin', 'plugin'];
-            runs(function() {
-                registryPromise(registry.search(params));
-            });
-            waitsFor(function() { return done; }, 'promise never resolved', 500);
-            runs(function() {
-                expect(done).toBe(true);
+            registryPromise(true, registry.search(params).then(function() {
                 expect(fakeLoad).toHaveBeenCalledWith(registry.settings, jasmine.any(Function));
                 expect(fakeNPMCommands.search).toHaveBeenCalledWith(params, true, jasmine.any(Function));
-            });
+            }));
         });
     });
 });
