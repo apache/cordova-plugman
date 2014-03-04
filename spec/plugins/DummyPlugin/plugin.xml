@@ -39,7 +39,7 @@
         <access origin="build.phonegap.com" />
         <access origin="s3.amazonaws.com" />
     </config-file>
-	
+
     <!-- android -->
     <platform name="android">
         <config-file target="AndroidManifest.xml" parent="/manifest/application">
@@ -103,6 +103,19 @@
         </config-file>
 
         <source-file src="src/blackberry10/index.js"/>
+        <js-module src="www/dummyplugin.js" name="Dummy">
+            <clobbers target="dummy" />
+        </js-module>
+    </platform>
+
+    <!-- firefoxos -->
+    <platform name="firefoxos">
+        <config-file target="config.xml" parent="/*">
+            <feature id="dummyPlugin" required="true" version="1.0.0.0"/>
+        </config-file>
+
+        <source-file src="src/firefoxos/DummyPlugin.js" 
+                   target-dir="src/plugins/dummyplugin" />
         <js-module src="www/dummyplugin.js" name="Dummy">
             <clobbers target="dummy" />
         </js-module>

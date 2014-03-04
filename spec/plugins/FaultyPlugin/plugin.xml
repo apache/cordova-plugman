@@ -88,6 +88,21 @@
                 target-dir="src/com/phonegap/plugins/faultyplugin" />
     </platform>
 
+    <!-- firefoxos -->
+    <platform name="firefoxos">
+        <config-file target="config.xml" parent="/*">
+            <feature name="FaultyPlugin">
+                <param name="firefoxos-package" value="FaultyPlugin"/>
+            </feature>
+        </config-file>
+
+        <!-- source-file src="src/firefoxos/faultyPlugin.js" / -->
+
+        <!-- does not exist -->
+        <source-file src="src/firefoxos/NotHere.js"
+                target-dir="src/plugins/faultyplugin" />
+    </platform>
+
     <!-- ios -->
     <platform name="ios">
         <!-- /cordova/plugins no longer exists, it is now /widget/plugins -->
