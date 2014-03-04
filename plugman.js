@@ -32,7 +32,7 @@ function addProperty(o, symbol, modulePath, doWrap) {
                 // If args exist and the last one is a function, it's the callback.
                 var args = Array.prototype.slice.call(arguments);
                 var cb = args.pop();
-                val.apply(o, args).done(cb, cb);
+                val.apply(o, args).done(function(result) {cb(undefined, result)}, cb);
             } else {
                 val.apply(o, arguments).done(null, function(err){ throw err; });
             }

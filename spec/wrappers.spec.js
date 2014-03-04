@@ -19,7 +19,7 @@ describe('callback wrapper', function() {
             });
 
             it('should call the callback on success', function(done) {
-                raw.andReturn(Q());
+                raw.andReturn(Q(1));
                 plugman[call](function(err) {
                     expect(err).toBeUndefined();
                     done();
@@ -27,7 +27,7 @@ describe('callback wrapper', function() {
             });
 
             it('should call the callback with the error on failure', function(done) {
-                raw.andReturn(Q.reject(new Error('junk')));
+                raw.andCallFake(function() { return Q.reject(new Error('junk'))});
                 plugman[call](function(err) {
                     expect(err).toEqual(new Error('junk'));
                     done();
