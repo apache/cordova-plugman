@@ -59,6 +59,9 @@ function copyArray(arr) {
 
 
 describe('firefoxos project handler', function() {
+    //require('../../plugman').on('verbose', console.log);
+    //require('../../plugman').on('warn', console.log);
+
     describe('www_dir method', function() {
         it('should return cordova-firefoxos project www location using www_dir', function() {
             expect(firefoxos.www_dir(path.sep)).toEqual(path.sep + 'www');
@@ -124,8 +127,6 @@ describe('firefoxos project handler', function() {
             shell.rm('-rf', temp);
         });
         describe('of <source-file> elements', function() {
-require('../../plugman').on('verbose', console.log);
-require('../../plugman').on('warn', console.log);
             it('should remove stuff by calling common.removeFile', function(done) {
                 var s = spyOn(common, 'removeFile');
                 install('firefoxos', temp, dummyplugin, plugins_dir, {})
