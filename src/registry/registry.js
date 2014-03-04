@@ -142,8 +142,8 @@ module.exports = {
     publish: function(args) {
         return initSettings()
         .then(function(settings) {
-            var p = manifest.generatePackageJsonFromPluginXml(args[0]);
-            p.then(function() {
+            return manifest.generatePackageJsonFromPluginXml(args[0])
+            .then(function() {
                 return Q.ninvoke(npm, 'load', settings);
             }).then(function() {
                 return Q.ninvoke(npm.commands, 'publish', args)
