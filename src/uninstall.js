@@ -143,9 +143,7 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
     var platformTag = plugin_et.find('./platform[@name="'+platform+'"]');
     www_dir = www_dir || handler.www_dir(project_dir);
     require('../plugman').emit('log', 'Uninstalling ' + plugin_id + ' from ' + platform);
-
-    console.log("in uninstall.js handleUninstall plugin_dir = " + plugin_dir);
-
+    
     var assets = plugin_et.findall('./asset');
     if (platformTag) {
         var sourceFiles = platformTag.findall('./source-file'),
