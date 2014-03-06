@@ -381,6 +381,6 @@ elif [[ $# == 1 ]] ; then
         exit 2
     fi
 else
-    echo "Error : No command recieved, exiting..."
+    echo "Error : No command received, exiting..."
     exit 2
 fi
