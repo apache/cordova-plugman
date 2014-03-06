@@ -10,7 +10,7 @@
     //NSString *body = [notification.userInfo objectForKey:@"body"];
     NSString *tag = [notification.userInfo objectForKey:@"tag"];
     
-    [(WebNotifications*)[self.viewController getCommandInstance:@"WebNotifications"] clickNofification:tag];
+    [(WebNotifications*)[self.viewController getCommandInstance:@"WebNotifications"] clickNotification:tag];
     
     application.applicationIconBadgeNumber = 0;
     application.scheduledLocalNotifications = [NSArray arrayWithArray:application.scheduledLocalNotifications]; // "hack" to clear seen notifications

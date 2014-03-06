@@ -96,7 +96,7 @@
     [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsInt:0] callbackId:command.callbackId];
 }
 
-- (void)clickNofification:(NSString*)tag {
+- (void)clickNotification:(NSString*)tag {
     NSString *jsCallBack;
     
     jsCallBack = [NSString stringWithFormat:@"window.Notification.callOnclickByTag('%@')", tag];

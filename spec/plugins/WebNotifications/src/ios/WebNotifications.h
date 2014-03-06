@@ -30,6 +30,6 @@
 - (void)createNotification:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 - (void)closeNotification:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 
-- (void)clickNofification:(NSString*)tag;
+- (void)clickNotification:(NSString*)tag;
 
 @end
