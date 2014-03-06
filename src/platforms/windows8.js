@@ -20,6 +20,7 @@
 var common = require('./common'),
     path = require('path'),
     glob = require('glob'),
+    shell = require('shelljs'),
     fs = require('fs'),
     w8jsproj = require('../util/w8jsproj'),
     xml_helpers = require('../util/xml-helpers');
@@ -93,27 +94,41 @@ module.exports = {
 
             var src = el.attrib['src'];
             var dest = src; // if !isCustom, we will just add a reference to the file in place
-            var isCustom = el.attrib.custom == "true";
-            if(isCustom) {
+            // technically it is not possible to get here without isCustom == true -jm
+            // var isCustom = el.attrib.custom == "true";
+            var type = el.attrib["type"];
+
+            if(type == "projectReference") {
+                project_file.addProjectReference(path.join(plugin_dir,src));
+            }
+            else {
+                // if(isCustom) {}
                 dest = path.join('plugins', plugin_id, path.basename(src));
                 common.copyFile(plugin_dir, src, project_dir, dest);
+                project_file.addReference(dest,src);
             }
-
-            project_file.addReference(dest,src);
 
         },
         uninstall:function(el, project_dir, plugin_id, project_file) {
             require('../../plugman').emit('verbose', 'windows8 framework uninstall :: ' + plugin_id  );
 
             var src = el.attrib['src'];
-            var isCustom = el.attrib.custom == "true";
+            // technically it is not possible to get here without isCustom == true -jm
+            // var isCustom = el.attrib.custom == "true"; 
+            var type = el.attrib["type"];
+            // unfortunately we have to generate the plugin_dir path because it is not passed to uninstall
+            var plugin_dir = path.join(project_dir,"cordova/plugins",plugin_id,src);
 
-            if(isCustom) {
-                var dest = path.join('plugins', plugin_id);//, path.basename(src));
-                common.removeFile(project_dir, dest);
+            if(type == "projectReference") {
+                project_file.removeProjectReference(plugin_dir);
             }
-
-            project_file.removeReference(src);
+            else {
+                // if(isCustom) {  }  
+                var targetPath = path.join('plugins', plugin_id);
+                common.removeFile(project_dir, targetPath);
+                project_file.removeReference(src);
+            }
         }
+
     }
 };
