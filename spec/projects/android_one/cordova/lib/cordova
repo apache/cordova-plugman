@@ -299,8 +299,8 @@ function run {
                 wait_for_emulator
                 install_emulator
             else
-                # TODO : look for emulator images and start one if it's availible
-                echo "Error : there are no availible devices or emulators to deploy to."
+                # TODO : look for emulator images and start one if it's available
+                echo "Error : there are no available devices or emulators to deploy to."
                 echo " create an emulator or connect your device to run this command."
                 echo "If you would like to create an emulator follow the instructions"
                 echo " provided here : http://developer.android.com/tools/devices/index.html"
