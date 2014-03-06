@@ -18,7 +18,7 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
     options.subdir = options.subdir || '.';
     options.searchpath = options.searchpath || [];
     if ( typeof options.searchpath === 'string' ) {
-        options.searchpath = [ options.searchpath ];
+        options.searchpath = options.searchpath.split(path.delimiter);
     }
 
     // clone from git repository
