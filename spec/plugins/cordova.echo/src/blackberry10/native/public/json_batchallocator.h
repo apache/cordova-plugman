@@ -111,7 +111,7 @@ private:
 
    BatchInfo *batches_;
    BatchInfo *currentBatch_;
-   /// Head of a single linked list within the allocated space of freeed object
+   /// Head of a single linked list within the allocated space of freed object
    AllocatedType *freeHead_;
    unsigned int objectsPerPage_;
 };
