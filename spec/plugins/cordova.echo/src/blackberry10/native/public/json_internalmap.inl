@@ -361,7 +361,7 @@ ValueInternalMap::doActualRemove( ValueInternalLink *link,
 {
    // find last item of the bucket and swap it with the 'removed' one.
    // set removed items flags to 'available'.
-   // if last page only contains 'available' items, then desallocate it (it's empty)
+   // if last page only contains 'available' items, then deallocate it (it's empty)
    ValueInternalLink *&lastLink = getLastLinkInBucket( index );
    BucketIndex lastItemIndex = 1; // a link can never be empty, so start at 1
    for ( ;   

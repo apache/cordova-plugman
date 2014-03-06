@@ -228,7 +228,7 @@ jsproj.prototype = {
         fs.writeFileSync(solutionPath,solText,{encoding:"utf8"});
 
         // select first ItemsGroups with a ChildNode ProjectReference
-        // ideally select all, and look for @attib 'Include'= projectFullPath
+        // ideally select all, and look for @attrib 'Include'= projectFullPath
         var projectRefNodesPar = this.xml.find("ItemGroup/ProjectReference[@Include='" + relative_path + "']/..");
         if(projectRefNodesPar) {
             this.xml.getroot().remove(0, projectRefNodesPar);

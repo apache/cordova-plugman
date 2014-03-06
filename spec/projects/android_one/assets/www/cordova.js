@@ -881,7 +881,7 @@ function hookOnlineApis() {
     }
     // The network module takes care of firing online and offline events.
     // It currently fires them only on document though, so we bridge them
-    // to window here (while first listening for exec()-releated online/offline
+    // to window here (while first listening for exec()-related online/offline
     // events).
     window.addEventListener('online', pollOnce, false);
     window.addEventListener('offline', pollOnce, false);
@@ -5469,7 +5469,7 @@ getLocaleName:function(successCB, failureCB) {
 * successCB callback with a properties object as a parameter. If there is an error
 * formatting the date, then the errorCB callback is invoked.
 *
-* The defaults are: formatLenght="short" and selector="date and time"
+* The defaults are: formatLength="short" and selector="date and time"
 *
 * @param {Date} date
 * @param {Function} successCB
@@ -6166,7 +6166,7 @@ var exec = require('cordova/exec'),
     utils = require('cordova/utils');
 
 // Link the onLine property with the Cordova-supplied network info.
-// This works because we clobber the naviagtor object with our own
+// This works because we clobber the navigator object with our own
 // object in bootstrap.js.
 if (typeof navigator != 'undefined') {
     utils.defineGetter(navigator, 'onLine', function() {

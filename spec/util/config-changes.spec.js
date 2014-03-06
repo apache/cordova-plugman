@@ -143,7 +143,7 @@ describe('config-changes module', function() {
             beforeEach(function() {
                 shell.cp('-rf', android_two_project, temp);
             });
-            it('should return a flat config heirarchy for simple, one-off config changes', function() {
+            it('should return a flat config hierarchy for simple, one-off config changes', function() {
                 var xml;
                 var munger = new configChanges.PlatformMunger('android', temp, 'unused');
                 var munge = munger.generate_plugin_config_munge(dummyplugin, {});
@@ -184,7 +184,7 @@ describe('config-changes module', function() {
                 expect(configChanges.get_munge_change(munge, 'AndroidManifest.xml', '/manifest', '<!--library-->')).not.toBeDefined();
                 expect(configChanges.get_munge_change(munge, 'AndroidManifest.xml', '/manifest', '<!-- GCM connects to Google Services. -->')).not.toBeDefined();
             });
-            it('should increment config heirarchy leaves if dfferent config-file elements target the same file + selector + xml', function() {
+            it('should increment config hierarchy leaves if different config-file elements target the same file + selector + xml', function() {
                 var munger = new configChanges.PlatformMunger('android', temp, 'unused');
                 var munge = munger.generate_plugin_config_munge(configplugin, {});
                 expect(configChanges.get_munge_change(munge, 'res/xml/config.xml', '/widget', '<poop />').count).toEqual(2);

@@ -4750,7 +4750,7 @@ getLocaleName:function(successCB, failureCB) {
 * successCB callback with a properties object as a parameter. If there is an error
 * formatting the date, then the errorCB callback is invoked.
 *
-* The defaults are: formatLenght="short" and selector="date and time"
+* The defaults are: formatLength="short" and selector="date and time"
 *
 * @param {Date} date
 * @param {Function} successCB
@@ -5335,7 +5335,7 @@ var exec = require('cordova/exec'),
     utils = require('cordova/utils');
 
 // Link the onLine property with the Cordova-supplied network info.
-// This works because we clobber the naviagtor object with our own
+// This works because we clobber the navigator object with our own
 // object in bootstrap.js.
 if (typeof navigator != 'undefined') {
     utils.defineGetter(navigator, 'onLine', function() {
@@ -6118,7 +6118,7 @@ module.exports = {
         cameraCaptureUI.videoSettings.format = Windows.Media.Capture.CameraCaptureUIVideoFormat.mp4;
         cameraCaptureUI.videoSettings.maxDurationInSeconds = videoOptions.duration;
         cameraCaptureUI.captureFileAsync(Windows.Media.Capture.CameraCaptureUIMode.video).then(function (file) {
-            file.moveAsync(Windows.Storage.KnownFolders.videosLibrary, "cameraCaptureVedio.mp4", Windows.Storage.NameCollisionOption.generateUniqueName).then(function () {
+            file.moveAsync(Windows.Storage.KnownFolders.videosLibrary, "cameraCaptureVideo.mp4", Windows.Storage.NameCollisionOption.generateUniqueName).then(function () {
                 file.getBasicPropertiesAsync().then(function (basicProperties) {
                     var results = [];
                     results.push(new MediaFile(file.name, file.path, file.contentType, basicProperties.dateModified, basicProperties.size));
