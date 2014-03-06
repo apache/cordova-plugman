@@ -105,7 +105,7 @@ describe('common platform handler', function() {
             shell.rm('-rf', java_dir);
         });
 
-        it('should delete empty directories after removing source code in a java src path heirarchy', function(){
+        it('should delete empty directories after removing source code in a java src path hierarchy', function(){
             shell.mkdir('-p', java_dir);
             fs.writeFileSync(java_file, 'contents', 'utf-8');
 

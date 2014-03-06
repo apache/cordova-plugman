@@ -182,7 +182,7 @@ Writer::~Writer()
 // //////////////////////////////////////////////////////////////////
 
 FastWriter::FastWriter()
-   : yamlCompatiblityEnabled_( false )
+   : yamlCompatibilityEnabled_( false )
 {
 }
 
@@ -190,7 +190,7 @@ FastWriter::FastWriter()
 void 
 FastWriter::enableYAMLCompatibility()
 {
-   yamlCompatiblityEnabled_ = true;
+   yamlCompatibilityEnabled_ = true;
 }
 
 
@@ -252,7 +252,7 @@ FastWriter::writeValue( const Value &value )
             if ( it != members.begin() )
                document_ += ",";
             document_ += valueToQuotedString( name.c_str() );
-            document_ += yamlCompatiblityEnabled_ ? ": " 
+            document_ += yamlCompatibilityEnabled_ ? ": " 
                                                   : ":";
             writeValue( value[name] );
          }

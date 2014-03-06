@@ -158,7 +158,7 @@ char* g_str2global( const string& strRetVal )
 
     else
     {
-        // To minimaize the number of memory reallocations, the assumption
+        // To minimize the number of memory reallocations, the assumption
         // is that in most times this will be the case
         delete [] g_pszRetVal;
         g_pszRetVal = new char[ nMAXSIZE ];

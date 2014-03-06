@@ -144,7 +144,7 @@ describe('install', function() {
                 expect(spy).toHaveBeenCalledWith('18.0.0','>=18');
             });
         });
-        it('should check plugmans version', function() {
+        it('should check plugman\'s version', function() {
             var spy = spyOn(semver, 'satisfies').andReturn(true);
             runs(function() {
                 installPromise(install('android', temp, engineplugin, plugins_dir, {}));

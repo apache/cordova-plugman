@@ -96,7 +96,7 @@ function cleanVersionOutput(version, name){
         }else{
             out = out.substr(0, dev_index-1);
         }
-        require('../plugman').emit('verbose', name+' has been detected as using a development branch. Attemping to install anyways.');
+        require('../plugman').emit('verbose', name+' has been detected as using a development branch. Attempting to install anyways.');
     }
 
     // add extra period/digits to conform to semver - some version scripts will output

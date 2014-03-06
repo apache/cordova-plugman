@@ -13,7 +13,7 @@ var amazon_fireos = require('../../src/platforms/amazon-fireos'),
     dummyplugin = path.join(__dirname, '..', 'plugins', 'DummyPlugin'),
     faultyplugin = path.join(__dirname, '..', 'plugins', 'FaultyPlugin'),
     variableplugin = path.join(__dirname, '..', 'plugins', 'VariablePlugin'),
-    amzon_fireos_one_project = path.join(__dirname, '..', 'projects', 'android_one', '*'),
+    amazon_fireos_one_project = path.join(__dirname, '..', 'projects', 'android_one', '*'),
     amazon_fireos_two_project = path.join(__dirname, '..', 'projects', 'android_two', '*');
 
 var xml_path     = path.join(dummyplugin, 'plugin.xml')

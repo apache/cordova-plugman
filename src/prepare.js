@@ -73,7 +73,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
     plugman.emit('verbose', 'Processing configuration changes for plugins.');
     config_changes.process(plugins_dir, project_dir, platform);
 
-    // for windows phone plaform we need to add all www resources to the .csproj file
+    // for windows phone platform we need to add all www resources to the .csproj file
     // first we need to remove them all to prevent duplicates
     var wp_csproj;
     if(platform == 'wp7' || platform == 'wp8') {
