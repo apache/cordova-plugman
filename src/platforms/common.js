@@ -20,7 +20,7 @@ module.exports = {
         dest = module.exports.resolveTargetPath(project_dir, dest);
         shell.mkdir('-p', path.dirname(dest));
 
-        // XXX sheljs decides to create a directory when -R|-r is used which sucks. http://goo.gl/nbsjq
+        // XXX shelljs decides to create a directory when -R|-r is used which sucks. http://goo.gl/nbsjq
         if(fs.statSync(src).isDirectory()) {
             shell.cp('-R', src+'/*', dest);
         } else {
