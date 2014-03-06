@@ -74,7 +74,7 @@ module.exports = {
             var plugin_id = xml.getroot().attrib.id;
 
             // TODO: what if a plugin depended on different subdirectories of the same plugin? this would fail.
-            // should probably copy over entire plugin git repo contents into plugins_dir and handle subdir seperately during install.
+            // should probably copy over entire plugin git repo contents into plugins_dir and handle subdir separately during install.
             var plugin_dir = path.join(plugins_dir, plugin_id);
             require('../../plugman').emit('verbose', 'Copying fetched plugin over "' + plugin_dir + '"...');
             shell.cp('-R', path.join(tmp_dir, '*'), plugin_dir);
