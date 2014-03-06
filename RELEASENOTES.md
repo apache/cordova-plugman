@@ -84,7 +84,7 @@
 * Overhaul dependency uninstallation
 * [CB-4872] - adding in custom semver check for project
 * [CB-4872] - updated paths to version files
-* Update action-stack to avoid static platform detection + test if parseProjectFile is present instea
+* Update action-stack to avoid static platform detection + test if parseProjectFile is present instead
 * Update spec to match new ios parse method name
 * Update references to old ios parse method
 * Rename parse method and add a write method to result + parseIOSProjectFiles --> parseProjectFile +
