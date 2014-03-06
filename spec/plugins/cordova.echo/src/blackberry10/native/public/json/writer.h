@@ -41,7 +41,7 @@ namespace Json {
       void writeValue( const Value &value );
 
       std::string document_;
-      bool yamlCompatiblityEnabled_;
+      bool yamlCompatibilityEnabled_;
    };
 
    /** \brief Writes a Value in <a HREF="http://www.json.org">JSON</a> format in a human friendly way.
