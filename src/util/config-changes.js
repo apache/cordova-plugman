@@ -497,7 +497,7 @@ function ConfigFile_load() {
         // plist file
         self.type = 'plist';
         // TODO: isBinaryPlist() reads the file and then parse re-reads it again.
-        //       We always write out text plist, not binaray.
+        //       We always write out text plist, not binary.
         //       Do we still need to support binary plist?
         //       If yes, use plist.parseStringSync() and read the file once.
         self.plist_module = (isBinaryPlist(filepath) ? bplist : plist);
