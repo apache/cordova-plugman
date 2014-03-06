@@ -6118,7 +6118,7 @@ module.exports = {
         cameraCaptureUI.videoSettings.format = Windows.Media.Capture.CameraCaptureUIVideoFormat.mp4;
         cameraCaptureUI.videoSettings.maxDurationInSeconds = videoOptions.duration;
         cameraCaptureUI.captureFileAsync(Windows.Media.Capture.CameraCaptureUIMode.video).then(function (file) {
-            file.moveAsync(Windows.Storage.KnownFolders.videosLibrary, "cameraCaptureVedio.mp4", Windows.Storage.NameCollisionOption.generateUniqueName).then(function () {
+            file.moveAsync(Windows.Storage.KnownFolders.videosLibrary, "cameraCaptureVideo.mp4", Windows.Storage.NameCollisionOption.generateUniqueName).then(function () {
                 file.getBasicPropertiesAsync().then(function (basicProperties) {
                     var results = [];
                     results.push(new MediaFile(file.name, file.path, file.contentType, basicProperties.dateModified, basicProperties.size));
