@@ -102,10 +102,10 @@
 * [CB-4837]: Version 0.12.0. Release notes updated.
 * Rename CHANGELOG.md -> RELEASENOTES.md
 * CB-4492 tracking which of cli or plugman is used to fetch from registry
-* removed unncessary console.logs
+* removed unnecessary console.logs
 * add full ff support to plugman
 * add firefoxos
-* removed unncessary console.logs
+* removed unnecessary console.logs
 * add full ff support to plugman
 * add firefoxos
 * Fix tests broken by lazy module requiring.
