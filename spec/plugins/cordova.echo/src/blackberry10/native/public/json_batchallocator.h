@@ -49,7 +49,7 @@ public:
    }
 
    /// allocate space for an array of objectPerAllocation object.
-   /// @warning it is the responsability of the caller to call objects constructors.
+   /// @warning it is the responsibility of the caller to call objects constructors.
    AllocatedType *allocate()
    {
       if ( freeHead_ ) // returns node from free list.
@@ -77,7 +77,7 @@ public:
    }
 
    /// Release the object.
-   /// @warning it is the responsability of the caller to actually destruct the object.
+   /// @warning it is the responsibility of the caller to actually destruct the object.
    void release( AllocatedType *object )
    {
       assert( object != 0 );
