@@ -479,7 +479,7 @@ namespace Json {
     * - ".name1.name2.name3"
     * - ".[0][1][2].name1[3]"
     * - ".%" => member name is provided as parameter
-    * - ".[%]" => index is provied as parameter
+    * - ".[%]" => index is provided as parameter
     */
    class Path
    {
