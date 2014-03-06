@@ -142,7 +142,7 @@ Adds a user account to the registry. Function takes no arguments other than a an
 
 ### `publish` method
 
-Publishes plugins to the registry. `plugin_paths` is an array of plugin paths to publish to the reigstry.
+Publishes plugins to the registry. `plugin_paths` is an array of plugin paths to publish to the registry.
 
     module.exports = function(plugin_paths, callback) {
 
