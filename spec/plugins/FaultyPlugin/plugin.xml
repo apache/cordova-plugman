@@ -127,7 +127,7 @@
 
         <source-file src="src/wp7/FaultyPlugin.cs" />
 
-        <!-- this desn't exist -->
+        <!-- this doesn't exist -->
         <source-file src="src/wp7/NotHere.cs" />
     </platform>
 
@@ -141,7 +141,7 @@
 
         <source-file src="src/wp8/FaultyPlugin.cs" />
 
-        <!-- this desn't exist -->
+        <!-- this doesn't exist -->
         <source-file src="src/wp8/NotHere.cs" />
     </platform>
 
