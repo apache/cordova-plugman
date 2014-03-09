@@ -37,9 +37,8 @@ module.exports = {
     "source-file":{
         install:function(source_el, plugin_dir, project_dir, plugin_id) {
             var dest = path.join(source_el.attrib['target-dir'], path.basename(source_el.attrib['src']));
-            var target_path = common.resolveTargetPath(project_dir, dest);
-            if (fs.existsSync(target_path)) throw new Error('"' + target_path + '" already exists!');
-            common.copyFile(plugin_dir, source_el.attrib['src'], project_dir, dest);
+
+            common.copyNewFile(plugin_dir, source_el.attrib['src'], project_dir, dest);
         },
         uninstall:function(source_el, project_dir, plugin_id) {
             var dest = path.join(source_el.attrib['target-dir'], path.basename(source_el.attrib['src']));
