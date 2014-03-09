@@ -411,17 +411,14 @@ describe('end', function() {
                          
     it('end', function() {
         done = false;
-        var finish = function(err){
+
+        promise.fin(function(err){
             if(err)
                 events.emit('error', err);
 
             shell.rm('-rf', project);
             done = true;	
-        }
-
-        promise.then( 
-
-        ).fin(finish);
+        });
 
         waitsFor(function() { return done; }, 'promise never resolved', 500);
     });
