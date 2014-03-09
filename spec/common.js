@@ -29,15 +29,34 @@ if(opt.debug) {
         plugman.on('log', console.log);
 }
 
-module.exports = {
-	spy: { 
-		getInstall: function(emitSpy){
-			var install = [], i;
-			for(i in emitSpy.argsForCall) {
-				if(emitSpy.argsForCall[i][1].substr(0, 13) === 'Install start')
-					install.push(emitSpy.argsForCall[i][1]);
-			}
-			return install;
-		}
-	}
+module.exports = common = {
+    spy: { 
+        getInstall: function(emitSpy){
+            return common.spy.startsWith(emitSpy, 'Install start');
+        },
+
+        getDeleted: function(emitSpy){
+            return common.spy.startsWith(emitSpy, 'Deleted');
+        },
+
+        startsWith: function(emitSpy, string)
+        {
+            var match = [], i;
+            for(i in emitSpy.argsForCall) {
+                if(emitSpy.argsForCall[i][1].substr(0, string.length) === string)
+                    match.push(emitSpy.argsForCall[i][1]);
+            }
+            return match;
+        },
+
+        contains: function(emitSpy, string)
+        {
+            var match = [], i;
+            for(i in emitSpy.argsForCall) {
+                if(emitSpy.argsForCall[i][1].indexOf(string) >= 0)
+                    match.push(emitSpy.argsForCall[i][1]);
+            }
+            return match;
+        }
+    }
 };

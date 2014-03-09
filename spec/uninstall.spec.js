@@ -13,9 +13,12 @@ var uninstall = require('../src/uninstall'),
     done    = false,
     srcProject = path.join(spec, 'projects', 'android_uninstall'),
     project = path.join(spec, 'projects', 'android_uninstall.test'),
+    project2 = path.join(spec, 'projects', 'android_uninstall.test2'),
 
     plugins_dir = path.join(spec, 'plugins'),
     plugins_install_dir = path.join(project, 'cordova', 'plugins'),	
+    plugins_install_dir2 = path.join(project2, 'cordova', 'plugins'),	
+
     plugins = {
         'DummyPlugin' : path.join(plugins_dir, 'DummyPlugin'),
         'A' : path.join(plugins_dir, 'dependencies', 'A'),
@@ -32,7 +35,9 @@ describe('start', function() {
 
     it('start', function() {
         shell.rm('-rf', project);
+        shell.rm('-rf', project2);
         shell.cp('-R', path.join(srcProject, '*'), project);
+        shell.cp('-R', path.join(srcProject, '*'), project2);
 
         done = false;
         promise = Q()
@@ -40,6 +45,10 @@ describe('start', function() {
             function(){ return install('android', project, plugins['DummyPlugin']) }
         ).then(
             function(){ return install('android', project, plugins['A']) }
+        ).then(
+            function(){ return install('android', project2, plugins['C']) }
+        ).then(
+            function(){ return install('android', project2, plugins['A']) }
         ).then(
             function(){ done = true; }
         );
@@ -134,28 +143,67 @@ describe('uninstallPlatform', function() {
 });
 
 describe('uninstallPlugin', function() {							 
-    var rm, fsWrite, rmstack = [];
+    var rm, fsWrite, rmstack = [], emit;
 
     beforeEach(function() {
         fsWrite = spyOn(fs, 'writeFileSync').andReturn(true);
         rm = spyOn(shell, 'rm').andCallFake(function(f,p) { rmstack.push(p); return true});
         rmstack = [];
+        emit = spyOn(events, 'emit');
         done = false;
     });
     describe('with dependencies', function() {
 
-        it('should delete all dangling plugins', function() {
-                                              
+        it('should delete all dependent plugins', function() {                              
             runs(function() {
                 uninstallPromise( uninstall.uninstallPlugin('A', plugins_install_dir) );
             });
             waitsFor(function() { return done; }, 'promise never resolved', 200);
             runs(function() {
-                expect(done).toEqual(true);
-                expect(rmstack[0]).toBe( path.join(plugins_install_dir, 'C') );
-                expect(rmstack[1]).toBe( path.join(plugins_install_dir, 'D') );
-                expect(rmstack[2]).toBe( path.join(plugins_install_dir, 'A') );
-                expect(rm.calls.length).toBe(3);
+                var del = common.spy.getDeleted(emit);
+
+                expect(del).toEqual([
+                    'Deleted "C"',
+                    'Deleted "D"',
+                    'Deleted "A"'
+                ]);
+            });
+        });
+
+        it("should fail if plugin is a required dependency", function() {  
+            runs(function() {
+                uninstallPromise( uninstall.uninstallPlugin('C', plugins_install_dir) );
+            });
+            waitsFor(function() { return done; }, 'promise never resolved', 200);
+            runs(function() {
+                expect(done.message).toBe('"C" is required by (A) and cannot be removed (hint: use -f or --force)');
+            });
+        });
+
+        it("allow forcefully removing a plugin", function() {  
+            runs(function() {
+                uninstallPromise( uninstall.uninstallPlugin('C', plugins_install_dir, {force: true}) );
+            });
+            waitsFor(function() { return done; }, 'promise never resolved', 200);
+            runs(function() {
+                expect(done).toBe(true);
+                var del = common.spy.getDeleted(emit);
+                expect(del).toEqual(['Deleted "C"']);
+            });
+        });		
+
+        it("never remove top level plugins if they are a dependency", function() {  
+            runs(function() {
+                uninstallPromise( uninstall.uninstallPlugin('A', plugins_install_dir2) );
+            });
+            waitsFor(function() { return done; }, 'promise never resolved', 200);
+            runs(function() {
+                var del = common.spy.getDeleted(emit);
+
+                expect(del).toEqual([
+                    'Deleted "D"',
+                    'Deleted "A"'
+                ]);
             });
         });
     });
@@ -208,13 +256,6 @@ describe('end', function() {
                          
     it('end', function() {
         done = false;
-        var finish = function(err){
-            if(err)
-                plugman.emit('error', err);
-
-            shell.rm('-rf', project);
-            done = true;	
-        }
 
         promise.then( 
             function(){ 
@@ -234,7 +275,14 @@ describe('end', function() {
                 // dependencies on C,D ... should this only work with --recursive? prompt user..?
                 return uninstall('android', project, plugins['A']) 
             }
-        ).fin(finish);
+        ).fin(function(err){
+            if(err)
+                plugman.emit('error', err);
+
+            shell.rm('-rf', project);
+            shell.rm('-rf', project2);
+            done = true;	
+        });
 
         waitsFor(function() { return done; }, 'promise never resolved', 500);
     });
