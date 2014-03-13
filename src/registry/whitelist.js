@@ -16,5 +16,6 @@ module.exports = [
     'org.apache.cordova.console',
     'org.apache.cordova.camera',
     'org.apache.cordova.device-motion',
-    'org.apache.cordova.battery-status'
+    'org.apache.cordova.battery-status',
+    'org.apache.cordova.statusbar'
 ]
