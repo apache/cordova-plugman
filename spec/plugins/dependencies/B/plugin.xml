@@ -25,8 +25,8 @@
 
     <name>Plugin B</name>
 
-    <dependency id="D" url="." subdir="spec/plugins/dependencies/D"/>
-    <dependency id="E" url="." subdir="spec/plugins/dependencies/subdir/E"/>
+    <dependency id="D" url="." subdir="D"/>
+    <dependency id="E" url="." subdir="subdir/E"/>
 
     <asset src="www/plugin-b.js" target="plugin-b.js" />
 

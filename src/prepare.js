@@ -154,7 +154,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
 
         // Copy www assets described in <asset> tags.
         assets = assets || [];
-        assets.forEach(function(asset) {					
+        assets.forEach(function(asset) {
             common.asset.install(asset, pluginDir, wwwDir);
         });
 

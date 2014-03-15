@@ -13,13 +13,13 @@ var install = require('../src/install'),
     child_process = require('child_process'),
     semver  = require('semver'),
     Q = require('q'),
-    spec    = __dirname,	
+    spec    = __dirname,
     done    = false,
     srcProject = path.join(spec, 'projects', 'android_install'),
     project = path.join(os.tmpdir(), 'plugman-test', 'android_install'),
 
     plugins_dir = path.join(spec, 'plugins'),
-    plugins_install_dir = path.join(project, 'cordova', 'plugins'),	
+    plugins_install_dir = path.join(project, 'cordova', 'plugins'),
     plugins = {
         'DummyPlugin' : path.join(plugins_dir, 'DummyPlugin'),
         'EnginePlugin' : path.join(plugins_dir, 'EnginePlugin'),
@@ -27,6 +27,7 @@ var install = require('../src/install'),
         'ChildBrowser' : path.join(plugins_dir, 'ChildBrowser'),
         'VariablePlugin' : path.join(plugins_dir, 'VariablePlugin'),
         'A' : path.join(plugins_dir, 'dependencies', 'A'),
+        'B' : path.join(plugins_dir, 'dependencies', 'B'),
         'C' : path.join(plugins_dir, 'dependencies', 'C'),
         'F' : path.join(plugins_dir, 'dependencies', 'F'),
         'G' : path.join(plugins_dir, 'dependencies', 'G')
@@ -58,12 +59,12 @@ var fake = {
             if(id == plugins['A'])
                 return Q(id); // full path to plugin
 
-            return Q( path.join(plugins_dir, 'dependencies', id) ); 
+            return Q( path.join(plugins_dir, 'dependencies', id) );
         }
     }
 }
 
-describe('start', function() {	
+describe('start', function() {
     var prepare, config_queue_add, proc, actions_push, ca, emit;
 
     beforeEach(function() {
@@ -114,7 +115,7 @@ describe('start', function() {
                 events.emit("verbose", "***** DONE START *****");
             }
         );
-        waitsFor(function() { return done; }, 'promise never resolved', 500);		
+        waitsFor(function() { return done; }, 'promise never resolved', 500);
     });
 });
 
@@ -172,11 +173,12 @@ describe('install', function() {
             });
         });
 
-        it('should call the config-changes module\'s add_installed_plugin_to_prepare_queue method after processing an install', function() {																												
+        it('should call the config-changes module\'s add_installed_plugin_to_prepare_queue method after processing an install', function() {
            expect(results['config_add']).toEqual([plugins_install_dir, dummy_id, 'android', {}, true]);
         });
-        it('should queue up actions as appropriate for that plugin and call process on the action stack', 			
-           function() {																											 				expect(results['actions_callCount']).toEqual(3);
+        it('should queue up actions as appropriate for that plugin and call process on the action stack',
+           function() {
+                expect(results['actions_callCount']).toEqual(3);
                 expect(results['actions_create']).toEqual([jasmine.any(Function), [jasmine.any(Object), path.join(plugins_install_dir, dummy_id), project, dummy_id], jasmine.any(Function), [jasmine.any(Object), project, dummy_id]]);
         });
 
@@ -288,14 +290,14 @@ describe('install', function() {
                 exec.andCallFake(function(cmd, cb) {
                     cb(null, '9.0.0\n');
                 });
-            });											   
-   
+            });
+
             it('should install any dependent plugins if missing', function() {
                 runs(function() {
                     installPromise( install('android', project, plugins['A']) );
                 });
                 waitsFor(function() { return done; }, 'install promise never resolved', 200);
-                runs(function() {							  
+                runs(function() {
                     // Look for 'Installing plugin ...' in events
                     var install = common.spy.getInstall(emit);
 
@@ -330,10 +332,10 @@ describe('install', function() {
                 runs(function () {
                     installPromise(install('android', project, plugins['F']));
                 });
-                waitsFor(function () { return done; }, 'install promise never resolved', 500);
+                waitsFor(function () { return done; }, 'install promise never resolved', 200);
                 runs(function () {
                     var install = common.spy.getInstall(emit);
-    
+
                     expect(install).toEqual([
                         'Install start for "C" on android.',
                         'Install start for "D" on android.',
@@ -348,13 +350,58 @@ describe('install', function() {
                 runs(function () {
                     installPromise( install('android', project, plugins['G']) );
                 });
-                waitsFor(function () { return done; }, 'install promise never resolved', 500);
+                waitsFor(function () { return done; }, 'install promise never resolved', 200);
                 runs(function () {
                     var install = common.spy.getInstall(emit);
        
                     expect(done.message).toEqual('Cyclic dependency from G to H');
                 });
-            });				
+            });
+
+            it('install subdir relative to top level plugin if no fetch meta', function() {
+                runs(function () {
+                    installPromise(install('android', project, plugins['B']));
+                });
+                waitsFor(function () { return done; }, 'install promise never resolved', 200);
+                runs(function () {
+                    var install = common.spy.getInstall(emit);
+
+                    expect(install).toEqual([
+                        'Install start for "D" on android.',
+                        'Install start for "E" on android.',
+                        'Install start for "B" on android.'
+                    ]);
+                });
+            });
+
+            it('install uses meta data (if available) of top level plugin source', function() {
+                // Fake metadata so plugin 'B' appears from 'meta/B'
+                var meta = require('../src/util/metadata');
+                spyOn(meta, 'get_fetch_metadata').andCallFake(function(){
+                    return {
+                        source: {type: 'dir', url: path.join(plugins['B'], '..', 'meta')}
+                    };
+                });
+
+                runs(function () {
+                    installPromise(install('android', project, plugins['B']));
+                });
+                waitsFor(function () { return done; }, 'install promise never resolved', 200);
+                runs(function () {
+                    var install = common.spy.getInstall(emit);
+
+                    expect(install).toEqual([
+                        'Install start for "D" on android.',
+                        'Install start for "E" on android.',
+                        'Install start for "B" on android.'
+                    ]);
+
+                    var copy = common.spy.startsWith(emit, "Copying from");
+                    expect(copy.length).toBe(3);
+                    expect(copy[0].indexOf(path.normalize('meta/D')) > 0).toBe(true);
+                    expect(copy[1].indexOf(path.normalize('meta/subdir/E')) > 0).toBe(true);
+                });
+            });
         });
 
     });
@@ -417,7 +464,7 @@ describe('end', function() {
                 events.emit('error', err);
 
             shell.rm('-rf', project);
-            done = true;	
+            done = true;
         });
 
         waitsFor(function() { return done; }, 'promise never resolved', 500);

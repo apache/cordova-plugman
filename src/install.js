@@ -137,7 +137,7 @@ function callEngineScripts(engines) {
         engines.map(function(engine){
             // CB-5192; on Windows scriptSrc doesn't have file extension so we shouldn't check whether the script exists
 
-            var scriptPath = engine.scriptSrc ? '"' + engine.scriptSrc + '"' : null;		
+            var scriptPath = engine.scriptSrc ? '"' + engine.scriptSrc + '"' : null;
 
             if(scriptPath && (isWindows || fs.existsSync(engine.scriptSrc)) ) {
 
@@ -236,8 +236,8 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
       , filtered_variables = {};
     var name         = plugin_et.findall('name').text;
     var plugin_id    = plugin_et.getroot().attrib['id'];
-    options = options || {};
 
+    options = options || {};
     options.graph = options.graph || new dep_graph();
 
     if (isPluginInstalled(plugins_dir, platform, plugin_id)) {
@@ -313,7 +313,7 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
 function installDependencies(install, dependencies, options) {
     events.emit('verbose', 'Dependencies detected, iterating through them...');
 
-    var top_plugins = path.join(install.top_plugin_dir, '..');
+    var top_plugins = path.join(options.plugin_src_dir || install.top_plugin_dir, '..')
 
     // Add directory of top-level plugin to search path
     options.searchpath = options.searchpath || [];
@@ -330,13 +330,13 @@ function installDependencies(install, dependencies, options) {
             function() {   
                 var dep = {
                     id: depXml.attrib.id,
-                    subdir: depXml.attrib.subdir,
+                    subdir: depXml.attrib.subdir || '',
                     url: depXml.attrib.url || '',
                     git_ref: depXml.attrib.commit
                 }
 
-                if (dep.subdir) {
-                    dep.subdir = path.join(dep.subdir.split('/'));
+                if (dep.subdir.length) {
+                    dep.subdir = path.normalize(dep.subdir);
                 }
 
                 if (!dep.id) {
@@ -347,9 +347,9 @@ function installDependencies(install, dependencies, options) {
                 options.graph.add(install.top_plugin_id, dep.id);
                 options.graph.getChain(install.top_plugin_id);
 
-                return tryFetchDependency(dep, install)
+                return tryFetchDependency(dep, install, options)
                 .then( 
-                    function(url){						
+                    function(url){
                         dep.url = url;
                         return installDependency(dep, install, options);
                     }
@@ -360,7 +360,7 @@ function installDependencies(install, dependencies, options) {
     }, Q(true));
 }
 
-function tryFetchDependency(dep, install) {
+function tryFetchDependency(dep, install, options) {
 
     // Handle relative dependency paths by expanding and resolving them.
     // The easy case of relative paths is to have a URL of '.' and a different subdir.
@@ -371,7 +371,12 @@ function tryFetchDependency(dep, install) {
         // Look up the parent plugin's fetch metadata and determine the correct URL.
         var fetchdata = require('./util/metadata').get_fetch_metadata(install.top_plugin_dir);
         if (!fetchdata || !(fetchdata.source && fetchdata.source.type)) {
-            throw new Error('No fetch metadata found for plugin ' + install.top_plugin_id + '. Cannot install relative dependency --> ' + dep.id);
+
+            var relativePath = dep.subdir || dep.id;
+
+            events.emit('warn', 'No fetch metadata found for plugin ' + install.top_plugin_id + '. checking for ' + relativePath + ' in '+ options.searchpath.join(','));
+
+            return Q(relativePath);
         }
 
         // Now there are two cases here: local directory, and git URL.
@@ -399,11 +404,38 @@ function tryFetchDependency(dep, install) {
                 return Q(url);
             }).fail(function(error){
 //console.log("Failed to resolve url='.': " + error);
-                return Q(dep.url);	
+                return Q(dep.url);
             });
 
         } else if (fetchdata.source.type === 'git') {
             return Q(fetchdata.source.url);
+        } else if (fetchdata.source.type === 'dir') {
+
+            // Note: With fetch() independant from install()
+            // $md5 = md5(uri)
+            // Need a Hash(uri) --> $tmpDir/cordova-fetch/git-hostname.com-$md5/
+            // plugin[id].install.source --> searchpath that matches fetch uri
+
+            // mapping to a directory of OS containing fetched plugins
+            var tmpDir = fetchdata.source.url;
+            tmpDir = tmpDir.replace('$tmpDir', os.tmpdir());
+
+            var pluginSrc = '';
+            if(dep.subdir.length) {
+                // Plugin is relative to directory
+                pluginSrc = path.join(tmpDir, dep.subdir);
+            }
+
+            // Try searchpath in dir, if that fails re-fetch
+            if( !pluginSrc.length || !fs.existsSync(pluginSrc) ) {
+                pluginSrc = dep.id;
+
+                // Add search path
+                if( options.searchpath.indexOf(tmpDir) == -1 )
+                    options.searchpath.unshift(tmpDir); // place at top of search
+            }
+
+            return Q( pluginSrc );
         }
     }
 
@@ -418,10 +450,10 @@ function tryFetchDependency(dep, install) {
 
     // CB-4770: registry fetching
     if(dep.url === undefined) {
-        dep.url = dep.plugin_id;							
-    }	
+        dep.url = dep.id;
+    }
 
-    return Q(dep.url);	
+    return Q(dep.url);
 }
 
 function installDependency(dep, install, options) {
@@ -552,7 +584,7 @@ function isAbsolutePath(path) {
 }
 
 function isRelativePath(path) {
-    return !isAbsolutePath();	
+    return !isAbsolutePath();
 }
 
 function readId(plugin_dir) {

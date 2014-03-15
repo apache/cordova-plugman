@@ -24,7 +24,7 @@
 
 <widget xmlns="http://www.w3.org/ns/widgets"
         xmlns:rim="http://www.blackberry.com/ns/widgets"
-	version="1.0.0.0" id="cordovaExample">
+  version="1.0.0.0" id="cordovaExample">
 
   <name>cordovaExample</name>
 
@@ -79,7 +79,7 @@
 
   <rim:loadingScreen backgroundColor="#CFCFCF"
                      foregroundImage="res/screen/blackberry/screen-225.png"
-		     onFirstLaunch="true">
+                     onFirstLaunch="true">
     <rim:transitionEffect type="fadeOut" />
   </rim:loadingScreen>
 
