@@ -20,41 +20,42 @@
 
 <plugin xmlns="http://cordova.apache.org/ns/plugins/1.0"
     xmlns:android="http://schemas.android.com/apk/res/android"
-    id="B"
+    id="D"
     version="0.6.0">
 
-    <name>Plugin B</name>
+    <name>Plugin D</name>
 
-    <dependency id="D" url="." subdir="D"/>
-    <dependency id="E" url="." subdir="subdir/E"/>
-
-    <asset src="www/plugin-b.js" target="plugin-b.js" />
+    <asset src="www/plugin-d.js" target="plugin-d.js" />
 
     <config-file target="config.xml" parent="/*">
         <access origin="build.phonegap.com" />
     </config-file>
 
+    <engines>
+        <engine name="cordova" version=">=1.0.0"/>
+    </engines>	
+	
     <!-- android -->
     <platform name="android">
         <config-file target="res/xml/config.xml" parent="plugins">
-            <plugin name="B"
-                value="com.phonegap.B.B"/>
+            <plugin name="D"
+                value="com.phonegap.D.D"/>
         </config-file>
 
-        <source-file src="src/android/B.java"
-                target-dir="src/com/phonegap/B" />
+        <source-file src="src/android/D.java"
+                target-dir="src/com/phonegap/D" />
     </platform>
 
-
+        
     <!-- ios -->
     <platform name="ios">
         <!-- CDV 2.5+ -->
         <config-file target="config.xml" parent="plugins">
-            <plugin name="B"
-                value="BPluginCommand"/>
+            <plugin name="D"
+                value="DPluginCommand"/>
         </config-file>
 
-        <header-file src="src/ios/BPluginCommand.h" />
-        <source-file src="src/ios/BPluginCommand.m"/>
+        <header-file src="src/ios/DPluginCommand.h" />
+        <source-file src="src/ios/DPluginCommand.m"/>
     </platform>
 </plugin>
