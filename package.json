@@ -33,7 +33,8 @@
     "tar": "0.1.x",
     "request": "2.22.0",
     "browserify": "3.2.0",
-    "through": "2.3.4"
+    "through": "2.3.4",
+    "cordova-js": "3.x.x"
   },
   "devDependencies": {
     "temp": "0.6.x",
