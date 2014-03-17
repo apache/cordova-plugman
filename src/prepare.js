@@ -19,20 +19,20 @@
 
 /* jshint node:true */
 
-var platform_modules = require('./platforms'),
-    path            = require('path'),
-    config_changes  = require('./util/config-changes'),
-    xml_helpers     = require('./util/xml-helpers'),
-    wp7             = require('./platforms/wp7'),
-    wp8             = require('./platforms/wp8'),
-    windows8        = require('./platforms/windows8'),
-    common          = require('./platforms/common');
-    fs              = require('fs'),
-    shell           = require('shelljs'),
-    util            = require('util'),
-    events          = require('./events'),
-    plugman         = require('../plugman'),
-    et              = require('elementtree');
+var platform_modules   = require('./platforms'),
+    path               = require('path'),
+    config_changes     = require('./util/config-changes'),
+    xml_helpers        = require('./util/xml-helpers'),
+    wp7                = require('./platforms/wp7'),
+    wp8                = require('./platforms/wp8'),
+    windows8           = require('./platforms/windows8'),
+    common             = require('./platforms/common');
+    fs                 = require('fs'),
+    shell              = require('shelljs'),
+    util               = require('util'),
+    plugman            = require('../plugman'),
+    et                 = require('elementtree'),
+    writeLicenseHeader = require('cordova-js/tasks/lib/write-license-header');
 
 // Called on --prepare.
 // Sets up each plugin's Javascript code to be loaded properly.
@@ -116,6 +116,10 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
         }
 
     }
+    
+    /* begin browserify */
+    var libraryRelease = bundle(platform, false, 'N/A');
+    /* end browserify */
 
     platform_json = config_changes.get_platform_json(plugins_dir, platform);
     // This array holds all the metadata for each module and ends up in cordova_plugins.json
@@ -173,12 +177,17 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
             if (module.attrib.name) {
                 moduleName += module.attrib.name;
             } else {
-                var result = module.attrib.src.match(/([^\/]+)\.js/);
-                moduleName += result[1];
+             // var result = module.attrib.src.match(/([^\/]+)\.js/);
+             // moduleName += result[1];
+              moduleName = path.basename(module.attrib.src, '.js');
             }
 
             var fsPath = path.join.apply(path, pathParts);
-            var scriptContent = fs.readFileSync(path.join(pluginDir, fsPath), 'utf-8');
+            var scriptPath = path.join(pluginDir, fsPath);
+
+            libraryRelease.add(fsPath);
+
+            var scriptContent = fs.readFileSync(scriptPath, 'utf-8');
             scriptContent = 'cordova.define("' + moduleName + '", function(require, exports, module) { ' + scriptContent + '\n});\n';
             fs.writeFileSync(path.join(platformPluginsDir, plugin_id, fsPath), scriptContent, 'utf-8');
             if(platform == 'wp7' || platform == 'wp8' || platform == "windows8") {
@@ -229,4 +238,21 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
         wp_csproj.addSourceFile(path.join('www', 'cordova_plugins.js'));
         wp_csproj.write();
     }
+
+    /* begin browserify */
+    var outReleaseFile = path.join('pkg', 'cordova.' + platform + '.js');
+    var outReleaseFileStream = fs.createWriteStream(outReleaseFile);
+    var commitId = 'N/A';
+    
+    writeLicenseHeader(outReleaseFileStream, platform, commitId);
+     
+    releaseBundle = libraryRelease.bundle();
+
+    releaseBundle.pipe(outReleaseFileStream);
+
+    releaseBundle.on('end', function() {
+      var newtime = new Date().valueOf() - time;
+      plugman.emit('verbose', 'generated cordova.' + platform + '.js @ ' + commitId + ' in ' + newtime + 'ms');
+    });
+    /* end browserify */
 };
