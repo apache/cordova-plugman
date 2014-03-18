@@ -2,6 +2,7 @@ var path = require('path'),
     fs   = require('fs'),
     action_stack = require('./util/action-stack'),
     dep_graph = require('dep-graph'),
+    elementtree = require('elementtree'),
     child_process = require('child_process'),
     semver = require('semver'),
     config_changes = require('./util/config-changes'),
@@ -336,6 +337,10 @@ function installDependencies(install, dependencies, options) {
 
                 if (dep.subdir) {
                     dep.subdir = path.join(dep.subdir.split('/'));
+                }
+
+                if (!dep.id) {
+                    throw new Error('<dependency> tag is missing id attribute: ' + elementtree.tostring(depXml, {xml_declaration:false}));
                 }
 
                 // We build the dependency graph only to be able to detect cycles, getChain will throw an error if it detects one
