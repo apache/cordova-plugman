@@ -186,7 +186,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
             var fsPath = path.join.apply(path, pathParts);
             var scriptPath = path.join(pluginDir, fsPath);
 
-            libraryRelease.add(fsPath);
+            libraryRelease.add(scriptPath);
 
             var scriptContent = fs.readFileSync(scriptPath, 'utf-8');
             scriptContent = 'cordova.define("' + moduleName + '", function(require, exports, module) { ' + scriptContent + '\n});\n';
@@ -244,7 +244,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
     var outReleaseFile = path.join(wwwDir, 'cordova-b.js');
     var outReleaseFileStream = fs.createWriteStream(outReleaseFile);
     var commitId = 'N/A';
-    var newTime = null;
+    var time = new Date().valueOf();
 
     writeLicenseHeader(outReleaseFileStream, platform, commitId);
     
@@ -253,14 +253,13 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
     releaseBundle.pipe(outReleaseFileStream);
 
     releaseBundle.on('end', function() {
-      console.log('end');
-      newtime = new Date().valueOf() - time;
+      var newtime = new Date().valueOf() - time;
       plugman.emit('verbose', 'generated cordova.' + platform + '.js @ ' + commitId + ' in ' + newtime + 'ms');
     });
 
     releaseBundle.on('error', function(err) {
-      newtime = new Date().valueOf() - time;
-      console.log('error while generating cordova.js');
+      var newtime = new Date().valueOf() - time;
+      console.log('error while generating cordova_b.js');
       plugman.emit('verbose', 'error while generating cordova.js');
     });
 };
