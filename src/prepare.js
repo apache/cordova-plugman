@@ -32,8 +32,8 @@ var platform_modules   = require('./platforms'),
     util               = require('util'),
     plugman            = require('../plugman'),
     et                 = require('elementtree'),
-//    bundle             = require('cordova-js/tasks/lib/bundle-browserify');
-//    writeLicenseHeader = require('cordova-js/tasks/lib/write-license-header');
+    bundle             = require('cordova-js/tasks/lib/bundle-browserify');
+    writeLicenseHeader = require('cordova-js/tasks/lib/write-license-header');
 
 // Called on --prepare.
 // Sets up each plugin's Javascript code to be loaded properly.
@@ -243,19 +243,26 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
     }
 
     /* begin browserify */
-    var outReleaseFile = path.join('pkg', 'cordova.' + platform + '.js');
+    var outReleaseFile = path.join(wwwDir, 'cordova-b.js');
     var outReleaseFileStream = fs.createWriteStream(outReleaseFile);
     var commitId = 'N/A';
-    
+    var newTime = null;
+
     writeLicenseHeader(outReleaseFileStream, platform, commitId);
-     
+    
     releaseBundle = libraryRelease.bundle();
 
     releaseBundle.pipe(outReleaseFileStream);
 
     releaseBundle.on('end', function() {
-      var newtime = new Date().valueOf() - time;
+      console.log('end');
+      newtime = new Date().valueOf() - time;
       plugman.emit('verbose', 'generated cordova.' + platform + '.js @ ' + commitId + ' in ' + newtime + 'ms');
     });
-    /* end browserify */
+
+    releaseBundle.on('error', function(err) {
+      newtime = new Date().valueOf() - time;
+      console.log('error while generating cordova.js');
+      plugman.emit('verbose', 'error while generating cordova.js');
+    });
 };
