@@ -149,7 +149,7 @@ module.exports.uninstallPlugin = function(id, plugins_dir, options) {
                     return Q.reject( new Error(msg) );
                 } else {
                     events.emit('warn', msg +' and cannot be removed (hint: use -f or --force)');
-                    continue;	
+                    continue;
                 }
             }
         }
@@ -169,7 +169,7 @@ function runUninstallPlatform(actions, platform, project_dir, plugin_dir, plugin
     var plugin_et    = xml_helpers.parseElementtreeSync(xml_path);
     var plugin_id    = plugin_et._root.attrib['id'];
 
-    // deps info can be passed recusively
+    // Deps info can be passed recusively
     var depsInfo = options.depsInfo || dependencies.generate_dependency_info(plugins_dir, platform, 'remove');
 
     // Check that this plugin has no dependents.
@@ -178,7 +178,7 @@ function runUninstallPlatform(actions, platform, project_dir, plugin_dir, plugin
     if(options.is_top_level && dependents && dependents.length > 0) {
         var msg = "The plugin '"+ plugin_id +"' is required by (" + dependents.join(', ') + ")";
         if(options.force) {
-            events.emit("info", msg + " but forcing removal");	
+            events.emit("info", msg + " but forcing removal");
         } else {
             return Q.reject( new Error(msg + ", skipping uninstallation.") );
         }

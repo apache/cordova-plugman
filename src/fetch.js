@@ -55,7 +55,7 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
                 }
             };
 
-            return plugins.clonePluginGitRepo(plugin_src, plugins_dir, options.subdir, options.git_ref)
+            return plugins.clonePluginGit(plugin_src, plugins_dir, options)
             .then(function(dir) {
                 return checkID(options.expected_id, dir);
             })
@@ -90,6 +90,8 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
 
         return p
         .then(function(dir) {
+                options.plugin_src_dir = dir;
+
                 return copyPlugin(dir, plugins_dir, options.link && linkable);
             })
         .then(function(dir) {

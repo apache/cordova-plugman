@@ -1,7 +1,7 @@
 var shell = require('shelljs'),
     path  = require('path'),
     fs    = require('fs'),
-	common;
+    common;
 
 module.exports = common = {
     // helper for resolving source paths from plugin.xml
@@ -30,9 +30,9 @@ module.exports = common = {
     },
     // Same as copy file but throws error if target exists
     copyNewFile:function(plugin_dir, src, project_dir, dest) {
-		var target_path = common.resolveTargetPath(project_dir, dest);
+        var target_path = common.resolveTargetPath(project_dir, dest);
         if (fs.existsSync(target_path)) 
-			throw new Error('"' + target_path + '" already exists!');
+            throw new Error('"' + target_path + '" already exists!');
 
         common.copyFile(plugin_dir, src, project_dir, dest);
     },

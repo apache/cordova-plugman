@@ -27,7 +27,7 @@
 
     <!-- android -->
     <platform name="android">
-		<js-module src="www/android.js" name="Android">
+        <js-module src="www/android.js" name="Android">
             <clobbers target="android" />
         </js-module>
     </platform>

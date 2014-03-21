@@ -39,7 +39,7 @@
         <access origin="build.phonegap.com" />
         <access origin="s3.amazonaws.com" />
     </config-file>
-	
+
     <!-- android -->
     <platform name="android">
         <config-file target="AndroidManifest.xml" parent="/manifest/application">

@@ -25,18 +25,30 @@ var http = require('http'),
     shell = require('shelljs'),
     child_process = require('child_process'),
     Q = require('q'),
-    xml_helpers = require('./xml-helpers');
+    xml_helpers = require('./xml-helpers'),
+    tmp_dir;
 
 module.exports = {
     searchAndReplace:require('./search-and-replace'),
 
+    clonePluginGit:function(plugin_git_url, plugins_dir, options) {
+        return module.exports.clonePluginGitRepo(plugin_git_url, plugins_dir, options.subdir, options.git_ref).then(
+            function(dst){
+                // Keep location where we checked out git repo
+                options.plugin_src_dir = tmp_dir;
+                return dst;
+            }
+        );
+    },
+
     // Fetches plugin information from remote server.
     // Returns a promise.
     clonePluginGitRepo:function(plugin_git_url, plugins_dir, subdir, git_ref) {
+
         if(!shell.which('git')) {
             return Q.reject(new Error('"git" command line tool is not installed: make sure it is accessible on your PATH.'));
         }
-        var tmp_dir = path.join(os.tmpdir(), 'plugman-tmp' +(new Date).valueOf());
+        tmp_dir = path.join(os.tmpdir(), 'plugman', 'git', String((new Date).valueOf()));
 
         shell.rm('-rf', tmp_dir);
 
