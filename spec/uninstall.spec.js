@@ -16,8 +16,8 @@ var uninstall = require('../src/uninstall'),
     project2 = path.join(spec, 'projects', 'android_uninstall.test2'),
 
     plugins_dir = path.join(spec, 'plugins'),
-    plugins_install_dir = path.join(project, 'cordova', 'plugins'),	
-    plugins_install_dir2 = path.join(project2, 'cordova', 'plugins'),	
+    plugins_install_dir = path.join(project, 'cordova', 'plugins'),
+    plugins_install_dir2 = path.join(project2, 'cordova', 'plugins'),
 
     plugins = {
         'DummyPlugin' : path.join(plugins_dir, 'DummyPlugin'),
@@ -25,13 +25,13 @@ var uninstall = require('../src/uninstall'),
         'C' : path.join(plugins_dir, 'dependencies', 'C')
     },
     promise,
-    dummy_id = 'com.phonegap.plugins.dummyplugin';	
+    dummy_id = 'com.phonegap.plugins.dummyplugin';
 
 function uninstallPromise(f) {
     return f.then(function() { done = true; }, function(err) { done = err; });
 }
 
-describe('start', function() {	
+describe('start', function() {
 
     it('start', function() {
         shell.rm('-rf', project);
@@ -56,13 +56,13 @@ describe('start', function() {
     });
 });
 
-describe('uninstallPlatform', function() {								   
+describe('uninstallPlatform', function() {
     var proc, prepare, actions_push, add_to_queue, c_a, rm;
     var fsWrite;
 
     var plat_common = require('../src/platforms/common');
 
-    beforeEach(function() {	
+    beforeEach(function() {
         proc = spyOn(actions.prototype, 'process').andReturn(Q());
         actions_push = spyOn(actions.prototype, 'push');
         c_a = spyOn(actions.prototype, 'createAction');
@@ -88,7 +88,7 @@ describe('uninstallPlatform', function() {
                 uninstallPromise(uninstall.uninstallPlatform('android', project, dummy_id));
             });
             waitsFor(function() { return done; }, 'promise never resolved', 200);
-            runs(function() {	  
+            runs(function() {
                 expect(add_to_queue).toHaveBeenCalledWith(plugins_install_dir, dummy_id, 'android', true);
             });
         });
@@ -112,7 +112,7 @@ describe('uninstallPlatform', function() {
                 runs(function() {
                     uninstallPromise(uninstall.uninstallPlatform('android', project, 'A'));
                 });
-                waitsFor(function() { return done; }, 'promise never resolved', 200);	
+                waitsFor(function() { return done; }, 'promise never resolved', 200);
                 runs(function() {
                     expect(emit).toHaveBeenCalledWith('log', 'Uninstalling 2 dependent plugins.');
                 });
@@ -142,7 +142,7 @@ describe('uninstallPlatform', function() {
     });
 });
 
-describe('uninstallPlugin', function() {							 
+describe('uninstallPlugin', function() {
     var rm, fsWrite, rmstack = [], emit;
 
     beforeEach(function() {
@@ -190,7 +190,7 @@ describe('uninstallPlugin', function() {
                 var del = common.spy.getDeleted(emit);
                 expect(del).toEqual(['Deleted "C"']);
             });
-        });		
+        });
 
         it("never remove top level plugins if they are a dependency", function() {  
             runs(function() {
@@ -281,7 +281,7 @@ describe('end', function() {
 
             shell.rm('-rf', project);
             shell.rm('-rf', project2);
-            done = true;	
+            done = true;
         });
 
         waitsFor(function() { return done; }, 'promise never resolved', 500);

@@ -33,7 +33,7 @@
     <config-file target="config.xml" parent="/*">
         <access origin="build.phonegap.com" />
     </config-file>
-	
+
     <!-- android -->
     <platform name="android">
         <config-file target="res/xml/config.xml" parent="plugins">

@@ -136,7 +136,7 @@ function callEngineScripts(engines) {
         engines.map(function(engine){
             // CB-5192; on Windows scriptSrc doesn't have file extension so we shouldn't check whether the script exists
 
-            var scriptPath = engine.scriptSrc ? '"' + engine.scriptSrc + '"' : null;		
+            var scriptPath = engine.scriptSrc ? '"' + engine.scriptSrc + '"' : null;
 
             if(scriptPath && (isWindows || fs.existsSync(engine.scriptSrc)) ) {
 
@@ -334,7 +334,7 @@ function installDependencies(install, dependencies, options) {
                     git_ref: depXml.attrib.commit
                 }
 
-                if (dep.subdir.length) {			
+                if (dep.subdir.length) {
                     dep.subdir = path.normalize(dep.subdir);
                 }
 
@@ -344,7 +344,7 @@ function installDependencies(install, dependencies, options) {
 
                 return tryFetchDependency(dep, install, options)
                 .then( 
-                    function(url){						
+                    function(url){
                         dep.url = url;
                         return installDependency(dep, install, options);
                     }
@@ -399,7 +399,7 @@ function tryFetchDependency(dep, install, options) {
                 return Q(url);
             }).fail(function(error){
 //console.log("Failed to resolve url='.': " + error);
-                return Q(dep.url);	
+                return Q(dep.url);
             });
 
         } else if (fetchdata.source.type === 'git') {
@@ -409,9 +409,9 @@ function tryFetchDependency(dep, install, options) {
             // Note: With fetch() independant from install()
             // $md5 = md5(uri)
             // Need a Hash(uri) --> $tmpDir/cordova-fetch/git-hostname.com-$md5/
-            // plugin[id].install.source --> searchpath that matches fetch uri 	
+            // plugin[id].install.source --> searchpath that matches fetch uri
 
-            // mapping to a directory of OS containing fetched plugins  
+            // mapping to a directory of OS containing fetched plugins
             var tmpDir = fetchdata.source.url;
             tmpDir = tmpDir.replace('$tmpDir', os.tmpdir());
 
@@ -445,10 +445,10 @@ function tryFetchDependency(dep, install, options) {
 
     // CB-4770: registry fetching
     if(dep.url === undefined) {
-        dep.url = dep.id;							
-    }	
+        dep.url = dep.id;
+    }
 
-    return Q(dep.url);	
+    return Q(dep.url);
 }
 
 function installDependency(dep, install, options) {
@@ -579,7 +579,7 @@ function isAbsolutePath(path) {
 }
 
 function isRelativePath(path) {
-    return !isAbsolutePath();	
+    return !isAbsolutePath();
 }
 
 function readId(plugin_dir) {
