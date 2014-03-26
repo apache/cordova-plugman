@@ -252,12 +252,12 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
 
     releaseBundle.pipe(outReleaseFileStream);
 
-    releaseBundle.on('end', function() {
+    outReleaseFileStream.on('finish', function() {
       var newtime = new Date().valueOf() - time;
       plugman.emit('verbose', 'generated cordova.' + platform + '.js @ ' + commitId + ' in ' + newtime + 'ms');
     });
 
-    releaseBundle.on('error', function(err) {
+    outReleaseFileStream.on('error', function(err) {
       var newtime = new Date().valueOf() - time;
       console.log('error while generating cordova_b.js');
       plugman.emit('verbose', 'error while generating cordova.js');
