@@ -139,5 +139,32 @@ describe('xml-helpers', function(){
                 selector= "/bookstore/book[price>35]/title";
             expect(xml_helpers.graftXML(doc, children, selector)).toBe(false);
         });
+
+        it('appends children after the specified sibling', function () {
+            var doc = new et.ElementTree(et.XML('<widget><A/><B/><C/></widget>')),
+                children = [et.XML('<B id="new"/>'), et.XML('<B id="new2"/>')],
+                selector= "/widget",
+                after= "B;A";
+            expect(xml_helpers.graftXML(doc, children, selector, after)).toBe(true);
+            expect(et.tostring(doc.getroot())).toContain('<B /><B id="new" /><B id="new2" />');
+        });
+
+        it('appends children after the 2nd priority sibling if the 1st one is missing', function () {
+            var doc = new et.ElementTree(et.XML('<widget><A/><C/></widget>')),
+                children = [et.XML('<B id="new"/>'), et.XML('<B id="new2"/>')],
+                selector= "/widget",
+                after= "B;A";
+            expect(xml_helpers.graftXML(doc, children, selector, after)).toBe(true);
+            expect(et.tostring(doc.getroot())).toContain('<A /><B id="new" /><B id="new2" />');
+        });
+
+        it('inserts children at the beginning if specified sibling is missing', function () {
+            var doc = new et.ElementTree(et.XML('<widget><B/><C/></widget>')),
+                children = [et.XML('<A id="new"/>'), et.XML('<A id="new2"/>')],
+                selector= "/widget",
+                after= "A";
+            expect(xml_helpers.graftXML(doc, children, selector, after)).toBe(true);
+            expect(et.tostring(doc.getroot())).toContain('<widget><A id="new" /><A id="new2" />');
+        });
     });
 });

@@ -23,6 +23,7 @@
 
 var fs = require('fs')
   , path = require('path')
+  , _ = require('underscore')
   , et = require('elementtree');
 
 module.exports = {
@@ -72,7 +73,7 @@ module.exports = {
     },
 
     // adds node to doc at selector, creating parent if it doesn't exist
-    graftXML: function(doc, nodes, selector) {
+    graftXML: function(doc, nodes, selector, after) {
         var parent = resolveParent(doc, selector);
         if (!parent) {
             //Try to create the parent recursively if necessary
@@ -91,7 +92,11 @@ module.exports = {
         nodes.forEach(function (node) {
             // check if child is unique first
             if (uniqueChild(node, parent)) {
-                parent.append(node);
+                var children = parent.getchildren();
+                var insertIdx = after ? findInsertIdx(children, after) : children.length;
+
+                //TODO: replace with parent.insert after the bug in ElementTree is fixed
+                parent.getchildren().splice(insertIdx, 0, node);
             }
         });
 
@@ -173,4 +178,19 @@ function resolveParent(doc, selector) {
         parent = doc.find(selector)
     }
     return parent;
+}
+
+// Find the index at which to insert an entry. After is a ;-separated priority list 
+// of tags after which the insertion should be made. E.g. If we need to 
+// insert an element C, and the rule is that the order of children has to be 
+// As, Bs, Cs. After will be equal to "C;B;A".
+
+function findInsertIdx(children, after) {
+    var childrenTags = children.map(function(child) { return child.tag; });
+    var afters = after.split(";");
+    var afterIndexes = afters.map(function(current) { return childrenTags.lastIndexOf(current); });
+    var foundIndex = _.find(afterIndexes, function(index) { return index != -1; });
+
+    //add to the beginning if no matching nodes are found
+    return typeof foundIndex === 'undefined' ? 0 : foundIndex+1;
 }

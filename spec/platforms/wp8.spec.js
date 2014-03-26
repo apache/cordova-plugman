@@ -70,6 +70,11 @@ describe('wp8 project handler', function() {
     });
 
     describe('installation', function() {
+        var done;
+        function installPromise(f) {
+            done = false;
+            f.then(function() { done = true; }, function(err) { done = err; });
+        }
         beforeEach(function() {
             shell.mkdir('-p', temp);
         });
@@ -100,6 +105,22 @@ describe('wp8 project handler', function() {
                 expect(function() {
                     wp8['source-file'].install(source[0], dummyplugin, temp, dummy_id, proj_files);
                 }).toThrow('"' + target + '" already exists!');
+            });
+        });
+        describe('of <config-changes> elements', function() {
+            beforeEach(function() {
+                shell.cp('-rf', path.join(wp8_project, '*'), temp);
+            });
+            it('should process and pass the after parameter to graftXML', function () {
+                var graftXML = spyOn(xml_helpers, 'graftXML').andCallThrough();
+
+                runs(function () { installPromise(install('wp8', temp, dummyplugin, plugins_dir, {})); });
+                waitsFor(function () { return done; }, 'install promise never resolved', 500);
+                runs(function () {
+                    expect(graftXML).toHaveBeenCalledWith(jasmine.any(Object), jasmine.any(Array), "/Deployment/App", "Tokens");
+                    expect(graftXML).toHaveBeenCalledWith(jasmine.any(Object), jasmine.any(Array), "/Deployment/App/Extensions", "Extension");
+                    expect(graftXML).toHaveBeenCalledWith(jasmine.any(Object), jasmine.any(Array), "/Deployment/App/Extensions", "FileTypeAssociation;Extension");
+                });
             });
         });
     });
