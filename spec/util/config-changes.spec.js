@@ -118,7 +118,10 @@ describe('config-changes module', function() {
         });
         it('should return the json file if it exists', function() {
             var filepath = path.join(plugins_dir, 'android.json');
-            var json = {prepare_queue:{installed:[],uninstalled:[]},config_munge:{somechange:"blah"},installed_plugins:{}};
+            var json = {
+                prepare_queue: {installed: [], uninstalled: []},
+                config_munge: {files: {"some_file": {parents: {"some_parent": [{"xml": "some_change", "count": 1}]}}}},
+                installed_plugins: {}};
             fs.writeFileSync(filepath, JSON.stringify(json), 'utf-8');
             var cfg = configChanges.get_platform_json(plugins_dir, 'android');
             expect(JSON.stringify(json)).toEqual(JSON.stringify(cfg));
@@ -144,64 +147,65 @@ describe('config-changes module', function() {
                 var xml;
                 var munger = new configChanges.PlatformMunger('android', temp, 'unused');
                 var munge = munger.generate_plugin_config_munge(dummyplugin, {});
-                expect(munge['AndroidManifest.xml']).toBeDefined();
-                expect(munge['AndroidManifest.xml']['/manifest/application']).toBeDefined();
+                expect(munge.files['AndroidManifest.xml']).toBeDefined();
+                expect(munge.files['AndroidManifest.xml'].parents['/manifest/application']).toBeDefined();
                 xml = (new et.ElementTree(dummy_xml.find('./platform[@name="android"]/config-file[@target="AndroidManifest.xml"]'))).write({xml_declaration:false});
                 xml = innerXML(xml);
-                expect(munge['AndroidManifest.xml']['/manifest/application'][xml]).toEqual(1);
-                expect(munge['res/xml/plugins.xml']).toBeDefined();
-                expect(munge['res/xml/plugins.xml']['/plugins']).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'AndroidManifest.xml', '/manifest/application', xml).count).toEqual(1);
+                expect(munge.files['res/xml/plugins.xml']).toBeDefined();
+                expect(munge.files['res/xml/plugins.xml'].parents['/plugins']).toBeDefined();
                 xml = (new et.ElementTree(dummy_xml.find('./platform[@name="android"]/config-file[@target="res/xml/plugins.xml"]'))).write({xml_declaration:false});
                 xml = innerXML(xml);
-                expect(munge['res/xml/plugins.xml']['/plugins'][xml]).toEqual(1);
-                expect(munge['res/xml/config.xml']).toBeDefined();
-                expect(munge['res/xml/config.xml']['/cordova/plugins']).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'res/xml/plugins.xml', '/plugins', xml).count).toEqual(1);
+                expect(munge.files['res/xml/config.xml']).toBeDefined();
+                expect(munge.files['res/xml/config.xml'].parents['/cordova/plugins']).toBeDefined();
                 xml = (new et.ElementTree(dummy_xml.find('./platform[@name="android"]/config-file[@target="res/xml/config.xml"]'))).write({xml_declaration:false});
                 xml = innerXML(xml);
-                expect(munge['res/xml/config.xml']['/cordova/plugins'][xml]).toEqual(1);
+                expect(configChanges.get_munge_change(munge, 'res/xml/config.xml', '/cordova/plugins', xml).count).toEqual(1);
             });
             it('should split out multiple children of config-file elements into individual leaves', function() {
                 var munger = new configChanges.PlatformMunger('android', temp, 'unused');
                 var munge = munger.generate_plugin_config_munge(childrenplugin, {});
-                expect(munge['AndroidManifest.xml']).toBeDefined();
-                expect(munge['AndroidManifest.xml']['/manifest']).toBeDefined();
-                expect(munge['AndroidManifest.xml']['/manifest']['<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />']).toBeDefined();
-                expect(munge['AndroidManifest.xml']['/manifest']['<uses-permission android:name="android.permission.READ_PHONE_STATE" />']).toBeDefined();
-                expect(munge['AndroidManifest.xml']['/manifest']['<uses-permission android:name="android.permission.INTERNET" />']).toBeDefined();
-                expect(munge['AndroidManifest.xml']['/manifest']['<uses-permission android:name="android.permission.GET_ACCOUNTS" />']).toBeDefined();
-                expect(munge['AndroidManifest.xml']['/manifest']['<uses-permission android:name="android.permission.WAKE_LOCK" />']).toBeDefined();
-                expect(munge['AndroidManifest.xml']['/manifest']['<permission android:name="com.alunny.childapp.permission.C2D_MESSAGE" android:protectionLevel="signature" />']).toBeDefined();
-                expect(munge['AndroidManifest.xml']['/manifest']['<uses-permission android:name="com.alunny.childapp.permission.C2D_MESSAGE" />']).toBeDefined();
-                expect(munge['AndroidManifest.xml']['/manifest']['<uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />']).toBeDefined();
+                expect(munge.files['AndroidManifest.xml']).toBeDefined();
+                expect(munge.files['AndroidManifest.xml'].parents['/manifest']).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'AndroidManifest.xml', '/manifest', '<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />')).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'AndroidManifest.xml', '/manifest', '<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />')).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'AndroidManifest.xml', '/manifest', '<uses-permission android:name="android.permission.READ_PHONE_STATE" />')).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'AndroidManifest.xml', '/manifest', '<uses-permission android:name="android.permission.INTERNET" />')).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'AndroidManifest.xml', '/manifest', '<uses-permission android:name="android.permission.GET_ACCOUNTS" />')).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'AndroidManifest.xml', '/manifest', '<uses-permission android:name="android.permission.WAKE_LOCK" />')).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'AndroidManifest.xml', '/manifest', '<permission android:name="com.alunny.childapp.permission.C2D_MESSAGE" android:protectionLevel="signature" />')).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'AndroidManifest.xml', '/manifest', '<uses-permission android:name="com.alunny.childapp.permission.C2D_MESSAGE" />')).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'AndroidManifest.xml', '/manifest', '<uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />')).toBeDefined();
             });
             it('should not use xml comments as config munge leaves', function() {
                 var munger = new configChanges.PlatformMunger('android', temp, 'unused');
                 var munge = munger.generate_plugin_config_munge(childrenplugin, {});
-                expect(munge['AndroidManifest.xml']['/manifest']['<!--library-->']).not.toBeDefined();
-                expect(munge['AndroidManifest.xml']['/manifest']['<!-- GCM connects to Google Services. -->']).not.toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'AndroidManifest.xml', '/manifest', '<!--library-->')).not.toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'AndroidManifest.xml', '/manifest', '<!-- GCM connects to Google Services. -->')).not.toBeDefined();
             });
             it('should increment config heirarchy leaves if dfferent config-file elements target the same file + selector + xml', function() {
                 var munger = new configChanges.PlatformMunger('android', temp, 'unused');
                 var munge = munger.generate_plugin_config_munge(configplugin, {});
-                expect(munge['res/xml/config.xml']['/widget']['<poop />']).toEqual(2);
+                expect(configChanges.get_munge_change(munge, 'res/xml/config.xml', '/widget', '<poop />').count).toEqual(2);
             });
             it('should take into account interpolation variables', function() {
                 var munger = new configChanges.PlatformMunger('android', temp, 'unused');
                 var munge = munger.generate_plugin_config_munge(childrenplugin, {PACKAGE_NAME:'ca.filmaj.plugins'});
-                expect(munge['AndroidManifest.xml']['/manifest']['<uses-permission android:name="ca.filmaj.plugins.permission.C2D_MESSAGE" />']).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'AndroidManifest.xml', '/manifest', '<uses-permission android:name="ca.filmaj.plugins.permission.C2D_MESSAGE" />')).toBeDefined();
             });
             it('should create munges for platform-agnostic config.xml changes', function() {
                 var munger = new configChanges.PlatformMunger('android', temp, 'unused');
                 var munge = munger.generate_plugin_config_munge(dummyplugin, {});
-                expect(munge['config.xml']['/*']['<access origin="build.phonegap.com" />']).toBeDefined();
-                expect(munge['config.xml']['/*']['<access origin="s3.amazonaws.com" />']).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'config.xml', '/*', '<access origin="build.phonegap.com" />')).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'config.xml', '/*', '<access origin="s3.amazonaws.com" />')).toBeDefined();
             });
             it('should automatically add on app java identifier as PACKAGE_NAME variable for android config munges', function() {
                 shell.cp('-rf', android_two_project, temp);
                 var munger = new configChanges.PlatformMunger('android', temp, 'unused');
                 var munge = munger.generate_plugin_config_munge(varplugin, {});
                 var expected_xml = '<package>com.alunny.childapp</package>';
-                expect(munge['AndroidManifest.xml']['/manifest'][expected_xml]).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'AndroidManifest.xml', '/manifest', expected_xml)).toBeDefined();
             });
         });
 
@@ -213,16 +217,16 @@ describe('config-changes module', function() {
                 var munger = new configChanges.PlatformMunger('ios', temp, 'unused');
                 var munge = munger.generate_plugin_config_munge(varplugin, {});
                 var expected_xml = '<cfbundleid>com.example.friendstring</cfbundleid>';
-                expect(munge['config.xml']['/widget'][expected_xml]).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'config.xml', '/widget', expected_xml)).toBeDefined();
             });
             it('should special case framework elements for ios', function() {
                 var munger = new configChanges.PlatformMunger('ios', temp, 'unused');
                 var munge = munger.generate_plugin_config_munge(cbplugin, {});
-                expect(munge['framework']).toBeDefined();
-                expect(munge['framework']['libsqlite3.dylib']['false']).toBeDefined();
-                expect(munge['framework']['social.framework']['true']).toBeDefined();
-                expect(munge['framework']['music.framework']['false']).toBeDefined();
-                expect(munge['framework']['Custom.framework']).not.toBeDefined();
+                expect(munge.files['framework']).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'framework', 'libsqlite3.dylib', 'false')).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'framework', 'social.framework', 'true')).toBeDefined();
+                expect(configChanges.get_munge_change(munge, 'framework', 'music.framework', 'false')).toBeDefined();
+                expect(munge.files['framework'].parents['Custom.framework']).not.toBeDefined();
             });
         });
     });
