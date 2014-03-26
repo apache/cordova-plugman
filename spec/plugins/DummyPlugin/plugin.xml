@@ -155,6 +155,28 @@
             <feature id="dummyPlugin" required="true" version="1.0.0.0"/>
         </config-file>
 
+        <config-file target="Properties/WMAppManifest.xml" parent="/Deployment/App" after="Tokens">
+            <Extensions />
+        </config-file>
+
+        <config-file target="Properties/WMAppManifest.xml" parent="/Deployment/App/Extensions" after="Extension">
+            <Extension ExtensionName="DummyExtension1" ConsumerID="{5B04B775-356B-4AA0-AAF8-6491FFEA5661}" TaskID="_default" ExtraFile="Extensions\\Extras.xml" />
+            <Extension ExtensionName="DummyExtension2" ConsumerID="{5B04B775-356B-4AA0-AAF8-6491FFEA5661}" TaskID="_default" ExtraFile="Extensions\\Extras.xml" />
+        </config-file>
+
+        <config-file target="Properties/WMAppManifest.xml" parent="/Deployment/App/Extensions" after="FileTypeAssociation;Extension">
+            <FileTypeAssociation TaskID="_default" Name="DummyFileType1" NavUriFragment="fileToken=%s">
+                <SupportedFileTypes>
+                    <FileType ContentType="application/dummy1">.dummy1</FileType>
+                </SupportedFileTypes>
+            </FileTypeAssociation>
+            <FileTypeAssociation TaskID="_default" Name="DummyFileType2" NavUriFragment="fileToken=%s">
+                <SupportedFileTypes>
+                    <FileType ContentType="application/dummy2">.dummy2</FileType>
+                </SupportedFileTypes>
+            </FileTypeAssociation>
+        </config-file>
+
         <source-file src="src/wp8/DummyPlugin.cs"/>
         <js-module src="www/dummyplugin.js" name="Dummy">
             <clobbers target="dummy" />
