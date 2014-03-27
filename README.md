@@ -28,9 +28,9 @@ You must have `git` on your PATH to be able to install plugins directly from rem
 * Amazon Fire OS
 * Android
 * BlackBerry 10
+* Tizen
 * Windows Phone (7+8)
 * Windows 8
-* Tizen
 
 ## Command Line Usage
     plugman help
