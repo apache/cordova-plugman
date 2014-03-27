@@ -185,10 +185,11 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
 
             var fsPath = path.join.apply(path, pathParts);
             var scriptPath = path.join(pluginDir, fsPath);
-
-            libraryRelease.add(scriptPath);
+            var bScriptPath = util.format("%s.%s", scriptPath, 'browserify');
 
             var scriptContent = fs.readFileSync(scriptPath, 'utf-8');
+            fs.writeFileSync(bScriptPath, scriptContent, 'utf-8');
+
             scriptContent = 'cordova.define("' + moduleName + '", function(require, exports, module) { ' + scriptContent + '\n});\n';
             fs.writeFileSync(path.join(platformPluginsDir, plugin_id, fsPath), scriptContent, 'utf-8');
             if(platform == 'wp7' || platform == 'wp8' || platform == "windows8") {
@@ -208,11 +209,27 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
                         obj.clobbers = [];
                     }
                     obj.clobbers.push(child.attrib.target);
+                    /* FIXME: browserify guettho clobber */
+                    fs.appendFileSync(bScriptPath,
+                      util.format(
+                        "require('cordova/builder').assignOrWrapInDeprecateGetter(window, '%s', module.exports);", 
+                        child.attrib.target
+                      ),
+                      'utf-8');
+                    /* end browserify guettho clobber */
                 } else if (child.tag.toLowerCase() == 'merges') {
                     if (!obj.merges) {
                         obj.merges = [];
                     }
                     obj.merges.push(child.attrib.target);
+                    /* FIXME: browserify guettho clobber */
+                    fs.appendFileSync(bScriptPath,
+                      util.format(
+                        "require('cordova/builder').recursiveMerge(window, '%s', module.exports);", 
+                        child.attrib.target
+                      ),
+                      'utf-8');
+                    /* end browserify guettho clobber */
                 } else if (child.tag.toLowerCase() == 'runs') {
                     obj.runs = true;
                 }
@@ -220,6 +237,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
 
             // Add it to the list of module objects bound for cordova_plugins.json
             moduleObjects.push(obj);
+            libraryRelease.add(bScriptPath);
         });
     });
 
