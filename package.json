@@ -34,7 +34,6 @@
     "request": "2.22.0"
   },
   "devDependencies": {
-    "temp": "0.6.x",
     "jasmine-node": "1.7.0",
     "osenv": "0.0.x"
   },
