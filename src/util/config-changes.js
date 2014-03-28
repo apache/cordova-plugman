@@ -39,6 +39,7 @@ var fs   = require('fs'),
     bplist = require('bplist-parser'),
     xcode = require('xcode'),
     et   = require('elementtree'),
+    _ = require('underscore'), 
     xml_helpers = require('./../util/xml-helpers'),
     platforms = require('./../platforms'),
     events = require('./../events'),
@@ -77,6 +78,11 @@ exports.process = function(plugins_dir, project_dir, platform) {
     munger.process();
     munger.save_all();
 };
+
+exports.get_munge_change = function(munge, keys) {
+    return deep_find.apply(null, arguments);
+}
+
 /******************************************************************************/
 
 
@@ -126,19 +132,20 @@ PlatformMunger.prototype.apply_file_munge = PlatformMunger_apply_file_munge;
 function PlatformMunger_apply_file_munge(file, munge, remove) {
     var self = this;
     var xml_child;
-
+    
     if ( file === 'framework' && self.platform === 'ios' ) {
         // ios pbxproj file
         var pbxproj = self.config_keeper.get(self.project_dir, self.platform, 'framework');
-        for (var src in munge) {
-            for (xml_child in munge[src]) {
+        for (var src in munge.parents) {
+            for (xml_child in munge.parents[src]) {
+                var xml = munge.parents[src][xml_child].xml;
                 // Only add the framework if it's not a cordova-ios core framework
                 if (keep_these_frameworks.indexOf(src) == -1) {
                     // xml_child in this case is whether the framework should use weak or not
                     if (remove) {
                         pbxproj.data.removeFramework(src);
                     } else {
-                        pbxproj.data.addFramework(src, {weak: (xml_child === 'true')});
+                        pbxproj.data.addFramework(src, {weak: (xml === 'true')});
                     }
                     pbxproj.is_changed = true;
                 }
@@ -146,13 +153,13 @@ function PlatformMunger_apply_file_munge(file, munge, remove) {
         }
     } else {
         // all other types of files
-        for (var selector in munge) {
-            for (xml_child in munge[selector]) {
+        for (var selector in munge.parents) {
+            for (xml_child in munge.parents[selector]) {
                 // this xml child is new, graft it (only if config file exists)
                 var config_file = self.config_keeper.get(self.project_dir, self.platform, file);
                 if (config_file.exists) {
-                    if (remove) config_file.prune_child(selector, xml_child);
-                    else config_file.graft_child(selector, xml_child);
+                    if (remove) config_file.prune_child(selector, munge.parents[selector][xml_child]);
+                    else config_file.graft_child(selector, munge.parents[selector][xml_child]);
                 }
             }
         }
@@ -173,7 +180,7 @@ function remove_plugin_changes(plugin_name, plugin_id, is_top_level) {
     var global_munge = platform_config.config_munge;
     var munge = decrement_munge(global_munge, config_munge);
 
-    for (var file in munge) {
+    for (var file in munge.files) {
         if (file == 'plugins-plist' && self.platform == 'ios') {
             // TODO: remove this check and <plugins-plist> sections in spec/plugins/../plugin.xml files.
             events.emit(
@@ -183,7 +190,7 @@ function remove_plugin_changes(plugin_name, plugin_id, is_top_level) {
             );
             continue;
         }
-        self.apply_file_munge(file, munge[file], /* remove = */ true);
+        self.apply_file_munge(file, munge.files[file], /* remove = */ true);
     }
 
     // Remove from installed_plugins
@@ -223,7 +230,7 @@ function add_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increme
         munge = config_munge;
     }
 
-    for (var file in munge) {
+    for (var file in munge.files) {
         // TODO: remove this warning some time after 3.4 is out.
         if (file == 'plugins-plist' && self.platform == 'ios') {
             events.emit(
@@ -233,7 +240,7 @@ function add_plugin_changes(plugin_id, plugin_vars, is_top_level, should_increme
             );
             continue;
         }
-        self.apply_file_munge(file, munge[file]);
+        self.apply_file_munge(file, munge.files[file]);
     }
 
     // Move to installed_plugins if it is a top-level plugin
@@ -257,7 +264,7 @@ function reapply_global_munge () {
 
     var platform_config = exports.get_platform_json(self.plugins_dir, self.platform);
     var global_munge = platform_config.config_munge;
-    for (var file in global_munge) {
+    for (var file in global_munge.files) {
         // TODO: remove this warning some time after 3.4 is out.
         if (file == 'plugins-plist' && self.platform == 'ios') {
             events.emit(
@@ -268,7 +275,7 @@ function reapply_global_munge () {
             continue;
         }
         // TODO: This is mostly file IO and can run in parallel since each file is independent.
-        self.apply_file_munge(file, global_munge[file]);
+        self.apply_file_munge(file, global_munge.files[file]);
     }
 }
 
@@ -285,7 +292,7 @@ function generate_plugin_config_munge(plugin_dir, vars) {
         vars['PACKAGE_NAME'] = self.platform_handler.package_name(self.project_dir);
     }
 
-    var munge = {};
+    var munge = { files: {} };
     var plugin_config = self.config_keeper.get(plugin_dir, '', 'plugin.xml');
     var plugin_xml = plugin_config.data;
 
@@ -303,18 +310,10 @@ function generate_plugin_config_munge(plugin_dir, vars) {
         frameworks.forEach(function(f) {
             var custom = f.attrib['custom'];
             if(!custom) {
-                if (!munge['framework']) {
-                    munge['framework'] = {};
-                }
                 var file = f.attrib['src'];
-                var weak = ('true' == f.attrib['weak']);
-                if (!munge['framework'][file]) {
-                    munge['framework'][file] = {};
-                }
-                if (!munge['framework'][file][weak]) {
-                    munge['framework'][file][weak] = 0;
-                }
-                munge['framework'][file][weak] += 1;
+                var weak = ('true' == f.attrib['weak']).toString();
+
+                deep_add(munge, 'framework', file, { xml: weak, count: 1 });
             }
         });
     }
@@ -322,14 +321,9 @@ function generate_plugin_config_munge(plugin_dir, vars) {
     changes.forEach(function(change) {
         var target = change.attrib['target'];
         var parent = change.attrib['parent'];
-        if (!munge[target]) {
-            munge[target] = {};
-        }
-        if (!munge[target][parent]) {
-            munge[target][parent] = {};
-        }
+        var after = change.attrib['after'];
         var xmls = change.getchildren();
-        xmls.forEach(function(xml) {
+		xmls.forEach(function(xml) {
             // 1. stringify each xml
             var stringified = (new et.ElementTree(xml)).write({xml_declaration:false});
             // interp vars
@@ -340,15 +334,11 @@ function generate_plugin_config_munge(plugin_dir, vars) {
                 });
             }
             // 2. add into munge
-            if (!munge[target][parent][stringified]) {
-                munge[target][parent][stringified] = 0;
-            }
-            munge[target][parent][stringified] += 1;
+            deep_add(munge, target, parent, { xml: stringified, count: 1, after: after });
         });
     });
     return munge;
 }
-
 
 // Go over the prepare queue an apply the config munges for each plugin
 // that has been (un)installed.
@@ -426,7 +416,7 @@ function get_platform_json(plugins_dir, platform) {
 
     var filepath = path.join(plugins_dir, platform + '.json');
     if (fs.existsSync(filepath)) {
-        return JSON.parse(fs.readFileSync(filepath, 'utf-8'));
+        return fix_munge(JSON.parse(fs.readFileSync(filepath, 'utf-8')));
     } else {
         var config = {
             prepare_queue:{installed:[], uninstalled:[]},
@@ -443,6 +433,28 @@ function save_platform_json(config, plugins_dir, platform) {
     checkPlatform(platform);
     var filepath = path.join(plugins_dir, platform + '.json');
     fs.writeFileSync(filepath, JSON.stringify(config, null, 4), 'utf-8');
+}
+
+
+// convert a munge from the old format ([file][parent][xml] = count) to the current one
+function fix_munge(platform_config) {
+    var munge = platform_config.config_munge;
+    if (!munge.files) {
+        var new_munge = { files: {} };
+        for (var file in munge) {
+            for (var selector in munge[file]) {
+                for (var xml_child in munge[file][selector]) {
+                    var val = parseInt(munge[file][selector][xml_child]);
+                    for (var i = 0; i < val; i++) {
+                        deep_add(new_munge, [file, selector, { xml: xml_child, count: val }]);
+                    }
+                }
+            }
+        }
+        platform_config.config_munge = new_munge;
+    }
+
+    return platform_config;
 }
 
 /**** END of ConfigKeeper ****/
@@ -528,14 +540,14 @@ function ConfigFile_graft_child(selector, xml_child) {
     var filepath = self.filepath;
     var result;
     if (self.type === 'xml') {
-        var xml_to_graft = [et.XML(xml_child)];
-        result = xml_helpers.graftXML(self.data, xml_to_graft, selector);
+        var xml_to_graft = [et.XML(xml_child.xml)];
+        result = xml_helpers.graftXML(self.data, xml_to_graft, selector, xml_child.after);
         if ( !result) {
             throw new Error('grafting xml at selector "' + selector + '" from "' + filepath + '" during config install went bad :(');
         }
     } else {
         // plist file
-        result = plist_helpers.graftPLIST(self.data, xml_child, selector);
+        result = plist_helpers.graftPLIST(self.data, xml_child.xml, selector);
         if ( !result ) {
             throw new Error('grafting to plist "' + filepath + '" during config install went bad :(');
         }
@@ -550,11 +562,11 @@ function ConfigFile_prune_child(selector, xml_child) {
     var filepath = self.filepath;
     var result;
     if (self.type === 'xml') {
-        var xml_to_graft = [et.XML(xml_child)];
+        var xml_to_graft = [et.XML(xml_child.xml)];
         result = xml_helpers.pruneXML(self.data, xml_to_graft, selector);
     } else {
         // plist file
-        result = plist_helpers.prunePLIST(self.data, xml_child, selector);
+        result = plist_helpers.prunePLIST(self.data, xml_child.xml, selector);
     }
     if ( !result) {
         var err_msg = 'Pruning at selector "' + selector + '" from "' + filepath + '" went bad.';
@@ -650,21 +662,94 @@ function resolveConfigFilePath(project_dir, platform, file) {
 * Munge object manipulations functions
 ******************************************************************************/
 
-// Increment obj[key1][key2]...[keyN] by val. If it
-// didn't exist, set it to val.
-function deep_add(obj, val, keys /* or key1, key2 .... */ ) {
+// add the count of [key1][key2]...[keyN] to obj
+// return true if it didn't exist before
+function deep_add(obj, keys /* or key1, key2 .... */ ) {
     if ( !Array.isArray(keys) ) {
-        keys = Array.prototype.slice.call(arguments, 2);
+        keys = Array.prototype.slice.call(arguments, 1);
+    }
+
+    return process_munge(obj, true/*createParents*/, function (parentArray, k) {
+        var found = _.find(parentArray, function(element) {
+            return element.xml == k.xml;
+        });
+        if (found) {
+            found.after = found.after || k.after;
+            found.count += k.count;
+        } else {
+            parentArray.push(k);
+        }
+        return !found;
+    }, keys);
+}
+
+// decrement the count of [key1][key2]...[keyN] from obj and remove if it reaches 0
+// return true if it was removed or not found
+function deep_remove(obj, keys /* or key1, key2 .... */ ) {
+    if ( !Array.isArray(keys) ) {
+        keys = Array.prototype.slice.call(arguments, 1);
+    }
+
+    var result = process_munge(obj, false/*createParents*/, function (parentArray, k) {
+        var index = -1;
+        var found = _.find(parentArray, function (element) {
+            index++;
+            return element.xml == k.xml;
+        });
+        if (found) {
+            found.count -= k.count;
+            if (found.count > 0) {
+                return false;
+            }
+            else {
+                parentArray.splice(index, 1);
+            }
+        }
+        return undefined;
+    }, keys);
+
+    return typeof result === "undefined" ? true : result;
+}
+
+// search for [key1][key2]...[keyN]
+// return the object or undefined if not found
+function deep_find(obj, keys /* or key1, key2 .... */ ) {
+    if ( !Array.isArray(keys) ) {
+        keys = Array.prototype.slice.call(arguments, 1);
+    }
+
+    return process_munge(obj, false/*createParents?*/, function (parentArray, k) {
+        return _.find(parentArray, function (element) {
+            return element.xml == (k.xml || k);
+        });
+    }, keys);
+}
+
+// Execute func passing it the parent array and the xmlChild key.
+// When createParents is true, add the file and parent items  they are missing
+// When createParents is false, stop and return undefined if the file and/or parent items are missing
+
+function process_munge(obj, createParents, func, keys /* or key1, key2 .... */ ) {
+    if ( !Array.isArray(keys) ) {
+        keys = Array.prototype.slice.call(arguments, 1);
     }
     var k = keys[0];
-
     if (keys.length == 1) {
-        obj[k] = obj[k] || 0;
-        obj[k] += val;
-        return obj[k];
+        return func(obj, k);
+    } else if (keys.length == 2) {
+        if (!obj.parents[k] && !createParents) {
+            return undefined;
+        }
+        obj.parents[k] = obj.parents[k] || [];
+        return process_munge(obj.parents[k], createParents, func, keys.slice(1));
+    } else if (keys.length == 3){
+        if (!obj.files[k] && !createParents) {
+            return undefined;
+        }
+        obj.files[k] = obj.files[k] || { parents: {} };
+        return process_munge(obj.files[k], createParents, func, keys.slice(1));
     } else {
-        obj[k] = obj[k] || {};
-        return deep_add(obj[k], val, keys.slice(1));
+        throw new Error("Invalid key format. Must contain at most 3 elements (file, parent, xmlChild).");
     }
 }
 
@@ -673,17 +758,17 @@ function deep_add(obj, val, keys /* or key1, key2 .... */ ) {
 // Returns a munge object containing values that exist in munge
 // but not in base.
 function increment_munge(base, munge) {
-    var diff = {};
+    var diff = { files: {} };
 
-    for (var file in munge) {
-        for (var selector in munge[file]) {
-            for (var xml_child in munge[file][selector]) {
-                var val = munge[file][selector][xml_child];
+    for (var file in munge.files) {
+        for (var selector in munge.files[file].parents) {
+            for (var xml_child in munge.files[file].parents[selector]) {
+                var val = munge.files[file].parents[selector][xml_child];
                 // if node not in base, add it to diff and base
                 // else increment it's value in base without adding to diff
-                var new_val = deep_add(base, val, [file, selector, xml_child]);
-                if ( val == new_val ) {
-                    deep_add(diff, val, file, selector, xml_child);
+                var newlyAdded = deep_add(base, [file, selector, val]);
+                if (newlyAdded) {
+                    deep_add(diff, file, selector, val);
                 }
             }
         }
@@ -693,21 +778,20 @@ function increment_munge(base, munge) {
 
 // Update the base munge object as
 // base[file][selector][child] -= base[file][selector][child]
-// nodes that reached zero value are removed from base and the returned munge
+// nodes that reached zero value are removed from base and added to the returned munge
 // object.
 function decrement_munge(base, munge) {
-    var zeroed = {};
+    var zeroed = { files: {} };
 
-    for (var file in munge) {
-        for (var selector in munge[file]) {
-            for (var xml_child in munge[file][selector]) {
-                var val = munge[file][selector][xml_child];
+    for (var file in munge.files) {
+        for (var selector in munge.files[file].parents) {
+            for (var xml_child in munge.files[file].parents[selector]) {
+                var val = munge.files[file].parents[selector][xml_child];
                 // if node not in base, add it to diff and base
                 // else increment it's value in base without adding to diff
-                var new_val = deep_add(base, -val, [file, selector, xml_child]);
-                if ( new_val <= 0) {
-                    deep_add(zeroed, val, file, selector, xml_child);
-                    delete base[file][selector][xml_child];
+                var removed = deep_remove(base, [file, selector, val]);
+                if (removed) {
+                    deep_add(zeroed, file, selector, val);
                 }
             }
         }
