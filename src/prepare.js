@@ -32,7 +32,8 @@ var platform_modules   = require('./platforms'),
     util               = require('util'),
     plugman            = require('../plugman'),
     et                 = require('elementtree'),
-    bundle             = require('cordova-js/tasks/lib/bundle-browserify');
+    bundle             = require('cordova-js/tasks/lib/bundle-browserify'),
+    requireTr          = require('cordova-js/tasks/lib/require-tr'),
     writeLicenseHeader = require('cordova-js/tasks/lib/write-license-header');
 
 // Called on --prepare.
@@ -121,6 +122,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
     }
     
     /* begin browserify */
+    requireTr.platform = platform;
     var libraryRelease = bundle(platform, false, 'N/A');
     /* end browserify */
 
@@ -187,7 +189,11 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
 
             var fsPath = path.join.apply(path, pathParts);
             var scriptPath = path.join(pluginDir, fsPath);
+
+            /* begin browserify */
             var bScriptPath = util.format("%s.%s", scriptPath, 'browserify');
+            requireTr.addModule({symbol: new RegExp(moduleName), path: bScriptPath});
+            /* end browserify */
 
             var scriptContent = fs.readFileSync(scriptPath, 'utf-8');
             fs.writeFileSync(bScriptPath, scriptContent, 'utf-8');
@@ -239,7 +245,10 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
 
             // Add it to the list of module objects bound for cordova_plugins.json
             moduleObjects.push(obj);
+            /* begin browserify */
+            libraryRelease.transform(requireTr.transform);
             libraryRelease.add(bScriptPath);
+            /* end browserify */
         });
     });
 
@@ -275,6 +284,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
     outReleaseFileStream.on('finish', function() {
       var newtime = new Date().valueOf() - time;
       plugman.emit('verbose', 'generated cordova.' + platform + '.js @ ' + commitId + ' in ' + newtime + 'ms');
+      // TODO clean up all the *.browserify files
     });
 
     outReleaseFileStream.on('error', function(err) {
@@ -282,4 +292,5 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
       console.log('error while generating cordova_b.js');
       plugman.emit('verbose', 'error while generating cordova.js');
     });
+    /* end browserify */
 };
