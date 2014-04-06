@@ -52,7 +52,7 @@ function fetchPackage(info, cl) {
     if(fs.existsSync(cached)) {
         d.resolve(cached);
     } else {
-        var download_dir = path.join(os.tmpdir(), info.name);
+        var download_dir = path.resolve(cached, '..');
         shell.mkdir('-p', download_dir);
 
         var req = makeRequest('GET', info.dist.tarball, function (err, res, body) {
