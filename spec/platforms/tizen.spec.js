@@ -17,20 +17,24 @@
 */
 var tizen = require('../../src/platforms/tizen'),
 	common = require('../../src/platforms/common'),
-	temp = require('temp'),
 	os = require('osenv'),
 	fs = require('fs'),
 	et = require('elementtree'),
 	path = require('path'),
-	tizen_project = path.join(__dirname, '..', 'projects', 'tizen'),
-	destination = temp.path(),
 	shell = require('shelljs'),
-	dummyPluginPath = path.join(__dirname, '..', 'plugins', 'DummyPlugin'),
-	dummyPlugin = et.XML(fs.readFileSync(
-		path.join(dummyPluginPath, 'plugin.xml'), {encoding: "utf-8"})),
-	dummySources = dummyPlugin
-		.find('./platform[@name="tizen"]')
-		.findall('./source-file');
+	temp = path.join( os.tmpdir(), 'plugman-' + ((function() {
+		var index, subIndex,
+			set = 'abcdefghijklmnopqrstuvwxyz0123456789',
+			str = '';
+
+		for ( index = 0 ; index < 12 ; index++ ) {
+			subIndex = Math.round( Math.random() * ( set.length - 1 ) );
+			str += set.substring( subIndex, subIndex + 1 );
+		}
+
+		return str;
+	})() )),
+	tizen_project = path.join(__dirname, '..', 'projects', 'tizen');
 
 describe('Tizen project handler', function() {
 	describe('www_dir method', function() {
@@ -39,15 +43,9 @@ describe('Tizen project handler', function() {
 		});
 	});
 	describe('Manipulating project files', function() {
-		beforeEach(function() {
-			shell.cp('-rf', path.join(tizen_project, '*'), destination);
-		});
-		afterEach(function() {
-			shell.rm('-rf', destination);
-		});
 		describe('package_name method', function() {
 			it('should return the id of the config.xml root element', function() {
-				expect(tizen.package_name(destination)).toEqual("TizenTestPackage");
+				expect(tizen.package_name(tizen_project)).toEqual("TizenTestPackage");
 			});
 		});
 	});

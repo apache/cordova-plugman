@@ -183,10 +183,10 @@
         </js-module>
     </platform>
 
-		<!-- tizen -->
-		<platform name="tizen">
-			<source-file src="src/tizen/dummer.js"/>
-		</platform>
+    <!-- tizen -->
+    <platform name="tizen">
+        <source-file src="src/tizen/dummer.js"/>
+    </platform>
 
     <!-- windows8 -->
     <platform name="windows8">
