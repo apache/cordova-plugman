@@ -274,8 +274,12 @@ function reapply_global_munge () {
             );
             continue;
         }
-        // TODO: This is mostly file IO and can run in parallel since each file is independent.
-        self.apply_file_munge(file, global_munge.files[file]);
+        if(file == 'config.xml') {
+            file = resolveConfigFilePath(self.project_dir, self.platform, file);
+            file = path.relative(self.project_dir, file);
+        }
+
+        self.apply_file_munge(file, global_munge.files[file]);    
     }
 }
 
