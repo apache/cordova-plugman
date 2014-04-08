@@ -277,7 +277,6 @@ function reapply_global_munge () {
         if(file == 'config.xml') {
             file = resolveConfigFilePath(self.project_dir, self.platform, file);
             file = path.relative(self.project_dir, file);
-            console.log('New file: ' + file);
         }
 
         self.apply_file_munge(file, global_munge.files[file]);    
