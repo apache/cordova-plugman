@@ -23,6 +23,7 @@ var platform_modules   = require('./platforms'),
     path               = require('path'),
     config_changes     = require('./util/config-changes'),
     xml_helpers        = require('./util/xml-helpers'),
+    prepareNamespace   = require('./util/prepare-namespace'),
     wp7                = require('./platforms/wp7'),
     wp8                = require('./platforms/wp8'),
     windows8           = require('./platforms/windows8'),
@@ -217,14 +218,10 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
                         obj.clobbers = [];
                     }
                     obj.clobbers.push(child.attrib.target);
-                    /* FIXME: browserify guettho clobber */
+                    //console.log(prepareNamespace(child.attrib.target, 'c'));
                     fs.appendFileSync(bScriptPath,
-                      util.format(
-                        "require('cordova/builder').assignOrWrapInDeprecateGetter(window, '%s', module.exports);", 
-                        child.attrib.target
-                      ),
+                      prepareNamespace(child.attrib.target, 'c'),
                       'utf-8');
-                    /* end browserify guettho clobber */
                 } else if (child.tag.toLowerCase() == 'merges') {
                     if (!obj.merges) {
                         obj.merges = [];
@@ -232,10 +229,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
                     obj.merges.push(child.attrib.target);
                     /* FIXME: browserify guettho clobber */
                     fs.appendFileSync(bScriptPath,
-                      util.format(
-                        "require('cordova/builder').recursiveMerge(window, '%s', module.exports);", 
-                        child.attrib.target
-                      ),
+                      prepareNamespace(child.attrib.target, 'm'),
                       'utf-8');
                     /* end browserify guettho clobber */
                 } else if (child.tag.toLowerCase() == 'runs') {
