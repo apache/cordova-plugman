@@ -1,5 +1,8 @@
 // FIXME this is extremely guettho
 module.exports = function(target, method) {
+  
+  target = target.replace(/^window(\.)?/, '');
+
   var lastDot = target.lastIndexOf('.');
   var namespace = target.substr(0, lastDot);
   var lastName = target.substr(lastDot + 1);
