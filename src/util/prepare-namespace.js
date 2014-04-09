@@ -1,6 +1,6 @@
 // FIXME this is extremely guettho
 module.exports = function(target, method) {
-  
+  var old = target; 
   target = target.replace(/^window(\.)?/, '');
 
   var lastDot = target.lastIndexOf('.');
@@ -8,9 +8,12 @@ module.exports = function(target, method) {
   var lastName = target.substr(lastDot + 1);
   var props = target.split(".");
   var code = "";
-  for(var i = 1, len = props.length ; i <= len ; i++) {
-    var sub = props.slice(0, i).join(".");
-    code += util.format("window.%s = window.%s || {};\n", sub, sub);
+
+  if(target !== "") {
+    for(var i = 1, len = props.length ; i <= len ; i++) {
+      var sub = props.slice(0, i).join(".");
+      code += util.format("window.%s = window.%s || {};\n", sub, sub);
+    }
   }
   
   props.unshift('window');  
@@ -18,17 +21,16 @@ module.exports = function(target, method) {
 //  code = "\n";
   if(method === "c") {
     return util.format(
-      "%s\n;require('cordova/builder').assignOrWrapInDeprecateGetter(%s, '%s', module.exports);", 
+      "%s\nrequire('cordova/builder').assignOrWrapInDeprecateGetter(%s, '%s', module.exports);", 
       code,
       object,
       lastName
     );
   } else if(method === "m") {
     return util.format(
-      "%s\n;require('cordova/builder').recursiveMerge(%s, '%s', module.exports);", 
+      "%s\n;require('cordova/builder').recursiveMerge(%s, module.exports);", 
       code,
-      object,
-      lastName
+      object
     );
   }
 }
