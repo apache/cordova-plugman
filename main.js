@@ -54,7 +54,7 @@ if (cli_opts.plugins_dir || cli_opts.project) {
 
 process.on('uncaughtException', function(error) {
     if (cli_opts.debug) {
-        console.error(error.stack);
+        console.error(error.message, error.stack);
     } else {
         console.error(error.message);
     }
