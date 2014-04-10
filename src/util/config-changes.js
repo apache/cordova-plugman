@@ -132,7 +132,7 @@ PlatformMunger.prototype.apply_file_munge = PlatformMunger_apply_file_munge;
 function PlatformMunger_apply_file_munge(file, munge, remove) {
     var self = this;
     var xml_child;
-
+    
     if ( file === 'framework' && self.platform === 'ios' ) {
         // ios pbxproj file
         var pbxproj = self.config_keeper.get(self.project_dir, self.platform, 'framework');
@@ -274,11 +274,6 @@ function reapply_global_munge () {
             );
             continue;
         }
-        if (file == 'config.xml') {
-            file = resolveConfigFilePath(self.project_dir, self.platform, file);
-            file = path.relative(self.project_dir, file);
-        }
-
         // TODO: This is mostly file IO and can run in parallel since each file is independent.
         self.apply_file_munge(file, global_munge.files[file]);
     }
