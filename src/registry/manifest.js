@@ -41,6 +41,7 @@ function generatePackageJsonFromPluginXml(plugin_path) {
             issue = pluginElm.findtext('issue'),
             engines = pluginElm.findall('engines/engine'),
             platformsElm = pluginElm.findall('platform'),
+            englishdoc = "",
             platforms = [];
 
         platformsElm.forEach(function(plat){
@@ -72,8 +73,19 @@ function generatePackageJsonFromPluginXml(plugin_path) {
             }
         }
 
+        //adding docs
+        var docs_path = path.resolve(plugin_path, 'doc/index.md');
+        console.log(docs_path);
+        if(fs.existsSync(docs_path)){
+            console.log("english docs exisit");
+            englishdoc = fs.readFileSync(docs_path, 'utf-8');
+            package_json.englishdoc = englishdoc;
+            console.log(englishdoc);
+        }
+
         // write package.json
         var package_json_path = path.resolve(plugin_path, 'package.json');
+        console.log('about to write package.json');
         fs.writeFileSync(package_json_path, JSON.stringify(package_json, null, 4), 'utf8');
         return package_json;
     });
