@@ -274,10 +274,6 @@ function reapply_global_munge () {
             );
             continue;
         }
-        if(file == 'config.xml') {
-            file = resolveConfigFilePath(self.project_dir, self.platform, file);
-            file = path.relative(self.project_dir, file);
-        }
 
         self.apply_file_munge(file, global_munge.files[file]);    
     }
@@ -390,7 +386,14 @@ function ConfigKeeper() {
 ConfigKeeper.prototype.get = ConfigKeeper_get;
 function ConfigKeeper_get(project_dir, platform, file) {
     var self = this;
+
+    //This fixes a bug with older plugins - when specifying config xml instead of res/xml/config.xml
+    //https://issues.apache.org/jira/browse/CB-6414
+    if(file == 'config.xml' && platform == 'android'){
+        file = 'res/xml/config.xml';
+    }
     var fake_path = path.join(project_dir, platform, file);
+
     if (self._cached[fake_path]) {
         return self._cached[fake_path];
     }
