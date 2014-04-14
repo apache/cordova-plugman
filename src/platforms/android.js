@@ -20,6 +20,7 @@
 var fs = require('fs')  // use existsSync in 0.6.x
    , path = require('path')
    , common = require('./common')
+   , events = require('../events')
    , xml_helpers = require(path.join(__dirname, '..', 'util', 'xml-helpers'));
 
 module.exports = {
@@ -47,10 +48,10 @@ module.exports = {
     },
     "header-file": {
         install:function(source_el, plugin_dir, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'header-file.install is not supported for android');
+            events.emit('verbose', 'header-file.install is not supported for android');
         },
         uninstall:function(source_el, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'header-file.uninstall is not supported for android');
+            events.emit('verbose', 'header-file.uninstall is not supported for android');
         }
     },
     "lib-file":{
@@ -69,7 +70,7 @@ module.exports = {
         install:function(el, plugin_dir, project_dir, plugin_id) {
             var src = el.attrib.src;
             var target = el.attrib.target;
-            require('../../plugman').emit('verbose', 'Copying resource file ' + src + ' to ' + target);
+            events.emit('verbose', 'Copying resource file ' + src + ' to ' + target);
             common.copyFile(plugin_dir, src, project_dir, path.normalize(target));
         },
         uninstall:function(el, project_dir, plugin_id) {
@@ -79,10 +80,10 @@ module.exports = {
     },
     "framework": {
         install:function(source_el, plugin_dir, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'framework.install is not supported for android');
+            events.emit('verbose', 'framework.install is not supported for android');
         },
         uninstall:function(source_el, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'framework.uninstall is not supported for android');
+            events.emit('verbose', 'framework.uninstall is not supported for android');
         }
     }
 };

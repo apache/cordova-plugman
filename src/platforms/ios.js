@@ -23,6 +23,7 @@ var path = require('path')
   , xcode = require('xcode')
   , plist = require('plist-with-patches')
   , shell = require('shelljs')
+  , events = require('../events')
   , cachedProjectFiles = {};
 
 module.exports = {
@@ -141,10 +142,10 @@ module.exports = {
     },
     "lib-file": {
         install:function(source_el, plugin_dir, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'lib-file.install is not supported for ios');
+            events.emit('verbose', 'lib-file.install is not supported for ios');
         },
         uninstall:function(source_el, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'lib-file.uninstall is not supported for ios');
+            events.emit('verbose', 'lib-file.uninstall is not supported for ios');
         }
     },    
     parseProjectFile:function(project_dir) {

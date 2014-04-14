@@ -23,6 +23,7 @@ var common = require('./common'),
     shell = require('shelljs'),
     fs = require('fs'),
     w8jsproj = require('../util/w8jsproj'),
+    events = require('../events'),
     xml_helpers = require('../util/xml-helpers');
 
 
@@ -63,15 +64,15 @@ module.exports = {
     },
     "header-file": {
         install:function(source_el, plugin_dir, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'header-fileinstall is not supported for Windows 8');
+            events.emit('verbose', 'header-fileinstall is not supported for Windows 8');
         },
         uninstall:function(source_el, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'header-file.uninstall is not supported for Windows 8');
+            events.emit('verbose', 'header-file.uninstall is not supported for Windows 8');
         }
     },
     "resource-file":{
         install:function(el, plugin_dir, project_dir, plugin_id, project_file) {
-            require('../../plugman').emit('verbose', 'resource-file is not supported for Windows 8');
+            events.emit('verbose', 'resource-file is not supported for Windows 8');
         },
         uninstall:function(el, project_dir, plugin_id, project_file) {
         }
@@ -82,14 +83,14 @@ module.exports = {
             project_file.addSDKRef(inc);
         },
         uninstall:function(el, project_dir, plugin_id, project_file) {
-            require('../../plugman').emit('verbose', 'windows8 lib-file uninstall :: ' + plugin_id);
+            events.emit('verbose', 'windows8 lib-file uninstall :: ' + plugin_id);
             var inc = el.attrib['Include'];
             project_file.removeSDKRef(inc);
         }
     },
     "framework": {
         install:function(el, plugin_dir, project_dir, plugin_id, project_file) {
-            require('../../plugman').emit('verbose', 'windows8 framework install :: ' + plugin_id);
+            events.emit('verbose', 'windows8 framework install :: ' + plugin_id);
 
             var src = el.attrib['src'];
             var dest = src; // if !isCustom, we will just add a reference to the file in place
@@ -109,7 +110,7 @@ module.exports = {
 
         },
         uninstall:function(el, project_dir, plugin_id, project_file) {
-            require('../../plugman').emit('verbose', 'windows8 framework uninstall :: ' + plugin_id  );
+            events.emit('verbose', 'windows8 framework uninstall :: ' + plugin_id  );
 
             var src = el.attrib['src'];
             // technically it is not possible to get here without isCustom == true -jm
