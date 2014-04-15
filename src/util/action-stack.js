@@ -1,4 +1,5 @@
 var platforms = require("../platforms"),
+    events = require('../events'),
     Q = require('q'),
     fs = require('fs');
 
@@ -25,12 +26,12 @@ ActionStack.prototype = {
     },
     // Returns a promise.
     process:function(platform, project_dir) {
-        require('../../plugman').emit('verbose', 'Beginning processing of action stack for ' + platform + ' project...');
+        events.emit('verbose', 'Beginning processing of action stack for ' + platform + ' project...');
         var project_files;
 
         // parse platform-specific project files once
         if (platforms[platform].parseProjectFile) {
-            require('../../plugman').emit('verbose', 'Parsing ' + platform + ' project files...');
+            events.emit('verbose', 'Parsing ' + platform + ' project files...');
             project_files = platforms[platform].parseProjectFile(project_dir);
         }
 
@@ -45,7 +46,7 @@ ActionStack.prototype = {
             try {
                 handler.apply(null, action_params);
             } catch(e) {
-                require('../../plugman').emit('warn', 'Error during processing of action! Attempting to revert...');
+                events.emit('warn', 'Error during processing of action! Attempting to revert...');
                 var incomplete = this.stack.unshift(action);
                 var issue = 'Uh oh!\n';
                 // revert completed tasks
@@ -61,7 +62,7 @@ ActionStack.prototype = {
                     try {
                         revert.apply(null, revert_params);
                     } catch(err) {
-                        require('../../plugman').emit('warn', 'Error during reversion of action! We probably really messed up your project now, sorry! D:');
+                        events.emit('warn', 'Error during reversion of action! We probably really messed up your project now, sorry! D:');
                         issue += 'A reversion action failed: ' + err.message + '\n';
                     }
                 }
@@ -70,10 +71,10 @@ ActionStack.prototype = {
             }
             this.completed.push(action);
         }
-        require('../../plugman').emit('verbose', 'Action stack processing complete.');
+        events.emit('verbose', 'Action stack processing complete.');
 
         if (project_files) {
-            require('../../plugman').emit('verbose', 'Writing out ' + platform + ' project files...');
+            events.emit('verbose', 'Writing out ' + platform + ' project files...');
             project_files.write();
         }
 
