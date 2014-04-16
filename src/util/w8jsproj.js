@@ -7,6 +7,7 @@ var xml_helpers = require('./xml-helpers'),
     et = require('elementtree'),
     fs = require('fs'),
     shell = require('shelljs'),
+    events = require('../events'),
     path = require('path');
 
 var WindowsStoreProjectTypeGUID = "{BC8A1FFA-BEE3-4634-8014-F334798102B3}";  // any of the below, subtype
@@ -16,7 +17,7 @@ var WinCplusplusProjectTypeGUID = "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"; // .
 
 
 function jsproj(location) {
-    require('../../plugman').emit('verbose','creating jsproj from project at : ' + location);
+    events.emit('verbose','creating jsproj from project at : ' + location);
     this.location = location;
     this.xml = xml_helpers.parseElementtreeSync(location);
     return this;
@@ -50,7 +51,7 @@ jsproj.prototype = {
 
     addReference:function(relPath,src) {
 
-        require('../../plugman').emit('verbose','addReference::' + relPath);
+        events.emit('verbose','addReference::' + relPath);
 
         var item = new et.Element('ItemGroup');
         var extName = path.extname(relPath);
@@ -76,7 +77,7 @@ jsproj.prototype = {
     },
     
     removeReference:function(relPath) {
-        require('../../plugman').emit('verbose','removeReference::' + relPath);
+        events.emit('verbose','removeReference::' + relPath);
 
         var extName = path.extname(relPath);
         var includeText = path.basename(relPath,extName);
@@ -130,7 +131,7 @@ jsproj.prototype = {
     },
     // relative path must include the project file, so we can determine .csproj, .jsproj, .vcxproj...
     addProjectReference:function(relative_path) {
-        require('../../plugman').emit('verbose','adding project reference to ' + relative_path);
+        events.emit('verbose','adding project reference to ' + relative_path);
 
         relative_path = relative_path.split('/').join('\\');
         // read the solution path from the base directory
@@ -186,7 +187,7 @@ jsproj.prototype = {
 
     },
     removeProjectReference:function(relative_path) {
-        require('../../plugman').emit('verbose','removing project reference to ' + relative_path);
+        events.emit('verbose','removing project reference to ' + relative_path);
 
         // find the guid + name of the referenced project
         var pluginProjectXML = xml_helpers.parseElementtreeSync(relative_path);

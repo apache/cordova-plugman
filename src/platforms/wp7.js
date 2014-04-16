@@ -22,6 +22,7 @@ var common = require('./common'),
     glob = require('glob'),
     fs = require('fs'),
     csproj = require('../util/csproj'),
+    events = require('../events'),
     xml_helpers = require('../util/xml-helpers');
 
 module.exports = {
@@ -57,34 +58,34 @@ module.exports = {
     },
     "header-file": {
         install:function(source_el, plugin_dir, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'header-fileinstall is not supported for wp7');
+            events.emit('verbose', 'header-fileinstall is not supported for wp7');
         },
         uninstall:function(source_el, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'header-file.uninstall is not supported for wp7');
+            events.emit('verbose', 'header-file.uninstall is not supported for wp7');
         }
     },
     "resource-file":{
         install:function(el, plugin_dir, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'resource-file.install is not supported for wp7');
+            events.emit('verbose', 'resource-file.install is not supported for wp7');
         },
         uninstall:function(el, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'resource-file.uninstall is not supported for wp7');
+            events.emit('verbose', 'resource-file.uninstall is not supported for wp7');
         }
     },
     "framework": {
         install:function(source_el, plugin_dir, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'framework.install is not supported for wp7');
+            events.emit('verbose', 'framework.install is not supported for wp7');
         },
         uninstall:function(source_el, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'framework.uninstall is not supported for wp7');
+            events.emit('verbose', 'framework.uninstall is not supported for wp7');
         }
     },
     "lib-file": {
         install:function(source_el, plugin_dir, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'lib-file.install is not supported for wp7');
+            events.emit('verbose', 'lib-file.install is not supported for wp7');
         },
         uninstall:function(source_el, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'lib-file.uninstall is not supported for wp7');
+            events.emit('verbose', 'lib-file.uninstall is not supported for wp7');
         }
     }
 };
