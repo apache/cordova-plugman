@@ -94,28 +94,7 @@ function runScriptFile(scriptPath, platform, project_dir, plugin_dir) {
         events.emit('warn', "Script file does't exist and will be skipped: " + scriptPath);
         return Q();
     }
-
-    // .js support only
-    var cmd = 'node ' + scriptPath,
-        d = Q.defer(),
-        options = {};
-
-    // populate required environment variables
-    options.env = {};
-    options.env.PATH = process.env.PATH;
-    options.env.CORDOVA_PLATFORM = platform;
-    options.env.CORDOVA_PROJECT_DIR = project_dir;
-    options.env.CORDOVA_PLUGIN_DIR = plugin_dir;
-    options.env.CORDOVA_CMDLINE = process.argv.join(' ');
-
-    events.emit('debug', "Running script file: " + scriptPath);
-
-    child_process.exec(cmd, options, function(error, stdout, stderr) {
-        events.emit('verbose', 'Script output: ' + stdout);
-        if (error) {
-            events.emit('warn', 'Script failed: ' + error);
-        }
-        d.resolve();
-    });
-    return d.promise;
+    var scriptFn = require(scriptPath);
+    // if hook is async it can return promise instance and we will handle it
+    return Q(new scriptFn(platform, project_dir, plugin_dir, process.argv.join(' ')));
 }
