@@ -148,7 +148,7 @@ module.exports = {
             }).then(function() {
                 return Q.ninvoke(npm.commands, 'publish', args)
             }).fin(function() {
-                //fs.unlink(path.resolve(args[0], 'package.json'));
+                fs.unlink(path.resolve(args[0], 'package.json'));
             });
         });
     },
