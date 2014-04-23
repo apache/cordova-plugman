@@ -41,12 +41,20 @@ module.exports = {
         events.emit('debug', 'Executing "' + type + '"  hook for "' + plugin_id + '" on ' + platform + '.');
         
         var scriptTypes = getScriptTypesForHook(type);
-
         if (scriptTypes == null) {
             throw Error('unknown plugin hook type: "' + type + '"' );
         }
 
-        return runScripts(scriptTypes, plugin_id, pluginElement, platform, project_dir, plugin_dir);
+        var scriptFilesToRun = getScriptFiles(pluginElement, scriptTypes, platform);
+            context = {
+                platform: platform,
+                projectDir: project_dir,
+                pluginDir: plugin_dir,
+                cmdLine: process.argv.join(' '),
+                pluginId: plugin_id
+            };
+
+        return runScripts(scriptFilesToRun, context);
     }
 };
 
@@ -68,33 +76,49 @@ function getScriptTypesForHook(hookType) {
 }
 
 /**
- * Async runs all the scripts with specified types.
+ * Gets all scripts from the plugin xml with the specified types.
  */
-function runScripts(scriptTypes, plugin_id, pluginElement, platform, project_dir, plugin_dir) {
-    var allScripts =  pluginElement.findall('./script').concat(pluginElement.findall('./platform[@name="'+platform+'"]/script'));
+function getScriptFiles(pluginElement, scriptTypes, platform) {
+    var scriptFiles= [],
+        scriptElements =  pluginElement.findall('./script').concat(
+            pluginElement.findall('./platform[@name="' + platform + '"]/script'));
 
     var pendingScripts = [];
-    allScripts.forEach(function(script){
+
+    scriptElements.forEach(function(script){
         if (script.attrib.type && scriptTypes.indexOf(script.attrib.type.toLowerCase()) > -1 && script.attrib.src) {
-            pendingScripts.push(runScriptFile(script.attrib.src, platform, project_dir, plugin_dir));
+            scriptFiles.push(script.attrib.src);
         }
+    });
+    return scriptFiles;
+}
+
+/**
+ * Async runs the script files.
+ */
+function runScripts(scripts, context) {
+    var pendingScripts = [];
+
+    scripts.forEach(function(script){
+        pendingScripts.push(runScriptFile(script, context));
     });
 
     return Q.all(pendingScripts);
 };
 
 /**
- * Async runs script file.
+ * Async runs single script file.
  */
-function runScriptFile(scriptPath, platform, project_dir, plugin_dir) {
+function runScriptFile(scriptPath, context) {
 
-    scriptPath = path.join(plugin_dir, scriptPath);
+    scriptPath = path.join(context.pluginDir, scriptPath);
 
     if(!fs.existsSync(scriptPath)) {
         events.emit('warn', "Script file does't exist and will be skipped: " + scriptPath);
         return Q();
     }
     var scriptFn = require(scriptPath);
+
     // if hook is async it can return promise instance and we will handle it
-    return Q(new scriptFn(platform, project_dir, plugin_dir, process.argv.join(' ')));
+    return Q(new scriptFn(context));
 }
