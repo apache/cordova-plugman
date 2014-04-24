@@ -49,7 +49,7 @@ public:
    }
 
    /// allocate space for an array of objectPerAllocation object.
-   /// @warning it is the responsability of the caller to call objects constructors.
+   /// @warning it is the responsibility of the caller to call objects constructors.
    AllocatedType *allocate()
    {
       if ( freeHead_ ) // returns node from free list.
@@ -77,7 +77,7 @@ public:
    }
 
    /// Release the object.
-   /// @warning it is the responsability of the caller to actually destruct the object.
+   /// @warning it is the responsibility of the caller to actually destruct the object.
    void release( AllocatedType *object )
    {
       assert( object != 0 );
@@ -94,7 +94,7 @@ private:
       AllocatedType buffer_[objectPerAllocation];
    };
 
-   // disabled copy constructor and assignement operator.
+   // disabled copy constructor and assignment operator.
    BatchAllocator( const BatchAllocator & );
    void operator =( const BatchAllocator &);
 
@@ -111,7 +111,7 @@ private:
 
    BatchInfo *batches_;
    BatchInfo *currentBatch_;
-   /// Head of a single linked list within the allocated space of freeed object
+   /// Head of a single linked list within the allocated space of freed object
    AllocatedType *freeHead_;
    unsigned int objectsPerPage_;
 };

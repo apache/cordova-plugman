@@ -304,9 +304,9 @@ describe('ios project handler', function() {
             });
             it('should rm the file from the right target location when element has a target-dir', function(){
                 var source = copyArray(valid_source).filter(function(s) { return s.attrib['target-dir'] != undefined});
-                shell.cp('-rf', ios_config_xml_project, temp);                
+                shell.cp('-rf', ios_config_xml_project, temp);
                 var spy = spyOn(shell, 'rm');
-                
+
                 ios['source-file'].uninstall(source[0], temp, dummy_id, proj_files);
                 expect(spy).toHaveBeenCalledWith('-rf', path.join(temp, 'SampleApp', 'Plugins', dummy_id, 'targetDir', 'TargetDirTest.m'));
             });
@@ -314,7 +314,7 @@ describe('ios project handler', function() {
                 var source = copyArray(valid_source).filter(function(s) { return s.attrib['framework'] == "true"});
                 shell.cp('-rf', ios_config_xml_project, temp);
                 var spy = spyOn(proj_files.xcode, 'removeFramework');
-                
+
                 ios['source-file'].uninstall(source[0], temp, dummy_id, proj_files);
                 expect(spy).toHaveBeenCalledWith(path.join('SampleApp', 'Plugins', dummy_id, 'SourceWithFramework.m'));
             });

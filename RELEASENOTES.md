@@ -84,7 +84,7 @@
 * Overhaul dependency uninstallation
 * [CB-4872] - adding in custom semver check for project
 * [CB-4872] - updated paths to version files
-* Update action-stack to avoid static platform detection + test if parseProjectFile is present instea
+* Update action-stack to avoid static platform detection + test if parseProjectFile is present instead
 * Update spec to match new ios parse method name
 * Update references to old ios parse method
 * Rename parse method and add a write method to result + parseIOSProjectFiles --> parseProjectFile +
@@ -102,10 +102,10 @@
 * [CB-4837]: Version 0.12.0. Release notes updated.
 * Rename CHANGELOG.md -> RELEASENOTES.md
 * CB-4492 tracking which of cli or plugman is used to fetch from registry
-* removed unncessary console.logs
+* removed unnecessary console.logs
 * add full ff support to plugman
 * add firefoxos
-* removed unncessary console.logs
+* removed unnecessary console.logs
 * add full ff support to plugman
 * add firefoxos
 * Fix tests broken by lazy module requiring.

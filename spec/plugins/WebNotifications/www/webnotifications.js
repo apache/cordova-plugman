@@ -43,7 +43,7 @@ if (typeof window.Notification == 'undefined') {
         this.soundUrl = options.soundUrl || '';
         this.badgeNumber = options.badgeNumber || 0;
 
-        // there must be one unique notification per tag, so close any existing outstanting notifications
+        // there must be one unique notification per tag, so close any existing outstanding notifications
         if (window.Notification.active[this.tag])
             window.Notification.active[this.tag].close();
         window.Notification.active[this.tag] = this;

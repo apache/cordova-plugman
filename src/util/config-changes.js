@@ -39,7 +39,7 @@ var fs   = require('fs'),
     bplist = require('bplist-parser'),
     xcode = require('xcode'),
     et   = require('elementtree'),
-    _ = require('underscore'), 
+    _ = require('underscore'),
     xml_helpers = require('./../util/xml-helpers'),
     platforms = require('./../platforms'),
     events = require('./../events'),
@@ -132,7 +132,7 @@ PlatformMunger.prototype.apply_file_munge = PlatformMunger_apply_file_munge;
 function PlatformMunger_apply_file_munge(file, munge, remove) {
     var self = this;
     var xml_child;
-    
+
     if ( file === 'framework' && self.platform === 'ios' ) {
         // ios pbxproj file
         var pbxproj = self.config_keeper.get(self.project_dir, self.platform, 'framework');
@@ -275,7 +275,7 @@ function reapply_global_munge () {
             continue;
         }
 
-        self.apply_file_munge(file, global_munge.files[file]);    
+        self.apply_file_munge(file, global_munge.files[file]);
     }
 }
 
@@ -516,7 +516,7 @@ function ConfigFile_load() {
         // plist file
         self.type = 'plist';
         // TODO: isBinaryPlist() reads the file and then parse re-reads it again.
-        //       We always write out text plist, not binaray.
+        //       We always write out text plist, not binary.
         //       Do we still need to support binary plist?
         //       If yes, use plist.parseStringSync() and read the file once.
         self.plist_module = (isBinaryPlist(filepath) ? bplist : plist);

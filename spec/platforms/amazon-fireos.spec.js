@@ -13,13 +13,13 @@ var amazon_fireos = require('../../src/platforms/amazon-fireos'),
     dummyplugin = path.join(__dirname, '..', 'plugins', 'DummyPlugin'),
     faultyplugin = path.join(__dirname, '..', 'plugins', 'FaultyPlugin'),
     variableplugin = path.join(__dirname, '..', 'plugins', 'VariablePlugin'),
-    amzon_fireos_one_project = path.join(__dirname, '..', 'projects', 'android_one', '*'),
+    amazon_fireos_one_project = path.join(__dirname, '..', 'projects', 'android_one', '*'),
     amazon_fireos_two_project = path.join(__dirname, '..', 'projects', 'android_two', '*');
 
 var xml_path     = path.join(dummyplugin, 'plugin.xml')
   , xml_text     = fs.readFileSync(xml_path, 'utf-8')
   , plugin_et    = new et.ElementTree(et.XML(xml_text));
-  
+
 var platformTag = plugin_et.find('./platform[@name="amazon-fireos"]');
 var dummy_id = plugin_et._root.attrib['id'];
 
@@ -82,13 +82,13 @@ describe('amazon-fireos project handler', function() {
             it('should copy stuff from one location to another by calling common.copyFile', function() {
                 var source = copyArray(valid_source);
                 var s = spyOn(common, 'copyFile');
-                amazon_fireos['source-file'].install(source[0], dummyplugin, temp); 
+                amazon_fireos['source-file'].install(source[0], dummyplugin, temp);
                 expect(s).toHaveBeenCalledWith(dummyplugin, 'src/amazon-fireos/DummyPlugin.java', temp, path.join('src', 'com', 'phonegap', 'plugins', 'dummyplugin', 'DummyPlugin.java'));
             });
             it('should throw if source file cannot be found', function() {
                 var source = copyArray(invalid_source);
                 expect(function() {
-                    amazon_fireos['source-file'].install(source[0], faultyplugin, temp); 
+                    amazon_fireos['source-file'].install(source[0], faultyplugin, temp);
                 }).toThrow('"' + path.resolve(faultyplugin, 'src/amazon-fireos/NotHere.java') + '" not found!');
             });
             it('should throw if target file already exists', function() {
@@ -100,7 +100,7 @@ describe('amazon-fireos project handler', function() {
 
                 var source = copyArray(valid_source);
                 expect(function() {
-                    amazon_fireos['source-file'].install(source[0], dummyplugin, temp); 
+                    amazon_fireos['source-file'].install(source[0], dummyplugin, temp);
                 }).toThrow('"' + target + '" already exists!');
             });
         });

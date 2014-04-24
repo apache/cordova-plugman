@@ -197,7 +197,7 @@ function runUninstallPlatform(actions, platform, project_dir, plugin_dir, plugin
             danglers.map(function(dangler) {
                 var dependent_path = dependencies.resolvePath(dangler, plugins_dir);
 
-                var opts = underscore.extend({}, options, { 
+                var opts = underscore.extend({}, options, {
                     is_top_level: depsInfo.top_level_plugins.indexOf(dangler) > -1,
                     depsInfo: depsInfo
                 });
@@ -221,7 +221,7 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
     var platformTag = plugin_et.find('./platform[@name="'+platform+'"]');
     www_dir = www_dir || handler.www_dir(project_dir);
     events.emit('log', 'Uninstalling ' + plugin_id + ' from ' + platform);
-    
+
     var assets = plugin_et.findall('./asset');
     if (platformTag) {
         var sourceFiles = platformTag.findall('./source-file'),
@@ -233,38 +233,38 @@ function handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, w
 
         // queue up native stuff
         sourceFiles && sourceFiles.forEach(function(source) {
-            actions.push(actions.createAction(handler["source-file"].uninstall, 
-                                             [source, project_dir, plugin_id], 
-                                             handler["source-file"].install, 
+            actions.push(actions.createAction(handler["source-file"].uninstall,
+                                             [source, project_dir, plugin_id],
+                                             handler["source-file"].install,
                                              [source, plugin_dir, project_dir, plugin_id]));
         });
 
         headerFiles && headerFiles.forEach(function(header) {
-            actions.push(actions.createAction(handler["header-file"].uninstall, 
-                                             [header, project_dir, plugin_id], 
-                                             handler["header-file"].install, 
+            actions.push(actions.createAction(handler["header-file"].uninstall,
+                                             [header, project_dir, plugin_id],
+                                             handler["header-file"].install,
                                              [header, plugin_dir, project_dir, plugin_id]));
         });
 
         resourceFiles && resourceFiles.forEach(function(resource) {
-            actions.push(actions.createAction(handler["resource-file"].uninstall, 
-                                              [resource, project_dir, plugin_id], 
-                                              handler["resource-file"].install, 
+            actions.push(actions.createAction(handler["resource-file"].uninstall,
+                                              [resource, project_dir, plugin_id],
+                                              handler["resource-file"].install,
                                               [resource, plugin_dir, project_dir]));
         });
 
         // CB-5238 custom frameworks only
         frameworkFiles && frameworkFiles.forEach(function(framework) {
-            actions.push(actions.createAction(handler["framework"].uninstall, 
-                                              [framework, project_dir, plugin_id], 
-                                              handler["framework"].install, 
+            actions.push(actions.createAction(handler["framework"].uninstall,
+                                              [framework, project_dir, plugin_id],
+                                              handler["framework"].install,
                                               [framework, plugin_dir, project_dir]));
         });
 
         libFiles && libFiles.forEach(function(source) {
-            actions.push(actions.createAction(handler["lib-file"].uninstall, 
-                                              [source, project_dir, plugin_id], 
-                                              handler["lib-file"].install, 
+            actions.push(actions.createAction(handler["lib-file"].uninstall,
+                                              [source, project_dir, plugin_id],
+                                              handler["lib-file"].install,
                                               [source, plugin_dir, project_dir, plugin_id]));
         });
     }

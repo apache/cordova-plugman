@@ -13,7 +13,7 @@ csproj.prototype = {
     write:function() {
         fs.writeFileSync(this.location, this.xml.write({indent:4}), 'utf-8');
     },
-    
+
     addReference:function(relPath) {
         var item = new et.Element('ItemGroup');
         var extName = path.extname(relPath);
@@ -33,10 +33,10 @@ csproj.prototype = {
         }
 
         item.append(elem);
-        
+
         this.xml.getroot().append(item);
     },
-    
+
     removeReference:function(relPath) {
         var item = new et.Element('ItemGroup');
         var extName = path.extname(relPath);
@@ -60,7 +60,7 @@ csproj.prototype = {
         if(extName == ".xaml") {
             var page = new et.Element('Page');
             var sub_type = new et.Element('SubType');
-                
+
             sub_type.text = "Designer";
             page.append(sub_type);
             page.attrib.Include = relative_path;

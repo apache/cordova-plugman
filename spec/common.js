@@ -30,7 +30,7 @@ if(opt.debug) {
 }
 
 module.exports = common = {
-    spy: { 
+    spy: {
         getInstall: function(emitSpy){
             return common.spy.startsWith(emitSpy, 'Install start');
         },

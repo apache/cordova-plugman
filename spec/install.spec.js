@@ -33,7 +33,7 @@ var install = require('../src/install'),
         'G' : path.join(plugins_dir, 'dependencies', 'G')
     },
     promise,
-    results = {}, 
+    results = {},
     dummy_id = 'com.phonegap.plugins.dummyplugin';
 
 function installPromise(f) {
@@ -83,7 +83,7 @@ describe('start', function() {
          .then(
             function(){ return install('android', project, plugins['DummyPlugin']) }
         ).then(
-            function(){ 
+            function(){
                 results['actions_callCount'] = actions_push.callCount;
                 results['actions_create'] = ca.argsForCall[0];
                 results['config_add'] = config_queue_add.argsForCall[0];
@@ -95,14 +95,14 @@ describe('start', function() {
         ).then(
             function(){
                 emit = spyOn(events, 'emit');
-                return install('android', project, plugins['ChildBrowser']) 
+                return install('android', project, plugins['ChildBrowser'])
             }
         ).then(
-            function(){ 
-                return install('android', project, plugins['VariablePlugin'], plugins_install_dir, { cli_variables:{API_KEY:'batman'} }) 
+            function(){
+                return install('android', project, plugins['VariablePlugin'], plugins_install_dir, { cli_variables:{API_KEY:'batman'} })
             }
         ).then(
-            function(){ 
+            function(){
                 done = true;
                 results['prepareCount'] = prepare.callCount;
                 results['emit_results'] = [];
@@ -124,7 +124,7 @@ describe('install', function() {
 
     beforeEach(function() {
         prepare = spyOn(plugman, 'prepare').andReturn( Q(true) );
-    
+
         exec = spyOn(child_process, 'exec').andCallFake(function(cmd, cb) {
             cb(false, '', '');
         });
@@ -353,7 +353,7 @@ describe('install', function() {
                 waitsFor(function () { return done; }, 'install promise never resolved', 200);
                 runs(function () {
                     var install = common.spy.getInstall(emit);
-       
+
                     expect(done.message).toEqual('Cyclic dependency from G to H');
                 });
             });
@@ -455,7 +455,7 @@ describe('install', function() {
 
 
 describe('end', function() {
-                         
+
     it('end', function() {
         done = false;
 
