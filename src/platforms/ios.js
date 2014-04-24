@@ -153,9 +153,9 @@ module.exports = {
         // there is now double caching of iOS project files.
         // Remove the cache here when install can handle
         // a list of plugins at once.
-        if (cachedProjectFiles[project_dir]) {
-            return cachedProjectFiles[project_dir];
-        }
+       // if (cachedProjectFiles[project_dir]) {
+       //     return cachedProjectFiles[project_dir];
+       // }
         // grab and parse pbxproj
         // we don't want CordovaLib's xcode project
         var project_files = glob.sync(path.join(project_dir, '*.xcodeproj', 'project.pbxproj'));

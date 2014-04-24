@@ -1,3 +1,5 @@
+var util = require('util');
+
 // FIXME this is extremely guettho
 module.exports = function(target, method) {
   var old = target; 
@@ -26,11 +28,13 @@ module.exports = function(target, method) {
       object,
       lastName
     );
-  } else if(method === "m") {
+  } else if(method === "m" && target !== "") {
     return util.format(
       "%s\n;require('cordova/builder').recursiveMerge(%s, module.exports);", 
       code,
-      object
+      target
     );
+  } else {
+    return "// no clobber or merges";
   }
 }
