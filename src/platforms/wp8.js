@@ -109,5 +109,5 @@ module.exports = {
         uninstall:function(source_el, project_dir, plugin_id) {
             events.emit('verbose', 'lib-file.uninstall is not supported for wp8');
         }
-    }    
+    }
 };

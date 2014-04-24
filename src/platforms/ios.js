@@ -147,7 +147,7 @@ module.exports = {
         uninstall:function(source_el, project_dir, plugin_id) {
             events.emit('verbose', 'lib-file.uninstall is not supported for ios');
         }
-    },    
+    },
     parseProjectFile:function(project_dir) {
         // TODO: With ConfigKeeper introduced in config-changes.js
         // there is now double caching of iOS project files.

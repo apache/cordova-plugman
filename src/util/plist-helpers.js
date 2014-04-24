@@ -21,7 +21,7 @@
 
 var et = require('elementtree'),
     plist = require('plist-with-patches');
- 
+
 // adds node to doc at selector
 module.exports = {
     graftPLIST:function (doc, xml, selector) {
@@ -38,7 +38,7 @@ module.exports = {
     // removes node from doc at selector
     prunePLIST:function(doc, xml, selector) {
         var obj = plist.parseStringSync("<plist>"+xml+"</plist>");
-            
+
         pruneOBJECT(doc, selector, obj);
 
         return true;
@@ -51,9 +51,9 @@ function pruneOBJECT(doc, selector, fragment) {
         for (i in fragment) {
             for (j in doc[selector]) {
                 empty = pruneOBJECT(doc[selector], j, fragment[i]) && empty;
-            }  
+            }
         }
-        if (empty) 
+        if (empty)
         {
             delete doc[selector];
             return true;
@@ -63,7 +63,7 @@ function pruneOBJECT(doc, selector, fragment) {
         delete doc[selector];
         return true;
     }
-    
+
     return false;
 }
 

@@ -2,7 +2,7 @@ var uninstall = require('../src/uninstall'),
     install = require('../src/install'),
     actions = require('../src/util/action-stack'),
     config_changes = require('../src/util/config-changes'),
-    events  = require('../src/events'),   
+    events  = require('../src/events'),
     plugman = require('../plugman'),
     common  = require('./common'),
     fs      = require('fs'),
@@ -154,7 +154,7 @@ describe('uninstallPlugin', function() {
     });
     describe('with dependencies', function() {
 
-        it('should delete all dependent plugins', function() {                              
+        it('should delete all dependent plugins', function() {
             runs(function() {
                 uninstallPromise( uninstall.uninstallPlugin('A', plugins_install_dir) );
             });
@@ -170,7 +170,7 @@ describe('uninstallPlugin', function() {
             });
         });
 
-        it("should fail if plugin is a required dependency", function() {  
+        it("should fail if plugin is a required dependency", function() {
             runs(function() {
                 uninstallPromise( uninstall.uninstallPlugin('C', plugins_install_dir) );
             });
@@ -180,7 +180,7 @@ describe('uninstallPlugin', function() {
             });
         });
 
-        it("allow forcefully removing a plugin", function() {  
+        it("allow forcefully removing a plugin", function() {
             runs(function() {
                 uninstallPromise( uninstall.uninstallPlugin('C', plugins_install_dir, {force: true}) );
             });
@@ -192,7 +192,7 @@ describe('uninstallPlugin', function() {
             });
         });
 
-        it("never remove top level plugins if they are a dependency", function() {  
+        it("never remove top level plugins if they are a dependency", function() {
             runs(function() {
                 uninstallPromise( uninstall.uninstallPlugin('A', plugins_install_dir2) );
             });
@@ -253,27 +253,27 @@ describe('uninstall', function() {
 });
 
 describe('end', function() {
-                         
+
     it('end', function() {
         done = false;
 
-        promise.then( 
-            function(){ 
-                return uninstall('android', project, plugins['DummyPlugin']) 
+        promise.then(
+            function(){
+                return uninstall('android', project, plugins['DummyPlugin'])
             }
-        ).then( 
-            function(){ 
-                // Fails... A depends on 
-                return uninstall('android', project, plugins['C']) 
+        ).then(
+            function(){
+                // Fails... A depends on
+                return uninstall('android', project, plugins['C'])
             }
-        ).fail( 
+        ).fail(
             function(err) {
                 expect(err.message).toBe("The plugin 'C' is required by (A), skipping uninstallation.");
             }
-        ).then( 
-            function(){ 
+        ).then(
+            function(){
                 // dependencies on C,D ... should this only work with --recursive? prompt user..?
-                return uninstall('android', project, plugins['A']) 
+                return uninstall('android', project, plugins['A'])
             }
         ).fin(function(err){
             if(err)

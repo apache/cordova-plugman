@@ -27,7 +27,7 @@ describe('csproj', function() {
     });
 
     describe('write method', function() {
-        
+
     });
 
     describe('source file', function() {
@@ -43,7 +43,7 @@ describe('csproj', function() {
             var test_csproj = new csproj(example1_csproj);
             it('should properly add .xaml files', function() {
                 test_csproj.addSourceFile(page_test);
-                expect(test_csproj.xml.getroot().find('.//Page[@Include="src\\UI\\PageTest.xaml"]')).toBeTruthy();        
+                expect(test_csproj.xml.getroot().find('.//Page[@Include="src\\UI\\PageTest.xaml"]')).toBeTruthy();
                 expect(test_csproj.xml.getroot().find('.//Page[@Include="src\\UI\\PageTest.xaml"]/Generator').text).toEqual('MSBuild:Compile');
                 expect(test_csproj.xml.getroot().find('.//Page[@Include="src\\UI\\PageTest.xaml"]/SubType').text).toEqual('Designer');
             });

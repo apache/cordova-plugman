@@ -71,7 +71,7 @@ function possiblyFetch(id, plugins_dir, options) {
     }
 
     var opts = underscore.extend({}, options, {
-        link: false, 
+        link: false,
         client: 'plugman'
     });
 
@@ -278,7 +278,7 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
                     filtered_variables[key] = options.cli_variables[key]
             });
             install.filtered_variables = filtered_variables;
-    
+
             if (missing_vars.length > 0) {
                 throw new Error('Variable(s) missing: ' + missing_vars.join(", "));
             }
@@ -327,7 +327,7 @@ function installDependencies(install, dependencies, options) {
 
     return dependencies.reduce(function(soFar, depXml) {
         return soFar.then(
-            function() {   
+            function() {
                 var dep = {
                     id: depXml.attrib.id,
                     subdir: depXml.attrib.subdir || '',
@@ -348,7 +348,7 @@ function installDependencies(install, dependencies, options) {
                 options.graph.getChain(install.top_plugin_id);
 
                 return tryFetchDependency(dep, install, options)
-                .then( 
+                .then(
                     function(url){
                         dep.url = url;
                         return installDependency(dep, install, options);
@@ -439,7 +439,7 @@ function tryFetchDependency(dep, install, options) {
         }
     }
 
-    // Test relative to parent folder 
+    // Test relative to parent folder
     if( dep.url && isRelativePath(dep.url) ) {
         var relativePath = path.resolve(install.top_plugin_dir, '../' + dep.url);
 
@@ -463,7 +463,7 @@ function installDependency(dep, install, options) {
     if ( fs.existsSync(dep.install_dir) ) {
         events.emit('verbose', 'Dependent plugin "' + dep.id + '" already fetched, using that version.');
         var opts = underscore.extend({}, options, {
-            cli_variables: install.filtered_variables, 
+            cli_variables: install.filtered_variables,
             is_top_level: false
         });
 
@@ -473,7 +473,7 @@ function installDependency(dep, install, options) {
         events.emit('verbose', 'Dependent plugin "' + dep.id + '" not fetched, retrieving then installing.');
 
         var opts = underscore.extend({}, options, {
-            cli_variables: install.filtered_variables, 
+            cli_variables: install.filtered_variables,
             is_top_level: false,
             subdir: dep.subdir,
             git_ref: dep.git_ref,

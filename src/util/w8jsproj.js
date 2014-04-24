@@ -75,7 +75,7 @@ jsproj.prototype = {
         item.append(elem);
         this.xml.getroot().append(item);
     },
-    
+
     removeReference:function(relPath) {
         events.emit('verbose','removeReference::' + relPath);
 
@@ -163,18 +163,18 @@ jsproj.prototype = {
         else if(projectExt == ".csproj") {
             projectTypeGuid = WinCSharpProjectTypeGUID;
         }
-        
+
         if(!projectTypeGuid) {
             throw new Error("unrecognized project type");
         }
 
-        var postInsertText = 'Project("' + projectTypeGuid + '") = "' + 
+        var postInsertText = 'Project("' + projectTypeGuid + '") = "' +
                          projName + '", "' + relative_path + '",' +
                         '"' + projectGuid + '"\n\r EndProject\n\r';
 
         solText = splitText[0] + preInsertText + "EndProject\n\r" + postInsertText + splitText[1];
         fs.writeFileSync(solutionPath,solText,{encoding:"utf8"});
-        
+
 
         // Add the ItemGroup/ProjectReference to the cordova project :
         // <ItemGroup><ProjectReference Include="blahblah.csproj"/></ItemGroup>
@@ -204,7 +204,7 @@ jsproj.prototype = {
         else if(projectExt == ".csproj") {
             projectTypeGuid = WinCSharpProjectTypeGUID;
         }
-        
+
         if(!projectTypeGuid) {
             throw new Error("unrecognized project type");
         }
@@ -213,7 +213,7 @@ jsproj.prototype = {
                              projectGuid + "=" + projectGuid + "\n\r" +
                             "EndProjectSection\n\r";
 
-        var postInsertText = 'Project("' + projectTypeGuid + '") = "' + 
+        var postInsertText = 'Project("' + projectTypeGuid + '") = "' +
                               projName + '", "' + relative_path + '",' +
                               '"' + projectGuid + '"\n\r EndProject\n\r';
 
@@ -221,7 +221,7 @@ jsproj.prototype = {
         var solutionPath = shell.ls(path.join(path.dirname(this.location),"*.sln"))[0];  // TODO:error handling
         var solText = fs.readFileSync(solutionPath,{encoding:"utf8"});
         var splitText = solText.split(preInsertText);
-        
+
         solText = splitText.join("").split(postInsertText);
         solText = solText.join("");
 

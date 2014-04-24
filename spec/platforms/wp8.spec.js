@@ -88,7 +88,7 @@ describe('wp8 project handler', function() {
             it('should copy stuff from one location to another by calling common.copyFile', function() {
                 var source = copyArray(valid_source);
                 var s = spyOn(common, 'copyFile');
-                wp8['source-file'].install(source[0], dummyplugin, temp, dummy_id, proj_files); 
+                wp8['source-file'].install(source[0], dummyplugin, temp, dummy_id, proj_files);
                 expect(s).toHaveBeenCalledWith(dummyplugin, 'src/wp8/DummyPlugin.cs', temp, path.join('Plugins', 'com.phonegap.plugins.dummyplugin', 'DummyPlugin.cs'));
             });
             it('should throw if source-file src cannot be found', function() {

@@ -78,7 +78,7 @@ module.exports = {
         }
     },
     "lib-file": {
-        install:function(el, plugin_dir, project_dir, plugin_id, project_file) { 
+        install:function(el, plugin_dir, project_dir, plugin_id, project_file) {
             var inc  = el.attrib['Include'];
             project_file.addSDKRef(inc);
         },
@@ -114,7 +114,7 @@ module.exports = {
 
             var src = el.attrib['src'];
             // technically it is not possible to get here without isCustom == true -jm
-            // var isCustom = el.attrib.custom == "true"; 
+            // var isCustom = el.attrib.custom == "true";
             var type = el.attrib["type"];
             // unfortunately we have to generate the plugin_dir path because it is not passed to uninstall
             var plugin_dir = path.join(project_dir,"cordova/plugins",plugin_id,src);
@@ -123,7 +123,7 @@ module.exports = {
                 project_file.removeProjectReference(plugin_dir);
             }
             else {
-                // if(isCustom) {  }  
+                // if(isCustom) {  }
                 var targetPath = path.join('plugins', plugin_id);
                 common.removeFile(project_dir, targetPath);
                 project_file.removeReference(src);

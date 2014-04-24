@@ -180,9 +180,9 @@ function resolveParent(doc, selector) {
     return parent;
 }
 
-// Find the index at which to insert an entry. After is a ;-separated priority list 
-// of tags after which the insertion should be made. E.g. If we need to 
-// insert an element C, and the rule is that the order of children has to be 
+// Find the index at which to insert an entry. After is a ;-separated priority list
+// of tags after which the insertion should be made. E.g. If we need to
+// insert an element C, and the rule is that the order of children has to be
 // As, Bs, Cs. After will be equal to "C;B;A".
 
 function findInsertIdx(children, after) {
