@@ -1,7 +1,5 @@
 /*
- *
- * Copyright 2013 Anis Kadri
- *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -42,7 +40,7 @@ module.exports = {
             var is_framework = source_el.attrib['framework'] && (source_el.attrib['framework'] == 'true' || source_el.attrib['framework'] == true);
             var has_flags = source_el.attrib['compiler-flags'] && source_el.attrib['compiler-flags'].length ? true : false ;
 
-            if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <source-file>');
+            if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" osx <source-file>');
             if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
             var project_ref = path.join('Plugins', path.relative(project.plugins_dir, destFile));
 
@@ -84,7 +82,7 @@ module.exports = {
             var srcFile = path.resolve(plugin_dir, src);
             var targetDir = path.resolve(project.plugins_dir, plugin_id, getRelativeDir(header_el));
             var destFile = path.resolve(targetDir, path.basename(src));
-            if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <header-file>');
+            if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" osx <header-file>');
             if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
             project.xcode.addHeaderFile(path.join('Plugins', path.relative(project.plugins_dir, destFile)));
             shell.mkdir('-p', targetDir);
@@ -106,7 +104,7 @@ module.exports = {
             var src = resource_el.attrib['src'],
                 srcFile = path.resolve(plugin_dir, src),
                 destFile = path.resolve(project.resources_dir, path.basename(src));
-            if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <resource-file>');
+            if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" osx <resource-file>');
             if (fs.existsSync(destFile)) throw new Error('target destination "' + destFile + '" already exists');
             project.xcode.addResourceFile(path.join('Resources', path.basename(src)));
             shell.cp('-R', srcFile, project.resources_dir);
@@ -125,7 +123,7 @@ module.exports = {
                 srcFile = path.resolve(plugin_dir, src),
                 targetDir = path.resolve(project.plugins_dir, plugin_id, path.basename(src));
             if (!custom) throw new Error('cannot add non custom frameworks.');
-            if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" ios <framework>');
+            if (!fs.existsSync(srcFile)) throw new Error('cannot find "' + srcFile + '" osx <framework>');
             if (fs.existsSync(targetDir)) throw new Error('target destination "' + targetDir + '" already exists');
             shell.mkdir('-p', path.dirname(targetDir));
             shell.cp('-R', srcFile, path.dirname(targetDir)); // frameworks are directories
@@ -141,15 +139,15 @@ module.exports = {
     },
     "lib-file": {
         install:function(source_el, plugin_dir, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'lib-file.install is not supported for ios');
+            require('../../plugman').emit('verbose', 'lib-file.install is not supported for osx');
         },
         uninstall:function(source_el, project_dir, plugin_id) {
-            require('../../plugman').emit('verbose', 'lib-file.uninstall is not supported for ios');
+            require('../../plugman').emit('verbose', 'lib-file.uninstall is not supported for osx');
         }
     },    
     parseProjectFile:function(project_dir) {
         // TODO: With ConfigKeeper introduced in config-changes.js
-        // there is now double caching of iOS project files.
+        // there is now double caching of osx project files.
         // Remove the cache here when install can handle
         // a list of plugins at once.
         if (cachedProjectFiles[project_dir]) {
