@@ -19,24 +19,20 @@
 
 /* jshint node:true */
 
-var platform_modules   = require('./platforms'),
-    path               = require('path'),
-    config_changes     = require('./util/config-changes'),
-    xml_helpers        = require('./util/xml-helpers'),
-    prepareNamespace   = require('./util/prepare-namespace'),
-    wp7                = require('./platforms/wp7'),
-    wp8                = require('./platforms/wp8'),
-    windows8           = require('./platforms/windows8'),
-    common             = require('./platforms/common'),
-    events             = require('./events'),
-    fs                 = require('fs'),
-    shell              = require('shelljs'),
-    util               = require('util'),
-    plugman            = require('../plugman'),
-    et                 = require('elementtree'),
-    bundle             = require('cordova-js/tasks/lib/bundle-browserify'),
-    requireTr          = require('cordova-js/tasks/lib/require-tr'),
-    writeLicenseHeader = require('cordova-js/tasks/lib/write-license-header');
+var platform_modules = require('./platforms'),
+    path            = require('path'),
+    config_changes  = require('./util/config-changes'),
+    xml_helpers     = require('./util/xml-helpers'),
+    wp7             = require('./platforms/wp7'),
+    wp8             = require('./platforms/wp8'),
+    windows8        = require('./platforms/windows8'),
+    common          = require('./platforms/common');
+    fs              = require('fs'),
+    shell           = require('shelljs'),
+    util            = require('util'),
+    events          = require('./events'),
+    plugman         = require('../plugman'),
+    et              = require('elementtree');
 
 // Called on --prepare.
 // Sets up each plugin's Javascript code to be loaded properly.
@@ -120,11 +116,6 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
         }
 
     }
-    
-    /* begin browserify */
-    requireTr.platform = platform;
-    var libraryRelease = bundle(platform, false, 'N/A');
-    /* end browserify */
 
     platform_json = config_changes.get_platform_json(plugins_dir, platform);
     // This array holds all the metadata for each module and ends up in cordova_plugins.json
@@ -182,22 +173,12 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
             if (module.attrib.name) {
                 moduleName += module.attrib.name;
             } else {
-             // var result = module.attrib.src.match(/([^\/]+)\.js/);
-             // moduleName += result[1];
-              moduleName = path.basename(module.attrib.src, '.js');
+                var result = module.attrib.src.match(/([^\/]+)\.js/);
+                moduleName += result[1];
             }
 
             var fsPath = path.join.apply(path, pathParts);
-            var scriptPath = path.join(pluginDir, fsPath);
-
-            /* begin browserify */
-            var bScriptPath = util.format("%s.%s", scriptPath, 'browserify');
-            requireTr.addModule({symbol: new RegExp(moduleName), path: bScriptPath});
-            /* end browserify */
-
-            var scriptContent = fs.readFileSync(scriptPath, 'utf-8');
-            fs.writeFileSync(bScriptPath, scriptContent, 'utf-8');
-
+            var scriptContent = fs.readFileSync(path.join(pluginDir, fsPath), 'utf-8');
             scriptContent = 'cordova.define("' + moduleName + '", function(require, exports, module) { ' + scriptContent + '\n});\n';
             fs.writeFileSync(path.join(platformPluginsDir, plugin_id, fsPath), scriptContent, 'utf-8');
             if(platform == 'wp7' || platform == 'wp8' || platform == "windows8") {
@@ -217,20 +198,11 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
                         obj.clobbers = [];
                     }
                     obj.clobbers.push(child.attrib.target);
-                    //console.log(prepareNamespace(child.attrib.target, 'c'));
-                    fs.appendFileSync(bScriptPath,
-                      prepareNamespace(child.attrib.target, 'c'),
-                      'utf-8');
                 } else if (child.tag.toLowerCase() == 'merges') {
                     if (!obj.merges) {
                         obj.merges = [];
                     }
                     obj.merges.push(child.attrib.target);
-                    /* FIXME: browserify guettho clobber */
-                    fs.appendFileSync(bScriptPath,
-                      prepareNamespace(child.attrib.target, 'm'),
-                      'utf-8');
-                    /* end browserify guettho clobber */
                 } else if (child.tag.toLowerCase() == 'runs') {
                     obj.runs = true;
                 }
@@ -238,10 +210,6 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
 
             // Add it to the list of module objects bound for cordova_plugins.json
             moduleObjects.push(obj);
-            /* begin browserify */
-            libraryRelease.transform(requireTr.transform);
-            libraryRelease.add(bScriptPath);
-            /* end browserify */
         });
     });
 
@@ -261,29 +229,4 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
         wp_csproj.addSourceFile(path.join('www', 'cordova_plugins.js'));
         wp_csproj.write();
     }
-
-    /* begin browserify */
-    var outReleaseFile = path.join(wwwDir, 'cordova-b.js');
-    var outReleaseFileStream = fs.createWriteStream(outReleaseFile);
-    var commitId = 'N/A';
-    var time = new Date().valueOf();
-
-    writeLicenseHeader(outReleaseFileStream, platform, commitId);
-    
-    releaseBundle = libraryRelease.bundle();
-
-    releaseBundle.pipe(outReleaseFileStream);
-
-    outReleaseFileStream.on('finish', function() {
-      var newtime = new Date().valueOf() - time;
-      plugman.emit('verbose', 'generated cordova.' + platform + '.js @ ' + commitId + ' in ' + newtime + 'ms');
-      // TODO clean up all the *.browserify files
-    });
-
-    outReleaseFileStream.on('error', function(err) {
-      var newtime = new Date().valueOf() - time;
-      console.log('error while generating cordova_b.js');
-      plugman.emit('verbose', 'error while generating cordova.js');
-    });
-    /* end browserify */
 };
