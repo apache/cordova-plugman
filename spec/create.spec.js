@@ -56,7 +56,7 @@ describe( 'create plugin in existing plugin', function() {
         });
         waitsFor(function() { return done; }, 'create promise never resolved', 500);
         runs(function() {
-            expect( done ).toEqual( new Error( 'Error: plugin.xml already exists. Are you already in a plugin?' ) );
+            expect(''+ done ).toContain( 'Error: plugin.xml already exists. Are you already in a plugin?'  );
         });
     });
 });

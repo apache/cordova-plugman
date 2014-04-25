@@ -34,7 +34,7 @@ describe( 'platform add', function() {
         });
         waitsFor(function() { return done; }, 'platform promise never resolved', 500);
         runs(function() {
-            expect( done ).toEqual( new Error( "can't find a plugin.xml.  Are you in the plugin?" ) );
+            expect(''+ done ).toContain( "can't find a plugin.xml.  Are you in the plugin?"  );
         });
     });
 });
@@ -58,7 +58,7 @@ describe( 'platform remove', function() {
         });
         waitsFor(function() { return done; }, 'platform promise never resolved', 500);
         runs(function() {
-            expect( done ).toEqual( new Error( "can't find a plugin.xml.  Are you in the plugin?" ) );
+            expect(''+ done ).toContain( "can't find a plugin.xml.  Are you in the plugin?"  );
         });
     });
 });

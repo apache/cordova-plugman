@@ -127,7 +127,7 @@ describe('uninstallPlatform', function() {
             });
             waitsFor(function() { return done; }, 'promise never resolved', 200);
             runs(function() {
-                expect(done).toEqual(new Error('atari not supported.'));
+                expect(''+done).toContain('atari not supported.');
             });
         });
         it('should throw if plugin is missing', function() {
@@ -136,7 +136,7 @@ describe('uninstallPlatform', function() {
             });
             waitsFor(function() { return done; }, 'promise never resolved', 200);
             runs(function() {
-                expect(done).toEqual(new Error('Plugin "SomePluginThatDoesntExist" not found. Already uninstalled?'));
+                expect(''+done).toContain('Plugin "SomePluginThatDoesntExist" not found. Already uninstalled?');
             });
         });
     });
@@ -237,7 +237,7 @@ describe('uninstall', function() {
             });
             waitsFor(function() { return done; }, 'promise never resolved', 200);
             runs(function() {
-                expect(done).toEqual(new Error('atari not supported.'));
+                expect(''+done).toContain('atari not supported.');
             });
         });
         it('should throw if plugin is missing', function() {
@@ -246,7 +246,7 @@ describe('uninstall', function() {
             });
             waitsFor(function() { return done; }, 'promise never resolved', 200);
             runs(function() {
-                expect(done).toEqual(new Error('Plugin "SomePluginThatDoesntExist" not found. Already uninstalled?'));
+                expect(''+done).toContain('Plugin "SomePluginThatDoesntExist" not found. Already uninstalled?');
             });
         });
     });

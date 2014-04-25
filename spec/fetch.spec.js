@@ -54,7 +54,7 @@ describe('fetch', function() {
             .then(function() {
                 expect('this call').toBe('fail');
             }, function(err) {
-                expect(err).toEqual(new Error('Expected fetched plugin to have ID "wrongID" but got "id".'));
+                expect(''+err).toContain('Expected fetched plugin to have ID "wrongID" but got "id".');
             }).fin(done);
         });
         it('should succeed when the expected ID is correct', function(done) {
@@ -157,7 +157,7 @@ describe('fetch', function() {
             });
             waitsFor(function() { return done; }, 'fetch promise never resolved', 250);
             runs(function() {
-                expect(done).toEqual(new Error('--link is not supported for git URLs'));
+                expect(''+done).toContain('--link is not supported for git URLs');
             });
         });
         it('should fail when the expected ID doesn\'t match', function(done) {
@@ -165,7 +165,7 @@ describe('fetch', function() {
             .then(function() {
                 expect('this call').toBe('fail');
             }, function(err) {
-                expect(err).toEqual(new Error('Expected fetched plugin to have ID "wrongID" but got "id".'));
+                expect(''+err).toContain('Expected fetched plugin to have ID "wrongID" but got "id".');
             }).fin(done);
         });
         it('should succeed when the expected ID is correct', function(done) {
@@ -199,7 +199,7 @@ describe('fetch', function() {
             .then(function() {
                 expect('this call').toBe('fail');
             }, function(err) {
-                expect(err).toEqual(new Error('Expected fetched plugin to have ID "wrongID" but got "id".'));
+                expect(''+err).toContain('Expected fetched plugin to have ID "wrongID" but got "id".');
             }).fin(done);
         });
         it('should succeed when the expected ID is correct', function(done) {

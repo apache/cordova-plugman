@@ -28,9 +28,9 @@ describe('action-stack', function() {
             var first_args = [1];
             var first_reverter = jasmine.createSpy();
             var first_reverter_args = [true];
-            var process_err = 'quit peein\' on my rug, man.';
+            var process_err = new Error('process_err');
             var second_spy = jasmine.createSpy().andCallFake(function() {
-                throw new Error(process_err);
+                throw process_err;
             });
             var second_args = [2];
             var third_spy = jasmine.createSpy();
@@ -45,7 +45,7 @@ describe('action-stack', function() {
             });
             waitsFor(function(){ return error; }, 'process promise never resolved', 500);
             runs(function() {
-                expect(error).toEqual(new Error('Uh oh!\n' + process_err));
+                expect(error).toEqual(process_err);
                 // first two actions should have been called, but not the third
                 expect(first_spy).toHaveBeenCalledWith(first_args[0]);
                 expect(second_spy).toHaveBeenCalledWith(second_args[0]);

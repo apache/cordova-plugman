@@ -27,9 +27,10 @@ describe('callback wrapper', function() {
             });
 
             it('should call the callback with the error on failure', function(done) {
-                raw.andCallFake(function() { return Q.reject(new Error('junk'))});
+                var err = new Error('junk');
+                raw.andCallFake(function() { return Q.reject(err)});
                 plugman[call](function(err) {
-                    expect(err).toEqual(new Error('junk'));
+                    expect(err).toEqual(err);
                     done();
                 });
             });

@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "temp": "0.6.x",
-    "jasmine-node": "1.7.0",
+    "jasmine-node": "~1",
     "osenv": "0.0.x"
   },
   "bin" : { "plugman" : "./main.js" },

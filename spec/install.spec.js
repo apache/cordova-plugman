@@ -413,7 +413,7 @@ describe('install', function() {
             });
             waitsFor(function() { return done; }, 'install promise never resolved', 200);
             runs(function() {
-                expect(done).toEqual(new Error('atari not supported.'));
+                expect(''+done).toContain('atari not supported.');
             });
         });
         it('should throw if variables are missing', function() {
@@ -422,7 +422,7 @@ describe('install', function() {
             });
             waitsFor(function(){ return done; }, 'install promise never resolved', 200);
             runs(function() {
-                expect(done).toEqual(new Error('Variable(s) missing: API_KEY'));
+                expect(''+done).toContain('Variable(s) missing: API_KEY');
             });
         });
         it('should throw if git is not found on the path and a remote url is requested', function() {
@@ -433,7 +433,7 @@ describe('install', function() {
             });
             waitsFor(function(){ return done; }, 'install promise never resolved', 200);
             runs(function() {
-                expect(done).toEqual(new Error('"git" command line tool is not installed: make sure it is accessible on your PATH.'));
+                expect(''+done).toContain('"git" command line tool is not installed: make sure it is accessible on your PATH.');
             });
         });
         it('should throw if plugin version is less than the minimum requirement', function(){
@@ -446,7 +446,7 @@ describe('install', function() {
             });
             waitsFor(function(){ return done; }, 'install promise never resolved', 200);
             runs(function() {
-                expect(done).toEqual(new Error('Plugin doesn\'t support this project\'s cordova version. cordova: 0.0.1, failed version requirement: >=2.3.0'));
+                expect(''+done).toContain('Plugin doesn\'t support this project\'s cordova version. cordova: 0.0.1, failed version requirement: >=2.3.0');
             });
         });
     });
