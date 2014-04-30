@@ -23,9 +23,10 @@ var path = require('path')
     , url = require('url')
     , package = require(path.join(__dirname, 'package'))
     , nopt = require('nopt')
-    , plugins = require('./src/util/plugins')
     , Q = require('q')
-    , plugman = require('./plugman');
+    , help = require('./src/help')
+    , cordova_lib = require('cordova-lib')
+    , plugman = cordova_lib.plugman;
 
 var known_opts = { 'platform' : [ 'ios', 'android', 'amazon-fireos', 'blackberry10', 'wp7', 'wp8' , 'windows8', 'firefoxos' ]
         , 'project' : path
@@ -77,12 +78,12 @@ plugman.on('error', console.error);
 if (cli_opts.version) {
     console.log(package.version);
 } else if (cli_opts.help) {
-    console.log(plugman.help());
+    console.log(help());
 } else if (plugman.commands[cmd]) {
     var result = plugman.commands[cmd](cli_opts);
     if (result && Q.isPromise(result)) {
         result.done();
     }
 } else {
-    console.log(plugman.help());
+    console.log(help());
 }
