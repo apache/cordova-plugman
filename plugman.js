@@ -64,7 +64,7 @@ addProperty(plugman, 'help', './src/help');
 addProperty(plugman, 'install', './src/install', true);
 addProperty(plugman, 'uninstall', './src/uninstall', true);
 addProperty(plugman, 'fetch', './src/fetch', true);
-addProperty(plugman, 'prepare', './src/prepare');
+//addProperty(plugman, 'prepare', './src/prepare');
 addProperty(plugman, 'config', './src/config', true);
 addProperty(plugman, 'owner', './src/owner', true);
 addProperty(plugman, 'adduser', './src/adduser', true);
@@ -90,6 +90,8 @@ plugman.commands =  {
         if(!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
             return console.log(plugman.help());
         }
+        cli_opts.browserify === true ?  addProperty(plugman, 'prepare', './src/prepare-browserify') :
+                                        addProperty(plugman, 'prepare', './src/prepare');
         var cli_variables = {}
         if (cli_opts.variable) {
             cli_opts.variable.forEach(function (variable) {
@@ -118,6 +120,9 @@ plugman.commands =  {
         if(!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
             return console.log(plugman.help());
         }
+        
+        cli_opts.browserify === true ?  addProperty(plugman, 'prepare', './src/prepare-browserify') :
+                                        addProperty(plugman, 'prepare', './src/prepare');
 
         var p = Q();
         cli_opts.plugin.forEach(function (pluginSrc) {
