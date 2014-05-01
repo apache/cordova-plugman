@@ -208,9 +208,12 @@ function runUninstallPlatform(actions, platform, project_dir, plugin_dir, plugin
     } else {
         promise = Q();
     }
+    var pluginHooks = require('./util/hooks');
 
     return promise.then(function() {
-        return handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, options.www_dir, plugins_dir, plugin_dir, options.is_top_level);
+        return handleUninstall(actions, platform, plugin_id, plugin_et, project_dir, options.www_dir, plugins_dir, plugin_dir, options.is_top_level)
+    }).then(function(){
+        return pluginHooks.fire('uninstall', plugin_id, plugin_et, platform, project_dir, plugin_dir);
     });
 }
 
