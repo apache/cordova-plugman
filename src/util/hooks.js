@@ -1,19 +1,21 @@
-/*
- * Copyright (c) Microsoft Open Technologies, Inc.  
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
- * You may obtain a copy of the License at 
- * 
- *     http://www.apache.org/licenses/LICENSE-2.0 
- * 
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
+/**
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+*/
 
 var path = require('path'),
     fs   = require('fs'),
@@ -41,12 +43,12 @@ module.exports = {
         events.emit('debug', 'Executing "' + type + '"  hook for "' + plugin_id + '" on ' + platform + '.');
         
         var scriptTypes = getScriptTypesForHook(type);
-        if (scriptTypes == null) {
+        if (!scriptTypes) {
             throw Error('unknown plugin hook type: "' + type + '"' );
         }
 
         var scriptFilesToRun = getScriptFiles(pluginElement, scriptTypes, platform);
-            context = {
+        var context = {
                 platform: platform,
                 projectDir: project_dir,
                 pluginDir: plugin_dir,
@@ -79,11 +81,9 @@ function getScriptTypesForHook(hookType) {
  * Gets all scripts from the plugin xml with the specified types.
  */
 function getScriptFiles(pluginElement, scriptTypes, platform) {
-    var scriptFiles= [],
-        scriptElements =  pluginElement.findall('./script').concat(
+    var scriptFiles= [];
+    var scriptElements =  pluginElement.findall('./script').concat(
             pluginElement.findall('./platform[@name="' + platform + '"]/script'));
-
-    var pendingScripts = [];
 
     scriptElements.forEach(function(script){
         if (script.attrib.type && scriptTypes.indexOf(script.attrib.type.toLowerCase()) > -1 && script.attrib.src) {
@@ -94,16 +94,38 @@ function getScriptFiles(pluginElement, scriptTypes, platform) {
 }
 
 /**
- * Async runs the script files.
+ * Serially runs the script files.
  */
 function runScripts(scripts, context) {
     var pendingScripts = [];
 
     scripts.forEach(function(script){
-        pendingScripts.push(runScriptFile(script, context));
+        pendingScripts.push(script);
     });
 
-    return Q.all(pendingScripts);
+    var deferral = new Q.defer();
+
+    function executePendingScript() {
+        try {
+            if (pendingScripts.length == 0) {
+                deferral.resolve();
+                return;
+            }
+            var nextScript = pendingScripts[0];
+            pendingScripts.shift();
+
+            runScriptFile(nextScript, context).then(executePendingScript, function(err){
+                deferral.fail(err);
+            });
+
+        } catch (ex) {
+            deferral.fail(ex);
+        }
+    }
+
+    executePendingScript();
+
+    return deferral.promise;
 };
 
 /**
@@ -120,5 +142,5 @@ function runScriptFile(scriptPath, context) {
     var scriptFn = require(scriptPath);
 
     // if hook is async it can return promise instance and we will handle it
-    return Q(new scriptFn(context));
+    return Q(scriptFn(context));
 }
