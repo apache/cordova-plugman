@@ -38,22 +38,7 @@ var platform_modules   = require('./platforms'),
     requireTr          = require('cordova-js/tasks/lib/require-tr'),
     writeLicenseHeader = require('cordova-js/tasks/lib/write-license-header');
 
-// Called on --prepare.
-// Sets up each plugin's Javascript code to be loaded properly.
-// Expects a path to the project (platforms/android in CLI, . in plugman-only),
-// a path to where the plugins are downloaded, the www dir, and the platform ('android', 'ios', etc.).
-module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_dir) {
-    // Process:
-    // - Do config munging by calling into config-changes module
-    // - List all plugins in plugins_dir
-    // - Load and parse their plugin.xml files.
-    // - Skip those without support for this platform. (No <platform> tags means JS-only!)
-    // - Build a list of all their js-modules, including platform-specific js-modules.
-    // - For each js-module (general first, then platform) build up an object storing the path and any clobbers, merges and runs for it.
-    events.emit('verbose', 'Preparing ' + platform + ' browserify project');
-    var platform_json = config_changes.get_platform_json(plugins_dir, platform);
-    var wwwDir = www_dir || platform_modules[platform].www_dir(project_dir);
-
+function uninstallQueuedPlugins(platform_json) {
     // Check if there are any plugins queued for uninstallation, and if so, remove any of their plugin web assets loaded in
     // via <js-module> elements
     var plugins_to_uninstall = platform_json.prepare_queue.uninstalled;
@@ -70,9 +55,57 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
             });
         }
     }
+}
+
+function generateFinalBundle(platform, libraryRelease, outReleaseFile) {
+
+    var outReleaseFileStream = fs.createWriteStream(outReleaseFile);
+    var commitId = 'N/A';
+    var time = new Date().valueOf();
+
+    writeLicenseHeader(outReleaseFileStream, platform, commitId);
+    
+    releaseBundle = libraryRelease.bundle();
+
+    releaseBundle.pipe(outReleaseFileStream);
+
+    outReleaseFileStream.on('finish', function() {
+      var newtime = new Date().valueOf() - time;
+      plugman.emit('verbose', 'generated cordova.' + platform + '.js @ ' + commitId + ' in ' + newtime + 'ms');
+      // TODO clean up all the *.browserify files
+    });
+
+    outReleaseFileStream.on('error', function(err) {
+      var newtime = new Date().valueOf() - time;
+      console.log('error while generating cordova_b.js');
+      plugman.emit('verbose', 'error while generating cordova.js');
+    });
+
+}
+
+// Called on --prepare.
+// Sets up each plugin's Javascript code to be loaded properly.
+// Expects a path to the project (platforms/android in CLI, . in plugman-only),
+// a path to where the plugins are downloaded, the www dir, and the platform ('android', 'ios', etc.).
+module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_dir, is_top_level) {
+    // Process:
+    // - Do config munging by calling into config-changes module
+    // - List all plugins in plugins_dir
+    // - Load and parse their plugin.xml files.
+    // - Skip those without support for this platform. (No <platform> tags means JS-only!)
+    // - Build a list of all their js-modules, including platform-specific js-modules.
+    // - For each js-module (general first, then platform) build up an object storing the path and any clobbers, merges and runs for it.
+    events.emit('verbose', 'Preparing ' + platform + ' browserify project');
+    var platform_json = config_changes.get_platform_json(plugins_dir, platform);
+    var wwwDir = www_dir || platform_modules[platform].www_dir(project_dir);
+    var scripts = [];
+
+    uninstallQueuedPlugins(platform_json);
 
     events.emit('verbose', 'Processing configuration changes for plugins.');
     config_changes.process(plugins_dir, project_dir, platform);
+
+    if(!is_top_level) return;
 
     requireTr.platform = platform;
     var libraryRelease = bundle(platform, false, 'N/A');
@@ -111,7 +144,6 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
         assets.forEach(function(asset) {
             common.asset.install(asset, pluginDir, wwwDir);
         });
-
         jsModules.forEach(function(module) {
             // Copy the plugin's files into the www directory.
             // NB: We can't always use path.* functions here, because they will use platform slashes.
@@ -127,58 +159,37 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
             if (module.attrib.name) {
                 moduleName += module.attrib.name;
             } else {
-             // var result = module.attrib.src.match(/([^\/]+)\.js/);
-             // moduleName += result[1];
-              moduleName = path.basename(module.attrib.src, '.js');
+                moduleName = path.basename(module.attrib.src, '.js');
             }
 
             var fsPath = path.join.apply(path, pathParts);
             var scriptPath = path.join(pluginDir, fsPath);
 
-            var bScriptPath = util.format("%s.%s", scriptPath, 'browserify');
-            requireTr.addModule({symbol: new RegExp(moduleName), path: bScriptPath});
+            requireTr.addModule({symbol: new RegExp(moduleName), path: scriptPath});
 
-            // Loop over the children of the js-module tag, collecting clobbers, merges and runs.
             module.getchildren().forEach(function(child) {
                 if (child.tag.toLowerCase() == 'clobbers') {
-                    fs.appendFileSync(bScriptPath,
+                    fs.appendFileSync(scriptPath,
                       prepareNamespace(child.attrib.target, 'c'),
                       'utf-8');
                 } else if (child.tag.toLowerCase() == 'merges') {
-                    fs.appendFileSync(bScriptPath,
+                    fs.appendFileSync(scriptPath,
                       prepareNamespace(child.attrib.target, 'm'),
                       'utf-8');
-                    /* end browserify guettho clobber */
                 }
             });
-
-            /* begin browserify */
-            libraryRelease.transform(requireTr.transform);
-            libraryRelease.add(bScriptPath);
-            /* end browserify */
+            scripts.push(scriptPath);
         });
     });
-
-    var outReleaseFile = path.join(wwwDir, 'cordova.js');
-    var outReleaseFileStream = fs.createWriteStream(outReleaseFile);
-    var commitId = 'N/A';
-    var time = new Date().valueOf();
-
-    writeLicenseHeader(outReleaseFileStream, platform, commitId);
     
-    releaseBundle = libraryRelease.bundle();
+    libraryRelease.transform(requireTr.transform);
 
-    releaseBundle.pipe(outReleaseFileStream);
-
-    outReleaseFileStream.on('finish', function() {
-      var newtime = new Date().valueOf() - time;
-      plugman.emit('verbose', 'generated cordova.' + platform + '.js @ ' + commitId + ' in ' + newtime + 'ms');
-      // TODO clean up all the *.browserify files
+    scripts.forEach(function(script) {
+        libraryRelease.add(script);
     });
+        
+    var outReleaseFile = path.join(wwwDir, 'cordova.js');
+    
+    generateFinalBundle(platform, libraryRelease, outReleaseFile);
 
-    outReleaseFileStream.on('error', function(err) {
-      var newtime = new Date().valueOf() - time;
-      console.log('error while generating cordova_b.js');
-      plugman.emit('verbose', 'error while generating cordova.js');
-    });
 };
