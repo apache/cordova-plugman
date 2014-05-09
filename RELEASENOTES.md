@@ -20,6 +20,32 @@
 -->
 # Cordova-plugman Release Notes
 
+### 0.22.0 (May 09, 2014)
+* Update plugman cli to use cordova-lib
+* Split out cordova-lib: move cordova-plugman files
+
+### 0.21.0 (Apr 03, 2014)
+* CB-6344 Specify after which sibling to add config-changes in plugin.xml
+* CB-6272 Fix subdir bug + tests & meta fetch with a src directory
+* Adding spec for Tizen platform
+* src/platforms.js: Adding tizen.
+* Throw an error when a <dependency> tag is missing `id` attribute.
+* Added org.apache.cordova.statusbar into the registry whitelist.
+* CB-6160 adding plugin fails for Firefoxos.
+* Fix to never remove top-level plugins that are dependencies + tests.
+* Improve dependencies tests by grouping with beforeStart() Fix for dependency cycle / throw error.
+* Refactoring of install & uninstall tests
+* CB-6147 Enable CLI and Plugman with npm shrinkwrap
+* Allow --searchpath to have a delimiter
+* working uninstall for projectReferences
+* projectReference.uninstall has to generate the plugin_dir because it is not passed to uninstall methods
+* CB-5970 added type attribute 'projectReference' to <framework> element to signal addition of dependent project
+* Separate out adding a dependent project from adding a .winmd reference in windows8
+* wip implementing reading guid from 'framework' project
+* CB-6162 Show a better error message when publish fails the whitelist
+* CB-6119 Fix `plugman info` command printing "undefined" always
+* CB-6159 Fix incorrect "success" message when publishing fails.
+
 ### 0.20.2 (Mar 3, 2014)
 * CB-6151 Fix exception when adding a new platform to a CLI project
 
@@ -139,25 +165,3 @@
 - Fixed some trouble with filesystem paths vs. web paths; improves Windows host support.
 - Projects beginning with `x`, `y`, and `z` now work. [CB-4502](https://issues.apache.org/jira/browse/CB-4502)
 
-
-### 0.21.0 (Apr 03, 2014)
-* CB-6344 Specify after which sibling to add config-changes in plugin.xml
-* CB-6272 Fix subdir bug + tests & meta fetch with a src directory
-* Adding spec for Tizen platform
-* src/platforms.js: Adding tizen.
-* Throw an error when a <dependency> tag is missing `id` attribute.
-* Added org.apache.cordova.statusbar into the registry whitelist.
-* CB-6160 adding plugin fails for Firefoxos.
-* Fix to never remove top-level plugins that are dependencies + tests.
-* Improve dependencies tests by grouping with beforeStart() Fix for dependency cycle / throw error.
-* Refactoring of install & uninstall tests
-* CB-6147 Enable CLI and Plugman with npm shrinkwrap
-* Allow --searchpath to have a delimiter
-* working uninstall for projectReferences
-* projectReference.uninstall has to generate the plugin_dir because it is not passed to uninstall methods
-* CB-5970 added type attribute 'projectReference' to <framework> element to signal addition of dependent project
-* Separate out adding a dependent project from adding a .winmd reference in windows8
-* wip implementing reading guid from 'framework' project
-* CB-6162 Show a better error message when publish fails the whitelist
-* CB-6119 Fix `plugman info` command printing "undefined" always
-* CB-6159 Fix incorrect "success" message when publishing fails.
