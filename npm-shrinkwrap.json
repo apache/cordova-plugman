@@ -7,7 +7,7 @@
       "from": "bplist-parser@0.0.5"
     },
     "cordova-js": {
-      "version": "3.6.0",
+      "version": "3.6.1",
       "from": "cordova-js@"
     },
     "dep-graph": {
