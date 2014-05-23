@@ -159,13 +159,13 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
             if (module.attrib.name) {
                 moduleName += module.attrib.name;
             } else {
-                moduleName = path.basename(module.attrib.src, '.js');
+                moduleName += path.basename(module.attrib.src, '.js');
             }
 
             var fsPath = path.join.apply(path, pathParts);
             var scriptPath = path.join(pluginDir, fsPath);
 
-            requireTr.addModule({symbol: new RegExp(moduleName), path: scriptPath});
+            requireTr.addModule({symbol: moduleName, path: scriptPath});
 
             module.getchildren().forEach(function(child) {
                 if (child.tag.toLowerCase() == 'clobbers') {
