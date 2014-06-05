@@ -38,7 +38,7 @@ var platform_modules   = require('./platforms'),
     requireTr          = require('cordova-js/tasks/lib/require-tr'),
     writeLicenseHeader = require('cordova-js/tasks/lib/write-license-header');
 
-function uninstallQueuedPlugins(platform_json) {
+function uninstallQueuedPlugins(platform_json, wwwDir) {
     // Check if there are any plugins queued for uninstallation, and if so, remove any of their plugin web assets loaded in
     // via <js-module> elements
     var plugins_to_uninstall = platform_json.prepare_queue.uninstalled;
@@ -100,7 +100,7 @@ module.exports = function handlePrepare(project_dir, platform, plugins_dir, www_
     var wwwDir = www_dir || platform_modules[platform].www_dir(project_dir);
     var scripts = [];
 
-    uninstallQueuedPlugins(platform_json);
+    uninstallQueuedPlugins(platform_json, www_dir);
 
     events.emit('verbose', 'Processing configuration changes for plugins.');
     config_changes.process(plugins_dir, project_dir, platform);
