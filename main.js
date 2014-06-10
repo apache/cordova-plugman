@@ -40,6 +40,7 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'amazon-fireos', 'blackberry
         , 'variable' : Array
         , 'www': path
         , 'searchpath' : [path, Array]
+        , 'browserify': Boolean
 }, shortHands = { 'var' : ['--variable'], 'v': ['--version'], 'h': ['--help'] };
 
 var cli_opts = nopt(known_opts, shortHands);
@@ -55,7 +56,7 @@ if (cli_opts.plugins_dir || cli_opts.project) {
 
 process.on('uncaughtException', function(error) {
     if (cli_opts.debug) {
-        console.error(error.stack);
+        console.error(error.message, error.stack);
     } else {
         console.error(error.message);
     }
