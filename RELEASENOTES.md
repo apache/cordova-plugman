@@ -18,6 +18,7 @@
 # under the License.
 #
 -->
+
 # Cordova-plugman Release Notes
 
 ### 0.22.0 (May 09, 2014)
