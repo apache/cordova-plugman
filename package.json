@@ -17,7 +17,7 @@
   },
   "engineStrict":true,
   "dependencies": {
-    "cordova-lib" : "0.21.4",
+    "cordova-lib" : "0.21.5",
     "nopt": "1.0.x",
     "underscore":"1.4.4",
     "q": "~0.9",
