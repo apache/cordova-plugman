@@ -29,7 +29,7 @@ You must have `git` on your PATH to be able to install plugins directly from rem
 * Android
 * BlackBerry 10
 * Tizen
-* Windows Phone (7+8)
+* Windows Phone 8
 * Windows 8
 
 ## Command Line Usage
@@ -38,8 +38,8 @@ You must have `git` on your PATH to be able to install plugins directly from rem
 * Displays all available plugman commands
 
 
-    plugman install --platform <ios|amazon-fireos|android|blackberry10|wp7|wp8> --project <directory> --plugin <name|url|path> [--plugins_dir <directory>] [--www <directory>] [--variable <name>=<value> [--variable <name>=<value> ...]]
-    plugman uninstall --platform <ios|amazon-fireos|android|blackberry10|wp7|wp8> --project <directory> --plugin <id> [--www <directory>] [--plugins_dir <directory>]
+    plugman install --platform <ios|amazon-fireos|android|blackberry10|wp8> --project <directory> --plugin <name|url|path> [--plugins_dir <directory>] [--www <directory>] [--variable <name>=<value> [--variable <name>=<value> ...]]
+    plugman uninstall --platform <ios|amazon-fireos|android|blackberry10|wp8> --project <directory> --plugin <id> [--www <directory>] [--plugins_dir <directory>]
 
 * Using minimum parameters, installs a plugin into a cordova project. You must specify a platform and cordova project location for that platform. You also must specify a plugin, with the different `--plugin` parameter forms being:
   * `name`: The directory name where the plugin contents exist. This must be an existing directory under the `--plugins_dir` path (see below for more info) or a plugin in the Cordova registry.
@@ -86,7 +86,7 @@ This section details how to consume Plugman as a node module and is only for Cor
 
 Installs a plugin into a specified cordova project of a specified platform.
 
- * `platform`: one of `amazon-fireos`, `android`, `ios`, `blackberry10`, `wp7` or `wp8`
+ * `platform`: one of `amazon-fireos`, `android`, `ios`, `blackberry10`, or `wp8`
  * `project_dir`: path to an instance of the above specified platform's cordova project
  * `id`: a string representing the `id` of the plugin, a path to a cordova plugin with a valid `plugin.xml` file, or an `https://` or `git://` url to a git repository of a valid cordova plugin or a plugin published to the Cordova registry
  * `plugins_dir`: path to directory where plugins will be stored, defaults to `<project_dir>/cordova/plugins`
@@ -101,7 +101,7 @@ Installs a plugin into a specified cordova project of a specified platform.
 
 Uninstalls a previously-installed cordova plugin from a specified cordova project of a specified platform.
 
- * `platform`: one of `amazon-fireos`, `android`, `ios`, `blackberry10`, `wp7` or `wp8`
+ * `platform`: one of `amazon-fireos`, `android`, `ios`, `blackberry10`, or `wp8`
  * `project_dir`: path to an instance of the above specified platform's cordova project
  * `id`: a string representing the `id` of the plugin
  * `plugins_dir`: path to directory where plugins are stored, defaults to `<project_dir>/cordova/plugins`
@@ -130,7 +130,7 @@ Finalizes plugin installation by making configuration file changes and setting u
     module.exports = function handlePrepare(project_dir, platform, plugins_dir) {
 
  * `project_dir`: path to an instance of the above specified platform's cordova project
- * `platform`: one of `amazon-fireos`, `android`, `ios`, `blackberry10`, `wp7` or `wp8`
+ * `platform`: one of `amazon-fireos`, `android`, `ios`, `blackberry10`, or `wp8`
  * `plugins_dir`: path housing all plugins used in this project
 
 ## Registry related actions

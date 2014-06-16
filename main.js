@@ -28,7 +28,7 @@ var path = require('path')
     , cordova_lib = require('cordova-lib')
     , plugman = cordova_lib.plugman;
 
-var known_opts = { 'platform' : [ 'ios', 'android', 'amazon-fireos', 'blackberry10', 'wp7', 'wp8' , 'windows8', 'firefoxos' ]
+var known_opts = { 'platform' : [ 'ios', 'android', 'amazon-fireos', 'blackberry10', 'wp8' , 'windows8', 'firefoxos' ]
         , 'project' : path
         , 'plugin' : [String, path, url, Array]
         , 'version' : Boolean
