@@ -21,6 +21,9 @@
 
 # Cordova-plugman Release Notes
 
+### 0.22.4 (June 23, 2014)
+* wp7 is dead, long live wp7
+
 ### 0.22.3 (June 12, 2014)
 * Update cordova-lib dependency to 0.21.5
 * CB-6931: Fix licence headers in plugman
