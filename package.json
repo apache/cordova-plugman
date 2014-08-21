@@ -29,7 +29,6 @@
   },
   "bin" : { "plugman" : "./main.js" },
   "scripts": {
-    "test": "jasmine-node --color spec"
   },
   "contributors":[
     {
