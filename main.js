@@ -20,13 +20,26 @@
 
 // copyright (c) 2013 Andrew Lunny, Adobe Systems
 var path = require('path')
-    , url = require('url')
     , package = require(path.join(__dirname, 'package'))
-    , nopt = require('nopt')
-    , Q = require('q')
     , help = require('./src/help')
-    , cordova_lib = require('cordova-lib')
-    , plugman = cordova_lib.plugman;
+    , url = require('url')
+    , nopt
+    , Q
+    , cordova_lib
+    , plugman;
+
+try {
+    nopt = require('nopt');
+    Q = require('q');
+    cordova_lib = require('cordova-lib');
+    plugman = cordova_lib.plugman;
+} catch(e) {
+    console.error(
+        'Please run npm install from this directory:\n\t' +
+        __dirname
+    );
+    process.exit(2);
+}
 
 var known_opts = { 'platform' : [ 'ios', 'android', 'amazon-fireos', 'blackberry10', 'wp8' , 'windows8', 'firefoxos' ]
         , 'project' : path
