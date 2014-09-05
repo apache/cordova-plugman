@@ -21,6 +21,10 @@
 
 # Cordova-plugman Release Notes
 
+### 0.22.7 (Sep 05, 2014)
+* updated Release notes
+* updated version to 0.22.7-dev
+
 ### 0.22.5 (Aug 29, 2014)
 * CB-7363 Do not insist on precise version of cordova-lib
 * CB-7362 Add Please run npm install from this directory code
@@ -180,3 +184,4 @@
 - `plugin rm` now doesn't choke when a file is already deleted
 - Fixed some trouble with filesystem paths vs. web paths; improves Windows host support.
 - Projects beginning with `x`, `y`, and `z` now work. [CB-4502](https://issues.apache.org/jira/browse/CB-4502)
+
