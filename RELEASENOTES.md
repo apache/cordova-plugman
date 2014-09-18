@@ -21,6 +21,15 @@
 
 # Cordova-plugman Release Notes
 
+### 0.22.10
+* remove shrinkwrap
+
+### 0.22.9
+CB-7383: depend on a newer version of cordova-lib
+
+### 0.22.8
+* bump version to 0.22.8
+
 ### 0.22.7 (Sep 05, 2014)
 * updated Release notes
 * updated version to 0.22.7-dev
