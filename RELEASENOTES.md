@@ -21,6 +21,11 @@
 
 # Cordova-plugman Release Notes
 
+### 0.22.11 (Oct 01, 2014)
+* CB-7383 Updated version and RELEASENOTES.md for release 0.22.10
+* update versions of self and dependencies after 3.6
+* CB-7383 Incremented package version to -dev
+
 ### 0.22.10
 * remove shrinkwrap
 
@@ -193,4 +198,3 @@ CB-7383: depend on a newer version of cordova-lib
 - `plugin rm` now doesn't choke when a file is already deleted
 - Fixed some trouble with filesystem paths vs. web paths; improves Windows host support.
 - Projects beginning with `x`, `y`, and `z` now work. [CB-4502](https://issues.apache.org/jira/browse/CB-4502)
-
