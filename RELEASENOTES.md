@@ -21,7 +21,8 @@
 
 # Cordova-plugman Release Notes
 
-### 0.22.11 (Oct 01, 2014)
+### 0.22.12 (Oct 10, 2014)
+* Pinned dependencies
 * CB-7383 Updated version and RELEASENOTES.md for release 0.22.10
 * update versions of self and dependencies after 3.6
 * CB-7383 Incremented package version to -dev

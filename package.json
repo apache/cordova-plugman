@@ -2,7 +2,7 @@
   "author": "Andrew Lunny <alunny@gmail.com>",
   "name": "plugman",
   "description": "install/uninstall Cordova plugins",
-  "version": "0.22.12-dev",
+  "version": "0.22.12",
   "repository": {
     "type": "git",
     "url": "git://git-wip-us.apache.org/repos/asf/cordova-plugman.git"
@@ -17,15 +17,15 @@
   },
   "engineStrict":true,
   "dependencies": {
-    "cordova-lib": "3.7.0",
-    "nopt": "1.0.x",
+    "cordova-lib": "4.0.0",
+    "nopt": "1.0.9",
     "underscore":"1.4.4",
-    "q": "~0.9",
+    "q": "0.9.7",
     "npm": "1.3.4",
     "rc": "0.3.0"
   },
   "devDependencies": {
-    "jasmine-node": "~1"
+    "jasmine-node": "1.14.5"
   },
   "bin" : { "plugman" : "./main.js" },
   "scripts": {
