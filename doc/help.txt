@@ -77,9 +77,9 @@ Manage registry configuration
 Manage owners
 -------------
 
-    $ plugman owner ls org.apache.cordova.core.file
-    $ plugman owner add username org.apache.cordova.core.file
-    $ plugman owner rm username org.apache.cordova.core.file
+    $ plugman owner ls org.apache.cordova.file
+    $ plugman owner add username org.apache.cordova.file
+    $ plugman owner rm username org.apache.cordova.file
 
 Create A Plugin
 ---------------
