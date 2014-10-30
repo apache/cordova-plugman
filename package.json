@@ -18,11 +18,11 @@
   "engineStrict":true,
   "dependencies": {
     "cordova-lib": "4.0.0",
-    "nopt": "1.0.9",
-    "underscore":"1.4.4",
-    "q": "0.9.7",
+    "nopt": "3.0.1",
+    "underscore":"1.7.0",
+    "q": "1.0.1",
     "npm": "1.3.4",
-    "rc": "0.3.0"
+    "rc": "0.5.2"
   },
   "devDependencies": {
     "jasmine-node": "1.14.5"
