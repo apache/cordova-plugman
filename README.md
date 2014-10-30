@@ -45,28 +45,34 @@ You must have `git` on your PATH to be able to install plugins directly from rem
 
 ## Supported Platforms
 
-* iOS
 * Amazon Fire OS
 * Android
 * BlackBerry 10
+* iOS
 * Tizen
 * Windows Phone 8
 * Windows 8
 
 ## Command Line Usage
+Display all available plugman commands:
+
     plugman help
 
-* Displays all available plugman commands
+### Plugin Management
 
+Install a plugin into a Cordova project: 
 
     plugman install --platform <ios|amazon-fireos|android|blackberry10|wp8> --project <directory> --plugin <name|url|path> [--plugins_dir <directory>] [--www <directory>] [--variable <name>=<value> [--variable <name>=<value> ...]]
-    plugman uninstall --platform <ios|amazon-fireos|android|blackberry10|wp8> --project <directory> --plugin <id> [--www <directory>] [--plugins_dir <directory>]
 
-* Using minimum parameters, installs a plugin into a cordova project. You must specify a platform and cordova project location for that platform. You also must specify a plugin, with the different `--plugin` parameter forms being:
+Uninstall a Plugin from a Cordova project:
+
+	plugman uninstall --platform <ios|amazon-fireos|android|blackberry10|wp8> --project <directory> --plugin <id> [--www <directory>] [--plugins_dir <directory>]
+
+For each command (install and uninstall), you must specify a platform and Cordova project location for that platform. You also must specify a plugin, with the different `--plugin` parameter forms being:
+
   * `name`: The directory name where the plugin contents exist. This must be an existing directory under the `--plugins_dir` path (see below for more info) or a plugin in the Cordova registry.
   * `url`: A URL starting with https:// or git://, pointing to a valid git repository that is clonable and contains a `plugin.xml` file. The contents of this repository would be copied into the `--plugins_dir`.
   * `path`: A path to a directory containing a valid plugin which includes a `plugin.xml` file. This path's contents will be copied into the `--plugins_dir`.
-* `--uninstall`: Uninstalls an already-`--install`'ed plugin from a cordova project. Specify the plugin ID.
 
 Other parameters:
 
@@ -74,16 +80,27 @@ Other parameters:
 * `--www` defaults to the project's `www` folder location, but can be any directory that is to be used as cordova project application web assets.
 * `--variable` allows to specify certain variables at install time, necessary for certain plugins requiring API keys or other custom, user-defined parameters. Please see the [plugin specification](plugin_spec.md) for more information.
 
+### Registry Search
+
+Search the [Plugin registry](http://plugins.cordova.io) for plugin id's that match the given space separated list of keywords.
 
     plugman search <plugin keywords>
 
-* Search the [Plugin registry](http://plugins.cordova.io) for plugin id's that match the given space separated list of keywords.
+### Configuration Management:
 
+Display the current list of configuration settings:
 
-    plugman config set registry <url-to-registry>
+	plugman config ls
+
+Display the current repository endpoint:
+
     plugman config get registry
 
-* Get or set the URL of the current plugin registry that plugman is using. Generally you should leave this set at http://registry.cordova.io unless you want to use a third party plugin registry.
+Set the registry endpoint:
+
+    plugman config set registry <url-to-registry>
+
+You should leave this set to http://registry.cordova.io, unless you want to use a third party plugin registry.
 
 ## Node Module Usage
 This section details how to consume Plugman as a node module and is only for Cordova tool authors and other hackers. You should not need to read this section if you are just using Plugman to manage a Cordova project.
