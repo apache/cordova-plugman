@@ -25,11 +25,15 @@
     "rc": "0.5.2"
   },
   "devDependencies": {
+    "jshint": "2.5.8",
     "jasmine-node": "1.14.5"
   },
   "bin" : { "plugman" : "./main.js" },
   "scripts": {
-  },
+    "test": "npm run jasmine && npm run jshint",
+    "jshint": "node node_modules/jshint/bin/jshint src",
+    "jasmine": "jasmine-node --captureExceptions --color spec"
+  },  
   "contributors":[
     {
         "name":"Anis Kadri"
