@@ -2,7 +2,7 @@
   "author": "Andrew Lunny <alunny@gmail.com>",
   "name": "plugman",
   "description": "install/uninstall Cordova plugins",
-  "version": "0.22.13-dev",
+  "version": "0.22.13",
   "repository": {
     "type": "git",
     "url": "git://git-wip-us.apache.org/repos/asf/cordova-plugman.git"
@@ -17,7 +17,7 @@
   },
   "engineStrict":true,
   "dependencies": {
-    "cordova-lib": "4.0.0",
+    "cordova-lib": "4.0.1",
     "nopt": "1.0.9",
     "underscore":"1.7.0",
     "q": "1.0.1",
@@ -33,7 +33,7 @@
     "test": "npm run jasmine && npm run jshint",
     "jshint": "node node_modules/jshint/bin/jshint src",
     "jasmine": "jasmine-node --captureExceptions --color spec"
-  },  
+  },
   "contributors":[
     {
         "name":"Anis Kadri"
