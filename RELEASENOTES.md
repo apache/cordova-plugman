@@ -21,7 +21,7 @@
 
 # Cordova-plugman Release Notes
 
-### 0.22.14 (Nov 7, 2014)
+### 0.22.15 (Nov 11, 2014)
 * Update dependencies in package.json
 
 ### 0.22.12 (Oct 10, 2014)
