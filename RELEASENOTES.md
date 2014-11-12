@@ -21,7 +21,8 @@
 
 # Cordova-plugman Release Notes
 
-### 0.22.15 (Nov 11, 2014)
+### 0.22.16 (Nov 13, 2014)
+* CB-7079 Allow special characters and digits in id when publishing to plugins registry
 * Update dependencies in package.json
 
 ### 0.22.12 (Oct 10, 2014)
