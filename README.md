@@ -232,7 +232,7 @@ Add/Remove a platform from a newly created plugin
 
 ## Example Plugins
 
-- Google has a [bunch of plugins](https://github.com/MobileChromeApps/chrome-cordova/tree/master/plugins) which are maintained actively by a contributor to plugman
+- Google has a [bunch of plugins](https://github.com/MobileChromeApps/mobile-chrome-apps/tree/master/chrome-cordova/plugins) which are maintained actively by a contributor to plugman
 - Adobe maintains plugins for its Build cloud service, which are open sourced and [available on GitHub](https://github.com/phonegap-build)
 - BlackBerry has a [bunch of plugins](https://github.com/blackberry/cordova-blackberry/tree/master/blackberry10/plugins) offering deep platform integration
 - Core and 3rd party plugins can be found on the [Cordova Registry](http://plugins.cordova.io).
