@@ -21,6 +21,9 @@
 
 # Cordova-plugman Release Notes
 
+### 0.22.17 (Jan 06, 2015)
+* fixing broken link to chrome plugins
+
 ### 0.22.16 (Nov 13, 2014)
 * CB-7079 Allow special characters and digits in id when publishing to plugins registry
 * Update dependencies in package.json
@@ -203,3 +206,5 @@ CB-7383: depend on a newer version of cordova-lib
 - `plugin rm` now doesn't choke when a file is already deleted
 - Fixed some trouble with filesystem paths vs. web paths; improves Windows host support.
 - Projects beginning with `x`, `y`, and `z` now work. [CB-4502](https://issues.apache.org/jira/browse/CB-4502)
+
+
