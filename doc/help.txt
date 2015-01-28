@@ -60,7 +60,9 @@ Add a user account
 Publish a plugin
 ----------------
 
-    $ plugman publish <directory>
+    $ plugman publish [<directory>]
+
+ - defaults to the current directory
 
 Unpublish a plugin
 ------------------
