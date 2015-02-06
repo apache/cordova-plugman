@@ -136,6 +136,13 @@ Parameters:
  - <directory>: An absolute or relative path for the directory where the plugin project will be created
  - variable NAME=VALUE: Extra variables such as description or Author
 
+Add a Package.JSON file to plugin
+---------------------------------
+Creates a package.json file in the plugin based on values from plugin.xml.
+
+ $ plugman createpackagejson <directory>
+
+
 Add a Platform to a Plugin
 --------------------------
 
