@@ -21,6 +21,10 @@
 
 # Cordova-plugman Release Notes
 
+### 0.23.0 (Feb 27, 2015)
+* CB-8416 added `plugman createpackagejson .` command to generate a package.json file from plugin.xml
+* CB-8370 Update documentation for `plugman publish` without args
+
 ### 0.22.17 (Jan 06, 2015)
 * fixing broken link to chrome plugins
 
@@ -206,5 +210,3 @@ CB-7383: depend on a newer version of cordova-lib
 - `plugin rm` now doesn't choke when a file is already deleted
 - Fixed some trouble with filesystem paths vs. web paths; improves Windows host support.
 - Projects beginning with `x`, `y`, and `z` now work. [CB-4502](https://issues.apache.org/jira/browse/CB-4502)
-
-
