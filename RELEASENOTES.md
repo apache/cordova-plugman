@@ -21,6 +21,9 @@
 
 # Cordova-plugman Release Notes
 
+### 0.23.1 (Apr 16, 2015)
+* CB-8637 add windows to plugman
+
 ### 0.23.0 (Feb 27, 2015)
 * CB-8416 added `plugman createpackagejson .` command to generate a package.json file from plugin.xml
 * CB-8370 Update documentation for `plugman publish` without args
