@@ -23,7 +23,8 @@ var path = require('path')
     , package = require(path.join(__dirname, 'package'))
     , help = require('./src/help')
     , url = require('url')
-    , nopt
+	, fs = require('fs')
+	, nopt
     , Q
     , cordova_lib
     , plugman;
@@ -59,6 +60,9 @@ var known_opts = { 'platform' : [ 'ios', 'android', 'amazon-fireos', 'blackberry
 var cli_opts = nopt(known_opts, shortHands);
 
 var cmd = cli_opts.argv.remain.shift();
+
+cli_opts.project = convertToRealPathSafe(cli_opts.project);
+cli_opts.plugins_dir = convertToRealPathSafe(cli_opts.plugins_dir);
 
 // Without these arguments, the commands will fail and print the usage anyway.
 if (cli_opts.plugins_dir || cli_opts.project) {
@@ -100,4 +104,13 @@ if (cli_opts.version) {
     }
 } else {
     console.log(help());
+}
+
+/// Resolve any symlinks in order to avoid relative path issues. See https://issues.apache.org/jira/browse/CB-8757
+function convertToRealPathSafe(path) {
+	if (path && fs.existsSync(path)) {
+		return fs.realpathSync(path);
+	}
+
+	return path;
 }
