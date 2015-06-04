@@ -21,8 +21,8 @@
 
 # Cordova-plugman Release Notes
 
-### 0.23.2 (May 27, 2015)
-* Updated cordova-lib dependency
+### 0.23.3 (June 4, 2015)
+* Updated cordova-lib dependency to 5.1.1
  
 ### 0.23.1 (Apr 16, 2015)
 * CB-8637 add windows to plugman
