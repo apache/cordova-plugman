@@ -52,22 +52,14 @@ Parameters:
 Interacting with the registry
 =============================
 
-Add a user account
-------------------
+NOTICE: The Cordova Plugin registry became read-only, so the following commands are not actual anymore and were removed:
 
     $ plugman adduser
+    $ plugman publish
+    $ plugman unpublish
+    $ plugman owner add/rm
 
-Publish a plugin
-----------------
-
-    $ plugman publish [<directory>]
-
- - defaults to the current directory
-
-Unpublish a plugin
-------------------
-
-    $ plugman unpublish <name>@<version>
+For managing plugins from NPM registry use corresponding NPM commands. For more info on NPM commands see `npm help <command>`
 
 Search for a plugin
 -------------------
@@ -106,22 +98,6 @@ Plugin owners are allowed to publish updates to a plugin. To display a list of o
 Example: 
    
     $ plugman owner ls org.apache.cordova.core.file
-
-To add an owner to a plugin's in the repository, use:
-
-    $ plugman owner add <username> <pluginID>
-
-Example:
-
-    $ plugman owner add joeuser org.apache.cordova.core.file
-
-To remove an owner from the plugin in the registry, use:
-
-    $ plugman owner rm <username> <pluginID>
-
-Example: 
-
-    $ plugman owner rm joeuser org.apache.cordova.core.file
 
 Create A Plugin
 ---------------
