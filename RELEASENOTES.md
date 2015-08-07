@@ -21,6 +21,13 @@
 
 # Cordova-plugman Release Notes
 
+### 1.0.0 (Aug 06, 2015)
+* updated help with changes for npm publishing
+* CB-9330 Adds notice about removed plugman commands. Removed
+publish, unpublish, addUser commands.
+* CB-9332 Removes unnecessary dependencies
+* Adding .ratignore file.
+
 ### 0.23.3 (June 4, 2015)
 * Updated cordova-lib dependency to 5.1.1
  
