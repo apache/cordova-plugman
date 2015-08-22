@@ -41,7 +41,7 @@ try {
     process.exit(2);
 }
 
-var known_opts = { 'platform' : [ 'ios', 'android', 'amazon-fireos', 'blackberry10', 'wp8' , 'windows8', 'windows', 'firefoxos' ]
+var known_opts = { 'platform' : [ 'ios', 'osx', 'android', 'amazon-fireos', 'blackberry10', 'wp8' , 'windows8', 'windows', 'firefoxos' ]
         , 'project' : path
         , 'plugin' : [String, path, url, Array]
         , 'version' : Boolean
