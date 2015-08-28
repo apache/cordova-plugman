@@ -21,7 +21,7 @@
 
 # Cordova-plugman Release Notes
 
-### 1.0.1 (Aug 28, 2015)
+### 1.0.2 (Aug 28, 2015)
 * Updated cordova-lib dependency to 5.3.1
 * CB-7143 Added support for OSX
 
