@@ -25,6 +25,9 @@
 * CB-9800 Fixing contribute link.
 * CB-9903 Updated cordova-lib dependency to 5.4.0
 
+### 1.0.3 (Sep 17, 2015)
+* updated cordova lib dependency to 5.3.2
+
 ### 1.0.2 (Aug 28, 2015)
 * Updated cordova-lib dependency to 5.3.1
 * CB-7143 Added support for OSX
