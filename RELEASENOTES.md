@@ -21,6 +21,9 @@
 
 # Cordova-plugman Release Notes
 
+### 1.2.0 (Mar 17, 2016)
+* CB-10902 Updated cordova-lib dependency to 6.1.0
+ 
 ### 1.1.0 (Jan 25, 2016)
 * CB-10424 Updated cordova-lib dependency to 6.0.0
 
