@@ -1,69 +1,71 @@
 {
-  "author": "Andrew Lunny <alunny@gmail.com>",
-  "name": "plugman",
-  "description": "install/uninstall Cordova plugins",
-  "version": "1.2.1",
-  "repository": {
-    "type": "git",
-    "url": "git://git-wip-us.apache.org/repos/asf/cordova-plugman.git"
-  },
-  "bugs": {
-    "url" : "https://issues.apache.org/jira/browse/CB",
-    "email" : "dev@cordova.apache.org"
-  },
-  "main": "plugman.js",
-  "engines": {
-    "node": ">=0.9.9"
-  },
-  "engineStrict":true,
-  "dependencies": {
-    "cordova-lib": "6.1.1",
-    "nopt": "1.0.9",
-    "q": "1.0.1"
-  },
-  "devDependencies": {
-    "jshint": "2.5.8",
-    "jasmine-node": "1.14.5"
-  },
-  "bin" : { "plugman" : "./main.js" },
-  "scripts": {
-    "test": "npm run jasmine && npm run jshint",
-    "jshint": "node node_modules/jshint/bin/jshint src",
-    "jasmine": "jasmine-node --captureExceptions --color spec"
-  },
-  "contributors":[
-    {
-        "name":"Anis Kadri"
+    "author": "Andrew Lunny <alunny@gmail.com>",
+    "name": "plugman",
+    "description": "install/uninstall Cordova plugins",
+    "version": "1.2.1",
+    "repository": {
+        "type": "git",
+        "url": "git://git-wip-us.apache.org/repos/asf/cordova-plugman.git"
     },
-    {
-        "name":"Tim Kim"
+    "bugs": {
+        "url": "https://issues.apache.org/jira/browse/CB",
+        "email": "dev@cordova.apache.org"
     },
-    {
-        "name":"Braden Shepherdson"
+    "main": "plugman.js",
+    "engines": {
+        "node": ">=0.9.9"
     },
-    {
-        "name":"Ryan Willoughby"
+    "engineStrict": true,
+    "dependencies": {
+        "cordova-lib": "6.1.1",
+        "nopt": "1.0.9",
+        "q": "1.0.1"
     },
-    {
-        "name":"Brett Rudd"
+    "devDependencies": {
+        "jshint": "2.5.8",
+        "jasmine-node": "1.14.5"
     },
-    {
-        "name":"Mike Reinstein"
+    "bin": {
+        "plugman": "./main.js"
     },
-    {
-        "name":"Shazron Abdullah"
+    "scripts": {
+        "test": "npm run jasmine && npm run jshint",
+        "jshint": "node node_modules/jshint/bin/jshint src",
+        "jasmine": "jasmine-node --captureExceptions --color spec"
     },
-    {
-        "name":"Steve Gill"
-    },
-    {
-        "name":"Fil Maj"
-    },
-    {
-        "name":"Michael Brooks"
-    },
-    {
-        "name":"Jesse MacFadyen"
-    }
-  ]
+    "contributors": [
+        {
+            "name": "Anis Kadri"
+        },
+        {
+            "name": "Tim Kim"
+        },
+        {
+            "name": "Braden Shepherdson"
+        },
+        {
+            "name": "Ryan Willoughby"
+        },
+        {
+            "name": "Brett Rudd"
+        },
+        {
+            "name": "Mike Reinstein"
+        },
+        {
+            "name": "Shazron Abdullah"
+        },
+        {
+            "name": "Steve Gill"
+        },
+        {
+            "name": "Fil Maj"
+        },
+        {
+            "name": "Michael Brooks"
+        },
+        {
+            "name": "Jesse MacFadyen"
+        }
+    ]
 }
