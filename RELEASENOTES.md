@@ -21,6 +21,9 @@
 
 # Cordova-plugman Release Notes
 
+### 1.3.0 (May 12, 2016)
+* CB-9858 added `--fetch` option to plugman
+
 ### 1.2.0 (Mar 17, 2016)
 * CB-10902 Updated cordova-lib dependency to 6.1.0
  
