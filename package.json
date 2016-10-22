@@ -33,6 +33,7 @@
         "jshint": "node node_modules/jshint/bin/jshint src",
         "jasmine": "jasmine-node --captureExceptions --color spec"
     },
+    "license": "Apache-2.0",
     "contributors": [
         {
             "name": "Anis Kadri"
