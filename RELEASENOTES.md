@@ -21,6 +21,10 @@
 
 # Cordova-plugman Release Notes
 
+### 1.4.0 (Oct 21, 2016)
+* Add github pull request template
+* [CB-12039](https://issues.apache.org/jira/browse/CB-12039) updated `cordova-lib` to `6.4.0`
+
 ### 1.3.0 (May 12, 2016)
 * [CB-9858](https://issues.apache.org/jira/browse/CB-9858) added `--fetch` option to plugman
 
@@ -75,7 +79,7 @@ publish, unpublish, addUser commands.
 * remove shrinkwrap
 
 ### 0.22.9
-CB-7383: depend on a newer version of cordova-lib
+[CB-7383](https://issues.apache.org/jira/browse/CB-7383) depend on a newer version of cordova-lib
 
 ### 0.22.8
 * bump version to 0.22.8
