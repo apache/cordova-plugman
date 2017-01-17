@@ -21,6 +21,9 @@
 
 # Cordova-plugman Release Notes
 
+### 1.4.1 (Jan 17, 2017)
+* [CB-12358](https://issues.apache.org/jira/browse/CB-12358) Updated `cordova-lib` dependency.
+
 ### 1.4.0 (Oct 21, 2016)
 * Add github pull request template
 * [CB-12039](https://issues.apache.org/jira/browse/CB-12039) updated `cordova-lib` to `6.4.0`
