@@ -5,7 +5,7 @@
     "version": "1.5.1-dev",
     "repository": {
         "type": "git",
-        "url": "git://git-wip-us.apache.org/repos/asf/cordova-plugman.git"
+        "url": "https://github.com/apache/cordova-plugman"
     },
     "bugs": {
         "url": "https://issues.apache.org/jira/browse/CB",
