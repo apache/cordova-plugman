@@ -16,10 +16,11 @@
     specific language governing permissions and limitations
     under the License.
 */
-var fs = require('fs'),
-    path = require('path');
+
+var fs = require('fs');
+var path = require('path');
 var doc_txt = path.join(__dirname, '..', 'doc', 'help.txt');
 
-module.exports = function help() {
+module.exports = function help () {
     return fs.readFileSync(doc_txt, 'utf-8');
 };
