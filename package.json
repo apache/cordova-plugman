@@ -2,7 +2,7 @@
   "author": "Andrew Lunny <alunny@gmail.com>",
   "name": "plugman",
   "description": "install/uninstall Cordova plugins",
-  "version": "1.5.1-dev",
+  "version": "1.5.1",
   "repository": {
     "type": "git",
     "url": "git://git-wip-us.apache.org/repos/asf/cordova-plugman.git"
@@ -17,7 +17,7 @@
   },
   "engineStrict": true,
   "dependencies": {
-    "cordova-lib": "7.0.0",
+    "cordova-lib": "7.1.0",
     "nopt": "1.0.9",
     "q": "1.0.1"
   },

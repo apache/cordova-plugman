@@ -21,6 +21,10 @@
 
 # Cordova-plugman Release Notes
 
+### 1.5.1 (Oct 04, 2017)
+* [CB-13380](https://issues.apache.org/jira/browse/CB-13380) Updated `cordova-lib` dependecy to `7.1.0`
+* [CB-12895](https://issues.apache.org/jira/browse/CB-12895) setup `eslint` and remove `jshint`
+
 ### 1.5.0 (May 02, 2017)
 * [CB-12747](https://issues.apache.org/jira/browse/CB-12747) Updated `cordova-lib` dependency to `7.0.0`
 
