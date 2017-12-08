@@ -1,72 +1,78 @@
 {
-    "author": "Andrew Lunny <alunny@gmail.com>",
-    "name": "plugman",
-    "description": "install/uninstall Cordova plugins",
-    "version": "1.5.1-dev",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/apache/cordova-plugman"
+  "author": "Andrew Lunny <alunny@gmail.com>",
+  "name": "plugman",
+  "description": "install/uninstall Cordova plugins",
+  "version": "1.5.2-dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/apache/cordova-plugman"
+  },
+  "bugs": {
+    "url": "https://issues.apache.org/jira/browse/CB",
+    "email": "dev@cordova.apache.org"
+  },
+  "main": "plugman.js",
+  "engines": {
+    "node": ">=0.9.9"
+  },
+  "engineStrict": true,
+  "dependencies": {
+    "cordova-lib": "7.1.0",
+    "nopt": "1.0.9",
+    "q": "1.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^4.2.0",
+    "eslint-config-semistandard": "^11.0.0",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-plugin-import": "^2.3.0",
+    "eslint-plugin-node": "^5.0.0",
+    "eslint-plugin-promise": "^3.5.0",
+    "eslint-plugin-standard": "^3.0.1",
+    "jasmine-node": "1.14.5"
+  },
+  "bin": {
+    "plugman": "./main.js"
+  },
+  "scripts": {
+    "test": "npm run jasmine && npm run eslint",
+    "eslint": "node node_modules/eslint/bin/eslint src",
+    "jasmine": "jasmine-node --captureExceptions --color spec"
+  },
+  "license": "Apache-2.0",
+  "contributors": [
+    {
+      "name": "Anis Kadri"
     },
-    "bugs": {
-        "url": "https://issues.apache.org/jira/browse/CB",
-        "email": "dev@cordova.apache.org"
+    {
+      "name": "Tim Kim"
     },
-    "main": "plugman.js",
-    "engines": {
-        "node": ">=0.9.9"
+    {
+      "name": "Braden Shepherdson"
     },
-    "engineStrict": true,
-    "dependencies": {
-        "cordova-lib": "7.0.0",
-        "nopt": "1.0.9",
-        "q": "1.0.1"
+    {
+      "name": "Ryan Willoughby"
     },
-    "devDependencies": {
-        "jshint": "2.5.8",
-        "jasmine-node": "1.14.5"
+    {
+      "name": "Brett Rudd"
     },
-    "bin": {
-        "plugman": "./main.js"
+    {
+      "name": "Mike Reinstein"
     },
-    "scripts": {
-        "test": "npm run jasmine && npm run jshint",
-        "jshint": "node node_modules/jshint/bin/jshint src",
-        "jasmine": "jasmine-node --captureExceptions --color spec"
+    {
+      "name": "Shazron Abdullah"
     },
-    "license": "Apache-2.0",
-    "contributors": [
-        {
-            "name": "Anis Kadri"
-        },
-        {
-            "name": "Tim Kim"
-        },
-        {
-            "name": "Braden Shepherdson"
-        },
-        {
-            "name": "Ryan Willoughby"
-        },
-        {
-            "name": "Brett Rudd"
-        },
-        {
-            "name": "Mike Reinstein"
-        },
-        {
-            "name": "Shazron Abdullah"
-        },
-        {
-            "name": "Steve Gill"
-        },
-        {
-            "name": "Fil Maj"
-        },
-        {
-            "name": "Michael Brooks"
-        },
-        {
-            "name": "Jesse MacFadyen"
-        }
-    ]
+    {
+      "name": "Steve Gill"
+    },
+    {
+      "name": "Fil Maj"
+    },
+    {
+      "name": "Michael Brooks"
+    },
+    {
+      "name": "Jesse MacFadyen"
+    }
+  ]
 }
