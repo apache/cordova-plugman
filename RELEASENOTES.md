@@ -21,6 +21,10 @@
 
 # Cordova-plugman Release Notes
 
+### 2.0.0 (Dec 14, 2017)
+* [CB-13674](https://issues.apache.org/jira/browse/CB-13674): updated `cordova-lib` dependency to 8.0.0
+* [CB-12762](https://issues.apache.org/jira/browse/CB-12762): pointed `package.json` repo items to github mirrors instead of apache repos site (#89)
+
 ### 1.5.1 (Oct 04, 2017)
 * [CB-13380](https://issues.apache.org/jira/browse/CB-13380) Updated `cordova-lib` dependecy to `7.1.0`
 * [CB-12895](https://issues.apache.org/jira/browse/CB-12895) setup `eslint` and remove `jshint`
