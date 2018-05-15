@@ -13,7 +13,7 @@
   },
   "main": "plugman.js",
   "engines": {
-    "node": ">=0.9.9"
+    "node": ">=6"
   },
   "engineStrict": true,
   "dependencies": {
