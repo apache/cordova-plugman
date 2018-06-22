@@ -18,8 +18,7 @@
   "engineStrict": true,
   "dependencies": {
     "cordova-lib": "8.0.0",
-    "nopt": "1.0.9",
-    "q": "1.0.1"
+    "nopt": "1.0.9"
   },
   "devDependencies": {
     "eslint": "^4.2.0",
