@@ -23,23 +23,10 @@ var path = require('path')
     , package = require(path.join(__dirname, 'package'))
     , help = require('./src/help')
     , url = require('url')
-    , nopt
-    , Q
-    , cordova_lib
-    , plugman;
-
-try {
-    nopt = require('nopt');
-    Q = require('q');
-    cordova_lib = require('cordova-lib');
-    plugman = cordova_lib.plugman;
-} catch(e) {
-    console.error(
-        'Please run npm install from this directory:\n\t' +
-        __dirname
-    );
-    process.exit(2);
-}
+    , nopt = require('nopt')
+    , Q = require('q')
+    , cordova_lib = require('cordova-lib')
+    , plugman = cordova_lib.plugman;
 
 var known_opts = { 'platform' : [ 'ios', 'osx', 'android', 'amazon-fireos', 'blackberry10', 'wp8' , 'windows8', 'windows', 'firefoxos' ]
         , 'project' : path
