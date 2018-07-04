@@ -18,10 +18,10 @@
 */
 var nopt = require('nopt');
 
-describe('nopt interface check', function() {
+describe('nopt interface check', function () {
     // https://issues.apache.org/jira/browse/CB-7915
-    it('parameters without assignment operator should be assigned', function() {
-        var cli_opts = nopt(null, null, ['plugman', 'create', '--name', 'MyName', '--platform_id', 'MyId', '--platform_version','1.0.0']);
+    it('parameters without assignment operator should be assigned', function () {
+        var cli_opts = nopt(null, null, ['plugman', 'create', '--name', 'MyName', '--platform_id', 'MyId', '--platform_version', '1.0.0']);
         expect(cli_opts.name).toEqual('MyName');
         expect(cli_opts.platform_id).toEqual('MyId');
         expect(cli_opts.platform_version).toEqual('1.0.0');

@@ -29,15 +29,14 @@
     "eslint-plugin-node": "^5.0.0",
     "eslint-plugin-promise": "^3.5.0",
     "eslint-plugin-standard": "^3.0.1",
-    "jasmine-node": "1.14.5"
+    "jasmine": "^3.1.0"
   },
   "bin": {
     "plugman": "./main.js"
   },
   "scripts": {
-    "test": "npm run jasmine && npm run eslint",
-    "eslint": "node node_modules/eslint/bin/eslint src",
-    "jasmine": "jasmine-node --captureExceptions --color spec"
+    "test": "npm run eslint && jasmine",
+    "eslint": "eslint ."
   },
   "license": "Apache-2.0",
   "contributors": [
