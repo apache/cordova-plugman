@@ -35,8 +35,8 @@
     "plugman": "./main.js"
   },
   "scripts": {
-    "test": "npm run jasmine && npm run eslint",
-    "eslint": "node node_modules/eslint/bin/eslint src",
+    "test": "npm run eslint && npm run jasmine",
+    "eslint": "eslint .",
     "jasmine": "jasmine-node --captureExceptions --color spec"
   },
   "license": "Apache-2.0",
