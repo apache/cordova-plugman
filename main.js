@@ -19,31 +19,38 @@
 */
 
 // copyright (c) 2013 Andrew Lunny, Adobe Systems
-var path = require('path')
-    , package = require(path.join(__dirname, 'package'))
-    , help = require('./src/help')
-    , url = require('url')
-    , nopt = require('nopt')
-    , Q = require('q')
-    , cordova_lib = require('cordova-lib')
-    , plugman = cordova_lib.plugman;
 
-var known_opts = { 'platform' : [ 'ios', 'osx', 'android', 'amazon-fireos', 'blackberry10', 'wp8' , 'windows8', 'windows', 'firefoxos' ]
-        , 'project' : path
-        , 'plugin' : [String, path, url, Array]
-        , 'version' : Boolean
-        , 'help' : Boolean
-        , 'debug' : Boolean
-        , 'silent' : Boolean
-        , 'plugins': path
-        , 'link': Boolean
-        , 'variable' : Array
-        , 'www': path
-        , 'searchpath' : [path, Array]
-        , 'browserify': Boolean
-        , 'fetch': Boolean
-        , 'save': Boolean
-}, shortHands = { 'var' : ['--variable'], 'v': ['--version'], 'h': ['--help'] };
+const url = require('url');
+const path = require('path');
+
+const Q = require('q');
+const nopt = require('nopt');
+
+const pkg = require('./package');
+const help = require('./src/help');
+const plugman = require('./plugman');
+
+const known_opts = {
+    platform: [
+        'ios', 'osx', 'android', 'amazon-fireos', 'blackberry10',
+        'wp8', 'windows8', 'windows', 'firefoxos'
+    ],
+    project: path,
+    plugin: [String, path, url, Array],
+    version: Boolean,
+    help: Boolean,
+    debug: Boolean,
+    silent: Boolean,
+    plugins: path,
+    link: Boolean,
+    variable: Array,
+    www: path,
+    searchpath: [path, Array],
+    browserify: Boolean,
+    fetch: Boolean,
+    save: Boolean
+};
+const shortHands = { var: ['--variable'], v: ['--version'], h: ['--help'] };
 
 var cli_opts = nopt(known_opts, shortHands);
 
@@ -51,12 +58,12 @@ var cmd = cli_opts.argv.remain.shift();
 
 // Without these arguments, the commands will fail and print the usage anyway.
 if (cli_opts.plugins_dir || cli_opts.project) {
-    cli_opts.plugins_dir = typeof cli_opts.plugins_dir == 'string' ?
+    cli_opts.plugins_dir = typeof cli_opts.plugins_dir === 'string' ?
         cli_opts.plugins_dir :
         path.join(cli_opts.project, 'cordova', 'plugins');
 }
 
-process.on('uncaughtException', function(error) {
+process.on('uncaughtException', function (error) {
     if (cli_opts.debug) {
         console.error(error.message, error.stack);
     } else {
@@ -79,7 +86,7 @@ if (!cli_opts.silent) {
 plugman.on('error', console.error);
 
 if (cli_opts.version) {
-    console.log(package.version);
+    console.log(pkg.version);
 } else if (cli_opts.help) {
     console.log(help());
 } else if (plugman.commands[cmd]) {
