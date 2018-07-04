@@ -23,7 +23,6 @@
 const url = require('url');
 const path = require('path');
 
-const Q = require('q');
 const nopt = require('nopt');
 
 const pkg = require('./package');
@@ -63,14 +62,7 @@ if (cli_opts.plugins_dir || cli_opts.project) {
         path.join(cli_opts.project, 'cordova', 'plugins');
 }
 
-process.on('uncaughtException', function (error) {
-    if (cli_opts.debug) {
-        console.error(error.message, error.stack);
-    } else {
-        console.error(error.message);
-    }
-    process.exit(1);
-});
+process.on('uncaughtException', fail);
 
 // Set up appropriate logging based on events
 if (cli_opts.debug) {
@@ -90,10 +82,16 @@ if (cli_opts.version) {
 } else if (cli_opts.help) {
     console.log(help());
 } else if (plugman.commands[cmd]) {
-    var result = plugman.commands[cmd](cli_opts);
-    if (result && Q.isPromise(result)) {
-        result.done();
-    }
+    Promise.resolve(plugman.commands[cmd](cli_opts))
+        .catch(fail);
 } else {
     console.log(help());
+}
+
+function fail (error) {
+    console.error(error.message);
+    if (cli_opts.debug) {
+        console.error(error.stack);
+    }
+    process.exit(1);
 }
