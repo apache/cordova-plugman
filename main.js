@@ -45,7 +45,6 @@ const known_opts = {
     variable: Array,
     www: path,
     searchpath: [path, Array],
-    browserify: Boolean,
     fetch: Boolean,
     save: Boolean
 };
