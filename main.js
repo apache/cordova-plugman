@@ -46,7 +46,6 @@ const known_opts = {
     www: path,
     searchpath: [path, Array],
     browserify: Boolean,
-    fetch: Boolean,
     save: Boolean
 };
 const shortHands = { var: ['--variable'], v: ['--version'], h: ['--help'] };
