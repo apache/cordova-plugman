@@ -17,7 +17,7 @@
   },
   "engineStrict": true,
   "dependencies": {
-    "cordova-lib": "8.0.0",
+    "cordova-lib": "^9.0.0",
     "nopt": "1.0.9"
   },
   "devDependencies": {
