@@ -21,6 +21,31 @@
 
 # Cordova-plugman Release Notes
 
+### 3.0.0 (Mar 20, 2019)
+
+* [GH-108](https://github.com/apache/cordova-plugman/pull/108) Cordova Plugman Release Preparation (Cordova 9)
+  * Bumped Dependencies
+    * `cordova-lib@^9.0.0`
+    * `nopt@^4.0.1`
+  * Bumped Dev Dependencies
+    * `jasmine@^3.3.1`
+    * `eslint-plugin-standard@^4.0.0`
+    * `eslint-plugin-promise@^4.0.1`
+    * `eslint-plugin-node@^8.0.1`
+    * `eslint-plugin-import@^2.16.0`
+    * `eslint-config-standard@^12.0.0`
+    * `eslint-config-semistandard@^13.0.0`
+    * `eslint@^5.15.3`
+  * Update to support nopt@^4.0.1
+* Add or update GitHub pull request and issue template
+* [GH-96](https://github.com/apache/cordova-plugman/pull/96) Remove `fetch` option
+* [GH-95](https://github.com/apache/cordova-plugman/pull/95) Remove `browserify` option
+* [GH-94](https://github.com/apache/cordova-plugman/pull/94) [CB-14164](https://issues.apache.org/jira/browse/CB-14164) Use native Promises instead of `Q`
+* [GH-88](https://github.com/apache/cordova-plugman/pull/88) [CB-12018](https://issues.apache.org/jira/browse/CB-12018) Use `jasmine` instead of `jasmine-node`
+* [GH-93](https://github.com/apache/cordova-plugman/pull/93) Code Refactor and Cleanup
+* [GH-92](https://github.com/apache/cordova-plugman/pull/92) Update link to `plugin.xml` specification in `README.md`
+* [GH-91](https://github.com/apache/cordova-plugman/pull/91) Drop support for Node.js < 6
+
 ### 2.0.0 (Dec 14, 2017)
 * [CB-13674](https://issues.apache.org/jira/browse/CB-13674): updated `cordova-lib` dependency to 8.0.0
 * [CB-12762](https://issues.apache.org/jira/browse/CB-12762): pointed `package.json` repo items to github mirrors instead of apache repos site (#89)
