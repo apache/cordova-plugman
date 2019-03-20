@@ -36,7 +36,7 @@ const known_opts = {
     ],
     project: path,
     plugin: [String, path, url, Array],
-    version: Boolean,
+    version: String,
     help: Boolean,
     debug: Boolean,
     silent: Boolean,
@@ -45,7 +45,11 @@ const known_opts = {
     variable: Array,
     www: path,
     searchpath: [path, Array],
-    save: Boolean
+    save: Boolean,
+    name: String,
+    platform_id: String,
+    platform_version: String,
+    plugins_dir: String
 };
 const shortHands = { var: ['--variable'], v: ['--version'], h: ['--help'] };
 

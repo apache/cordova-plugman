@@ -17,18 +17,19 @@
   },
   "engineStrict": true,
   "dependencies": {
-    "cordova-lib": "8.0.0",
-    "nopt": "1.0.9"
+    "cordova-lib": "^9.0.0",
+    "nopt": "^4.0.1"
   },
   "devDependencies": {
-    "eslint": "^4.2.0",
-    "eslint-config-semistandard": "^11.0.0",
-    "eslint-config-standard": "^10.2.1",
-    "eslint-plugin-import": "^2.3.0",
-    "eslint-plugin-node": "^5.0.0",
-    "eslint-plugin-promise": "^3.5.0",
-    "eslint-plugin-standard": "^3.0.1",
-    "jasmine": "^3.1.0"
+    "eslint": "^5.15.3",
+    "eslint-config-semistandard": "^13.0.0",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-node": "^8.0.1",
+    "eslint-plugin-promise": "^4.0.1",
+    "eslint-plugin-standard": "^4.0.0",
+    "jasmine": "^3.3.1",
+    "rewire": "^4.0.1"
   },
   "bin": {
     "plugman": "./main.js"

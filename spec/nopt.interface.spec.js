@@ -16,12 +16,16 @@
     specific language governing permissions and limitations
     under the License.
 */
-var nopt = require('nopt');
+const nopt = require('nopt');
+const rewire = require('rewire');
+const main = rewire('../main');
 
-describe('nopt interface check', function () {
-    // https://issues.apache.org/jira/browse/CB-7915
-    it('parameters without assignment operator should be assigned', function () {
-        var cli_opts = nopt(null, null, ['plugman', 'create', '--name', 'MyName', '--platform_id', 'MyId', '--platform_version', '1.0.0']);
+describe('nopt interface check', () => {
+    it('parameters without assignment operator should be assigned', () => {
+        const knownOptions = main.__get__('known_opts');
+        const shortHands = main.__get__('shortHands');
+        const cli_opts = nopt(knownOptions, shortHands, ['plugman', 'create', '--name', 'MyName', '--platform_id', 'MyId', '--platform_version', '1.0.0']);
+
         expect(cli_opts.name).toEqual('MyName');
         expect(cli_opts.platform_id).toEqual('MyId');
         expect(cli_opts.platform_version).toEqual('1.0.0');
