@@ -30,7 +30,7 @@ const help = require('./src/help');
 const plugman = require('./plugman');
 
 const known_opts = {
-    platform: [
+    platform_name: [
         'ios', 'osx', 'android', 'amazon-fireos', 'blackberry10',
         'wp8', 'windows8', 'windows', 'firefoxos'
     ],
