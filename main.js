@@ -34,6 +34,7 @@ const knownPlatforms = Object.keys(cordova_platforms);
 
 const known_opts = {
     platform: knownPlatforms,
+    platform_name: knownPlatforms,
     project: path,
     plugin: [String, path, url, Array],
     version: String,
