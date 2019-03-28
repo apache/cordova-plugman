@@ -28,12 +28,13 @@ const nopt = require('nopt');
 const pkg = require('./package');
 const help = require('./src/help');
 const plugman = require('./plugman');
+const { cordova_platforms } = require('cordova-lib');
+
+const knownPlatforms = Object.keys(cordova_platforms);
 
 const known_opts = {
-    platform: [
-        'ios', 'osx', 'android', 'amazon-fireos', 'blackberry10',
-        'wp8', 'windows8', 'windows', 'firefoxos'
-    ],
+    platform: knownPlatforms,
+    platform_name: knownPlatforms,
     project: path,
     plugin: [String, path, url, Array],
     version: String,
