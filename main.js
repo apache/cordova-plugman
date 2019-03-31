@@ -90,6 +90,7 @@ if (cli_opts.version) {
         .catch(fail);
 } else {
     console.log(help());
+    process.exitCode = 1;
 }
 
 function fail (error) {
