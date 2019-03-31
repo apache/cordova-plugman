@@ -22,7 +22,7 @@
 const { plugman } = require('cordova-lib');
 
 module.exports = {
-    'install': function (cli_opts) {
+    install (cli_opts) {
         if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
             return console.log(plugman.help());
         }
@@ -35,6 +35,7 @@ module.exports = {
                 if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
             });
         }
+
         var opts = {
             subdir: '.',
             cli_variables: cli_variables,
@@ -55,7 +56,8 @@ module.exports = {
 
         return p;
     },
-    'uninstall': function (cli_opts) {
+
+    uninstall (cli_opts) {
         if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
             return console.log(plugman.help());
         }
@@ -74,7 +76,8 @@ module.exports = {
 
         return p;
     },
-    'create': function (cli_opts) {
+
+    create (cli_opts) {
         if (!cli_opts.name || !cli_opts.plugin_id || !cli_opts.plugin_version) {
             return console.log(plugman.help());
         }
@@ -88,14 +91,16 @@ module.exports = {
         }
         plugman.create(cli_opts.name, cli_opts.plugin_id, cli_opts.plugin_version, cli_opts.path || '.', cli_variables);
     },
-    'platform': function (cli_opts) {
+
+    platform (cli_opts) {
         var operation = cli_opts.argv.remain[ 0 ] || '';
         if ((operation !== 'add' && operation !== 'remove') || !cli_opts.platform_name) {
             return console.log(plugman.help());
         }
         plugman.platform({ operation: operation, platform_name: cli_opts.platform_name });
     },
-    'createpackagejson': function (cli_opts) {
+
+    createpackagejson (cli_opts) {
         var plugin_path = cli_opts.argv.remain[0];
         if (!plugin_path) {
             return console.log(plugman.help());
