@@ -97,5 +97,5 @@ function fail (error) {
     if (cli_opts.debug) {
         console.error(error.stack);
     }
-    process.exit(1);
+    process.exitCode = 1;
 }
