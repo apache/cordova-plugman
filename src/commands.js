@@ -19,6 +19,7 @@
 
 // copyright (c) 2013 Andrew Lunny, Adobe Systems
 
+const pEachSeries = require('p-each-series');
 const { plugman } = require('cordova-lib');
 
 module.exports = {
@@ -38,14 +39,10 @@ module.exports = {
             force: cli_opts.force || false,
             nohooks: cli_opts.nohooks || false
         };
-        var p = Promise.resolve();
-        cli_opts.plugin.forEach(function (pluginSrc) {
-            p = p.then(function () {
-                return plugman.install(cli_opts.platform, cli_opts.project, pluginSrc, cli_opts.plugins_dir, opts);
-            });
-        });
 
-        return p;
+        return pEachSeries(cli_opts.plugin, pluginSrc =>
+            plugman.install(cli_opts.platform, cli_opts.project, pluginSrc, cli_opts.plugins_dir, opts)
+        );
     },
 
     uninstall (cli_opts) {
@@ -53,19 +50,15 @@ module.exports = {
             return console.log(plugman.help());
         }
 
-        var p = Promise.resolve();
-        cli_opts.plugin.forEach(function (pluginSrc) {
-            var opts = {
-                www_dir: cli_opts.www,
-                save: cli_opts.save || false,
-                projectRoot: cli_opts.project
-            };
-            p = p.then(function () {
-                return plugman.uninstall(cli_opts.platform, cli_opts.project, pluginSrc, cli_opts.plugins_dir, opts);
-            });
-        });
+        var opts = {
+            www_dir: cli_opts.www,
+            save: cli_opts.save || false,
+            projectRoot: cli_opts.project
+        };
 
-        return p;
+        return pEachSeries(cli_opts.plugin, pluginSrc =>
+            plugman.uninstall(cli_opts.platform, cli_opts.project, pluginSrc, cli_opts.plugins_dir, opts)
+        );
     },
 
     create (cli_opts) {
