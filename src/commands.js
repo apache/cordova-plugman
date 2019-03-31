@@ -73,7 +73,7 @@ module.exports = {
             return console.log(plugman.help());
         }
         const cli_variables = expandCliVariables(cli_opts.variable);
-        plugman.create(cli_opts.name, cli_opts.plugin_id, cli_opts.plugin_version, cli_opts.path || '.', cli_variables);
+        return plugman.create(cli_opts.name, cli_opts.plugin_id, cli_opts.plugin_version, cli_opts.path || '.', cli_variables);
     },
 
     platform (cli_opts) {
@@ -81,7 +81,7 @@ module.exports = {
         if ((operation !== 'add' && operation !== 'remove') || !cli_opts.platform_name) {
             return console.log(plugman.help());
         }
-        plugman.platform({ operation: operation, platform_name: cli_opts.platform_name });
+        return plugman.platform({ operation: operation, platform_name: cli_opts.platform_name });
     },
 
     createpackagejson (cli_opts) {
@@ -89,7 +89,7 @@ module.exports = {
         if (!plugin_path) {
             return console.log(plugman.help());
         }
-        plugman.createpackagejson(plugin_path);
+        return plugman.createpackagejson(plugin_path);
     }
 };
 
