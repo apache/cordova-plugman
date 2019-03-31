@@ -27,6 +27,7 @@ const nopt = require('nopt');
 
 const pkg = require('./package');
 const help = require('./src/help');
+const commands = require('./src/commands');
 const plugman = require('./plugman');
 const { cordova_platforms } = require('cordova-lib');
 
@@ -84,8 +85,8 @@ if (cli_opts.version) {
     console.log(pkg.version);
 } else if (cli_opts.help) {
     console.log(help());
-} else if (plugman.commands[cmd]) {
-    Promise.resolve(plugman.commands[cmd](cli_opts))
+} else if (commands[cmd]) {
+    Promise.resolve(commands[cmd](cli_opts))
         .catch(fail);
 } else {
     console.log(help());
