@@ -1,0 +1,9 @@
+Uninstall a plugin
+
+Usage plugman uninstall PARAMETER...
+
+Parameters:
+  --platform <platform>    The platform from which to install the plugin
+  --project <directory>    Path to a cordova-generated project of <platform>
+  --plugin <plugin-id>     The ID of the plugin to remove; see attribute 'id'
+                           of element 'plugin' in plugin.xml

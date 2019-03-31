@@ -84,7 +84,7 @@ plugman.on('error', console.error);
 if (cli_opts.version) {
     console.log(pkg.version);
 } else if (cli_opts.help) {
-    console.log(help());
+    console.log(help(commands[cmd] ? cmd : 'summary'));
 } else if (commands[cmd]) {
     Promise.resolve(commands[cmd](cli_opts))
         .catch(fail);
