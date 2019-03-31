@@ -26,19 +26,10 @@ module.exports = {
         if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
             return console.log(plugman.help());
         }
-        var cli_variables = {};
-
-        if (cli_opts.variable) {
-            cli_opts.variable.forEach(function (variable) {
-                var tokens = variable.split('=');
-                var key = tokens.shift().toUpperCase();
-                if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
-            });
-        }
 
         var opts = {
             subdir: '.',
-            cli_variables: cli_variables,
+            cli_variables: expandCliVariables(cli_opts.variable),
             save: cli_opts.save || false,
             www_dir: cli_opts.www,
             searchpath: cli_opts.searchpath,
@@ -81,14 +72,7 @@ module.exports = {
         if (!cli_opts.name || !cli_opts.plugin_id || !cli_opts.plugin_version) {
             return console.log(plugman.help());
         }
-        var cli_variables = {};
-        if (cli_opts.variable) {
-            cli_opts.variable.forEach(function (variable) {
-                var tokens = variable.split('=');
-                var key = tokens.shift().toUpperCase();
-                if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
-            });
-        }
+        const cli_variables = expandCliVariables(cli_opts.variable);
         plugman.create(cli_opts.name, cli_opts.plugin_id, cli_opts.plugin_version, cli_opts.path || '.', cli_variables);
     },
 
@@ -108,3 +92,12 @@ module.exports = {
         plugman.createpackagejson(plugin_path);
     }
 };
+
+function expandCliVariables (cliVarList) {
+    return (cliVarList || []).reduce((cli_variables, variable) => {
+        var tokens = variable.split('=');
+        var key = tokens.shift().toUpperCase();
+        if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
+        return cli_variables;
+    }, {});
+}
