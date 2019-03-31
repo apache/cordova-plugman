@@ -22,15 +22,6 @@
 const { plugman } = require('cordova-lib');
 
 module.exports = {
-    'config': function (cli_opts) {
-        plugman.config(cli_opts.argv.remain, function (err) {
-            if (err) throw err;
-            else console.log('done');
-        });
-    },
-    'owner': function (cli_opts) {
-        plugman.owner(cli_opts.argv.remain);
-    },
     'install': function (cli_opts) {
         if (!cli_opts.platform || !cli_opts.project || !cli_opts.plugin) {
             return console.log(plugman.help());
@@ -82,30 +73,6 @@ module.exports = {
         });
 
         return p;
-    },
-    'search': function (cli_opts) {
-        plugman.search(cli_opts.argv.remain, function (err, plugins) {
-            if (err) throw err;
-            else {
-                for (var plugin in plugins) {
-                    console.log(plugins[plugin].name, '-', plugins[plugin].description || 'no description provided');
-                }
-            }
-        });
-    },
-    'info': function (cli_opts) {
-        plugman.info(cli_opts.argv.remain, function (err, plugin_info) {
-            if (err) throw err;
-            else {
-                console.log('name:', plugin_info.name);
-                console.log('version:', plugin_info.version);
-                if (plugin_info.engines) {
-                    for (var i = 0, j = plugin_info.engines.length; i < j; i++) {
-                        console.log(plugin_info.engines[i].name, 'version:', plugin_info.engines[i].version);
-                    }
-                }
-            }
-        });
     },
     'create': function (cli_opts) {
         if (!cli_opts.name || !cli_opts.plugin_id || !cli_opts.plugin_version) {
