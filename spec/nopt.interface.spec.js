@@ -24,10 +24,10 @@ describe('nopt interface check', () => {
     it('parameters without assignment operator should be assigned', () => {
         const knownOptions = main.__get__('known_opts');
         const shortHands = main.__get__('shortHands');
-        const cli_opts = nopt(knownOptions, shortHands, ['plugman', 'create', '--name', 'MyName', '--platform_id', 'MyId', '--platform_version', '1.0.0']);
+        const cli_opts = nopt(knownOptions, shortHands, ['plugman', 'create', '--name', 'MyName', '--plugin_id', 'MyId', '--plugin_version', '1.0.0']);
 
         expect(cli_opts.name).toEqual('MyName');
-        expect(cli_opts.platform_id).toEqual('MyId');
-        expect(cli_opts.platform_version).toEqual('1.0.0');
+        expect(cli_opts.plugin_id).toEqual('MyId');
+        expect(cli_opts.plugin_version).toEqual('1.0.0');
     });
 });

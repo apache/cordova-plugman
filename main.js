@@ -49,8 +49,8 @@ const known_opts = {
     searchpath: [path, Array],
     save: Boolean,
     name: String,
-    platform_id: String,
-    platform_version: String,
+    plugin_id: String,
+    plugin_version: String,
     plugins_dir: String
 };
 const shortHands = { var: ['--variable'], v: ['--version'], h: ['--help'] };
