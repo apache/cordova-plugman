@@ -20,6 +20,9 @@
 
 // copyright (c) 2013 Andrew Lunny, Adobe Systems
 
+// Register custom fail handler for uncaughtException event
+process.on('uncaughtException', fail);
+
 // On unhandled promise rejection, log it to STDERR and exit with code 1
 require('loud-rejection/register');
 
@@ -69,8 +72,6 @@ if (cli_opts.plugins_dir || cli_opts.project) {
         path.join(cli_opts.project, 'cordova', 'plugins');
 }
 
-process.on('uncaughtException', fail);
-
 // Set up appropriate logging based on events
 if (cli_opts.debug) {
     plugman.on('verbose', console.log);
@@ -98,7 +99,7 @@ if (cli_opts.version) {
 
 function fail (error) {
     console.error(error.message);
-    if (cli_opts.debug) {
+    if (cli_opts && cli_opts.debug) {
         console.error(error.stack);
     }
     process.exitCode = 1;
