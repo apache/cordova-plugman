@@ -20,6 +20,9 @@
 
 // copyright (c) 2013 Andrew Lunny, Adobe Systems
 
+// On unhandled promise rejection, log it to STDERR and exit with code 1
+require('loud-rejection/register');
+
 const url = require('url');
 const path = require('path');
 

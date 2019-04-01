@@ -18,6 +18,7 @@
   "engineStrict": true,
   "dependencies": {
     "cordova-lib": "^9.0.0",
+    "loud-rejection": "^1.6.0",
     "nopt": "^4.0.1",
     "p-each-series": "^1.0.0",
     "p-try": "^2.2.0"
