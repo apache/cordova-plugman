@@ -15,7 +15,6 @@
   "engines": {
     "node": ">=6"
   },
-  "engineStrict": true,
   "dependencies": {
     "cordova-lib": "^9.0.0",
     "loud-rejection": "^1.6.0",
