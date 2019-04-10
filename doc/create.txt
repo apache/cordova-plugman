@@ -1,0 +1,13 @@
+Create a plugin
+
+Usage: plugman create PARAMETER... [OPTION]...
+
+Parameters:
+  --name <pluginName>           The name of the plugin
+  --plugin_id <pluginID>        An ID for the plugin, ex: org.bar.foo
+  --plugin_version <version>    A version for the plugin, ex: 0.0.1
+
+Options:
+  --path <directory>            An absolute or relative path for the directory
+                                where the plugin project will be created
+  --variable NAME=VALUE         Extra variables such as description or Author

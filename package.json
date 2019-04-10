@@ -18,7 +18,10 @@
   "engineStrict": true,
   "dependencies": {
     "cordova-lib": "^9.0.0",
-    "nopt": "^4.0.1"
+    "loud-rejection": "^1.6.0",
+    "nopt": "^4.0.1",
+    "p-each-series": "^1.0.0",
+    "p-try": "^2.2.0"
   },
   "devDependencies": {
     "eslint": "^5.15.3",

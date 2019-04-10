@@ -1,0 +1,26 @@
+Install a plugin
+
+Usage: plugman install PARAMETER... [OPTION]...
+
+Parameters:
+  --platform <platform>     The platform for which to install the plugin
+  --project <directory>     Path to a cordova-generated project of <platform>
+  --plugin <plugin>         The spec of the plugin to install. Anything that
+                            could be passed to npm install
+
+Options:
+ --variable NAME=VALUE      Some plugins require install-time variables to be
+                            defined. These could be things like API keys/tokens
+                            or other app-specific variables.
+ --www <directory>          www assets for the plugin will be installed into
+                            this directory. Default is to install into the
+                            standard www directory for the platform specified
+ --plugins_dir <directory>  a copy of the plugin will be stored in this
+                            directory. Default is to install into the
+                            <project directory>/plugins folder
+ --searchpath <directory>   when looking up plugins by ID, look in this
+                            directory and each of its subdirectories for the
+                            plugin before hitting the registry. Multiple search
+                            paths can be used by either specifying the flag
+                            multiple times, or by separating paths with a
+                            delimiter (: on 'nix, ; on Windows).

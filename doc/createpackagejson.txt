@@ -1,0 +1,3 @@
+Derive a package.json file for a plugin based on its plugin.xml
+
+Usage: plugman createpackagejson <plugin directory>

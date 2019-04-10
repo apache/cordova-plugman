@@ -19,8 +19,10 @@
 
 var fs = require('fs');
 var path = require('path');
-var doc_txt = path.join(__dirname, '..', 'doc', 'help.txt');
 
-module.exports = function help () {
-    return fs.readFileSync(doc_txt, 'utf-8');
+const docsDir = path.join(__dirname, '../doc');
+
+module.exports = function help (topic = 'summary') {
+    const doc = path.join(docsDir, topic + '.txt');
+    return fs.readFileSync(doc, 'utf-8');
 };

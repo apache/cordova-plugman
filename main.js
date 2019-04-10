@@ -20,6 +20,12 @@
 
 // copyright (c) 2013 Andrew Lunny, Adobe Systems
 
+// Register custom fail handler for uncaughtException event
+process.on('uncaughtException', fail);
+
+// On unhandled promise rejection, log it to STDERR and exit with code 1
+require('loud-rejection/register');
+
 const url = require('url');
 const path = require('path');
 
@@ -27,6 +33,7 @@ const nopt = require('nopt');
 
 const pkg = require('./package');
 const help = require('./src/help');
+const commands = require('./src/commands');
 const plugman = require('./plugman');
 const { cordova_platforms } = require('cordova-lib');
 
@@ -48,8 +55,8 @@ const known_opts = {
     searchpath: [path, Array],
     save: Boolean,
     name: String,
-    platform_id: String,
-    platform_version: String,
+    plugin_id: String,
+    plugin_version: String,
     plugins_dir: String
 };
 const shortHands = { var: ['--variable'], v: ['--version'], h: ['--help'] };
@@ -64,8 +71,6 @@ if (cli_opts.plugins_dir || cli_opts.project) {
         cli_opts.plugins_dir :
         path.join(cli_opts.project, 'cordova', 'plugins');
 }
-
-process.on('uncaughtException', fail);
 
 // Set up appropriate logging based on events
 if (cli_opts.debug) {
@@ -83,18 +88,19 @@ plugman.on('error', console.error);
 if (cli_opts.version) {
     console.log(pkg.version);
 } else if (cli_opts.help) {
-    console.log(help());
-} else if (plugman.commands[cmd]) {
-    Promise.resolve(plugman.commands[cmd](cli_opts))
+    console.log(help(commands[cmd] ? cmd : 'summary'));
+} else if (commands[cmd]) {
+    Promise.resolve(commands[cmd](cli_opts))
         .catch(fail);
 } else {
     console.log(help());
+    process.exitCode = 1;
 }
 
 function fail (error) {
     console.error(error.message);
-    if (cli_opts.debug) {
+    if (cli_opts && cli_opts.debug) {
         console.error(error.stack);
     }
-    process.exit(1);
+    process.exitCode = 1;
 }
