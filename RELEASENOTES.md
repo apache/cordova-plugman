@@ -21,6 +21,27 @@
 
 # Cordova-plugman Release Notes
 
+### 3.0.1 (Apr 11, 2019)
+
+* [GH-117](https://github.com/apache/cordova-plugman/pull/117) chore: remove deprecated `engineStrict`
+* [GH-113](https://github.com/apache/cordova-plugman/pull/113) Bug Fixes
+  * Register uncaughtException handler as early as possible
+  * Make unhandled promise rejections fail loudly
+  * Split up docs by command and add a short summary
+  * Remove documentation for obsolete commands
+  * Fix known options for plugman create
+  * Set positive exit code if we don't know what to do
+  * Set process.exitCode instead of calling process.exit
+  * Provide helpful error message and code on failure
+  * Properly install multiple plugins in series
+  * Properly return Promises from commands
+  * Factor out duplicated code
+  * Improve readability of commands module
+  * Remove commands from CLI that do not exist in the lib anymore
+  * Remove errors about unsupported publish/unpublish commands
+  * Move CLI interface plugman.commands from cordova-lib to plugman
+* [GH-112](https://github.com/apache/cordova-plugman/pull/112) Fix platform_name option
+
 ### 3.0.0 (Mar 20, 2019)
 
 * [GH-108](https://github.com/apache/cordova-plugman/pull/108) Cordova Plugman Release Preparation (Cordova 9)
