@@ -44,7 +44,7 @@ const known_opts = {
     platform_name: knownPlatforms,
     project: path,
     plugin: [String, path, url, Array],
-    version: String,
+    version: Boolean,
     help: Boolean,
     debug: Boolean,
     silent: Boolean,
