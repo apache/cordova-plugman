@@ -2,7 +2,7 @@
   "author": "Andrew Lunny <alunny@gmail.com>",
   "name": "plugman",
   "description": "install/uninstall Cordova plugins",
-  "version": "3.0.2-dev",
+  "version": "4.0.0-dev",
   "repository": {
     "type": "git",
     "url": "https://github.com/apache/cordova-plugman"
