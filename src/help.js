@@ -17,8 +17,8 @@
     under the License.
 */
 
-var fs = require('fs');
-var path = require('path');
+const fs = require('fs');
+const path = require('path');
 
 const docsDir = path.join(__dirname, '../doc');
 
