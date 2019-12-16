@@ -13,7 +13,7 @@
   },
   "main": "plugman.js",
   "engines": {
-    "node": ">=6"
+    "node": ">=10"
   },
   "dependencies": {
     "cordova-lib": "^9.0.0",
