@@ -67,7 +67,7 @@ module.exports = {
 
     platform (cli_opts) {
         assertRequiredOptions(cli_opts, ['platform_name']);
-        var operation = cli_opts.argv.remain[ 0 ] || '';
+        var operation = cli_opts.argv.remain[0] || '';
         if (operation !== 'add' && operation !== 'remove') {
             throw new Error(`Operation must be either 'add' or 'remove' but was '${operation}'`);
         }
