@@ -67,9 +67,9 @@ var cmd = cli_opts.argv.remain.shift();
 
 // Without these arguments, the commands will fail and print the usage anyway.
 if (cli_opts.plugins_dir || cli_opts.project) {
-    cli_opts.plugins_dir = typeof cli_opts.plugins_dir === 'string' ?
-        cli_opts.plugins_dir :
-        path.join(cli_opts.project, 'cordova', 'plugins');
+    cli_opts.plugins_dir = typeof cli_opts.plugins_dir === 'string'
+        ? cli_opts.plugins_dir
+        : path.join(cli_opts.project, 'cordova', 'plugins');
 }
 
 // Set up appropriate logging based on events
