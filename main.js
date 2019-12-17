@@ -61,9 +61,9 @@ const known_opts = {
 };
 const shortHands = { var: ['--variable'], v: ['--version'], h: ['--help'] };
 
-var cli_opts = nopt(known_opts, shortHands);
+const cli_opts = nopt(known_opts, shortHands);
 
-var cmd = cli_opts.argv.remain.shift();
+const cmd = cli_opts.argv.remain.shift();
 
 // Without these arguments, the commands will fail and print the usage anyway.
 if (cli_opts.plugins_dir || cli_opts.project) {

@@ -27,7 +27,7 @@ module.exports = {
     install (cli_opts) {
         assertRequiredOptions(cli_opts, ['platform', 'project', 'plugin']);
 
-        var opts = {
+        const opts = {
             subdir: '.',
             cli_variables: expandCliVariables(cli_opts.variable),
             save: cli_opts.save || false,
@@ -47,7 +47,7 @@ module.exports = {
     uninstall (cli_opts) {
         assertRequiredOptions(cli_opts, ['platform', 'project', 'plugin']);
 
-        var opts = {
+        const opts = {
             www_dir: cli_opts.www,
             save: cli_opts.save || false,
             projectRoot: cli_opts.project
@@ -67,7 +67,7 @@ module.exports = {
 
     platform (cli_opts) {
         assertRequiredOptions(cli_opts, ['platform_name']);
-        var operation = cli_opts.argv.remain[0] || '';
+        const operation = cli_opts.argv.remain[0] || '';
         if (operation !== 'add' && operation !== 'remove') {
             throw new Error(`Operation must be either 'add' or 'remove' but was '${operation}'`);
         }
@@ -76,7 +76,7 @@ module.exports = {
     },
 
     createpackagejson (cli_opts) {
-        var plugin_path = cli_opts.argv.remain[0];
+        const plugin_path = cli_opts.argv.remain[0];
         if (!plugin_path) {
             throw new Error(`Missing required path to plugin`);
         }
@@ -99,8 +99,8 @@ function assertRequiredOptions (options, requiredKeys) {
 
 function expandCliVariables (cliVarList) {
     return (cliVarList || []).reduce((cli_variables, variable) => {
-        var tokens = variable.split('=');
-        var key = tokens.shift().toUpperCase();
+        const tokens = variable.split('=');
+        const key = tokens.shift().toUpperCase();
         if (/^[\w-_]+$/.test(key)) cli_variables[key] = tokens.join('=');
         return cli_variables;
     }, {});
