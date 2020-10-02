@@ -28,40 +28,5 @@
     "test": "npm run lint && jasmine",
     "lint": "eslint ."
   },
-  "license": "Apache-2.0",
-  "contributors": [
-    {
-      "name": "Anis Kadri"
-    },
-    {
-      "name": "Tim Kim"
-    },
-    {
-      "name": "Braden Shepherdson"
-    },
-    {
-      "name": "Ryan Willoughby"
-    },
-    {
-      "name": "Brett Rudd"
-    },
-    {
-      "name": "Mike Reinstein"
-    },
-    {
-      "name": "Shazron Abdullah"
-    },
-    {
-      "name": "Steve Gill"
-    },
-    {
-      "name": "Fil Maj"
-    },
-    {
-      "name": "Michael Brooks"
-    },
-    {
-      "name": "Jesse MacFadyen"
-    }
-  ]
+  "license": "Apache-2.0"
 }
