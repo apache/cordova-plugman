@@ -1,5 +1,5 @@
 {
-  "author": "Andrew Lunny <alunny@gmail.com>",
+  "author": "Apache Software Foundation",
   "name": "plugman",
   "description": "install/uninstall Cordova plugins",
   "version": "4.0.0-dev",
