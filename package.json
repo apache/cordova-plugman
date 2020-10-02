@@ -1,16 +1,10 @@
 {
-  "author": "Andrew Lunny <alunny@gmail.com>",
+  "author": "Apache Software Foundation",
   "name": "plugman",
   "description": "install/uninstall Cordova plugins",
   "version": "4.0.0-dev",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/apache/cordova-plugman"
-  },
-  "bugs": {
-    "url": "https://issues.apache.org/jira/browse/CB",
-    "email": "dev@cordova.apache.org"
-  },
+  "repository": "github:apache/cordova-plugman",
+  "bugs": "https://github.com/apache/cordova-plugman/issues",
   "main": "plugman.js",
   "engines": {
     "node": ">=10"
@@ -34,40 +28,5 @@
     "test": "npm run lint && jasmine",
     "lint": "eslint ."
   },
-  "license": "Apache-2.0",
-  "contributors": [
-    {
-      "name": "Anis Kadri"
-    },
-    {
-      "name": "Tim Kim"
-    },
-    {
-      "name": "Braden Shepherdson"
-    },
-    {
-      "name": "Ryan Willoughby"
-    },
-    {
-      "name": "Brett Rudd"
-    },
-    {
-      "name": "Mike Reinstein"
-    },
-    {
-      "name": "Shazron Abdullah"
-    },
-    {
-      "name": "Steve Gill"
-    },
-    {
-      "name": "Fil Maj"
-    },
-    {
-      "name": "Michael Brooks"
-    },
-    {
-      "name": "Jesse MacFadyen"
-    }
-  ]
+  "license": "Apache-2.0"
 }
