@@ -3,10 +3,7 @@
   "name": "plugman",
   "description": "install/uninstall Cordova plugins",
   "version": "4.0.0-dev",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/apache/cordova-plugman"
-  },
+  "repository": "github:apache/cordova-plugman",
   "bugs": {
     "url": "https://issues.apache.org/jira/browse/CB",
     "email": "dev@cordova.apache.org"
