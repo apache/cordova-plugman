@@ -18,8 +18,8 @@
   },
   "devDependencies": {
     "@cordova/eslint-config": "^3.0.0",
-    "jasmine": "^3.3.1",
-    "rewire": "^4.0.1"
+    "jasmine": "^3.9.0",
+    "rewire": "^5.0.0"
   },
   "bin": {
     "plugman": "./main.js"
