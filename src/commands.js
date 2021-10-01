@@ -78,7 +78,7 @@ module.exports = {
     createpackagejson (cli_opts) {
         const plugin_path = cli_opts.argv.remain[0];
         if (!plugin_path) {
-            throw new Error(`Missing required path to plugin`);
+            throw new Error('Missing required path to plugin');
         }
         return plugman.createpackagejson(plugin_path);
     }
