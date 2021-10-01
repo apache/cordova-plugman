@@ -22,7 +22,7 @@
     "rewire": "^5.0.0"
   },
   "bin": {
-    "plugman": "./main.js"
+    "plugman": "./bin.js"
   },
   "scripts": {
     "test": "npm run lint && jasmine",
