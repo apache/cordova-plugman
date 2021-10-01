@@ -10,10 +10,10 @@
     "node": ">=10"
   },
   "dependencies": {
-    "cordova-lib": "^9.0.0",
-    "loud-rejection": "^1.6.0",
-    "nopt": "^4.0.1",
-    "p-each-series": "^1.0.0",
+    "cordova-lib": "^10.0.0",
+    "loud-rejection": "^2.2.0",
+    "nopt": "^5.0.0",
+    "p-each-series": "^2.2.0",
     "p-try": "^2.2.0"
   },
   "devDependencies": {
