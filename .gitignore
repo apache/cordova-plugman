@@ -1,6 +1,20 @@
+# System files
 .DS_Store
+
+# Editors
+.vscode
+
+# Testing, code coverage, and linting
+.nyc_output
+coverage
+temp
+.tmp
+
+# Logging
+logs
+*.log
+npm-debug.log*
+
+# others
 node_modules
 .gitkeep
-.tmp
-.nyc_output/
-coverage/
