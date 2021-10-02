@@ -21,6 +21,9 @@
 
 # plugman
 
+[![Node CI](https://github.com/apache/cordova-plugman/actions/workflows/ci.yml/badge.svg)](https://github.com/apache/cordova-plugman/actions/workflows/ci.yml)
+[![codecov.io](https://codecov.io/github/apache/cordova-plugman/coverage.svg?branch=master)](https://codecov.io/github/apache/cordova-plugman?branch=master)
+
 A command line tool to install and uninstall plugins for use with [Apache Cordova](http://cordova.io) projects.
 
 This document defines tool usage.
