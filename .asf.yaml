@@ -15,6 +15,22 @@
 # specific language governing permissions and limitations
 # under the License.
 
+github:
+  description: Apache Cordova Plugman
+  homepage: https://cordova.apache.org/
+
+  labels:
+    - cordova
+    - cplusplus
+    - csharp
+    - hacktoberfest
+    - java
+    - javascript
+    - library
+    - mobile
+    - nodejs
+    - objective-c
+
 notifications:
   commits:              commits@cordova.apache.org
   issues:               issues@cordova.apache.org
