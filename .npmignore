@@ -1,1 +1,11 @@
+# Config related files
+.*
+
+# Testing, code coverage, and linting
+coverage
 spec
+
+# Logging
+logs
+*.log
+npm-debug.log*
