@@ -85,7 +85,7 @@ Other parameters:
 
 ### Registry Search
 
-Search the [Plugin registry](http://plugins.cordova.io) for plugin id's that match the given space separated list of keywords.
+Search the [Plugin registry](https://cordova.apache.org/plugins/) for plugin id's that match the given space separated list of keywords.
 
     plugman search <plugin keywords>
 
