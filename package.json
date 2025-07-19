@@ -7,7 +7,7 @@
   "bugs": "https://github.com/apache/cordova-plugman/issues",
   "main": "plugman.js",
   "engines": {
-    "node": ">=10"
+    "node": ">=20.5.0"
   },
   "dependencies": {
     "cordova-lib": "^10.0.0",
