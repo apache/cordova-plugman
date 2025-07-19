@@ -12,7 +12,7 @@
   "dependencies": {
     "cordova-lib": "^12.0.2",
     "loud-rejection": "^2.2.0",
-    "nopt": "^5.0.0",
+    "nopt": "^8.1.0",
     "p-each-series": "^2.2.0",
     "p-try": "^2.2.0"
   },
