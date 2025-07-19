@@ -10,14 +10,14 @@
     "node": ">=20.5.0"
   },
   "dependencies": {
-    "cordova-lib": "^10.0.0",
+    "cordova-lib": "^12.0.2",
     "loud-rejection": "^2.2.0",
     "nopt": "^5.0.0",
     "p-each-series": "^2.2.0",
     "p-try": "^2.2.0"
   },
   "devDependencies": {
-    "@cordova/eslint-config": "^3.0.0",
+    "@cordova/eslint-config": "^5.1.0",
     "jasmine": "^3.9.0",
     "nyc": "^15.1.0",
     "rewire": "^5.0.0"

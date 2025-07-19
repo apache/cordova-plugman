@@ -72,7 +72,7 @@ module.exports = {
             throw new Error(`Operation must be either 'add' or 'remove' but was '${operation}'`);
         }
 
-        return plugman.platform({ operation: operation, platform_name: cli_opts.platform_name });
+        return plugman.platform({ operation, platform_name: cli_opts.platform_name });
     },
 
     createpackagejson (cli_opts) {
