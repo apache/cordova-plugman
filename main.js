@@ -25,8 +25,8 @@ process.on('uncaughtException', fail);
 // On unhandled promise rejection, log it to STDERR and exit with code 1
 require('loud-rejection/register');
 
-const url = require('url');
-const path = require('path');
+const url = require('node:url');
+const path = require('node:path');
 
 const nopt = require('nopt');
 
