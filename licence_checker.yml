@@ -15,14 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Config related files
-.*
-
-# Testing, code coverage, and linting
-coverage
-spec
-
-# Logging
-logs
-*.log
-npm-debug.log*
+ignored-packages:
+  - spdx-exceptions@2.5.0
+  - underscore@1.2.1
