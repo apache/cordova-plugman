@@ -1,0 +1,55 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+name: Release Auditing
+
+on:
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+  pull_request:
+    branches:
+      - '*'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Audit Licenses
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout project
+      - uses: actions/checkout@v4
+
+      # Check license headers (v1.2.0)
+      - uses: erisu/apache-rat-action@3127a8c18f3bb10e91c60e835144085b31c5c463
+
+      # Setup environment with node
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Install node packages
+      - name: npm install packages
+        run: npm i
+
+      # Check node package licenses (v2.0.0)
+      - uses: erisu/license-checker-action@1c222d0c2f5898a4c40b8bd6fd6888650bd6f68a
+        with:
+          license-config: 'licence_checker.yml'
+          include-asf-category-a: true
