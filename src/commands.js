@@ -56,31 +56,6 @@ module.exports = {
         return pEachSeries(cli_opts.plugin, pluginSrc =>
             plugman.uninstall(cli_opts.platform, cli_opts.project, pluginSrc, cli_opts.plugins_dir, opts)
         );
-    },
-
-    create (cli_opts) {
-        assertRequiredOptions(cli_opts, ['name', 'plugin_id', 'plugin_version']);
-
-        const cli_variables = expandCliVariables(cli_opts.variable);
-        return plugman.create(cli_opts.name, cli_opts.plugin_id, cli_opts.plugin_version, cli_opts.path || '.', cli_variables);
-    },
-
-    platform (cli_opts) {
-        assertRequiredOptions(cli_opts, ['platform_name']);
-        const operation = cli_opts.argv.remain[0] || '';
-        if (operation !== 'add' && operation !== 'remove') {
-            throw new Error(`Operation must be either 'add' or 'remove' but was '${operation}'`);
-        }
-
-        return plugman.platform({ operation, platform_name: cli_opts.platform_name });
-    },
-
-    createpackagejson (cli_opts) {
-        const plugin_path = cli_opts.argv.remain[0];
-        if (!plugin_path) {
-            throw new Error('Missing required path to plugin');
-        }
-        return plugman.createpackagejson(plugin_path);
     }
 };
 
