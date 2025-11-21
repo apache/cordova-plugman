@@ -1,4 +1,0 @@
-Add or remove a platform to a plugin
-
-Usage: plugman platform add --platform_name <platform>
-       plugman platform remove --platform_name <platform>
