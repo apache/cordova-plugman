@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-\.(.*)
-(.*).txt
-coverage
-node_modules
+.git/
+coverage/
+doc/*.txt
+node_modules/
