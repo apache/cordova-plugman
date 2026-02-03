@@ -10,17 +10,17 @@
     "node": ">=20.5.0"
   },
   "dependencies": {
-    "cordova-lib": "^12.0.2",
+    "cordova-lib": "^13.0.0",
     "loud-rejection": "^2.2.0",
-    "nopt": "^8.1.0",
+    "nopt": "^9.0.0",
     "p-each-series": "^2.2.0",
     "p-try": "^2.2.0"
   },
   "devDependencies": {
-    "@cordova/eslint-config": "^5.1.0",
-    "jasmine": "^5.8.0",
+    "@cordova/eslint-config": "^6.0.0",
+    "jasmine": "^6.0.0",
     "nyc": "^17.1.0",
-    "rewire": "^9.0.0"
+    "rewire": "^9.0.1"
   },
   "bin": {
     "plugman": "./bin.js"
