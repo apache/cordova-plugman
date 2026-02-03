@@ -6,11 +6,6 @@ Manage plugins in a Cordova project
     install              Install a plugin into a Cordova project
     uninstall            Uninstall a plugin from a Cordova project
 
-Author plugins
-    create               Create a plugin
-    createpackagejson    Add a package.json file to a plugin
-    platform             Add and remove platforms from a plugin
-
 Global options:
     --help, -h           Show help for <command> or this if none was given
     --debug, -d          Enable verbose output
