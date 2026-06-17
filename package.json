@@ -16,16 +16,21 @@
   },
   "devDependencies": {
     "@cordova/eslint-config": "^6.0.1",
+    "c8": "^11.0.0",
     "jasmine": "^6.3.0",
-    "nyc": "^17.1.0",
     "rewire": "^9.0.1"
+  },
+  "overrides": {
+    "c8": {
+      "yargs": "^18.0.0"
+    }
   },
   "bin": {
     "plugman": "./bin.js"
   },
   "scripts": {
     "test": "npm run lint && npm run test:coverage",
-    "test:coverage": "nyc jasmine",
+    "test:coverage": "c8 jasmine",
     "lint": "eslint ."
   },
   "license": "Apache-2.0",
