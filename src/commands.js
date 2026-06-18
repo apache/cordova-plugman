@@ -19,12 +19,10 @@
 
 // copyright (c) 2013 Andrew Lunny, Adobe Systems
 
-const pTry = require('p-try');
-const pEachSeries = require('p-each-series');
 const { plugman } = require('cordova-lib');
 
 module.exports = {
-    install (cli_opts) {
+    async install (cli_opts) {
         assertRequiredOptions(cli_opts, ['platform', 'project', 'plugin']);
 
         const opts = {
@@ -39,12 +37,15 @@ module.exports = {
             nohooks: cli_opts.nohooks || false
         };
 
-        return pEachSeries(cli_opts.plugin, pluginSrc =>
-            plugman.install(cli_opts.platform, cli_opts.project, pluginSrc, cli_opts.plugins_dir, opts)
-        );
+        const plugins = cli_opts?.plugin || [];
+
+        for (let i = 0; i < plugins.length; i++) {
+            const pluginSrc = plugins[i];
+            await plugman.install(cli_opts.platform, cli_opts.project, pluginSrc, cli_opts.plugins_dir, opts);
+        }
     },
 
-    uninstall (cli_opts) {
+    async uninstall (cli_opts) {
         assertRequiredOptions(cli_opts, ['platform', 'project', 'plugin']);
 
         const opts = {
@@ -53,18 +54,38 @@ module.exports = {
             projectRoot: cli_opts.project
         };
 
-        return pEachSeries(cli_opts.plugin, pluginSrc =>
-            plugman.uninstall(cli_opts.platform, cli_opts.project, pluginSrc, cli_opts.plugins_dir, opts)
-        );
+        const plugins = cli_opts?.plugin || [];
+        for (let i = 0; i < plugins.length; i++) {
+            const pluginSrc = plugins[i];
+            await plugman.uninstall(cli_opts.platform, cli_opts.project, pluginSrc, cli_opts.plugins_dir, opts);
+        }
+    },
+
+    async create (cli_opts) {
+        assertRequiredOptions(cli_opts, ['name', 'plugin_id', 'plugin_version']);
+
+        const cli_variables = expandCliVariables(cli_opts.variable);
+        return plugman.create(cli_opts.name, cli_opts.plugin_id, cli_opts.plugin_version, cli_opts.path || '.', cli_variables);
+    },
+
+    async platform (cli_opts) {
+        assertRequiredOptions(cli_opts, ['platform_name']);
+        const operation = cli_opts.argv.remain[0] || '';
+        if (operation !== 'add' && operation !== 'remove') {
+            throw new Error(`Operation must be either 'add' or 'remove' but was '${operation}'`);
+        }
+
+        return plugman.platform({ operation, platform_name: cli_opts.platform_name });
+    },
+
+    async createpackagejson (cli_opts) {
+        const plugin_path = cli_opts.argv.remain[0];
+        if (!plugin_path) {
+            throw new Error('Missing required path to plugin');
+        }
+        return plugman.createpackagejson(plugin_path);
     }
 };
-
-// Until we can declare all above functions async, wrap them all with pTry
-// to turn all thrown errors into rejections
-for (const key in module.exports) {
-    const fn = module.exports[key];
-    module.exports[key] = (...args) => pTry(fn, ...args);
-}
 
 function assertRequiredOptions (options, requiredKeys) {
     for (const key of requiredKeys) {
