@@ -34,7 +34,7 @@
     "lint": "eslint ."
   },
   "license": "Apache-2.0",
-  "nyc": {
+  "c8": {
     "all": true,
     "exclude": [
       "bin.js",
